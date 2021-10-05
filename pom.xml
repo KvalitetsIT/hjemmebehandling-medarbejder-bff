@@ -31,10 +31,10 @@
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.5.2</version>
 	</parent>
-	<groupId>dk.kvalitetsit.kithugs</groupId>
-	<artifactId>kithugs</artifactId>
+	<groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
+	<artifactId>rim-medarbejder-bff</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>kithugs</name>
+	<name>rim-medarbejder-bff</name>
 	<description>KITHUGS service</description>
 
 	<properties>
@@ -55,19 +55,19 @@
 		<dependencies>
 			<!-- Modules in project -->
 			<dependency>
-				<groupId>dk.kvalitetsit.kithugs</groupId>
+				<groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
 				<artifactId>service</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 
 			<dependency>
-				<groupId>dk.kvalitetsit.kithugs</groupId>
+				<groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
 				<artifactId>integrationtest</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 
 			<dependency>
-				<groupId>dk.kvalitetsit.kithugs</groupId>
+				<groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
 				<artifactId>web</artifactId>
 				<version>${project.version}</version>
 			</dependency>
