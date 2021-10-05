@@ -1,16 +1,9 @@
 version: '2.1'
 services:
-   testfrontend:
-     image: kvalitetsit/gooioidwsrest:1.1.14
-     command:
-      - "-config"
-      - "/caddy/config.json"
-     volumes:
-      - ./frontend.json:/caddy/config.json
-     ports:
-      - 8080:80
    helloservice:
      image: kvalitetsit/rim-medarbejder-bff:latest
+     ports:
+       - 8080:8080
      environment:
       - usercontext_header_name=X-Test-Auth
 
@@ -21,9 +14,3 @@ services:
       - userrole_user_values=userrole1,userrole2
       - userrole_monitor_values=monitorrole
       - userrole_provisioner_values=provisionerrole
-   documenatation-and-test:
-     image: kvalitetsit/rim-medarbejder-bff-documentation:latest
-     environment:
-      - BASE_URL=/test
-     ports:
-      - 80:8080
