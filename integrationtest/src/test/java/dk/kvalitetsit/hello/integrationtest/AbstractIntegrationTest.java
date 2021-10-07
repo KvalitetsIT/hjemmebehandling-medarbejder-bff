@@ -40,7 +40,7 @@ public abstract class AbstractIntegrationTest {
         serviceStarter = new ServiceStarter();
         if(runInDocker) {
             helloService = serviceStarter.startServicesInDocker();
-            apiBasePath = "http://" + helloService.getContainerIpAddress() + ":" + helloService.getMappedPort(8080);
+            apiBasePath = "http://" + helloService.getContainerIpAddress() + ":" + helloService.getMappedPort(8080) + "/api";
         }
         else {
             serviceStarter.startServices();
