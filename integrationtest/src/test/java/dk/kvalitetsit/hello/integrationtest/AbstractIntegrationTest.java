@@ -44,7 +44,7 @@ public abstract class AbstractIntegrationTest {
         }
         else {
             serviceStarter.startServices();
-            apiBasePath = "http://localhost:8080";
+            apiBasePath = "http://localhost:8080/api";
         }
     }
 
