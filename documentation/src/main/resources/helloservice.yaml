@@ -23,8 +23,8 @@ servers:
         default: localhost # Development
       port:
         enum:
-          - 8080
-        default: 8080
+          - 8484
+        default: 8484
 paths:
   /v1/hello:
     post:

@@ -4,6 +4,7 @@ services:
      image: kvalitetsit/rim-medarbejder-bff:latest
      ports:
        - 8080:8080
+       - 5005:5005
      environment:
       - usercontext_header_name=X-Test-Auth
 
@@ -14,3 +15,5 @@ services:
       - userrole_user_values=userrole1,userrole2
       - userrole_monitor_values=monitorrole
       - userrole_provisioner_values=provisionerrole
+
+      - JVM_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
