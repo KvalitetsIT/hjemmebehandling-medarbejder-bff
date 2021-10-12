@@ -1,10 +1,10 @@
 version: '2.1'
 services:
-   helloservice:
+   medarbejder-bff:
      image: kvalitetsit/rim-medarbejder-bff:latest
      ports:
-       - 8080:8080
-       - 5005:5005
+      - 8080:8080
+      - 5005:5005
      environment:
       - usercontext_header_name=X-Test-Auth
 
@@ -17,3 +17,16 @@ services:
       - userrole_provisioner_values=provisionerrole
 
       - JVM_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+
+   hapi-server:
+     image: hapiproject/hapi:latest
+     ports:
+      - 8082:8080
+
+   hapi-server-initializer:
+     image: alpine:3.11.5
+     depends_on:
+       - hapi-server
+     volumes:
+      - ./hapi-server-initializer:/hapi-server-initializer
+     command: "/hapi-server-initializer/init.sh"
