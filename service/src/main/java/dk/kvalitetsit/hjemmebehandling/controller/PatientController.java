@@ -2,8 +2,10 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
 import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
+import dk.kvalitetsit.hjemmebehandling.api.PatientRequest;
+import dk.kvalitetsit.hjemmebehandling.api.PatientResponse;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.model.Patient;
+import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -28,9 +30,21 @@ public class PatientController {
 
         String clinicalIdentifier = getClinicalIdentifier();
 
-        List<Patient> patients = patientService.getPatients(clinicalIdentifier);
+        List<PatientModel> patients = patientService.getPatients(clinicalIdentifier);
 
         return buildResponse(patients);
+    }
+
+    @PostMapping(value = "/v1/patient")
+    @CrossOrigin(origins = "http://localhost:3000") // TODO - cross origin only allowed for development purposes - find a solution that avoids this annotation.
+    public @ResponseBody PatientResponse getPatient(@RequestBody PatientRequest patientRequest) {
+        logger.info("Getting patient ...");
+
+        String clinicalIdentifier = getClinicalIdentifier();
+
+        PatientModel patient = patientService.getPatient(patientRequest.getCpr());
+
+        return buildResponse(patient);
     }
 
     private String getClinicalIdentifier() {
@@ -38,7 +52,7 @@ public class PatientController {
         return "1234";
     }
 
-    private PatientListResponse buildResponse(List<Patient> patients) {
+    private PatientListResponse buildResponse(List<PatientModel> patients) {
         PatientListResponse response = new PatientListResponse();
 
         response.setPatients(patients.stream().map(p -> mapPatient(p)).collect(Collectors.toList()));
@@ -46,7 +60,15 @@ public class PatientController {
         return response;
     }
 
-    private PatientDto mapPatient(Patient patient) {
+    private PatientResponse buildResponse(PatientModel patient) {
+        PatientResponse response = new PatientResponse();
+
+        response.setPatientDto(mapPatient(patient));
+
+        return response;
+    }
+
+    private PatientDto mapPatient(PatientModel patient) {
         PatientDto patientDto = new PatientDto();
 
         patientDto.setCpr(patient.getCpr());

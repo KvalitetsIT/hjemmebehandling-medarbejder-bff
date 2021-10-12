@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service.model;
 
-public class Patient {
+public class PatientModel {
     private String givenName;
     private String familyName;
     private String cpr;
