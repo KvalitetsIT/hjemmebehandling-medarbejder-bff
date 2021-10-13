@@ -6,9 +6,9 @@ public class PatientDto {
     private String givenName;
     private String familyName;
     private String cpr;
-    private ContactDetailDto patientContactDetails;
-    private ContactDetailDto primaryRelativeContactDetails;
-    private List<ContactDetailDto> additionalRelativeContactDetails;
+    private ContactDetailsDto patientContactDetails;
+    private ContactDetailsDto primaryRelativeContactDetails;
+    private List<ContactDetailsDto> additionalRelativeContactDetails;
 
     public String getGivenName() {
         return givenName;
@@ -34,27 +34,27 @@ public class PatientDto {
         this.cpr = cpr;
     }
 
-    public ContactDetailDto getPatientContactDetails() {
+    public ContactDetailsDto getPatientContactDetails() {
         return patientContactDetails;
     }
 
-    public void setPatientContactDetails(ContactDetailDto patientContactDetails) {
+    public void setPatientContactDetails(ContactDetailsDto patientContactDetails) {
         this.patientContactDetails = patientContactDetails;
     }
 
-    public ContactDetailDto getPrimaryRelativeContactDetails() {
+    public ContactDetailsDto getPrimaryRelativeContactDetails() {
         return primaryRelativeContactDetails;
     }
 
-    public void setPrimaryRelativeContactDetails(ContactDetailDto primaryRelativeContactDetails) {
+    public void setPrimaryRelativeContactDetails(ContactDetailsDto primaryRelativeContactDetails) {
         this.primaryRelativeContactDetails = primaryRelativeContactDetails;
     }
 
-    public List<ContactDetailDto> getAdditionalRelativeContactDetails() {
+    public List<ContactDetailsDto> getAdditionalRelativeContactDetails() {
         return additionalRelativeContactDetails;
     }
 
-    public void setAdditionalRelativeContactDetails(List<ContactDetailDto> additionalRelativeContactDetails) {
+    public void setAdditionalRelativeContactDetails(List<ContactDetailsDto> additionalRelativeContactDetails) {
         this.additionalRelativeContactDetails = additionalRelativeContactDetails;
     }
 }

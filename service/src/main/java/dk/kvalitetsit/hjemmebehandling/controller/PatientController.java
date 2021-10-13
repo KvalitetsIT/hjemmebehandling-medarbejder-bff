@@ -1,11 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
-import dk.kvalitetsit.hjemmebehandling.api.PatientRequest;
-import dk.kvalitetsit.hjemmebehandling.api.PatientResponse;
+import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +68,21 @@ public class PatientController {
         patientDto.setCpr(patient.getCpr());
         patientDto.setFamilyName(patient.getFamilyName());
         patientDto.setGivenName(patient.getGivenName());
+        patientDto.setPatientContactDetails(mapContactDetails(patient.getPatientContactDetails()));
 
         return patientDto;
+    }
+
+    private ContactDetailsDto mapContactDetails(ContactDetailsModel contactDetails) {
+        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
+
+        contactDetailsDto.setCountry(contactDetails.getCountry());
+        contactDetailsDto.setEmailAddress(contactDetails.getEmailAddress());
+        contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
+        contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
+        contactDetailsDto.setPostalCode(contactDetails.getPostalCode());
+        contactDetailsDto.setStreet(contactDetails.getStreet());
+
+        return contactDetailsDto;
     }
 }

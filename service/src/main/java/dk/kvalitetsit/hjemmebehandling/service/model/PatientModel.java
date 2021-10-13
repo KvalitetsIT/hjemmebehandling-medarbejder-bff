@@ -4,6 +4,7 @@ public class PatientModel {
     private String givenName;
     private String familyName;
     private String cpr;
+    private ContactDetailsModel patientContactDetails;
 
     public String getGivenName() {
         return givenName;
@@ -27,5 +28,13 @@ public class PatientModel {
 
     public void setCpr(String cpr) {
         this.cpr = cpr;
+    }
+
+    public ContactDetailsModel getPatientContactDetails() {
+        return patientContactDetails;
+    }
+
+    public void setPatientContactDetails(ContactDetailsModel patientContactDetails) {
+        this.patientContactDetails = patientContactDetails;
     }
 }

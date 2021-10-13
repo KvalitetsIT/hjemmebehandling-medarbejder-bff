@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-public class ContactDetailDto {
+public class ContactDetailsDto {
     private String street;
     private String postalCode;
     private String country;

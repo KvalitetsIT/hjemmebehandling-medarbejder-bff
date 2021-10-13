@@ -1,6 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
+import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +14,7 @@ public class FhirMapper {
         patientModel.setCpr(extractCpr(patient));
         patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setGivenName(extractGivenNames(patient));
+        patientModel.setPatientContactDetails(extractPatientContactDetails(patient));
 
         return patientModel;
     }
@@ -26,5 +29,38 @@ public class FhirMapper {
 
     private String extractGivenNames(Patient patient) {
         return patient.getName().get(0).getGivenAsSingleString();
+    }
+
+    private ContactDetailsModel extractPatientContactDetails(Patient patient) {
+        ContactDetailsModel contactDetails = new ContactDetailsModel();
+
+        contactDetails.setPrimaryPhone(extractPrimaryPhone(patient));
+        contactDetails.setEmailAddress(extractEmailAddress(patient));
+
+        return contactDetails;
+    }
+
+    private String extractPrimaryPhone(Patient patient) {
+        if(patient.getTelecom() == null || patient.getTelecom().isEmpty()) {
+            return null;
+        }
+        for(ContactPoint cp : patient.getTelecom()) {
+            if(!cp.getValue().contains("@")) {
+                return cp.getValue();
+            }
+        }
+        return null;
+    }
+
+    private String extractEmailAddress(Patient patient) {
+        if(patient.getTelecom() == null || patient.getTelecom().isEmpty()) {
+            return null;
+        }
+        for(ContactPoint cp : patient.getTelecom()) {
+            if(cp.getValue().contains("@")) {
+                return cp.getValue();
+            }
+        }
+        return null;
     }
 }
