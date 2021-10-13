@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.controller.PatientController;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
@@ -28,7 +29,7 @@ public class FhirClient {
         Bundle bundle = (Bundle) client
                 .search()
                 .forResource(Patient.class)
-                .where(Patient.IDENTIFIER.exactly().systemAndValues("http://acme.org/mrns", "12345"))
+                .where(Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr))
                 .prettyPrint()
                 .execute();
 
@@ -40,9 +41,7 @@ public class FhirClient {
             logger.warn("More than one patient present!");
         }
 
-        Bundle.BundleEntryComponent component = bundle.getEntry().get(0);
-        Patient patient = (Patient) component.getResource();
-
-        return patient;
+        Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
+        return (Patient) component.getResource();
     }
 }

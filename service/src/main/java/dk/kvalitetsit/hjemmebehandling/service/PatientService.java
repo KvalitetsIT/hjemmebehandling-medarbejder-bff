@@ -45,6 +45,9 @@ public class PatientService {
     public PatientModel getPatient(String cpr) {
         // Look up the patient
         Patient patient = fhirClient.lookupPatient(cpr);
+        if(patient == null) {
+            return null;
+        }
 
         // Map to the domain model
         return fhirMapper.mapPatient(patient);

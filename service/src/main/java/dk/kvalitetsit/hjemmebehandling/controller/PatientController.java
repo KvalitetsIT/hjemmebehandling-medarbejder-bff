@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
 import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
 import dk.kvalitetsit.hjemmebehandling.api.PatientRequest;
 import dk.kvalitetsit.hjemmebehandling.api.PatientResponse;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.slf4j.Logger;
@@ -37,14 +38,17 @@ public class PatientController {
 
     @PostMapping(value = "/v1/patient")
     @CrossOrigin(origins = "http://localhost:3000") // TODO - cross origin only allowed for development purposes - find a solution that avoids this annotation.
-    public @ResponseBody PatientResponse getPatient(@RequestBody PatientRequest patientRequest) {
+    public @ResponseBody PatientDto getPatient(@RequestBody PatientRequest patientRequest) {
         logger.info("Getting patient ...");
 
         String clinicalIdentifier = getClinicalIdentifier();
 
         PatientModel patient = patientService.getPatient(patientRequest.getCpr());
 
-        return buildResponse(patient);
+        if(patient == null) {
+            throw new ResourceNotFoundException("Patient did not exist!");
+        }
+        return mapPatient(patient);
     }
 
     private String getClinicalIdentifier() {
@@ -56,14 +60,6 @@ public class PatientController {
         PatientListResponse response = new PatientListResponse();
 
         response.setPatients(patients.stream().map(p -> mapPatient(p)).collect(Collectors.toList()));
-
-        return response;
-    }
-
-    private PatientResponse buildResponse(PatientModel patient) {
-        PatientResponse response = new PatientResponse();
-
-        response.setPatientDto(mapPatient(patient));
 
         return response;
     }
