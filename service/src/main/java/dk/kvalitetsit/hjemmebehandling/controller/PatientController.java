@@ -35,13 +35,19 @@ public class PatientController {
     }
 
     @PostMapping(value = "/v1/patient")
+    public void createPatient(PatientRequest request, String planDefinitionId) {
+        throw new UnsupportedOperationException();
+
+    }
+
+    @GetMapping(value = "/v1/patient")
     @CrossOrigin(origins = "http://localhost:3000") // TODO - cross origin only allowed for development purposes - find a solution that avoids this annotation.
-    public @ResponseBody PatientDto getPatient(@RequestBody PatientRequest patientRequest) {
+    public @ResponseBody PatientDto getPatient(String cpr) {
         logger.info("Getting patient ...");
 
         String clinicalIdentifier = getClinicalIdentifier();
 
-        PatientModel patient = patientService.getPatient(patientRequest.getCpr());
+        PatientModel patient = patientService.getPatient(cpr);
 
         if(patient == null) {
             throw new ResourceNotFoundException("Patient did not exist!");
