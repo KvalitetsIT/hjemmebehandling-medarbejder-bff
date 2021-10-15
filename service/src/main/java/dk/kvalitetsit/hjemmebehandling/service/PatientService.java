@@ -5,7 +5,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.service.exception.PatientServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
@@ -26,12 +26,12 @@ public class PatientService {
         this.fhirMapper = fhirMapper;
     }
 
-    public void createPatient(PatientModel patientModel) throws PatientServiceException {
+    public void createPatient(PatientModel patientModel) throws ServiceException {
         try {
             fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
         }
         catch(Exception e) {
-            throw new PatientServiceException("Error saving patient", e);
+            throw new ServiceException("Error saving patient", e);
         }
     }
 

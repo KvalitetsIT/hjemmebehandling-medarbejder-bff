@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.PatientServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class PatientController {
         try {
             patientService.createPatient(mapPatientDto(request.getPatient()));
         }
-        catch(PatientServiceException e) {
+        catch(ServiceException e) {
             logger.error("Error creating patient", e);
             throw new InternalServerErrorException();
         }
