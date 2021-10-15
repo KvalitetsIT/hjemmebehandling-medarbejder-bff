@@ -1,8 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.PatientServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
 import org.slf4j.Logger;
@@ -35,9 +37,19 @@ public class PatientController {
     }
 
     @PostMapping(value = "/v1/patient")
-    public void createPatient(PatientRequest request, String planDefinitionId) {
-        throw new UnsupportedOperationException();
+    public void createPatient(@RequestBody CreatePatientRequest request) {
+        // Create the patient
+        try {
+            patientService.createPatient(mapPatientDto(request.getPatient()));
+        }
+        catch(PatientServiceException e) {
+            logger.error("Error creating patient", e);
+            throw new InternalServerErrorException();
+        }
 
+        if(request.getPlanDefinitionId() != null) {
+            // TODO: Create CarePlan based on provided planDefinition
+        }
     }
 
     @GetMapping(value = "/v1/patient")
@@ -79,6 +91,19 @@ public class PatientController {
         return patientDto;
     }
 
+    private PatientModel mapPatientDto(PatientDto patient) {
+        PatientModel patientModel = new PatientModel();
+
+        patientModel.setCpr(patient.getCpr());
+        patientModel.setFamilyName(patient.getFamilyName());
+        patientModel.setGivenName(patient.getGivenName());
+        if(patient.getPatientContactDetails() != null) {
+            patientModel.setPatientContactDetails(mapContactDetails(patient.getPatientContactDetails()));
+        }
+
+        return patientModel;
+    }
+
     private ContactDetailsDto mapContactDetails(ContactDetailsModel contactDetails) {
         ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
 
@@ -90,5 +115,18 @@ public class PatientController {
         contactDetailsDto.setStreet(contactDetails.getStreet());
 
         return contactDetailsDto;
+    }
+
+    private ContactDetailsModel mapContactDetails(ContactDetailsDto contactDetails) {
+        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
+
+        contactDetailsModel.setCountry(contactDetails.getCountry());
+        contactDetailsModel.setEmailAddress(contactDetails.getEmailAddress());
+        contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
+        contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
+        contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
+        contactDetailsModel.setStreet(contactDetails.getStreet());
+
+        return contactDetailsModel;
     }
 }

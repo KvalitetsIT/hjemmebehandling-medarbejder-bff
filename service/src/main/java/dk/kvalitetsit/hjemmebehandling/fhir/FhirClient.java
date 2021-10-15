@@ -44,4 +44,10 @@ public class FhirClient {
         Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
         return (Patient) component.getResource();
     }
+
+    public void savePatient(Patient patient) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        client.create().resource(patient).prettyPrint().execute();
+    }
 }
