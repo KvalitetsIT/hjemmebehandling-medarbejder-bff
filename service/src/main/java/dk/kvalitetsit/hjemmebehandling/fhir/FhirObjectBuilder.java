@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class FhirObjectBuilder {
     public CarePlan buildCarePlan(Patient patient, PlanDefinition planDefinition) {
-        throw new UnsupportedOperationException();
+        CarePlan carePlan = new CarePlan();
+
+
+        return carePlan;
     }
 }
