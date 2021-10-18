@@ -7,6 +7,7 @@ public class CarePlanDto {
     private String id;
     private String title;
     private String status;
+    private PatientDto patientDto;
     private List<QuestionnaireDto> questionnaires;
     private Map<String, FrequencyDto> questionnaireFrequencies;
 }

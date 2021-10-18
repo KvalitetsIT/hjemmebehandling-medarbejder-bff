@@ -15,7 +15,7 @@
         <text value="Chlamydia Screening"/>
     </topic>
     <action>
-        <title value="Patient has not had chlamydia screening within the recommended timeframe..."/>
+        <title value="Yet another action ..."/>
         <condition>
             <kind value="applicability"/>
             <expression>
@@ -23,14 +23,11 @@
                 <expression value="NoScreening"/>
             </expression>
         </condition>
-        <dynamicValue>
-            <!--   The '$this' here indicates the dynamic value is providing the entire result, rather
-             than a value of a particular element   -->
-            <path value="$this"/>
-            <expression>
-                <language value="text/cql"/>
-                <expression value="ChlamydiaScreeningRequest"/>
-            </expression>
-        </dynamicValue>
+        <timingTiming>
+            <repeat>
+                <dayOfWeek value="mon"/>
+            </repeat>
+        </timingTiming>
+        <definitionUri value="http://localhost:8082/fhir/Questionnaire/2"/>
     </action>
 </PlanDefinition>
