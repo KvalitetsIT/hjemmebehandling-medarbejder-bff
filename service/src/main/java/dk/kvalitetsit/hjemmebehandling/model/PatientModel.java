@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.service.model;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 public class PatientModel {
     private String givenName;

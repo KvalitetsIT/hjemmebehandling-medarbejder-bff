@@ -6,7 +6,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;

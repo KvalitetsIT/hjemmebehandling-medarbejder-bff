@@ -4,12 +4,11 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Provider;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;

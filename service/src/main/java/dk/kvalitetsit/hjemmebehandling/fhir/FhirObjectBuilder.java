@@ -1,6 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import dk.kvalitetsit.hjemmebehandling.service.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 

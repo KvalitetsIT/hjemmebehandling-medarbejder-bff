@@ -5,8 +5,8 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorE
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;

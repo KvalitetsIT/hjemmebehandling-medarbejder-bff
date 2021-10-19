@@ -1,15 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.service.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.types.Weekday;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Locale;
 
 @Component
 public class FhirMapper {

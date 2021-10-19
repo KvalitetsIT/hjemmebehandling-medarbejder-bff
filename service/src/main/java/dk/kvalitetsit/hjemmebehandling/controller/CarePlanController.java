@@ -8,16 +8,13 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 public class CarePlanController {
@@ -26,7 +23,6 @@ public class CarePlanController {
     private CarePlanService carePlanService;
 
     private static final String QUESTIONNAIRES_KEY = "questionnaires";
-    private static final Set<String> ALLOWED_UPDATE_FIELDS = Set.of(QUESTIONNAIRES_KEY);
 
     public CarePlanController(CarePlanService carePlanService) {
         this.carePlanService = carePlanService;
@@ -57,7 +53,7 @@ public class CarePlanController {
     }
 
     @PatchMapping(value = "/v1/careplan/{id}")
-    public void partialUpdate(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
+    public void patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
         if(request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
             throw new BadRequestException(String.format("Both questionnaireIds and questionnaireFrequencies must be supplied!"));
         }
