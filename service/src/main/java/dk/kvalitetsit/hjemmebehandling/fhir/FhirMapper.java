@@ -1,15 +1,28 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.service.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.service.model.PatientModel;
-import org.hl7.fhir.r4.model.ContactPoint;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Patient;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class FhirMapper {
+    public Timing mapFrequencyModel(FrequencyModel frequencyModel) {
+        Timing timing = new Timing();
+
+        Timing.TimingRepeatComponent repeat = new Timing.TimingRepeatComponent();
+
+        EnumFactory<Timing.DayOfWeek> factory = new Timing.DayOfWeekEnumFactory();
+        repeat.setDayOfWeek(List.of(new Enumeration<>(factory, frequencyModel.getWeekday().toString().toLowerCase())));
+        timing.setRepeat(repeat);
+
+        return timing;
+    }
+
     public Patient mapPatientModel(PatientModel patientModel) {
         Patient patient = new Patient();
 

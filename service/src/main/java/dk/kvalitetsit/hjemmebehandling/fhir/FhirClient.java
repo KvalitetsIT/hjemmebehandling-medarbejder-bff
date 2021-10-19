@@ -1,13 +1,19 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.base.composite.BaseIdentifierDt;
+import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.controller.PatientController;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
@@ -29,6 +35,30 @@ public class FhirClient {
             throw new IllegalStateException("Tried to create CarePlan, but it was not created!");
         }
         return outcome.getId().getValue();
+    }
+
+    public CarePlan lookupCarePlan(String carePlanId) {
+        // "http://hapi-server:8080/fhir"
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        // <identifier><system value="http://acme.org/mrns"/><value value="12345"/></identifier>
+        Bundle bundle = (Bundle) client
+                .search()
+                .forResource(CarePlan.class)
+                .where(CarePlan.RES_ID.exactly().identifier(carePlanId))
+                .prettyPrint()
+                .execute();
+
+        // Extract patient from the bundle
+        if(bundle.getTotal() == 0) {
+            return null;
+        }
+        if(bundle.getTotal() > 1) {
+            logger.warn("More than one CarePlan present!");
+        }
+
+        Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
+        return (CarePlan) component.getResource();
     }
 
     public Patient lookupPatient(String cpr) {
@@ -83,5 +113,24 @@ public class FhirClient {
 
         Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
         return (PlanDefinition) component.getResource();
+    }
+
+    public List<Questionnaire> lookupQuestionnaires(List<String> questionnaireIds) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        Bundle bundle = (Bundle) client
+                .search()
+                .forResource(Questionnaire.class)
+                .where(Questionnaire.RES_ID.exactly().systemAndValues(null, questionnaireIds))
+                .prettyPrint()
+                .execute();
+
+        return bundle.getEntry().stream().map(e -> (Questionnaire) e.getResource()).collect(Collectors.toList());
+    }
+
+    public void updateCarePlan(CarePlan carePlan) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        client.update().resource(carePlan).prettyPrint().execute();
     }
 }

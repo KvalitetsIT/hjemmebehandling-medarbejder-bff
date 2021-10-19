@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PlanDefinition xmlns="http://hl7.org/fhir">
-    <id value="chlamydia-screening-intervention"/>
+    <id value="plandefinition-1"/>
     <text>bla</text>
     <identifier>
         <use value="official"/>
@@ -12,7 +12,7 @@
     <date value="2015-07-22"/>
     <description value="Chlamydia Screening CDS Example Using Common"/>
     <topic>
-        <text value="Chlamydia Screening"/>
+        <text value="Chlamydia Screening Extended"/>
     </topic>
     <action>
         <title value="Yet another action ..."/>
@@ -28,6 +28,6 @@
                 <dayOfWeek value="mon"/>
             </repeat>
         </timingTiming>
-        <definitionUri value="http://localhost:8082/fhir/Questionnaire/2"/>
+        <definitionUri value="Questionnaire/questionnaire-1"/>
     </action>
 </PlanDefinition>

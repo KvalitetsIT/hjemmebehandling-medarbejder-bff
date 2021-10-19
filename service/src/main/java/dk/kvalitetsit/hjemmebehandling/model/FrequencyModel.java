@@ -1,8 +1,8 @@
-package dk.kvalitetsit.hjemmebehandling.api;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 
-public class FrequencyDto {
+public class FrequencyModel {
     private Weekday weekday;
 
     public Weekday getWeekday() {

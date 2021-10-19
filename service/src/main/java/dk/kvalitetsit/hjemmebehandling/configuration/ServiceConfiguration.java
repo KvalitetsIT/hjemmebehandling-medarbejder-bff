@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ServiceConfiguration {
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirObjectBuilder builder) {
-        return new CarePlanService(client, builder);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder) {
+        return new CarePlanService(client, mapper, builder);
     }
 
     @Bean
