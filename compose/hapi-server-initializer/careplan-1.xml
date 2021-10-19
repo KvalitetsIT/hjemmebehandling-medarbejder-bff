@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CarePlan xmlns="http://hl7.org/fhir">
     <id value="careplan-1"/>
-    <identifier>
-        <value value="http://localhost:8080/fhir/Patient/123"/>
-    </identifier>
     <subject>
-        <reference value="http://hapi-server:8080/fhir/Patient/1"/>
+        <reference value="Patient/patient-1"/>
     </subject>
     <period>
         <start value="2021-10-18"/>
     </period>
     <activity>
         <detail>
-            <instantiatesUri value="http://localhost:8082/fhir/Questionnaire/2"/>
+            <instantiatesUri value="Questionnaire/questionnaire-1"/>
             <status value="not-started"/>
             <scheduledTiming>
                 <repeat>

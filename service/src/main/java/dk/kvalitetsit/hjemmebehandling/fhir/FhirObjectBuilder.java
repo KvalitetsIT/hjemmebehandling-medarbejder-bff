@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import dk.kvalitetsit.hjemmebehandling.service.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class FhirObjectBuilder {
@@ -48,5 +50,28 @@ public class FhirObjectBuilder {
         }
 
         return carePlan;
+    }
+
+    public void setQuestionnairesForCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, Map<String, Timing> frequencies) {
+        // Clear existing Activity list
+        carePlan.getActivity().clear();
+
+        // Map each questionnaire to an Activity
+        for(Questionnaire questionnaire : questionnaires) {
+            // Map the action to an Activity
+            CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
+
+            CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
+
+            detail.setInstantiatesUri(List.of(new UriType(questionnaire.getIdElement().toVersionless().getValue())));
+            detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
+
+            String questionnaireId = questionnaire.getIdElement().getIdPart();
+            detail.setScheduled(frequencies.get(questionnaireId));
+
+            activity.setDetail(detail);
+
+            carePlan.addActivity(activity);
+        }
     }
 }
