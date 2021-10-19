@@ -8,5 +8,8 @@ curl -o /dev/null --retry 5 --retry-max-time 40 --retry-connrefused http://hapi-
 
 echo 'Initializing hapi-server ...';
 
-curl -i -d '@/hapi-server-initializer/patient1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/Patient?_format=xml
-curl -i -d '@/hapi-server-initializer/plandefinition1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/PlanDefinition?_format=xml
+# Using PUT allows us to control the resource id's.
+curl -i -X PUT -d '@/hapi-server-initializer/careplan-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/CarePlan/careplan-1?_format=xml
+curl -i -X PUT -d '@/hapi-server-initializer/patient-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/Patient/patient-1?_format=xml
+curl -i -X PUT -d '@/hapi-server-initializer/plandefinition-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/PlanDefinition/plandefinition-1?_format=xml
+curl -i -X PUT -d '@/hapi-server-initializer/questionnaire-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/Questionnaire/questionnaire-1?_format=xml
