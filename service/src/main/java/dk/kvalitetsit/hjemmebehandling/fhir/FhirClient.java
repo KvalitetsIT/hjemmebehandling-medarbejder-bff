@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FhirClient {
@@ -37,8 +38,7 @@ public class FhirClient {
         return outcome.getId().getValue();
     }
 
-    public CarePlan lookupCarePlan(String carePlanId) {
-        // "http://hapi-server:8080/fhir"
+    public Optional<CarePlan> lookupCarePlan(String carePlanId) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         // <identifier><system value="http://acme.org/mrns"/><value value="12345"/></identifier>
@@ -58,7 +58,7 @@ public class FhirClient {
         }
 
         Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
-        return (CarePlan) component.getResource();
+        return Optional.of((CarePlan) component.getResource());
     }
 
     public Patient lookupPatient(String cpr) {

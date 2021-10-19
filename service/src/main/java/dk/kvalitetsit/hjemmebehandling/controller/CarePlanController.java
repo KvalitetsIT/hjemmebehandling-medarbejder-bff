@@ -39,12 +39,11 @@ public class CarePlanController {
     @GetMapping(value = "/v1/careplan/{id}")
     public CarePlanDto getCarePlan(@PathVariable String id) {
         // Look up the CarePlan
-        CarePlanModel carePlan = carePlanService.getCarePlan(id);
-        if(carePlan == null) {
-            throw new ResourceNotFoundException(String.format("CarePlan with id %s no found.", id));
+        Optional<CarePlanModel> carePlan = carePlanService.getCarePlan(id);
+        if(!carePlan.isPresent()) {
+            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id));
         }
-
-        return dtoMapper.mapCarePlanModel(carePlan);
+        return dtoMapper.mapCarePlanModel(carePlan.get());
     }
 
     @PostMapping(value = "/v1/careplan")
