@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
@@ -7,6 +8,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DtoMapper {
+    public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
+        CarePlanDto carePlanDto = new CarePlanDto();
+
+        carePlanDto.setId(carePlan.getId());
+
+        return carePlanDto;
+    }
+
     public FrequencyModel mapFrequency(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 

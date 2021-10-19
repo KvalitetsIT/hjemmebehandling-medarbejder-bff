@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
@@ -46,6 +47,10 @@ public class CarePlanService {
         catch(Exception e) {
             throw new ServiceException("Error saving CarePlan", e);
         }
+    }
+
+    public CarePlanModel getCarePlan(String carePlanId) {
+        throw new UnsupportedOperationException();
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException {

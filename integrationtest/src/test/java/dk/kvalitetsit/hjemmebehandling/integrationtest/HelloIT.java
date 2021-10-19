@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiClient;
 import org.openapitools.client.ApiException;
 import org.openapitools.client.api.KithugsApi;
@@ -22,7 +22,7 @@ public class HelloIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testCallService() throws ApiException {
         var input = new HelloRequest();
         input.setName("John Doe");
