@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
@@ -11,6 +12,14 @@ import java.util.List;
 
 @Component
 public class FhirMapper {
+    public CarePlanModel mapCarePlan(CarePlan carePlan) {
+        CarePlanModel carePlanModel = new CarePlanModel();
+
+        carePlanModel.setId(carePlan.getId());
+
+        return carePlanModel;
+    }
+
     public Timing mapFrequencyModel(FrequencyModel frequencyModel) {
         Timing timing = new Timing();
 

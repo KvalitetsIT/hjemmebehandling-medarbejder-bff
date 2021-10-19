@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CarePlanService {
@@ -49,8 +50,13 @@ public class CarePlanService {
         }
     }
 
-    public CarePlanModel getCarePlan(String carePlanId) {
-        throw new UnsupportedOperationException();
+    public Optional<CarePlanModel> getCarePlan(String carePlanId) {
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlan(carePlanId);
+
+        if(!carePlan.isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(fhirMapper.mapCarePlan(carePlan.get()));
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException {
@@ -61,17 +67,17 @@ public class CarePlanService {
         }
 
         // Look up the CarePlan, throw an exception in case it does not exist.
-        CarePlan carePlan = fhirClient.lookupCarePlan(carePlanId);
-        if(carePlan == null) {
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlan(carePlanId);
+        if(!carePlan.isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId));
         }
 
         // Update the carePlan
         Map<String, Timing> timings = mapFrequencies(frequencies);
-        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan, questionnaires, timings);
+        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaires, timings);
 
         // Save the updated CarePlan
-        fhirClient.updateCarePlan(carePlan);
+        fhirClient.updateCarePlan(carePlan.get());
     }
 
     private Map<String, Timing> mapFrequencies(Map<String, FrequencyModel> frequencies) {

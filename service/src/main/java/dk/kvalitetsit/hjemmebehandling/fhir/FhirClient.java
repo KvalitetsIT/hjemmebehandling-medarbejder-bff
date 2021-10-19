@@ -5,6 +5,7 @@ import ca.uhn.fhir.model.base.composite.BaseIdentifierDt;
 import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.controller.PatientController;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FhirClient {
@@ -37,28 +39,21 @@ public class FhirClient {
         return outcome.getId().getValue();
     }
 
-    public CarePlan lookupCarePlan(String carePlanId) {
-        // "http://hapi-server:8080/fhir"
+    public Optional<CarePlan> lookupCarePlan(String carePlanId) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
-        // <identifier><system value="http://acme.org/mrns"/><value value="12345"/></identifier>
-        Bundle bundle = (Bundle) client
-                .search()
-                .forResource(CarePlan.class)
-                .where(CarePlan.RES_ID.exactly().identifier(carePlanId))
-                .prettyPrint()
-                .execute();
-
-        // Extract patient from the bundle
-        if(bundle.getTotal() == 0) {
-            return null;
+        try {
+            CarePlan carePlan = client
+                    .read()
+                    .resource(CarePlan.class)
+                    .withId(carePlanId)
+                    .execute();
+            return Optional.of(carePlan);
         }
-        if(bundle.getTotal() > 1) {
-            logger.warn("More than one CarePlan present!");
+        catch(ResourceNotFoundException e) {
+            // Swallow the exception - corresponds to a 404 response
+            return Optional.empty();
         }
-
-        Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
-        return (CarePlan) component.getResource();
     }
 
     public Patient lookupPatient(String cpr) {

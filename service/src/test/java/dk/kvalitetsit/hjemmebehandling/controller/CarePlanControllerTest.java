@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +34,7 @@ public class CarePlanControllerTest {
 
         CarePlanModel carePlanModel = new CarePlanModel();
         CarePlanDto carePlanDto = new CarePlanDto();
-        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(carePlanModel);
+        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(Optional.of(carePlanModel));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlanDto);
 
         // Act
@@ -47,12 +49,10 @@ public class CarePlanControllerTest {
         // Arrange
         String carePlanId = "careplan-1";
 
-        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(null);
-
+        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(Optional.empty());
         // Act
 
         // Assert
-        //assertDoesNotThrow(() -> subject.getCarePlan(carePlanId));
         assertThrows(ResourceNotFoundException.class, () -> subject.getCarePlan(carePlanId));
     }
 }
