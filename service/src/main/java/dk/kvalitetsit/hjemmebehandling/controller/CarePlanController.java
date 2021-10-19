@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
-import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
-import dk.kvalitetsit.hjemmebehandling.api.FrequencyDto;
-import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -21,11 +18,13 @@ public class CarePlanController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private CarePlanService carePlanService;
+    private DtoMapper mapper;
 
     private static final String QUESTIONNAIRES_KEY = "questionnaires";
 
-    public CarePlanController(CarePlanService carePlanService) {
+    public CarePlanController(CarePlanService carePlanService, DtoMapper mapper) {
         this.carePlanService = carePlanService;
+        this.mapper = mapper;
     }
 
     @GetMapping(value = "/v1/careplan")
@@ -73,17 +72,9 @@ public class CarePlanController {
         Map<String, FrequencyModel> frequencies = new HashMap<>();
 
         for(String questionnaireId : frequencyDtos.keySet()) {
-            frequencies.put(questionnaireId, mapFrequency(frequencyDtos.get(questionnaireId)));
+            frequencies.put(questionnaireId, mapper.mapFrequency(frequencyDtos.get(questionnaireId)));
         }
 
         return frequencies;
-    }
-
-    private FrequencyModel mapFrequency(FrequencyDto frequencyDto) {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        frequencyModel.setWeekday(frequencyDto.getWeekday());
-
-        return frequencyModel;
     }
 }
