@@ -6,12 +6,18 @@ import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
+
 @Component
 public class DtoMapper {
     public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setId(carePlan.getId());
+        carePlanDto.setTitle(carePlan.getTitle());
+        carePlanDto.setStatus(carePlan.getStatus());
+        carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
 
         return carePlanDto;
     }
