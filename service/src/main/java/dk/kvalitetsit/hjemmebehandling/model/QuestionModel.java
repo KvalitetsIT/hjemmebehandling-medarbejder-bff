@@ -1,6 +1,6 @@
-package dk.kvalitetsit.hjemmebehandling.api;
+package dk.kvalitetsit.hjemmebehandling.model;
 
-public class QuestionDto {
+public class QuestionModel {
     private String text;
 
     public String getText() {

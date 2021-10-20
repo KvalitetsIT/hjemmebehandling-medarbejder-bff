@@ -34,18 +34,7 @@ public class FhirObjectBuilder {
                 continue;
             }
 
-            // Map the action to an Activity
-            CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
-
-            CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
-
-            detail.setInstantiatesUri(List.of(action.getDefinitionUriType()));
-            detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
-            detail.setScheduled(action.getTiming());
-
-            activity.setDetail(detail);
-
-            carePlan.addActivity(activity);
+            carePlan.addActivity(buildActivity(action));
         }
 
         return carePlan;
@@ -57,20 +46,48 @@ public class FhirObjectBuilder {
 
         // Map each questionnaire to an Activity
         for(Questionnaire questionnaire : questionnaires) {
-            // Map the action to an Activity
-            CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
-
-            CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
-
-            detail.setInstantiatesUri(List.of(new UriType(questionnaire.getIdElement().toVersionless().getValue())));
-            detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
-
-            String questionnaireId = questionnaire.getIdElement().getIdPart();
-            detail.setScheduled(frequencies.get(questionnaireId));
-
-            activity.setDetail(detail);
-
-            carePlan.addActivity(activity);
+            carePlan.addActivity(buildActivity(questionnaire, frequencies));
         }
+    }
+
+    private CarePlan.CarePlanActivityComponent buildActivity(PlanDefinition.PlanDefinitionActionComponent action) {
+        UriType instantiatesUri = action.getDefinitionUriType();
+        Type timing = action.getTiming();
+
+        return buildActivity(instantiatesUri, timing);
+    }
+
+    private CarePlan.CarePlanActivityComponent buildActivity(Questionnaire questionnaire, Map<String, Timing> frequencies) {
+        UriType instantiatesUri = getInstantiatesUri(questionnaire);
+        Timing timing = getTiming(questionnaire, frequencies);
+
+        return buildActivity(instantiatesUri, timing);
+    }
+
+    private UriType getInstantiatesUri(Questionnaire questionnaire) {
+        return new UriType(questionnaire.getIdElement().toVersionless().getValue());
+    }
+
+    private Timing getTiming(Questionnaire questionnaire, Map<String, Timing> frequencies) {
+        String questionnaireId = questionnaire.getIdElement().getIdPart();
+        return frequencies.get(questionnaireId);
+    }
+
+    private CarePlan.CarePlanActivityComponent buildActivity(UriType instantiatesUri, Type timing) {
+        CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
+
+        activity.setDetail(buildDetail(instantiatesUri, timing));
+
+        return activity;
+    }
+
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(UriType instantiatesUri, Type timing) {
+        CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
+
+        detail.setInstantiatesUri(List.of(instantiatesUri));
+        detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
+        detail.setScheduled(timing);
+
+        return detail;
     }
 }

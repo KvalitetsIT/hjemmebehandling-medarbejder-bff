@@ -2,12 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import java.util.List;
 
-public class CarePlanModel {
+public class QuestionnaireModel {
     private String id;
     private String title;
     private String status;
-    private PatientModel patient;
-    private List<QuestionnaireWrapperModel> questionnaires;
+    private List<QuestionModel> questions;
 
     public String getId() {
         return id;
@@ -33,19 +32,11 @@ public class CarePlanModel {
         this.status = status;
     }
 
-    public PatientModel getPatient() {
-        return patient;
+    public List<QuestionModel> getQuestions() {
+        return questions;
     }
 
-    public void setPatient(PatientModel patient) {
-        this.patient = patient;
-    }
-
-    public List<QuestionnaireWrapperModel> getQuestionnaires() {
-        return questionnaires;
-    }
-
-    public void setQuestionnaires(List<QuestionnaireWrapperModel> questionnaires) {
-        this.questionnaires = questionnaires;
+    public void setQuestions(List<QuestionModel> questions) {
+        this.questions = questions;
     }
 }

@@ -1,10 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +13,8 @@ public class FhirMapper {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         carePlanModel.setId(carePlan.getId());
+        carePlanModel.setTitle(carePlan.getTitle());
+        //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
 
         return carePlanModel;
     }

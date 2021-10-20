@@ -1,15 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import java.util.List;
-import java.util.Map;
 
 public class CarePlanDto {
     private String id;
     private String title;
     private String status;
     private PatientDto patientDto;
-    private List<QuestionnaireDto> questionnaires;
-    private Map<String, FrequencyDto> questionnaireFrequencies;
+    private List<QuestionnaireWrapperDto> questionnaires;
 
     public String getId() {
         return id;
@@ -43,19 +41,11 @@ public class CarePlanDto {
         this.patientDto = patientDto;
     }
 
-    public List<QuestionnaireDto> getQuestionnaires() {
+    public List<QuestionnaireWrapperDto> getQuestionnaires() {
         return questionnaires;
     }
 
-    public void setQuestionnaires(List<QuestionnaireDto> questionnaires) {
+    public void setQuestionnaires(List<QuestionnaireWrapperDto> questionnaires) {
         this.questionnaires = questionnaires;
-    }
-
-    public Map<String, FrequencyDto> getQuestionnaireFrequencies() {
-        return questionnaireFrequencies;
-    }
-
-    public void setQuestionnaireFrequencies(Map<String, FrequencyDto> questionnaireFrequencies) {
-        this.questionnaireFrequencies = questionnaireFrequencies;
     }
 }
