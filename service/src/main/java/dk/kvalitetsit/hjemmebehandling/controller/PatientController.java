@@ -48,10 +48,6 @@ public class PatientController {
             logger.error("Error creating patient", e);
             throw new InternalServerErrorException();
         }
-
-        if(request.getPlanDefinitionId() != null) {
-            // TODO: Create CarePlan based on provided planDefinition
-        }
     }
 
     @GetMapping(value = "/v1/patient")

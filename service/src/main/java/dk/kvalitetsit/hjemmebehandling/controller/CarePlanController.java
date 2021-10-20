@@ -4,14 +4,18 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +27,14 @@ public class CarePlanController {
 
     private CarePlanService carePlanService;
     private DtoMapper dtoMapper;
+    private LocationHeaderBuilder locationHeaderBuilder;
 
     private static final String QUESTIONNAIRES_KEY = "questionnaires";
 
-    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper) {
+    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
         this.dtoMapper = dtoMapper;
+        this.locationHeaderBuilder = locationHeaderBuilder;
     }
 
     @GetMapping(value = "/v1/careplan")
@@ -47,7 +53,7 @@ public class CarePlanController {
     }
 
     @PostMapping(value = "/v1/careplan")
-    public void createCarePlan(@RequestBody CreateCarePlanRequest request) {
+    public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carepPlanId = null;
         try {
             carepPlanId = carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId());
@@ -57,7 +63,8 @@ public class CarePlanController {
             throw new InternalServerErrorException();
         }
 
-        // TODO: Return 201 and include the resource URI in the Location header.
+        URI location = locationHeaderBuilder.buildLocationHeader(carepPlanId);
+        return ResponseEntity.created(location).build();
     }
 
     @PutMapping(value = "/v1/careplan")

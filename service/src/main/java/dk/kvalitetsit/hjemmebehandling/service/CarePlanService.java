@@ -33,13 +33,14 @@ public class CarePlanService {
 
     public String createCarePlan(String cpr, String planDefinitionId) throws ServiceException {
         // Look up the Patient identified by the cpr.
-        Patient patient = fhirClient.lookupPatient(cpr);
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        // TODO - verify the result
 
         // Look up the PlanDefinition based on the planDefinitionId
         PlanDefinition planDefinition = fhirClient.lookupPlanDefinition(planDefinitionId);
 
         // Based on that, build a CarePlan
-        CarePlan carePlan = fhirObjectBuilder.buildCarePlan(patient, planDefinition);
+        CarePlan carePlan = fhirObjectBuilder.buildCarePlan(patient.get(), planDefinition);
 
         // Save the carePlan, return the id.
         try {
@@ -56,7 +57,17 @@ public class CarePlanService {
         if(!carePlan.isPresent()) {
             return Optional.empty();
         }
-        return Optional.of(fhirMapper.mapCarePlan(carePlan.get()));
+
+        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan.get());
+
+        // Look up the subject and include it in the result.
+        Optional<Patient> patient = fhirClient.lookupPatientById(carePlan.get().getSubject().getReference());
+        if(!patient.isPresent()) {
+            throw new IllegalStateException(String.format("Could not look up subject for CarePlan %s!", carePlanId));
+        }
+        carePlanModel.setPatient(fhirMapper.mapPatient(patient.get()));
+
+        return Optional.of(carePlanModel);
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException {

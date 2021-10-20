@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 
 public class PatientService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
@@ -54,12 +55,12 @@ public class PatientService {
 
     public PatientModel getPatient(String cpr) {
         // Look up the patient
-        Patient patient = fhirClient.lookupPatient(cpr);
-        if(patient == null) {
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        if(!patient.isPresent()) {
             return null;
         }
 
         // Map to the domain model
-        return fhirMapper.mapPatient(patient);
+        return fhirMapper.mapPatient(patient.get());
     }
 }
