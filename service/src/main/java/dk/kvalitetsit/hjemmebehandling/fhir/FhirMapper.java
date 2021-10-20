@@ -1,10 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +14,8 @@ public class FhirMapper {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         carePlanModel.setId(carePlan.getId());
+        carePlanModel.setTitle(carePlan.getTitle());
+        //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
 
         return carePlanModel;
     }
@@ -49,6 +49,28 @@ public class FhirMapper {
         patientModel.setPatientContactDetails(extractPatientContactDetails(patient));
 
         return patientModel;
+    }
+
+    public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
+        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+
+        questionnaireModel.setId(questionnaire.getId());
+
+        return questionnaireModel;
+    }
+
+    public FrequencyModel mapTiming(Timing timing) {
+        FrequencyModel frequencyModel = new FrequencyModel();
+
+        if(timing.getRepeat() != null) {
+            Timing.TimingRepeatComponent repeat = timing.getRepeat();
+            if(repeat.getDayOfWeek() == null || repeat.getDayOfWeek().size() != 1) {
+                throw new IllegalStateException("Only repeats of one day a week is supperted (yet)!");
+            }
+            frequencyModel.setWeekday(Enum.valueOf(Weekday.class, repeat.getDayOfWeek().get(0).getValue().toString()));
+        }
+
+        return frequencyModel;
     }
 
     private String extractCpr(Patient patient) {

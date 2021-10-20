@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -93,7 +92,7 @@ public class CarePlanController {
         Map<String, FrequencyModel> frequencies = new HashMap<>();
 
         for(String questionnaireId : frequencyDtos.keySet()) {
-            frequencies.put(questionnaireId, dtoMapper.mapFrequency(frequencyDtos.get(questionnaireId)));
+            frequencies.put(questionnaireId, dtoMapper.mapFrequencyDto(frequencyDtos.get(questionnaireId)));
         }
 
         return frequencies;
