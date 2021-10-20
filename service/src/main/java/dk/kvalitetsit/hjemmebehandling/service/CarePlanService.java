@@ -4,16 +4,14 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.AbstractMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CarePlanService {
@@ -67,6 +65,10 @@ public class CarePlanService {
         }
         carePlanModel.setPatient(fhirMapper.mapPatient(patient.get()));
 
+        // Look up the questionnaires and include them in the result.
+        List<QuestionnaireWrapperModel> questionnaires = getQuestionnaires(carePlan.get());
+        carePlanModel.setQuestionnaires(questionnaires);
+
         return Optional.of(carePlanModel);
     }
 
@@ -97,5 +99,58 @@ public class CarePlanService {
                 .stream()
                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), fhirMapper.mapFrequencyModel(e.getValue())))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+    }
+
+    private List<QuestionnaireWrapperModel> getQuestionnaires(CarePlan carePlan) {
+        // We want to fetch all the questionnaires using one invocation of the FhirClient.
+
+        // Build a map from id's to frequencies so that we may associate questionnaires to their frequency later on.
+        final Map<String, FrequencyModel> frequenciesById = getFrequenciesById(carePlan);
+
+        // Fetch the questionnaires
+        List<String> questionnaireIds = frequenciesById.keySet().stream().collect(Collectors.toList());
+        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
+
+        // Associate questionnaires with their frequencies.
+        return questionnaires
+                .stream()
+                .map(q -> wrapQuestionnaire(q, frequenciesById))
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, FrequencyModel> getFrequenciesById(CarePlan carePlan) {
+        return carePlan
+                .getActivity()
+                .stream()
+                .map(a -> a.getDetail())
+                .collect(Collectors.toMap(d -> getQuestionnaireId(d), d -> getFrequencyModel(d)));
+    }
+
+    private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
+        if(detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
+            throw new IllegalStateException("Expected InstantiatesCanonical to be present, and to contain exactly one value!");
+        }
+        return detail.getInstantiatesCanonical().get(0).getValue();
+    }
+
+    private FrequencyModel getFrequencyModel(CarePlan.CarePlanActivityDetailComponent detail) {
+        if(detail.getScheduled() == null || !(detail.getScheduled() instanceof Timing)) {
+            throw new IllegalStateException("Expected Scheduled to be a Timing-object!");
+        }
+        return fhirMapper.mapTiming((Timing) detail.getScheduled());
+    }
+
+    private QuestionnaireWrapperModel wrapQuestionnaire(Questionnaire questionnaire, Map<String, FrequencyModel> frequenciesById) {
+        QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
+
+        String questionnaireId = questionnaire.getIdElement().toUnqualifiedVersionless().toString();
+        if(!frequenciesById.containsKey(questionnaireId)) {
+            throw new IllegalStateException(String.format("No frequency present for questionnaireId %s!", questionnaireId));
+        }
+
+        wrapper.setQuestionnaire(fhirMapper.mapQuestionnaire(questionnaire));
+        wrapper.setFrequency(frequenciesById.get(questionnaireId));
+
+        return wrapper;
     }
 }

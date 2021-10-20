@@ -3,11 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Reference;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,19 +84,26 @@ public class CarePlanServiceTest {
         String patientId = "Patient/patient-1";
         String questionnaireId = "questionnaire-1";
 
-        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId);
-        PatientModel patientModel = setupPatient(patientId);
+        setupPatient(patientId);
+
+        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId, questionnaireId);
+        QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
 
         // Act
         Optional<CarePlanModel> result = subject.getCarePlan(carePlanId);
 
         // Assert
         assertEquals(carePlanModel, result.get());
-        assertEquals(patientModel, result.get().getPatient());
+        assertEquals(1, result.get().getQuestionnaires().size());
+        assertEquals(questionnaireModel, result.get().getQuestionnaires().get(0).getQuestionnaire());
     }
 
     private CarePlanModel setupCarePlan(String carePlanId, String patientId) {
-        CarePlan carePlan = buildCarePlan(carePlanId, patientId);
+        return setupCarePlan(carePlanId, patientId, null);
+    }
+
+    private CarePlanModel setupCarePlan(String carePlanId, String patientId, String questionnaireId) {
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
         Mockito.when(fhirClient.lookupCarePlan(carePlanId)).thenReturn(Optional.of(carePlan));
 
         CarePlanModel carePlanModel = new CarePlanModel();
@@ -117,11 +122,32 @@ public class CarePlanServiceTest {
         return patientModel;
     }
 
-    private CarePlan buildCarePlan(String carePlanId, String patientId) {
+    private QuestionnaireModel setupQuestionnaire(String questionnaireId) {
+        Questionnaire questionnaire = new Questionnaire();
+        questionnaire.setIdElement(new IdType(questionnaireId));
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(questionnaireId))).thenReturn(List.of(questionnaire));
+
+        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
+
+        FrequencyModel frequencyModel = new FrequencyModel();
+        Mockito.when(fhirMapper.mapTiming(Mockito.any())).thenReturn(frequencyModel);
+
+        return questionnaireModel;
+    }
+
+    private CarePlan buildCarePlan(String carePlanId, String patientId, String questionnaireId) {
         CarePlan carePlan = new CarePlan();
 
         carePlan.setId(carePlanId);
         carePlan.setSubject(new Reference(patientId));
+
+        if(questionnaireId != null) {
+            CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
+            detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
+            detail.setScheduled(new Timing());
+            carePlan.addActivity().setDetail(detail);
+        }
 
         return carePlan;
     }

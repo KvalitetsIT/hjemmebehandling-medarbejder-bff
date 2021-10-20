@@ -1,13 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class DtoMapper {
@@ -18,16 +14,25 @@ public class DtoMapper {
         carePlanDto.setTitle(carePlan.getTitle());
         carePlanDto.setStatus(carePlan.getStatus());
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
+        carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));
 
         return carePlanDto;
     }
 
-    public FrequencyModel mapFrequency(FrequencyDto frequencyDto) {
+    public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
         frequencyModel.setWeekday(frequencyDto.getWeekday());
 
         return frequencyModel;
+    }
+
+    public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
+        FrequencyDto frequencyDto = new FrequencyDto();
+
+        frequencyDto.setWeekday(frequencyModel.getWeekday());
+
+        return frequencyDto;
     }
 
     public PatientModel mapPatientDto(PatientDto patient) {
@@ -54,6 +59,19 @@ public class DtoMapper {
         return patientDto;
     }
 
+    public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
+        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
+
+        questionnaireDto.setId(questionnaireModel.getId());
+        questionnaireDto.setTitle(questionnaireModel.getTitle());
+        questionnaireDto.setStatus(questionnaireModel.getStatus());
+        if(questionnaireModel.getQuestions() != null) {
+            questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(q -> mapQuestionModel(q)).collect(Collectors.toList()));
+        }
+
+        return questionnaireDto;
+    }
+
     private ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
         ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
 
@@ -78,5 +96,22 @@ public class DtoMapper {
         contactDetailsDto.setStreet(contactDetails.getStreet());
 
         return contactDetailsDto;
+    }
+
+    private QuestionDto mapQuestionModel(QuestionModel questionModel) {
+        QuestionDto questionDto = new QuestionDto();
+
+        questionDto.setText(questionModel.getText());
+
+        return questionDto;
+    }
+
+    private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
+        QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
+
+        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireModel(questionnaireWrapper.getQuestionnaire()));
+        questionnaireWrapperDto.setFrequency(mapFrequencyModel(questionnaireWrapper.getFrequency()));
+
+        return questionnaireWrapperDto;
     }
 }
