@@ -51,21 +51,22 @@ public class FhirObjectBuilder {
     }
 
     private CarePlan.CarePlanActivityComponent buildActivity(PlanDefinition.PlanDefinitionActionComponent action) {
-        UriType instantiatesUri = action.getDefinitionUriType();
+        CanonicalType instantiatesCanonical = action.getDefinitionCanonicalType();
         Type timing = action.getTiming();
 
-        return buildActivity(instantiatesUri, timing);
+        return buildActivity(instantiatesCanonical, timing);
     }
 
     private CarePlan.CarePlanActivityComponent buildActivity(Questionnaire questionnaire, Map<String, Timing> frequencies) {
-        UriType instantiatesUri = getInstantiatesUri(questionnaire);
+        CanonicalType instantiatesCanonical = getInstantiatesCanonical(questionnaire);
+
         Timing timing = getTiming(questionnaire, frequencies);
 
-        return buildActivity(instantiatesUri, timing);
+        return buildActivity(instantiatesCanonical, timing);
     }
 
-    private UriType getInstantiatesUri(Questionnaire questionnaire) {
-        return new UriType(questionnaire.getIdElement().toVersionless().getValue());
+    private CanonicalType getInstantiatesCanonical(Questionnaire questionnaire) {
+        return new CanonicalType(questionnaire.getIdElement().toVersionless().getValue());
     }
 
     private Timing getTiming(Questionnaire questionnaire, Map<String, Timing> frequencies) {
@@ -73,18 +74,18 @@ public class FhirObjectBuilder {
         return frequencies.get(questionnaireId);
     }
 
-    private CarePlan.CarePlanActivityComponent buildActivity(UriType instantiatesUri, Type timing) {
+    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
 
-        activity.setDetail(buildDetail(instantiatesUri, timing));
+        activity.setDetail(buildDetail(instantiatesCanonical, timing));
 
         return activity;
     }
 
-    private CarePlan.CarePlanActivityDetailComponent buildDetail(UriType instantiatesUri, Type timing) {
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing) {
         CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
 
-        detail.setInstantiatesUri(List.of(instantiatesUri));
+        detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
         detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
         detail.setScheduled(timing);
 

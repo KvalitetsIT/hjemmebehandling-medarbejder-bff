@@ -9,7 +9,7 @@
     </period>
     <activity>
         <detail>
-            <instantiatesUri value="Questionnaire/questionnaire-1"/>
+            <instantiatesCanonical value="Questionnaire/questionnaire-1"/>
             <status value="not-started"/>
             <scheduledTiming>
                 <repeat>

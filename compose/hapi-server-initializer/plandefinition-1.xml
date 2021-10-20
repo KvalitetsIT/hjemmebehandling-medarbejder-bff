@@ -28,6 +28,6 @@
                 <dayOfWeek value="mon"/>
             </repeat>
         </timingTiming>
-        <definitionUri value="Questionnaire/questionnaire-1"/>
+        <definitionCanonical value="Questionnaire/questionnaire-1"/>
     </action>
 </PlanDefinition>

@@ -79,6 +79,24 @@ public class CarePlanServiceTest {
         assertFalse(result.isPresent());
     }
 
+    @Test
+    public void getCarePlan_carePlanPresent_includesQuestionnaires() {
+        // Arrange
+        String carePlanId = "careplan-1";
+        String patientId = "Patient/patient-1";
+        String questionnaireId = "questionnaire-1";
+
+        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId);
+        PatientModel patientModel = setupPatient(patientId);
+
+        // Act
+        Optional<CarePlanModel> result = subject.getCarePlan(carePlanId);
+
+        // Assert
+        assertEquals(carePlanModel, result.get());
+        assertEquals(patientModel, result.get().getPatient());
+    }
+
     private CarePlanModel setupCarePlan(String carePlanId, String patientId) {
         CarePlan carePlan = buildCarePlan(carePlanId, patientId);
         Mockito.when(fhirClient.lookupCarePlan(carePlanId)).thenReturn(Optional.of(carePlan));
