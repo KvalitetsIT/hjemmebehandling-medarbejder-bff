@@ -1,14 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.base.composite.BaseIdentifierDt;
-import ca.uhn.fhir.model.primitive.IdDt;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.controller.PatientController;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +32,7 @@ public class FhirClient {
         if(!outcome.getCreated()) {
             throw new IllegalStateException("Tried to create CarePlan, but it was not created!");
         }
-        return outcome.getId().getValue();
+        return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
     public Optional<CarePlan> lookupCarePlan(String carePlanId) {
