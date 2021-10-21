@@ -6,4 +6,8 @@ VOLUME /jacoco-report
 # Loop script to avoid termination of container.
 ADD ./loop.sh /loop.sh
 
+# Add compose setup for integration tests.
+VOLUME /compose
+COPY ../compose /compose
+
 CMD [ "/loop.sh" ]

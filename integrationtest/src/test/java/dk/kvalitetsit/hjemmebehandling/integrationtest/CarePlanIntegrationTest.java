@@ -19,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CarePlanIntegrationTest {
     private CarePlanApi subject;
 
-    @ClassRule
-    public static DockerComposeContainer environment = new DockerComposeContainer(new File("compose/docker-compose.yml"))
+    public static DockerComposeContainer environment = new DockerComposeContainer(new File("/compose/docker-compose.yml"))
             .waitingFor("hapi-server", Wait.forHttp("/fhir/CarePlan/careplan-1").forStatusCode(200));
 
     @BeforeAll
