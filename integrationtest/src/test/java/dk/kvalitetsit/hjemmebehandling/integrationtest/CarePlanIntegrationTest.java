@@ -20,7 +20,7 @@ public class CarePlanIntegrationTest {
     private CarePlanApi subject;
 
     @ClassRule
-    public static DockerComposeContainer environment = new DockerComposeContainer(new File("/src/integrationtest/src/test/resources/compose/docker-compose.yml"))
+    public static DockerComposeContainer environment = new DockerComposeContainer(new File("/src/integrationtest/compose/docker-compose.yml"))
             .waitingFor("hapi-server", Wait.forHttp("/fhir/CarePlan/careplan-1").forStatusCode(200));
 
     @BeforeAll
