@@ -17,3 +17,5 @@ curl -i -X PUT -d '@/hapi-server-initializer/questionnaire-2.xml' -H 'Content-Ty
 curl -i -X PUT -d '@/hapi-server-initializer/careplan-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/CarePlan/careplan-1?_format=xml
 
 curl -i -X PUT -d '@/hapi-server-initializer/plandefinition-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/PlanDefinition/plandefinition-1?_format=xml
+
+echo 'Done initializing hapi-server!';
