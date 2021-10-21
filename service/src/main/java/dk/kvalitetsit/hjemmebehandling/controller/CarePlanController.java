@@ -9,6 +9,14 @@ import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
+@Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
 public class CarePlanController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
@@ -41,8 +50,13 @@ public class CarePlanController {
         throw new UnsupportedOperationException();
     }
 
-    @GetMapping(value = "/v1/careplan/{id}")
-    public CarePlanDto getCarePlan(@PathVariable String id) {
+    @Operation(summary = "Get CarePlan by id.", description = "Retrieves a CarePlan by its id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = CarePlanDto.class))),
+            @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
+    })
+    @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
+    public CarePlanDto getCarePlan(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
         Optional<CarePlanModel> carePlan = carePlanService.getCarePlan(id);
         if(!carePlan.isPresent()) {
@@ -51,7 +65,12 @@ public class CarePlanController {
         return dtoMapper.mapCarePlanModel(carePlan.get());
     }
 
-    @PostMapping(value = "/v1/careplan")
+    @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successful operation.", headers = { @Header(name = "Location", description = "URL pointing to the created CarePlan.")}, content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content)
+    })
+    @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
     public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carepPlanId = null;
         try {

@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 public class CarePlanDto {
@@ -9,6 +11,7 @@ public class CarePlanDto {
     private PatientDto patientDto;
     private List<QuestionnaireWrapperDto> questionnaires;
 
+    @Schema(required = true, description = "Id of the CarePlan", example = "10")
     public String getId() {
         return id;
     }
