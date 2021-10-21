@@ -26,6 +26,8 @@ public class CarePlanIntegrationTest {
     @BeforeAll
     public static void setupEnvironment() {
         if(Boolean.getBoolean("startDocker")) {
+            System.out.println("Starting docker-compose setup ...");
+            System.out.println("Current working dir: " + new File(".").getAbsolutePath());
             environment.start();
         }
     }
