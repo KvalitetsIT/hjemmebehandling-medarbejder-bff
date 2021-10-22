@@ -30,6 +30,7 @@ public class CarePlanIntegrationTest {
             System.out.println("Current working dir: " + new File(".").getAbsolutePath());
             System.out.println("Compose folder exists: " + new File("./compose").exists());
             System.out.println("Compose file exists: " + new File("./compose/docker-compose.yml").exists());
+            System.out.println("/src/compose exists: " + new File("/src/compose").exists());
             environment.start();
         }
     }
