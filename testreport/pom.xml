@@ -19,11 +19,6 @@
 
         <dependency>
             <groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
-            <artifactId>integrationtest</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>dk.kvalitetsit.rim-medarbejder-bff</groupId>
             <artifactId>web</artifactId>
         </dependency>
     </dependencies>
