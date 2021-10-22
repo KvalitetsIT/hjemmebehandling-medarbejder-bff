@@ -8,24 +8,29 @@ import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.CarePlanDto;
 import org.openapitools.client.model.CreateCarePlanRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-import java.io.File;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CarePlanIntegrationTest {
+    private static final Logger serviceLogger = LoggerFactory.getLogger("rim-medarbejder-bff");
+    private static final Logger hapiLogger = LoggerFactory.getLogger("hapi-server");
+
     private CarePlanApi subject;
 
+    private static String host = "localhost";
     private static String exposedServicePort = "8080";
 
     @BeforeAll
     public static void setupEnvironment() throws Exception {
-        //System.setProperty("startDocker", "true");
         if(Boolean.getBoolean("startDocker")) {
             Network network = Network.newNetwork();
 
@@ -38,32 +43,32 @@ public class CarePlanIntegrationTest {
             GenericContainer service = new GenericContainer("kvalitetsit/rim-medarbejder-bff:dev")
                     .withNetwork(network)
                     .withNetworkAliases("medarbejder-bff")
-                    .withExposedPorts(8080);
+                    .withExposedPorts(8080)
+                    .waitingFor(Wait.forHttp("/api/v3/api-docs"));
 
-            System.out.println("../compose/hapi-server/application.yaml exists: " + new File("../compose/hapi-server/application.yaml").exists());
             GenericContainer hapiServer = new GenericContainer<>("hapiproject/hapi:latest")
                     .withNetwork(network)
                     .withNetworkAliases("hapi-server")
                     .withEnv("SPRING_CONFIG_LOCATION", "file:///hapi-server/application.yaml")
-
                     .withCreateContainerCmdModifier(modifier -> modifier.withVolumesFrom(volumesFrom))
-
                     .withExposedPorts(8080)
                     .waitingFor(Wait.forHttp("/fhir").forStatusCode(400))                    ;
-            //hapiServer.withFileSystemBind("../compose/hapi-server/application.yaml", "/data/hapi/application.yaml");
 
             GenericContainer hapiServerInitializer = new GenericContainer<>("alpine:3.11.5")
                     .withNetwork(network)
-
                     .withCreateContainerCmdModifier(modifier -> modifier.withVolumesFrom(volumesFrom))
-
                     .withCommand("/hapi-server-initializer/init.sh");
-            //hapiServerInitializer.withFileSystemBind("../compose/hapi-server-initializer", "/hapi-server-initializer");
 
             service.start();
-            hapiServer.start();
-            hapiServerInitializer.start();
+            attachLogger(serviceLogger, service);
 
+            hapiServer.start();
+            attachLogger(hapiLogger, hapiServer);
+
+            hapiServerInitializer.start();
+            attachLogger(hapiLogger, hapiServerInitializer);
+
+            host = service.getContainerIpAddress();
             exposedServicePort = Integer.toString(service.getMappedPort(8080));
             System.out.println("Sleeping for a little while, until hapi-server is definitely initialized.");
             Thread.sleep(5000);
@@ -74,7 +79,7 @@ public class CarePlanIntegrationTest {
     public void setup() {
         subject = new CarePlanApi();
 
-        String basePath = subject.getApiClient().getBasePath().replace("8586", exposedServicePort);
+        String basePath = subject.getApiClient().getBasePath().replace("localhost", host).replace("8586", exposedServicePort);
         subject.getApiClient().setBasePath(basePath);
     }
 
@@ -84,6 +89,8 @@ public class CarePlanIntegrationTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .cpr("0101010101")
                 .planDefinitionId("2");
+
+        System.out.println("Creating careplan at: " + subject.getApiClient().getBasePath());
 
         // Act
         ApiResponse<Void> response = subject.createCarePlanWithHttpInfo(request);
@@ -113,5 +120,10 @@ public class CarePlanIntegrationTest {
                 .withNameFilter(Collections.singleton(containerName))
                 .exec()
                 .size() != 0;
+    }
+
+    private static void attachLogger(Logger logger, GenericContainer container) {
+        Slf4jLogConsumer logConsumer = new Slf4jLogConsumer(logger);
+        container.followOutput(logConsumer);
     }
 }
