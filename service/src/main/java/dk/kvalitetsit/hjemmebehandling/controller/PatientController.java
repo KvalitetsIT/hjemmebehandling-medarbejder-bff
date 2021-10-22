@@ -5,7 +5,6 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorE
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -29,7 +28,6 @@ public class PatientController {
     }
 
     @GetMapping(value = "/v1/patientlist")
-    @CrossOrigin(origins = "http://localhost:3000") // TODO - cross origin only allowed for development purposes - find a solution that avoids this annotation.
     public @ResponseBody PatientListResponse getPatientList() {
         logger.info("Getting patient list ...");
 
@@ -53,7 +51,6 @@ public class PatientController {
     }
 
     @GetMapping(value = "/v1/patient")
-    @CrossOrigin(origins = "http://localhost:3000") // TODO - cross origin only allowed for development purposes - find a solution that avoids this annotation.
     public @ResponseBody PatientDto getPatient(String cpr) {
         logger.info("Getting patient ...");
 

@@ -7,8 +7,12 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 @Configuration
 public class ServiceConfiguration {
@@ -27,5 +31,15 @@ public class ServiceConfiguration {
         FhirContext context = FhirContext.forR4();
         String endpoint = "http://hapi-server:8080/fhir";
         return new FhirClient(context, endpoint);
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer(@Value("${allowed_origins}") String allowedOrigins) {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedOrigins(allowedOrigins);
+            }
+        };
     }
 }

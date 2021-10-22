@@ -6,6 +6,8 @@ services:
       - 8080:8080
       - 5005:5005
      environment:
+      - allowed_origins=http://localhost:3000
+
       - usercontext_header_name=X-Test-Auth
 
       - userattributes_role_key=UserRoles
