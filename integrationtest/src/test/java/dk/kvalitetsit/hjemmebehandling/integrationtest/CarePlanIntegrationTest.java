@@ -1,7 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
-import org.junit.ClassRule;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,36 +7,47 @@ import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.CarePlanDto;
 import org.openapitools.client.model.CreateCarePlanRequest;
-import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
-
-import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CarePlanIntegrationTest {
     private CarePlanApi subject;
 
-    @ClassRule
-    public static DockerComposeContainer environment = new DockerComposeContainer(new File("/src/compose/docker-compose.yml"))
-            .waitingFor("hapi-server", Wait.forHttp("/fhir/CarePlan/careplan-1").forStatusCode(200));
+    private static String exposedServicePort = "8080";
 
     @BeforeAll
-    public static void setupEnvironment() {
+    public static void setupEnvironment() throws Exception {
         if(Boolean.getBoolean("startDocker")) {
-            System.out.println("Starting docker-compose setup ...");
-            System.out.println("Current working dir: " + new File(".").getAbsolutePath());
-            System.out.println("Compose folder exists: " + new File("./compose").exists());
-            System.out.println("Compose file exists: " + new File("./compose/docker-compose.yml").exists());
-            System.out.println("/src/compose exists: " + new File("/src/compose").exists());
-            environment.start();
-        }
-    }
+            Network network = Network.newNetwork();
 
-    @AfterAll
-    public static void destroyEnvironment() {
-        if(Boolean.getBoolean("startDocker")) {
-            environment.stop();
+            GenericContainer service = new GenericContainer("kvalitetsit/rim-medarbejder-bff:dev")
+                    .withNetwork(network)
+                    .withNetworkAliases("medarbejder-bff")
+                    .withExposedPorts(8080);
+
+            GenericContainer hapiServer = new GenericContainer("hapiproject/hapi:latest")
+                    .withNetwork(network)
+                    .withNetworkAliases("hapi-server")
+                    .withEnv("SPRING_CONFIG_LOCATION", "file:///data/hapi/application.yaml")
+                    .withExposedPorts(8080)
+                    .waitingFor(Wait.forHttp("/fhir").forStatusCode(400))                    ;
+            hapiServer.withFileSystemBind("../compose/hapi-server/application.yaml", "/data/hapi/application.yaml");
+
+            GenericContainer hapiServerInitializer = new GenericContainer("alpine:3.11.5")
+                    .withNetwork(network)
+                    .withCommand("/hapi-server-initializer/init.sh");
+            hapiServerInitializer.withFileSystemBind("../compose/hapi-server-initializer", "/hapi-server-initializer");
+
+            service.start();
+            hapiServer.start();
+            hapiServerInitializer.start();
+
+            exposedServicePort = Integer.toString(service.getMappedPort(8080));
+            System.out.println("Sleeping for a little while, until hapi-server is definitely initialized.");
+            Thread.sleep(5000);
         }
     }
 
@@ -46,7 +55,7 @@ public class CarePlanIntegrationTest {
     public void setup() {
         subject = new CarePlanApi();
 
-        String basePath = subject.getApiClient().getBasePath().replace("8586", "8080");
+        String basePath = subject.getApiClient().getBasePath().replace("8586", exposedServicePort);
         subject.getApiClient().setBasePath(basePath);
     }
 
