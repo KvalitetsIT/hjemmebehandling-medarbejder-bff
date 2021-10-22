@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
+import com.github.dockerjava.api.model.VolumesFrom;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,11 +8,13 @@ import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.CarePlanDto;
 import org.openapitools.client.model.CreateCarePlanRequest;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,24 +28,36 @@ public class CarePlanIntegrationTest {
         if(Boolean.getBoolean("startDocker")) {
             Network network = Network.newNetwork();
 
+            var resourcesContainerName = "rim-medarbejder-bff-resources";
+            var resourcesRunning = containerRunning(resourcesContainerName);
+            //logger.info("Resource container is running: " + resourcesRunning);
+
+            VolumesFrom volumesFrom = new VolumesFrom(resourcesContainerName);
+
             GenericContainer service = new GenericContainer("kvalitetsit/rim-medarbejder-bff:dev")
                     .withNetwork(network)
                     .withNetworkAliases("medarbejder-bff")
                     .withExposedPorts(8080);
 
             System.out.println("../compose/hapi-server/application.yaml exists: " + new File("../compose/hapi-server/application.yaml").exists());
-            GenericContainer hapiServer = new GenericContainer("hapiproject/hapi:latest")
+            GenericContainer hapiServer = new GenericContainer<>("hapiproject/hapi:latest")
                     .withNetwork(network)
                     .withNetworkAliases("hapi-server")
                //     .withEnv("SPRING_CONFIG_LOCATION", "file:///data/hapi/application.yaml")
+
+                    .withCreateContainerCmdModifier(modifier -> modifier.withVolumesFrom(volumesFrom))
+
                     .withExposedPorts(8080)
                     .waitingFor(Wait.forHttp("/fhir").forStatusCode(400))                    ;
             //hapiServer.withFileSystemBind("../compose/hapi-server/application.yaml", "/data/hapi/application.yaml");
 
-            GenericContainer hapiServerInitializer = new GenericContainer("alpine:3.11.5")
+            GenericContainer hapiServerInitializer = new GenericContainer<>("alpine:3.11.5")
                     .withNetwork(network)
+
+                    .withCreateContainerCmdModifier(modifier -> modifier.withVolumesFrom(volumesFrom))
+
                     .withCommand("/hapi-server-initializer/init.sh");
-            hapiServerInitializer.withFileSystemBind("../compose/hapi-server-initializer", "/hapi-server-initializer");
+            //hapiServerInitializer.withFileSystemBind("../compose/hapi-server-initializer", "/hapi-server-initializer");
 
             service.start();
             hapiServer.start();
@@ -87,5 +102,15 @@ public class CarePlanIntegrationTest {
 
         // Assert
         assertEquals(200, response.getStatusCode());
+    }
+
+    private static boolean containerRunning(String containerName) {
+        return DockerClientFactory
+                .instance()
+                .client()
+                .listContainersCmd()
+                .withNameFilter(Collections.singleton(containerName))
+                .exec()
+                .size() != 0;
     }
 }

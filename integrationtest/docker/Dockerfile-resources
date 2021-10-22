@@ -3,6 +3,14 @@ FROM bash:latest
 # Jacoco agent jar file.
 VOLUME /jacoco-report
 
+# hapi-server volume
+VOLUME /hapi-server
+ADD ../../compose/hapi-server /hapi-server
+
+# hapi-server-initializer volume
+VOLUME /hapi-server-initializer
+ADD ../../compose/hapi-server-initializer /hapi-server-initializer
+
 # Loop script to avoid termination of container.
 ADD ./loop.sh /loop.sh
 
