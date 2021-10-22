@@ -11,6 +11,8 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.io.File;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CarePlanIntegrationTest {
@@ -28,13 +30,14 @@ public class CarePlanIntegrationTest {
                     .withNetworkAliases("medarbejder-bff")
                     .withExposedPorts(8080);
 
+            System.out.println("../compose/hapi-server/application.yaml exists: " + new File("../compose/hapi-server/application.yaml").exists());
             GenericContainer hapiServer = new GenericContainer("hapiproject/hapi:latest")
                     .withNetwork(network)
                     .withNetworkAliases("hapi-server")
-                    .withEnv("SPRING_CONFIG_LOCATION", "file:///data/hapi/application.yaml")
+               //     .withEnv("SPRING_CONFIG_LOCATION", "file:///data/hapi/application.yaml")
                     .withExposedPorts(8080)
                     .waitingFor(Wait.forHttp("/fhir").forStatusCode(400))                    ;
-            hapiServer.withFileSystemBind("../compose/hapi-server/application.yaml", "/data/hapi/application.yaml");
+            //hapiServer.withFileSystemBind("../compose/hapi-server/application.yaml", "/data/hapi/application.yaml");
 
             GenericContainer hapiServerInitializer = new GenericContainer("alpine:3.11.5")
                     .withNetwork(network)
