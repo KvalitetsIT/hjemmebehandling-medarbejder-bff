@@ -21,7 +21,6 @@ public class CarePlanIntegrationTest {
 
     @ClassRule
     public static DockerComposeContainer environment = new DockerComposeContainer(new File("/src/compose/docker-compose.yml"))
-            .withLocalCompose(true)
             .waitingFor("hapi-server", Wait.forHttp("/fhir/CarePlan/careplan-1").forStatusCode(200));
 
     @BeforeAll
