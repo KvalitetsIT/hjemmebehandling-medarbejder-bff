@@ -28,7 +28,7 @@ public class CarePlanIntegrationTest {
         if(Boolean.getBoolean("startDocker")) {
             Network network = Network.newNetwork();
 
-            var resourcesContainerName = "rim-medarbejder-bff-resources";
+            var resourcesContainerName = "hapi-server-resources";
             var resourcesRunning = containerRunning(resourcesContainerName);
             //logger.info("Resource container is running: " + resourcesRunning);
 
