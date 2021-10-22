@@ -25,12 +25,13 @@ public class CarePlanIntegrationTest {
 
     @BeforeAll
     public static void setupEnvironment() throws Exception {
+        //System.setProperty("startDocker", "true");
         if(Boolean.getBoolean("startDocker")) {
             Network network = Network.newNetwork();
 
             var resourcesContainerName = "hapi-server-resources";
             var resourcesRunning = containerRunning(resourcesContainerName);
-            //logger.info("Resource container is running: " + resourcesRunning);
+            System.out.println("Resource container is running: " + resourcesRunning);
 
             VolumesFrom volumesFrom = new VolumesFrom(resourcesContainerName);
 
@@ -43,7 +44,7 @@ public class CarePlanIntegrationTest {
             GenericContainer hapiServer = new GenericContainer<>("hapiproject/hapi:latest")
                     .withNetwork(network)
                     .withNetworkAliases("hapi-server")
-               //     .withEnv("SPRING_CONFIG_LOCATION", "file:///data/hapi/application.yaml")
+                    .withEnv("SPRING_CONFIG_LOCATION", "file:///hapi-server/application.yaml")
 
                     .withCreateContainerCmdModifier(modifier -> modifier.withVolumesFrom(volumesFrom))
 
