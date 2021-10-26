@@ -32,7 +32,7 @@ public class CarePlanServiceTest {
     private FhirObjectBuilder fhirObjectBuilder;
 
     @Test
-    public void getCarePlan_carePlanPresent_returnsCarePlan() {
+    public void getCarePlanById_carePlanPresent_returnsCarePlan() {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
@@ -41,7 +41,7 @@ public class CarePlanServiceTest {
         PatientModel patientModel = setupPatient(patientId);
 
         // Act
-        Optional<CarePlanModel> result = subject.getCarePlan(carePlanId);
+        Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(carePlanModel, result.get());
@@ -49,7 +49,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlan_patientMissing_throwsException() {
+    public void getCarePlanById_patientMissing_throwsException() {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
@@ -60,25 +60,25 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.getCarePlan(carePlanId));
+        assertThrows(IllegalStateException.class, () -> subject.getCarePlanById(carePlanId));
     }
 
     @Test
-    public void getCarePlan_carePlanMissing_returnsEmpty() {
+    public void getCarePlanById_carePlanMissing_returnsEmpty() {
         // Arrange
         String carePlanId = "careplan-1";
 
         Mockito.when(fhirClient.lookupCarePlan(carePlanId)).thenReturn(Optional.empty());
 
         // Act
-        Optional<CarePlanModel> result = subject.getCarePlan(carePlanId);
+        Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertFalse(result.isPresent());
     }
 
     @Test
-    public void getCarePlan_carePlanPresent_includesQuestionnaires() {
+    public void getCarePlanById_carePlanPresent_includesQuestionnaires() {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
@@ -90,7 +90,7 @@ public class CarePlanServiceTest {
         QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
 
         // Act
-        Optional<CarePlanModel> result = subject.getCarePlan(carePlanId);
+        Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(carePlanModel, result.get());

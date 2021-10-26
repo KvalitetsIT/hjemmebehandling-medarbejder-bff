@@ -49,7 +49,11 @@ public class CarePlanService {
         }
     }
 
-    public Optional<CarePlanModel> getCarePlan(String carePlanId) {
+    public List<CarePlanModel> getCarePlansByCpr(String cpr) throws ServiceException {
+        throw new UnsupportedOperationException();
+    }
+
+    public Optional<CarePlanModel> getCarePlanById(String carePlanId) {
         Optional<CarePlan> carePlan = fhirClient.lookupCarePlan(carePlanId);
 
         if(!carePlan.isPresent()) {

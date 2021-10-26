@@ -40,7 +40,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         String carePlanId = "careplan-1";
 
         // Act
-        ApiResponse<CarePlanDto> response = subject.getCarePlanWithHttpInfo(carePlanId);
+        ApiResponse<CarePlanDto> response = subject.getCarePlanByIdWithHttpInfo(carePlanId);
 
         // Assert
         assertEquals(200, response.getStatusCode());

@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -89,31 +90,95 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void getCarePlan_carePlanPresent_200() {
+    public void getCarePlanById_carePlanPresent_200() {
         // Arrange
         String carePlanId = "careplan-1";
 
         CarePlanModel carePlanModel = new CarePlanModel();
         CarePlanDto carePlanDto = new CarePlanDto();
-        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(Optional.of(carePlanModel));
+        Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.of(carePlanModel));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlanDto);
 
         // Act
-        CarePlanDto result = subject.getCarePlan(carePlanId);
+        CarePlanDto result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(carePlanDto, result);
     }
 
     @Test
-    public void getCarePlan_carePlanMissing_404() {
+    public void getCarePlanById_carePlanMissing_404() {
         // Arrange
         String carePlanId = "careplan-1";
 
-        Mockito.when(carePlanService.getCarePlan(carePlanId)).thenReturn(Optional.empty());
+        Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.empty());
         // Act
 
         // Assert
-        assertThrows(ResourceNotFoundException.class, () -> subject.getCarePlan(carePlanId));
+        assertThrows(ResourceNotFoundException.class, () -> subject.getCarePlanById(carePlanId));
+    }
+
+    @Test
+    public void getCarePlansByCpr_parameterMissing_400() {
+        // Arrange
+        Optional<String> cpr = Optional.empty();
+
+        // Act
+        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
+    public void getCarePlansByCpr_carePlansPresent_200() throws Exception {
+        // Arrange
+        Optional<String> cpr = Optional.of("0101010101");
+
+        CarePlanModel carePlanModel1 = new CarePlanModel();
+        CarePlanModel carePlanModel2 = new CarePlanModel();
+        CarePlanDto carePlanDto1 = new CarePlanDto();
+        CarePlanDto carePlanDto2 = new CarePlanDto();
+
+        Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
+        Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
+
+        // Act
+        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(2, result.getBody().size());
+        assertTrue(result.getBody().contains(carePlanDto1));
+        assertTrue(result.getBody().contains(carePlanDto2));
+    }
+
+    @Test
+    public void getCarePlansByCpr_carePlansMissing_204() throws Exception {
+        // Arrange
+        Optional<String> cpr = Optional.of("0101010101");
+
+        Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenReturn(List.of());
+
+        // Act
+        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+    }
+
+    @Test
+    public void getCarePlansByCpr_failureToFetch_500() throws Exception {
+        // Arrange
+        Optional<String> cpr = Optional.of("0101010101");
+
+        Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenThrow(ServiceException.class);
+
+        // Act
+        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
     }
 }

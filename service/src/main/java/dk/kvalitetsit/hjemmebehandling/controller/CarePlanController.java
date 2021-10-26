@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
@@ -46,8 +47,22 @@ public class CarePlanController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public List<CarePlanDto> getCarePlans(@RequestParam("cpr") Optional<String> cpr) {
-        throw new UnsupportedOperationException();
+    public ResponseEntity<List<CarePlanDto>> getCarePlansByCpr(@RequestParam("cpr") Optional<String> cpr) {
+        if(!cpr.isPresent()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<CarePlanModel> carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+            if(carePlans.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
+        }
+        catch(ServiceException e) {
+            logger.error("Could not look up careplans by cpr", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @Operation(summary = "Get CarePlan by id.", description = "Retrieves a CarePlan by its id.")
@@ -56,9 +71,9 @@ public class CarePlanController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public CarePlanDto getCarePlan(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public CarePlanDto getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
-        Optional<CarePlanModel> carePlan = carePlanService.getCarePlan(id);
+        Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(id);
         if(!carePlan.isPresent()) {
             throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id));
         }
