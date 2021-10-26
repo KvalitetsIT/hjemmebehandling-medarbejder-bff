@@ -54,7 +54,7 @@ public class FhirMapper {
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        questionnaireModel.setId(questionnaire.getId());
+        questionnaireModel.setId(questionnaire.getIdElement().toUnqualifiedVersionless ().toString());
 
         return questionnaireModel;
     }

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,6 +60,34 @@ public class FhirClientTest {
     }
 
     @Test
+    public void lookupCarePlanByPatientId_carePlanPresent_success() {
+        // Arrange
+        String patientId = "patient-1";
+        CarePlan carePlan = new CarePlan();
+        setupSearchCarePlanClient(carePlan);
+
+        // Act
+        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(carePlan, result.get(0));
+    }
+
+    @Test
+    public void lookupCarePlanByPatientId_carePlanMissing_empty() {
+        // Arrange
+        String patientId = "patient-1";
+        setupSearchCarePlanClient();
+
+        // Act
+        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
+
+        // Assert
+        assertEquals(0, result.size());
+    }
+
+    @Test
     public void lookupPatientByCpr_patientPresent_success() {
         // Arrange
         String cpr = "0101010101";
@@ -87,7 +116,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupPatentById_patientPresent_success() {
+    public void lookupPatientById_patientPresent_success() {
         // Arrange
         String id = "patient-1";
         Patient patient = new Patient();
@@ -102,7 +131,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupPatentById_patientMissing_empty() {
+    public void lookupPatientById_patientMissing_empty() {
         // Arrange
         String id = "patient-1";
         setupReadPatientClient(id, null);
@@ -114,9 +143,7 @@ public class FhirClientTest {
         assertFalse(result.isPresent());
     }
 
-    private void setupSearchPatientClient(Patient... patients) {
-        setupSearchClient(Patient.class, patients);
-    }
+
 
     private void setupReadCarePlanClient(String carePlanId, CarePlan carePlan) {
         setupReadClient(carePlanId, carePlan, CarePlan.class);
@@ -142,6 +169,14 @@ public class FhirClientTest {
             });
 
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
+    }
+
+    private void setupSearchCarePlanClient(CarePlan... carePlans) {
+        setupSearchClient(CarePlan.class, carePlans);
+    }
+
+    private void setupSearchPatientClient(Patient... patients) {
+        setupSearchClient(Patient.class, patients);
     }
 
     private void setupSearchClient(Class<? extends Resource> resourceClass, Resource... resources) {

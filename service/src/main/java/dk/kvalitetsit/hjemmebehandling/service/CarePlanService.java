@@ -52,19 +52,20 @@ public class CarePlanService {
     }
 
     public List<CarePlanModel> getCarePlansByCpr(String cpr) throws ServiceException {
-        List<CarePlan> carePlans = fhirClient.lookupCarePlansByCpr(cpr);
+        // Look up the patient so that we may look up careplans by patientId.
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        if(!patient.isPresent()) {
+            throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
+        }
 
+        List<CarePlan> carePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getIdElement().toUnqualifiedVersionless().toString());
         if(carePlans.isEmpty()) {
             return List.of();
         }
 
         List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
 
-        // Look up the patient and include it in the result.
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
-        }
+        // Set patient on each careplan in the result.
         result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient.get())));
 
         // Look up the questionnaires and include them in the result.

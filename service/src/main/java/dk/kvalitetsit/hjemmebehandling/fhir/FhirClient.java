@@ -36,8 +36,8 @@ public class FhirClient {
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
-    public List<CarePlan> lookupCarePlansByCpr(String cpr) {
-        throw new UnsupportedOperationException();
+    public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
+        return lookupByCriterion(CarePlan.class, CarePlan.PATIENT.hasId(patientId));
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
@@ -49,7 +49,7 @@ public class FhirClient {
     }
 
     public Optional<Patient> lookupPatientByCpr(String cpr) {
-        return lookupByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
+        return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
     public void savePatient(Patient patient) {
@@ -101,7 +101,18 @@ public class FhirClient {
         client.update().resource(carePlan).prettyPrint().execute();
     }
 
-    private <T extends Resource> Optional<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
+    private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
+        List<T> result = lookupByCriterion(resourceClass, criterion);
+        if(result == null || result.isEmpty()) {
+            return Optional.empty();
+        }
+        if(result.size() > 1) {
+            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", resourceClass.getName()));
+        }
+        return Optional.of(result.get(0));
+    }
+
+    private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         Bundle bundle = (Bundle) client
@@ -110,16 +121,7 @@ public class FhirClient {
                 .where(criterion)
                 .execute();
 
-        // Extract resource from the bundle
-        if(bundle.getTotal() == 0) {
-            return Optional.empty();
-        }
-        if(bundle.getTotal() > 1) {
-            logger.warn("More than one resource present!");
-        }
-
-        Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
-        return Optional.of((T) component.getResource());
+        return bundle.getEntry().stream().map(e -> ((T) e.getResource())).collect(Collectors.toList());
     }
 
     private <T extends Resource> Optional<T> lookupById(String id, Class<T> resourceClass) {

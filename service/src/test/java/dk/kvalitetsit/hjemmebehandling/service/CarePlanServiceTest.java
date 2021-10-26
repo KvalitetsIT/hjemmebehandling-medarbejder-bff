@@ -36,9 +36,10 @@ public class CarePlanServiceTest {
         // Arrange
         String cpr = "0101010101";
         String carePlanId = "careplan-1";
+        String patientId = "patient-1";
 
-        setupCarePlanForCpr(carePlanId, cpr);
-        setupPatientForCpr(cpr);
+        setupCarePlanForPatient(carePlanId, patientId);
+        setupPatientForCpr(cpr, patientId);
 
         // Act
         List<CarePlanModel> result = subject.getCarePlansByCpr(cpr);
@@ -52,6 +53,11 @@ public class CarePlanServiceTest {
     public void getCarePlanByCpr_carePlansPresent_returnsEmptyList() throws Exception {
         // Arrange
         String cpr = "0101010101";
+        String patientId = "patient-1";
+
+        Patient patient = new Patient();
+        patient.setId(patientId);
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
 
         // Act
         List<CarePlanModel> result = subject.getCarePlansByCpr(cpr);
@@ -65,11 +71,12 @@ public class CarePlanServiceTest {
         // Arrange
         String cpr = "0101010101";
         String carePlanId = "careplan-1";
+        String patientId = "patient-1";
         String questionnaireId = "questionnaire-1";
 
-        setupPatientForCpr(cpr);
+        setupPatientForCpr(cpr, patientId);
 
-        setupCarePlanForCpr(carePlanId, cpr, questionnaireId);
+        setupCarePlanForPatient(carePlanId, patientId, questionnaireId);
         QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
 
         // Act
@@ -148,13 +155,13 @@ public class CarePlanServiceTest {
         assertEquals(questionnaireModel, result.get().getQuestionnaires().get(0).getQuestionnaire());
     }
 
-    private void setupCarePlanForCpr(String carePlanId, String cpr) {
-        setupCarePlanForCpr(carePlanId, cpr, null);
+    private void setupCarePlanForPatient(String carePlanId, String patientId) {
+        setupCarePlanForPatient(carePlanId, patientId, null);
     }
 
-    private void setupCarePlanForCpr(String carePlanId, String cpr, String questionnaireId) {
-        CarePlan carePlan = buildCarePlan(carePlanId, cpr, questionnaireId);
-        Mockito.when(fhirClient.lookupCarePlansByCpr(cpr)).thenReturn(List.of(carePlan));
+    private void setupCarePlanForPatient(String carePlanId, String patientId, String questionnaireId) {
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
+        Mockito.when(fhirClient.lookupCarePlansByPatientId(patientId)).thenReturn(List.of(carePlan));
 
         CarePlanModel carePlanModel = new CarePlanModel();
         carePlanModel.setId(carePlanId);
@@ -175,8 +182,9 @@ public class CarePlanServiceTest {
         return carePlanModel;
     }
 
-    private void setupPatientForCpr(String cpr) {
+    private void setupPatientForCpr(String cpr, String patientId) {
         Patient patient = new Patient();
+        patient.setId(patientId);
         Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
 
         PatientModel patientModel = new PatientModel();
