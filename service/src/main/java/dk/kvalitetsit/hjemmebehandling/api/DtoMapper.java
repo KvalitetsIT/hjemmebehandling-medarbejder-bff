@@ -72,6 +72,14 @@ public class DtoMapper {
         return questionnaireDto;
     }
 
+    public QuestionnaireResponseDto mapQuestionnaireModel(QuestionnaireResponseModel questionnaireResponseModel) {
+        QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
+
+        questionnaireResponseDto.setId(questionnaireResponseModel.getId());
+
+        return questionnaireResponseDto;
+    }
+
     private ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
         ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
 

@@ -143,7 +143,24 @@ public class FhirClientTest {
         assertFalse(result.isPresent());
     }
 
+    @Test
+    public void lookupQuestionnaireResponses_patientAndQuestionnairesPresent_success() {
+        // Arrange
+        String cpr = "0101010101";
+        String questionnaireId = "questionnaire-1";
 
+        QuestionnaireResponse questionnaireResponse1 = new QuestionnaireResponse();
+        QuestionnaireResponse questionnaireResponse2 = new QuestionnaireResponse();
+        setupSearchQuestionnaireResponseClient(questionnaireResponse1, questionnaireResponse2);
+
+        // Act
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(cpr, List.of(questionnaireId));
+
+        // Assert
+        assertEquals(2, result.size());
+        assertTrue(result.contains(questionnaireResponse1));
+        assertTrue(result.contains(questionnaireResponse2));
+    }
 
     private void setupReadCarePlanClient(String carePlanId, CarePlan carePlan) {
         setupReadClient(carePlanId, carePlan, CarePlan.class);
@@ -179,7 +196,15 @@ public class FhirClientTest {
         setupSearchClient(Patient.class, patients);
     }
 
+    private void setupSearchQuestionnaireResponseClient(QuestionnaireResponse... questionnaireResponses) {
+        setupSearchClient(true, QuestionnaireResponse.class, questionnaireResponses);
+    }
+
     private void setupSearchClient(Class<? extends Resource> resourceClass, Resource... resources) {
+        setupSearchClient(false, resourceClass, resources);
+    }
+
+    private void setupSearchClient(boolean additionalCriterion, Class<? extends Resource> resourceClass, Resource... resources) {
         IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
 
         Bundle bundle = new Bundle();
@@ -191,12 +216,23 @@ public class FhirClientTest {
         }
         bundle.setTotal(resources.length);
 
-        Mockito.when(client
-            .search()
-            .forResource(resourceClass)
-            .where(Mockito.any(ICriterion.class))
-            .execute())
-            .thenReturn(bundle);
+        if(additionalCriterion) {
+            Mockito.when(client
+                    .search()
+                    .forResource(resourceClass)
+                    .where(Mockito.any(ICriterion.class))
+                    .and(Mockito.any(ICriterion.class))
+                    .execute())
+                    .thenReturn(bundle);
+        }
+        else {
+            Mockito.when(client
+                    .search()
+                    .forResource(resourceClass)
+                    .where(Mockito.any(ICriterion.class))
+                    .execute())
+                    .thenReturn(bundle);
+        }
 
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }

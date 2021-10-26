@@ -1,6 +1,6 @@
-package dk.kvalitetsit.hjemmebehandling.api;
+package dk.kvalitetsit.hjemmebehandling.model;
 
-public class QuestionnaireResponseDto {
+public class QuestionnaireResponseModel {
     private String id;
 
     public String getId() {

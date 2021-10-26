@@ -52,6 +52,13 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
+        var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
+        var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty(Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
+
+        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
+    }
+
     public void savePatient(Patient patient) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
@@ -103,6 +110,7 @@ public class FhirClient {
 
     private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
         List<T> result = lookupByCriterion(resourceClass, criterion);
+
         if(result == null || result.isEmpty()) {
             return Optional.empty();
         }
@@ -113,14 +121,21 @@ public class FhirClient {
     }
 
     private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
+        return lookupByCriteria(resourceClass, criterion, null);
+    }
+
+    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?> firstCriterion, ICriterion<?> secondCriterion) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
-        Bundle bundle = (Bundle) client
+        var query = client
                 .search()
                 .forResource(resourceClass)
-                .where(criterion)
-                .execute();
+                .where(firstCriterion);
+        if(secondCriterion != null) {
+            query = query.and(secondCriterion);
+        }
 
+        Bundle bundle = (Bundle) query.execute();
         return bundle.getEntry().stream().map(e -> ((T) e.getResource())).collect(Collectors.toList());
     }
 

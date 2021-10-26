@@ -59,6 +59,14 @@ public class FhirMapper {
         return questionnaireModel;
     }
 
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
+
+        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+
+        return questionnaireResponseModel;
+    }
+
     public FrequencyModel mapTiming(Timing timing) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
