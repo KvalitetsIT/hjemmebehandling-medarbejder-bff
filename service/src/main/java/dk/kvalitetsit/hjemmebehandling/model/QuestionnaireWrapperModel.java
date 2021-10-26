@@ -4,6 +4,15 @@ public class QuestionnaireWrapperModel {
     private QuestionnaireModel questionnaire;
     private FrequencyModel frequency;
 
+    public QuestionnaireWrapperModel() {
+
+    }
+
+    public QuestionnaireWrapperModel(QuestionnaireModel questionnaire, FrequencyModel frequency) {
+        this.questionnaire = questionnaire;
+        this.frequency = frequency;
+    }
+
     public QuestionnaireModel getQuestionnaire() {
         return questionnaire;
     }

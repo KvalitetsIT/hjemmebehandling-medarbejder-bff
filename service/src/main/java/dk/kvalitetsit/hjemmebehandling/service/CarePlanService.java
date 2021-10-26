@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CarePlanService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
@@ -50,11 +52,37 @@ public class CarePlanService {
     }
 
     public List<CarePlanModel> getCarePlansByCpr(String cpr) throws ServiceException {
-        throw new UnsupportedOperationException();
+        List<CarePlan> carePlans = fhirClient.lookupCarePlansByCpr(cpr);
+
+        if(carePlans.isEmpty()) {
+            return List.of();
+        }
+
+        List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
+
+        // Look up the patient and include it in the result.
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        if(!patient.isPresent()) {
+            throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
+        }
+        result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient.get())));
+
+        // Look up the questionnaires and include them in the result.
+        Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
+        for(CarePlanModel carePlanModel : result) {
+            if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
+                // The Careplan simply may not have any questionnaires attached, so we continue.
+                continue;
+            }
+            List<QuestionnaireWrapperModel> questionnaires = questionnairesByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setQuestionnaires(questionnaires);
+        }
+
+        return result;
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) {
-        Optional<CarePlan> carePlan = fhirClient.lookupCarePlan(carePlanId);
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
 
         if(!carePlan.isPresent()) {
             return Optional.empty();
@@ -84,7 +112,7 @@ public class CarePlanService {
         }
 
         // Look up the CarePlan, throw an exception in case it does not exist.
-        Optional<CarePlan> carePlan = fhirClient.lookupCarePlan(carePlanId);
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
         if(!carePlan.isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId));
         }
@@ -122,12 +150,69 @@ public class CarePlanService {
                 .collect(Collectors.toList());
     }
 
+    private Map<String, List<QuestionnaireWrapperModel>> getQuestionnairesByCarePlanId(List<CarePlan> carePlans) {
+        // We want a map from carePlanIds to their questionnaires, and we would like to make only one invocation of the FhirClient.
+
+        // Get the questionnaireIds
+        List<String> questionnaireIds = getQuestionnaireIds(carePlans);
+
+        // Fetch the Questionnaires
+        List<QuestionnaireModel> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds)
+                .stream()
+                .map(q -> fhirMapper.mapQuestionnaire(q))
+                .collect(Collectors.toList());
+
+        // Build the result
+        return carePlans
+                .stream()
+                .collect(Collectors.toMap(cp -> cp.getId(), cp -> getQuestionnairesForCarePlan(cp, questionnaires)));
+    }
+
+    private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
+        return carePlans
+                .stream()
+                .flatMap(cp -> cp.getActivity().stream().map(a -> getQuestionnaireId(a.getDetail())))
+                .collect(Collectors.toList());
+    }
+
+    private List<QuestionnaireWrapperModel> getQuestionnairesForCarePlan(CarePlan carePlan, List<QuestionnaireModel> questionnaires) {
+        // For each activity on the careplan, we need to find the corresponding questionnaire and frequency.
+        List<QuestionnaireWrapperModel> result = new ArrayList<>();
+
+        Map<String, QuestionnaireModel> questionnairesById = questionnaires.stream().collect(Collectors.toMap(q -> q.getId(), q -> q));
+
+        for(var activity : carePlan.getActivity()) {
+            String questionnaireId = getQuestionnaireId(activity.getDetail());
+
+            // Get the questionnaire
+            if(!questionnairesById.containsKey(questionnaireId)) {
+                throw new IllegalStateException(String.format("No questionnaire present for id %s!", questionnaireId));
+            }
+            QuestionnaireModel questionnaire = questionnairesById.get(questionnaireId);
+
+            // Get the frequency
+            FrequencyModel frequency = getFrequencyModel(activity.getDetail());
+
+            result.add(new QuestionnaireWrapperModel(questionnaire, frequency));
+        }
+
+        return result;
+    }
+
     private Map<String, FrequencyModel> getFrequenciesById(CarePlan carePlan) {
         return carePlan
                 .getActivity()
                 .stream()
                 .map(a -> a.getDetail())
                 .collect(Collectors.toMap(d -> getQuestionnaireId(d), d -> getFrequencyModel(d)));
+    }
+
+    private Map<String, FrequencyModel> getFrequenciesByQuestionnaireId(List<CarePlan> carePlans) {
+        Stream<CarePlan.CarePlanActivityDetailComponent> detailComponents = carePlans
+                .stream()
+                .flatMap(cp -> cp.getActivity().stream().map(a -> a.getDetail()));
+
+        return detailComponents.collect(Collectors.toMap(d -> getQuestionnaireId(d), d -> getFrequencyModel(d)));
     }
 
     private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {

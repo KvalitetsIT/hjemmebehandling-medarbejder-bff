@@ -36,7 +36,11 @@ public class FhirClient {
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
-    public Optional<CarePlan> lookupCarePlan(String carePlanId) {
+    public List<CarePlan> lookupCarePlansByCpr(String cpr) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
         return lookupById(carePlanId, CarePlan.class);
     }
 

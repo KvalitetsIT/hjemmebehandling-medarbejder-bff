@@ -4,7 +4,6 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
-import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,14 +31,14 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlan_carePlanPresent_success() {
+    public void lookupCarePlanById_carePlanPresent_success() {
         // Arrange
         String carePlanId = "careplan-1";
         CarePlan carePlan = new CarePlan();
         setupReadCarePlanClient(carePlanId, carePlan);
 
         // Act
-        Optional<CarePlan> result = subject.lookupCarePlan(carePlanId);
+        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
 
         // Assert
         assertTrue(result.isPresent());
@@ -47,13 +46,13 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlan_carePlanMissing_empty() {
+    public void lookupCarePlanById_carePlanMissing_empty() {
         // Arrange
         String carePlanId = "careplan-1";
         setupReadCarePlanClient(carePlanId, null);
 
         // Act
-        Optional<CarePlan> result = subject.lookupCarePlan(carePlanId);
+        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
 
         // Assert
         assertFalse(result.isPresent());
