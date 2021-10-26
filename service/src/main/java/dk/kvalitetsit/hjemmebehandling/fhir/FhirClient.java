@@ -54,7 +54,7 @@ public class FhirClient {
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
-        var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty(Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
+        var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
 
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
     }

@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,11 @@ public class ServiceConfiguration {
     @Bean
     public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
         return new PatientService(client, mapper);
+    }
+
+    @Bean
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+        return new QuestionnaireResponseService(client, mapper);
     }
 
     @Bean

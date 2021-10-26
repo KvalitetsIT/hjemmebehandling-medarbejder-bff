@@ -59,7 +59,7 @@ public class DtoMapper {
         return patientDto;
     }
 
-    public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
+    public QuestionnaireDto mapQuestionnaireResponseModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
         questionnaireDto.setId(questionnaireModel.getId());
@@ -72,7 +72,7 @@ public class DtoMapper {
         return questionnaireDto;
     }
 
-    public QuestionnaireResponseDto mapQuestionnaireModel(QuestionnaireResponseModel questionnaireResponseModel) {
+    public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
 
         questionnaireResponseDto.setId(questionnaireResponseModel.getId());
@@ -117,7 +117,7 @@ public class DtoMapper {
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
         QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
 
-        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireModel(questionnaireWrapper.getQuestionnaire()));
+        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireResponseModel(questionnaireWrapper.getQuestionnaire()));
         questionnaireWrapperDto.setFrequency(mapFrequencyModel(questionnaireWrapper.getFrequency()));
 
         return questionnaireWrapperDto;
