@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@Tag(name = "QuestionnaireResponse", description = "API for manipulating and retrieving QuestionnaireResponses.")
 public class QuestionnaireResponseController {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
