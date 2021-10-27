@@ -3,6 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,10 +36,18 @@ public class QuestionnaireResponseServiceTest {
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         QuestionnaireResponse response1 = new QuestionnaireResponse();
+        response1.setQuestionnaire("questionnaire-1");
         QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
 
+        Questionnaire questionnaire = new Questionnaire();
+        questionnaire.setId("questionnaire-1");
+        Patient patient = new Patient();
+
         Mockito.when(fhirClient.lookupQuestionnaireResponses(cpr, questionnaireIds)).thenReturn(List.of(response1));
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response1)).thenReturn(responseModel1);
+        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response1, questionnaire, patient)).thenReturn(responseModel1);
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(cpr, questionnaireIds);

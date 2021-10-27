@@ -2,11 +2,18 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.OptionQuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class FhirMapper {
@@ -59,12 +66,24 @@ public class FhirMapper {
         return questionnaireModel;
     }
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
         questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
 
+        // Populate questionAnswerMap
+        Map<QuestionModel, AnswerModel> answers = new HashMap<>();
 
+        for(var item : questionnaireResponse.getItem()) {
+            QuestionModel question = getQuestion(questionnaire, item.getLinkId());
+            AnswerModel answer = getAnswer(item);
+            answers.put(question, answer);
+        }
+
+        questionnaireResponseModel.setAnswers(answers);
+
+        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
+        questionnaireResponseModel.setPatient(mapPatient(patient));
 
         return questionnaireResponseModel;
     }
@@ -141,5 +160,40 @@ public class FhirMapper {
             }
         }
         return null;
+    }
+
+    private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
+        OptionQuestionModel question = new OptionQuestionModel();
+
+        var item = getQuestionnaireItem(questionnaire, linkId);
+        if(item == null) {
+            throw new IllegalStateException(String.format("Malformed QuestionnaireResponse: Question for linkId %s not found in Questionnaire %s!", linkId, questionnaire.getId()));
+        }
+
+        question.setText(item.getText());
+        question.setRequired(item.getRequired());
+        question.setOptions(item.getAnswerOption().stream().map(o -> o.getValue().primitiveValue()).collect(Collectors.toList()));
+
+        return question;
+    }
+
+    private Questionnaire.QuestionnaireItemComponent getQuestionnaireItem(Questionnaire questionnaire, String linkId) {
+        for(var item : questionnaire.getItem()) {
+            if(item.getLinkId().equals(linkId)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
+        AnswerModel answer = new AnswerModel();
+
+        if(item.getAnswer() == null || item.getAnswer().size() != 1) {
+            throw new IllegalStateException("Expected exactly one answer!");
+        }
+        answer.setValue(item.getAnswer().get(0).getValue().primitiveValue());
+
+        return answer;
     }
 }

@@ -4,11 +4,13 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QuestionnaireResponseService {
@@ -29,9 +31,23 @@ public class QuestionnaireResponseService {
             return List.of();
         }
 
+        // Look up questionnaires
+        Map<String, Questionnaire> questionnairesById = fhirClient.lookupQuestionnaires(questionnaireIds)
+                .stream()
+                .collect(Collectors.toMap(q -> q.getIdElement().toUnqualifiedVersionless().getValue(), q -> q));
+        if(!new HashSet<>(questionnaireIds).equals(questionnairesById.keySet())) {
+            throw new IllegalStateException("Could not look up every questionnaire when retrieving questionnaireResponses!");
+        }
+
+        // Look up patient
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        if(!patient.isPresent()) {
+            throw new IllegalStateException(String.format("Could not look up patient for cpr %s!", cpr));
+        }
+
         return questionnaireResponses
                 .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr))
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, questionnairesById.get(qr.getQuestionnaire()), patient.get()))
                 .collect(Collectors.toList());
     }
 }

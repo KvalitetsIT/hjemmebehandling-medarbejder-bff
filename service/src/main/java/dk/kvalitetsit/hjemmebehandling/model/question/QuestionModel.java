@@ -11,4 +11,12 @@ public abstract class QuestionModel {
     public void setText(String text) {
         this.text = text;
     }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
 }
