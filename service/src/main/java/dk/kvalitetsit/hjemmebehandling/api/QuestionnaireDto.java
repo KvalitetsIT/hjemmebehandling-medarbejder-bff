@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+
 import java.util.List;
 
 public class QuestionnaireDto {

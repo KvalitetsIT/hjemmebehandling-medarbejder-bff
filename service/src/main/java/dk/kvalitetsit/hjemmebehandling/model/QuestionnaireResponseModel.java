@@ -1,14 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 
 public class QuestionnaireResponseModel {
     private String id;
-    private Map<QuestionModel, AnswerModel> answers;
+    private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
     //private QuestionnaireResponseStatus status; // TODO - figure out how this should work.
     private PatientModel patient;
@@ -21,12 +18,12 @@ public class QuestionnaireResponseModel {
         this.id = id;
     }
 
-    public Map<QuestionModel, AnswerModel> getAnswers() {
-        return answers;
+    public List<QuestionAnswerPairModel> getQuestionAnswerPairs() {
+        return questionAnswerPairs;
     }
 
-    public void setAnswers(Map<QuestionModel, AnswerModel> answers) {
-        this.answers = answers;
+    public void setQuestionAnswerPairs(List<QuestionAnswerPairModel> questionAnswerPairs) {
+        this.questionAnswerPairs = questionAnswerPairs;
     }
 
     public Instant getAnswered() {

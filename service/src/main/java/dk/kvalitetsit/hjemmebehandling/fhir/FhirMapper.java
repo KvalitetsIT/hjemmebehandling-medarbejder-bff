@@ -9,10 +9,8 @@ import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -72,15 +70,15 @@ public class FhirMapper {
         questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
 
         // Populate questionAnswerMap
-        Map<QuestionModel, AnswerModel> answers = new HashMap<>();
+        List<QuestionAnswerPairModel> answers = new ArrayList<>();
 
         for(var item : questionnaireResponse.getItem()) {
             QuestionModel question = getQuestion(questionnaire, item.getLinkId());
             AnswerModel answer = getAnswer(item);
-            answers.put(question, answer);
+            answers.add(new QuestionAnswerPairModel(question, answer));
         }
 
-        questionnaireResponseModel.setAnswers(answers);
+        questionnaireResponseModel.setQuestionAnswerPairs(answers);
 
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setPatient(mapPatient(patient));

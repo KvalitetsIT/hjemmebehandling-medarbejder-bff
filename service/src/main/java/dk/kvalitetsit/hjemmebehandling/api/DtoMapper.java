@@ -1,6 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
+import dk.kvalitetsit.hjemmebehandling.api.question.OptionQuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.OptionQuestionModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.springframework.stereotype.Component;
 
@@ -77,6 +82,9 @@ public class DtoMapper {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
 
         questionnaireResponseDto.setId(questionnaireResponseModel.getId());
+        questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
+        questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
+        questionnaireResponseDto.setPatient(mapPatientModel(questionnaireResponseModel.getPatient()));
 
         return questionnaireResponseDto;
     }
@@ -107,12 +115,47 @@ public class DtoMapper {
         return contactDetailsDto;
     }
 
+    private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
+        QuestionAnswerPairDto questionAnswerPairDto = new QuestionAnswerPairDto();
+
+        questionAnswerPairDto.setQuestion(mapQuestionModel(questionAnswerPairModel.getQuestion()));
+        questionAnswerPairDto.setAnswer(mapAnswerModel(questionAnswerPairModel.getAnswer()));
+
+        return questionAnswerPairDto;
+    }
+
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
-        QuestionDto questionDto = new QuestionDto();
+        QuestionDto questionDto = null;
+
+        String type = questionModel.getClass().getSimpleName();
+        switch(type) {
+            case "OptionQuestionModel":
+                questionDto = mapOptionQuestionAttributes((OptionQuestionModel) questionModel);
+                break;
+            default:
+                throw new UnsupportedOperationException(String.format("Don't know how to map type %s!", type));
+        }
 
         questionDto.setText(questionModel.getText());
+        questionDto.setRequired(questionModel.isRequired());
 
         return questionDto;
+    }
+
+    private QuestionDto mapOptionQuestionAttributes(OptionQuestionModel questionModel) {
+        OptionQuestionDto questionDto = new OptionQuestionDto();
+
+        questionDto.setOptions(questionModel.getOptions());
+
+        return questionDto;
+    }
+
+    private AnswerDto mapAnswerModel(AnswerModel answerModel) {
+        AnswerDto answerDto = new AnswerDto();
+
+        answerDto.setValue(answerModel.getValue());
+
+        return answerDto;
     }
 
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
