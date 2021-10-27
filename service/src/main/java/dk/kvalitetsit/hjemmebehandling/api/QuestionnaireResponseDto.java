@@ -5,6 +5,7 @@ import java.util.List;
 
 public class QuestionnaireResponseDto {
     private String id;
+    private String questionnaireId;
     private List<QuestionAnswerPairDto> questionAnswerPairs;
     private Instant answered;
     private PatientDto patient;
@@ -15,6 +16,14 @@ public class QuestionnaireResponseDto {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getQuestionnaireId() {
+        return questionnaireId;
+    }
+
+    public void setQuestionnaireId(String questionnaireId) {
+        this.questionnaireId = questionnaireId;
     }
 
     public List<QuestionAnswerPairDto> getQuestionAnswerPairs() {

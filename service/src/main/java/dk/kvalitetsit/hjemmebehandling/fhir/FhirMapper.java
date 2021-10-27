@@ -68,6 +68,7 @@ public class FhirMapper {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
         questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+        questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
 
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = new ArrayList<>();

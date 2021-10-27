@@ -5,6 +5,7 @@ import java.util.List;
 
 public class QuestionnaireResponseModel {
     private String id;
+    private String questionnaireId;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
     //private QuestionnaireResponseStatus status; // TODO - figure out how this should work.
@@ -16,6 +17,14 @@ public class QuestionnaireResponseModel {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getQuestionnaireId() {
+        return questionnaireId;
+    }
+
+    public void setQuestionnaireId(String questionnaireId) {
+        this.questionnaireId = questionnaireId;
     }
 
     public List<QuestionAnswerPairModel> getQuestionAnswerPairs() {
