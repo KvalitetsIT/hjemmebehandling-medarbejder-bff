@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+
 import java.util.List;
 
 public class QuestionnaireModel {

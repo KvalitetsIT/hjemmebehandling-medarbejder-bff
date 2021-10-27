@@ -1,7 +1,8 @@
-package dk.kvalitetsit.hjemmebehandling.model;
+package dk.kvalitetsit.hjemmebehandling.model.question;
 
-public class QuestionModel {
+public abstract class QuestionModel {
     private String text;
+    private boolean required;
 
     public String getText() {
         return text;

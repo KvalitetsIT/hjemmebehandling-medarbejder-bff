@@ -64,6 +64,8 @@ public class FhirMapper {
 
         questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
 
+
+
         return questionnaireResponseModel;
     }
 

@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
