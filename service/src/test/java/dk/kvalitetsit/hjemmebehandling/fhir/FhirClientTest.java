@@ -144,6 +144,34 @@ public class FhirClientTest {
     }
 
     @Test
+    public void lookupPlanDefinitionById_planDefinitionPresent_success() {
+        // Arrange
+        String plandefinitionId = "plandefinition-1";
+        PlanDefinition planDefinition = new PlanDefinition();
+        setupReadPlanDefinitionClient(plandefinitionId, planDefinition);
+
+        // Act
+        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(planDefinition, result.get());
+    }
+
+    @Test
+    public void lookupPlanDefinitionById_planDefinitionMissing_empty() {
+        // Arrange
+        String plandefinitionId = "plandefinition-1";
+        setupReadPlanDefinitionClient(plandefinitionId, null);
+
+        // Act
+        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
     public void lookupQuestionnaireResponses_patientAndQuestionnairesPresent_success() {
         // Arrange
         String cpr = "0101010101";
@@ -168,6 +196,10 @@ public class FhirClientTest {
 
     private void setupReadPatientClient(String patientId, Patient patient) {
         setupReadClient(patientId, patient, Patient.class);
+    }
+
+    private void setupReadPlanDefinitionClient(String planDefinitionId, PlanDefinition planDefinition) {
+        setupReadClient(planDefinitionId, planDefinition, PlanDefinition.class);
     }
 
     private void setupReadClient(String id, Resource resource, Class<? extends Resource> resourceClass) {

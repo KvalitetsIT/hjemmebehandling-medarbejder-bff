@@ -65,28 +65,8 @@ public class FhirClient {
         MethodOutcome outcome = client.create().resource(patient).prettyPrint().execute();
     }
 
-    public PlanDefinition lookupPlanDefinition(String planDefinitionId) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        // <identifier><system value="http://acme.org/mrns"/><value value="12345"/></identifier>
-        Bundle bundle = (Bundle) client
-                .search()
-                .forResource(PlanDefinition.class)
-                //.where( Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr))
-                //.where(PlanDefinition.IDENTIFIER.exactly().)
-                .prettyPrint()
-                .execute();
-
-        // Extract patient from the bundle
-        if(bundle.getTotal() == 0) {
-            return null;
-        }
-        if(bundle.getTotal() > 1) {
-            logger.warn("More than one PlanDefinition present!");
-        }
-
-        Bundle.BundleEntryComponent component = bundle.getEntry().get(bundle.getEntry().size() - 1);
-        return (PlanDefinition) component.getResource();
+    public Optional<PlanDefinition> lookupPlanDefinition(String planDefinitionId) {
+        return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
     public List<Questionnaire> lookupQuestionnaires(List<String> questionnaireIds) {
