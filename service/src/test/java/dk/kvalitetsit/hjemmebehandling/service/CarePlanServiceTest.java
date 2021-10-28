@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,80 @@ public class CarePlanServiceTest {
 
     @Mock
     private FhirObjectBuilder fhirObjectBuilder;
+
+    @Test
+    public void createCarePlan_patientMissing_throwsException() {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.empty());
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+    }
+
+    @Test
+    public void createCarePlan_planDefinitionMissing_throwsException() {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(new Patient()));
+        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.empty());
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+    }
+
+    @Test
+    public void createCarePlan_persistingFails_throwsException() {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Patient patient = new Patient();
+        PlanDefinition planDefinition = new PlanDefinition();
+
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(planDefinition));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirObjectBuilder.buildCarePlan(patient, planDefinition)).thenReturn(carePlan);
+        Mockito.when(fhirClient.saveCarePlan(carePlan)).thenThrow(IllegalStateException.class);
+
+        // Act
+
+        // Assert
+        assertThrows(ServiceException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+    }
+
+    @Test
+    public void createCarePlan_persistingSucceeds_returnsId() throws Exception {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Patient patient = new Patient();
+        PlanDefinition planDefinition = new PlanDefinition();
+
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(planDefinition));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirObjectBuilder.buildCarePlan(patient, planDefinition)).thenReturn(carePlan);
+        Mockito.when(fhirClient.saveCarePlan(carePlan)).thenReturn("careplan-1");
+
+        // Act
+        String result = subject.createCarePlan(cpr, planDefinitionId);
+
+        // Assert
+        assertEquals("careplan-1", result);
+    }
 
     @Test
     public void getCarePlanByCpr_carePlansPresent_returnsCarePlans() throws Exception {

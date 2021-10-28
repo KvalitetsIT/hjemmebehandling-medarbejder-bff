@@ -34,13 +34,13 @@ public class CarePlanService {
     public String createCarePlan(String cpr, String planDefinitionId) throws ServiceException {
         // Look up the Patient identified by the cpr.
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(patient.isPresent()) {
+        if(!patient.isPresent()) {
             throw new IllegalStateException(String.format("Could not look up Patient by cpr %s!", cpr));
         }
 
         // Look up the PlanDefinition based on the planDefinitionId
         Optional<PlanDefinition> planDefinition = fhirClient.lookupPlanDefinition(planDefinitionId);
-        if(planDefinition.isPresent()) {
+        if(!planDefinition.isPresent()) {
             throw new IllegalStateException(String.format("Could not look up PlanDefinition by id %s!", planDefinitionId));
         }
 
