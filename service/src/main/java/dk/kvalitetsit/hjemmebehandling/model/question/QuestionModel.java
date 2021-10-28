@@ -1,8 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.model.question;
 
-public abstract class QuestionModel {
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+
+import java.util.List;
+
+public class QuestionModel {
     private String text;
     private boolean required;
+    private QuestionType questionType;
+    private List<String> options;
 
     public String getText() {
         return text;
@@ -18,5 +24,21 @@ public abstract class QuestionModel {
 
     public void setRequired(boolean required) {
         this.required = required;
+    }
+
+    public QuestionType getQuestionType() {
+        return questionType;
+    }
+
+    public void setQuestionType(QuestionType questionType) {
+        this.questionType = questionType;
+    }
+
+    public List<String> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
     }
 }

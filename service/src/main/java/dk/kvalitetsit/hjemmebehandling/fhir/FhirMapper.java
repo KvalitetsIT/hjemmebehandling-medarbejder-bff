@@ -1,9 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.OptionQuestionModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
@@ -162,7 +163,7 @@ public class FhirMapper {
     }
 
     private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
-        OptionQuestionModel question = new OptionQuestionModel();
+        QuestionModel question = new QuestionModel();
 
         var item = getQuestionnaireItem(questionnaire, linkId);
         if(item == null) {
@@ -171,7 +172,10 @@ public class FhirMapper {
 
         question.setText(item.getText());
         question.setRequired(item.getRequired());
-        question.setOptions(item.getAnswerOption().stream().map(o -> o.getValue().primitiveValue()).collect(Collectors.toList()));
+        if(item.getAnswerOption() != null) {
+            question.setOptions(mapOptions(item.getAnswerOption()));
+        }
+        question.setQuestionType(mapQuestionType(item.getType()));
 
         return question;
     }
@@ -185,14 +189,54 @@ public class FhirMapper {
         return null;
     }
 
+    private List<String> mapOptions(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
+        return optionComponents
+                .stream()
+                .map(oc -> oc.getValue().primitiveValue())
+                .collect(Collectors.toList());
+    }
+
+    private QuestionType mapQuestionType(Questionnaire.QuestionnaireItemType type) {
+        switch(type) {
+            case CHOICE:
+                return QuestionType.CHOICE;
+            case INTEGER:
+                return QuestionType.INTEGER;
+            case QUANTITY:
+                return QuestionType.QUANTITY;
+            case STRING:
+                return QuestionType.STRING;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
+        }
+    }
+
     private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
         AnswerModel answer = new AnswerModel();
 
+        var answerItem = extractAnswerItem(item);
+        answer.setValue(answerItem.getValue().primitiveValue());
+        answer.setAnswerType(getAnswerType(answerItem));
+
+        return answer;
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent extractAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
         if(item.getAnswer() == null || item.getAnswer().size() != 1) {
             throw new IllegalStateException("Expected exactly one answer!");
         }
-        answer.setValue(item.getAnswer().get(0).getValue().primitiveValue());
+        return item.getAnswer().get(0);
+    }
 
-        return answer;
+    private AnswerType getAnswerType(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
+        String type = answerItem.getValue().getClass().getSimpleName();
+        switch(type) {
+            case "IntegerType":
+                return AnswerType.INTEGER;
+            case "StringType":
+                return AnswerType.STRING;
+            default:
+                throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", type));
+        }
     }
 }

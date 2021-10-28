@@ -1,11 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
-import dk.kvalitetsit.hjemmebehandling.api.question.OptionQuestionDto;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.OptionQuestionModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.springframework.stereotype.Component;
 
@@ -126,27 +124,12 @@ public class DtoMapper {
     }
 
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
-        QuestionDto questionDto = null;
-
-        String type = questionModel.getClass().getSimpleName();
-        switch(type) {
-            case "OptionQuestionModel":
-                questionDto = mapOptionQuestionAttributes((OptionQuestionModel) questionModel);
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("Don't know how to map type %s!", type));
-        }
+        QuestionDto questionDto = new QuestionDto();
 
         questionDto.setText(questionModel.getText());
         questionDto.setRequired(questionModel.isRequired());
-
-        return questionDto;
-    }
-
-    private QuestionDto mapOptionQuestionAttributes(OptionQuestionModel questionModel) {
-        OptionQuestionDto questionDto = new OptionQuestionDto();
-
         questionDto.setOptions(questionModel.getOptions());
+        questionDto.setQuestionType(questionModel.getQuestionType());
 
         return questionDto;
     }
@@ -155,6 +138,7 @@ public class DtoMapper {
         AnswerDto answerDto = new AnswerDto();
 
         answerDto.setValue(answerModel.getValue());
+        answerDto.setAnswerType(answerModel.getAnswerType());
 
         return answerDto;
     }
