@@ -25,7 +25,7 @@
         <linkId value="2"/>
         <text>Hvad er din temperatur?</text>
         <answer>
-            <valueInteger value="41"/>
+            <valueInteger value="11"/>
         </answer>
     </item>
 </QuestionnaireResponse>
