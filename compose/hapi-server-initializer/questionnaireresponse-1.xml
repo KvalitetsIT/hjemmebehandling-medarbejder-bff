@@ -28,4 +28,11 @@
             <valueInteger value="42"/>
         </answer>
     </item>
+    <item>
+        <linkId value="3"/>
+        <text>Hvad er din højde?</text>
+        <answer>
+            <valueInteger value="142"/>
+        </answer>
+    </item>
 </QuestionnaireResponse>

@@ -27,4 +27,10 @@
         <type value="integer"/>
         <required value="true"/>
     </item>
+    <item>
+        <linkId value="3"/>
+        <text value="Hvad er din højde?"/>
+        <type value="integer"/>
+        <required value="true"/>
+    </item>
 </Questionnaire>
