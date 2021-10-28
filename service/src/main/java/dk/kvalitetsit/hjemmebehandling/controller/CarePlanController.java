@@ -87,16 +87,16 @@ public class CarePlanController {
     })
     @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
     public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
-        String carepPlanId = null;
+        String carePlanId = null;
         try {
-            carepPlanId = carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId());
+            carePlanId = carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId());
         }
         catch(ServiceException e) {
             logger.error("Error creating CarePlan", e);
             throw new InternalServerErrorException();
         }
 
-        URI location = locationHeaderBuilder.buildLocationHeader(carepPlanId);
+        URI location = locationHeaderBuilder.buildLocationHeader(carePlanId);
         return ResponseEntity.created(location).build();
     }
 

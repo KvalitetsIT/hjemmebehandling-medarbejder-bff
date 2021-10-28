@@ -24,14 +24,14 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .cpr("0101010101")
-                .planDefinitionId("2");
+                .planDefinitionId("plandefinition-1");
 
         // Act
         ApiResponse<Void> response = subject.createCarePlanWithHttpInfo(request);
 
         // Assert
         assertEquals(201, response.getStatusCode());
-        assertTrue(response.getHeaders().containsKey("Location"));
+        assertTrue(response.getHeaders().containsKey("location"));
     }
 
     @Test
