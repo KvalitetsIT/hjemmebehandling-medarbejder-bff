@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -10,7 +11,9 @@ import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -63,6 +66,21 @@ public class FhirMapper {
         questionnaireModel.setId(questionnaire.getIdElement().toUnqualifiedVersionless ().toString());
 
         return questionnaireModel;
+    }
+
+    public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        questionnaireResponse.setId(questionnaireResponseModel.getId());
+        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
+        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
+            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
+        }
+        questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
+        questionnaireResponse.getExtension().add(toExtension(ExaminationStatus.NOT_EXAMINED));
+        questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
+
+        return questionnaireResponse;
     }
 
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
@@ -238,5 +256,46 @@ public class FhirMapper {
             default:
                 throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", type));
         }
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
+        var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
+
+        item.getAnswer().add(getAnswerItem(answer));
+
+        return item;
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(AnswerModel answer) {
+        var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
+
+        answerItem.setValue(getValue(answer));
+        // TODO - handle linkId (possibly by extending AnswerModel with such a field.)
+
+        return answerItem;
+    }
+
+    private Type getValue(AnswerModel answer) {
+        Type value = null;
+        switch(answer.getAnswerType()) {
+            case INTEGER:
+                value = new IntegerType(answer.getValue());
+                break;
+            case STRING:
+                value = new StringType(answer.getValue());
+                break;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
+        }
+        return value;
+    }
+
+    private Extension toExtension(ExaminationStatus examinationStatus) {
+        Extension extension = new Extension();
+
+        extension.setUrl(Systems.EXAMINATION_STATUS);
+        extension.setValue(new StringType(examinationStatus.toString()));
+
+        return extension;
     }
 }
