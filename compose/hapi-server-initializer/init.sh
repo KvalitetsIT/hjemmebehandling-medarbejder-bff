@@ -22,4 +22,6 @@ curl -i -X PUT -d '@/hapi-server-initializer/careplan-1.xml' -H 'Content-Type: a
 
 curl -i -X PUT -d '@/hapi-server-initializer/plandefinition-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/PlanDefinition/plandefinition-1?_format=xml
 
+curl -i -X PUT -d '@/hapi-server-initializer/searchparameter-examination-status.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/SearchParameter/searchparameter-examination-status?_format=xml
+
 echo 'Done initializing hapi-server!';

@@ -44,7 +44,7 @@ public class FhirMapperTest {
         // Assert
         assertEquals(1, result.getExtension().size());
         assertEquals(Systems.EXAMINATION_STATUS, result.getExtension().get(0).getUrl());
-        assertEquals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString(), result.getExtension().get(0).getValue().toString());
+        assertEquals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString().toLowerCase(), result.getExtension().get(0).getValue().toString());
     }
 
     @Test

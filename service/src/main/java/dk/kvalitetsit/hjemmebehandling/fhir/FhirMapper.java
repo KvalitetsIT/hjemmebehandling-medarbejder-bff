@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Component
@@ -294,7 +295,7 @@ public class FhirMapper {
         Extension extension = new Extension();
 
         extension.setUrl(Systems.EXAMINATION_STATUS);
-        extension.setValue(new StringType(examinationStatus.toString()));
+        extension.setValue(new StringType(examinationStatus.toString().toLowerCase()));
 
         return extension;
     }
