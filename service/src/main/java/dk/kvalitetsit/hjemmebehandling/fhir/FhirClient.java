@@ -4,13 +4,16 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
+import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +49,11 @@ public class FhirClient {
         var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
 
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
+    }
+
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(ExaminationStatus status) {
+        var criterion = new TokenClientParam("examination_status").exactly().code(status.toString().toLowerCase());
+        return lookupByCriterion(QuestionnaireResponse.class, criterion);
     }
 
     public String saveCarePlan(CarePlan carePlan) {
