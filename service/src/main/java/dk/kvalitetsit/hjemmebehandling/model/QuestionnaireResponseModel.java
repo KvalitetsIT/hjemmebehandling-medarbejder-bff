@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -8,7 +10,7 @@ public class QuestionnaireResponseModel {
     private String questionnaireId;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
-    //private QuestionnaireResponseStatus status; // TODO - figure out how this should work.
+    private ExaminationStatus examinationStatus;
     private PatientModel patient;
 
     public String getId() {
@@ -41,6 +43,14 @@ public class QuestionnaireResponseModel {
 
     public void setAnswered(Instant answered) {
         this.answered = answered;
+    }
+
+    public ExaminationStatus getExaminationStatus() {
+        return examinationStatus;
+    }
+
+    public void setExaminationStatus(ExaminationStatus examinationStatus) {
+        this.examinationStatus = examinationStatus;
     }
 
     public PatientModel getPatient() {

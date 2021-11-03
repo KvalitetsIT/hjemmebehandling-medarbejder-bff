@@ -25,17 +25,6 @@ public class FhirClient {
         this.endpoint = endpoint;
     }
 
-    public String saveCarePlan(CarePlan carePlan) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        MethodOutcome outcome = client.create().resource(carePlan).prettyPrint().execute();
-
-        if(!outcome.getCreated()) {
-            throw new IllegalStateException("Tried to create CarePlan, but it was not created!");
-        }
-        return outcome.getId().toUnqualifiedVersionless().getIdPart();
-    }
-
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
         return lookupByCriterion(CarePlan.class, CarePlan.PATIENT.hasId(patientId));
     }
@@ -59,10 +48,16 @@ public class FhirClient {
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
     }
 
-    public void savePatient(Patient patient) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
+    public String saveCarePlan(CarePlan carePlan) {
+        return save(carePlan);
+    }
 
-        MethodOutcome outcome = client.create().resource(patient).prettyPrint().execute();
+    public String savePatient(Patient patient) {
+        return save(patient);
+    }
+
+    public String saveQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        return save(questionnaireResponse);
     }
 
     public Optional<PlanDefinition> lookupPlanDefinition(String planDefinitionId) {
@@ -134,5 +129,15 @@ public class FhirClient {
             // Swallow the exception - corresponds to a 404 response
             return Optional.empty();
         }
+    }
+
+    private <T extends Resource> String save(Resource resource) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        MethodOutcome outcome = client.create().resource(resource).execute();
+        if(!outcome.getCreated()) {
+            throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
+        }
+        return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 }
