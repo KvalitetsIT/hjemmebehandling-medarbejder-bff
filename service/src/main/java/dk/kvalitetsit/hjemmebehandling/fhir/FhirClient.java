@@ -94,29 +94,8 @@ public class FhirClient {
     }
 
     public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        Parameters patch = new Parameters();
-        var operation = patch.addParameter();
-        operation.setName("operation");
-
-        operation.addPart()
-                        .setName("type")
-                        .setValue(new CodeType("add"));
-        operation.addPart()
-                        .setName("path")
-                        .setValue(new StringType("QuestionnaireResponse"));
-        operation.addPart()
-                        .setName("name")
-                        .setValue(new StringType("extension"));
-        operation.addPart()
-                        .setName("value")
-                        .setValue(questionnaireResponse.getExtension().get(0));
-
-        client.patch().withFhirPatch(patch).withId(questionnaireResponse.getId()).execute();
+        update(questionnaireResponse);
     }
-
-
 
     private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
         List<T> result = lookupByCriterion(resourceClass, criterion);

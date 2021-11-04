@@ -28,8 +28,8 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
-        return new QuestionnaireResponseService(client, mapper);
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder) {
+        return new QuestionnaireResponseService(client, mapper, builder);
     }
 
     @Bean

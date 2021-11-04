@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Patient;
@@ -30,6 +31,9 @@ public class QuestionnaireResponseServiceTest {
 
     @Mock
     private FhirMapper fhirMapper;
+
+    @Mock
+    private FhirObjectBuilder fhirObjectBuilder;
 
     @Test
     public void getQuestionnaireResponses_responsesPresent_returnsResponses() throws Exception {
@@ -97,16 +101,12 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse response = new QuestionnaireResponse();
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
 
-        QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponseForUpdate(response)).thenReturn(model);
-        Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
-
         Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
 
         // Act
         subject.updateExaminationStatus(id, status);
 
         // Assert
-        assertEquals(status, model.getExaminationStatus());
+        Mockito.verify(fhirObjectBuilder).updateExaminationStatusForQuestionnaireResponse(response, status);
     }
 }

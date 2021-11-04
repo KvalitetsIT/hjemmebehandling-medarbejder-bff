@@ -82,24 +82,10 @@ public class FhirMapper {
         return questionnaireResponse;
     }
 
-    public QuestionnaireResponse mapQuestionnaireResponseModelForUpdate(QuestionnaireResponseModel questionnaireResponseModel) {
-        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-
-        questionnaireResponse.setId(questionnaireResponseModel.getId());
-        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
-//        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
-//            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
-//        }
-        questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
-        questionnaireResponse.getExtension().add(toExtension(questionnaireResponseModel.getExaminationStatus()));
-        //questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
-
-        return questionnaireResponse;
-    }
-
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
-        QuestionnaireResponseModel questionnaireResponseModel = mapQuestionnaireResponseForUpdate(questionnaireResponse);
+        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
+        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
         questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
 
         // Populate questionAnswerMap
@@ -112,17 +98,9 @@ public class FhirMapper {
         }
 
         questionnaireResponseModel.setQuestionAnswerPairs(answers);
-        questionnaireResponseModel.setPatient(mapPatient(patient));
-
-        return questionnaireResponseModel;
-    }
-
-    public QuestionnaireResponseModel mapQuestionnaireResponseForUpdate(QuestionnaireResponse questionnaireResponse) {
-        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
-
-        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setExaminationStatus(toExaminationStatus(questionnaireResponse.getExtension()));
+        questionnaireResponseModel.setPatient(mapPatient(patient));
 
         return questionnaireResponseModel;
     }
@@ -312,12 +290,7 @@ public class FhirMapper {
     }
 
     private Extension toExtension(ExaminationStatus examinationStatus) {
-        Extension extension = new Extension();
-
-        extension.setUrl(Systems.EXAMINATION_STATUS);
-        extension.setValue(new StringType(examinationStatus.toString()));
-
-        return extension;
+        return new Extension(Systems.EXAMINATION_STATUS, new StringType(examinationStatus.toString()));
     }
 
     private ExaminationStatus toExaminationStatus(List<Extension> extensions) {
