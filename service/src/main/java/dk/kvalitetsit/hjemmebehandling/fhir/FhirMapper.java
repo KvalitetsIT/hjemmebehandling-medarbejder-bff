@@ -9,13 +9,11 @@ import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -84,10 +82,24 @@ public class FhirMapper {
         return questionnaireResponse;
     }
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
-        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
+    public QuestionnaireResponse mapQuestionnaireResponseModelForUpdate(QuestionnaireResponseModel questionnaireResponseModel) {
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
 
-        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+        questionnaireResponse.setId(questionnaireResponseModel.getId());
+        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
+//        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
+//            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
+//        }
+        questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
+        questionnaireResponse.getExtension().add(toExtension(questionnaireResponseModel.getExaminationStatus()));
+        //questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
+
+        return questionnaireResponse;
+    }
+
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
+        QuestionnaireResponseModel questionnaireResponseModel = mapQuestionnaireResponseForUpdate(questionnaireResponse);
+
         questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
 
         // Populate questionAnswerMap
@@ -100,9 +112,17 @@ public class FhirMapper {
         }
 
         questionnaireResponseModel.setQuestionAnswerPairs(answers);
-
-        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setPatient(mapPatient(patient));
+
+        return questionnaireResponseModel;
+    }
+
+    public QuestionnaireResponseModel mapQuestionnaireResponseForUpdate(QuestionnaireResponse questionnaireResponse) {
+        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
+
+        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
+        questionnaireResponseModel.setExaminationStatus(toExaminationStatus(questionnaireResponse.getExtension()));
 
         return questionnaireResponseModel;
     }
@@ -295,8 +315,17 @@ public class FhirMapper {
         Extension extension = new Extension();
 
         extension.setUrl(Systems.EXAMINATION_STATUS);
-        extension.setValue(new StringType(examinationStatus.toString().toLowerCase()));
+        extension.setValue(new StringType(examinationStatus.toString()));
 
         return extension;
+    }
+
+    private ExaminationStatus toExaminationStatus(List<Extension> extensions) {
+        for(Extension extension : extensions) {
+            if(extension.getUrl().equals(Systems.EXAMINATION_STATUS)) {
+                return Enum.valueOf(ExaminationStatus.class, extension.getValue().toString());
+            }
+        }
+        throw new IllegalStateException("Could not look up ExaminationStatus among the candidate extensions!");
     }
 }

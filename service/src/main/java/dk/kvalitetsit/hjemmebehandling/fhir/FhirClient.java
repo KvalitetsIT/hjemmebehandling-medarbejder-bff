@@ -44,6 +44,10 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
+        return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
+    }
+
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
@@ -86,10 +90,33 @@ public class FhirClient {
     }
 
     public void updateCarePlan(CarePlan carePlan) {
+        update(carePlan);
+    }
+
+    public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
-        client.update().resource(carePlan).prettyPrint().execute();
+        Parameters patch = new Parameters();
+        var operation = patch.addParameter();
+        operation.setName("operation");
+
+        operation.addPart()
+                        .setName("type")
+                        .setValue(new CodeType("add"));
+        operation.addPart()
+                        .setName("path")
+                        .setValue(new StringType("QuestionnaireResponse"));
+        operation.addPart()
+                        .setName("name")
+                        .setValue(new StringType("extension"));
+        operation.addPart()
+                        .setName("value")
+                        .setValue(questionnaireResponse.getExtension().get(0));
+
+        client.patch().withFhirPatch(patch).withId(questionnaireResponse.getId()).execute();
     }
+
+
 
     private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
         List<T> result = lookupByCriterion(resourceClass, criterion);
@@ -147,5 +174,10 @@ public class FhirClient {
             throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
         }
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
+    }
+
+    private <T extends Resource> void update(Resource resource) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        client.update().resource(resource).execute();
     }
 }

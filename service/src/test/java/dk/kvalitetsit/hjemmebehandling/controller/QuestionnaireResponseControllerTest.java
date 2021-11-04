@@ -1,7 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -108,5 +112,50 @@ public class QuestionnaireResponseControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaireResponse_malformedRequest_400() {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
+
+        // Act
+        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaireResponse_failureToUpdate_500() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
+        request.setExaminationStatus(ExaminationStatus.UNDER_EXAMINATION);
+
+        Mockito.doThrow(ServiceException.class).when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+
+        // Act
+        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaireResponse_success_200() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
+        request.setExaminationStatus(ExaminationStatus.UNDER_EXAMINATION);
+
+        Mockito.doNothing().when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+
+        // Act
+        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }

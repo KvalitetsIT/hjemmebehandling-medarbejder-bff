@@ -3,7 +3,7 @@
 <QuestionnaireResponse xmlns="http://hl7.org/fhir">
     <id value="questionnaireresponse-1"/>
     <extension url="http://hjemmebehandling.rm.dk/examination-status">
-        <valueString value="examined"/>
+        <valueString value="EXAMINED"/>
     </extension>
     <questionnaire value="Questionnaire/questionnaire-1"/>
     <subject>

@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
@@ -49,5 +50,20 @@ public class QuestionnaireResponseService {
                 .stream()
                 .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, questionnairesById.get(qr.getQuestionnaire()), patient.get()))
                 .collect(Collectors.toList());
+    }
+
+    public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException {
+        // Look up the QuestionnaireResponse
+        Optional<QuestionnaireResponse> questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
+        if(!questionnaireResponse.isPresent()) {
+            throw new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId));
+        }
+
+        // Update it
+        QuestionnaireResponseModel model = fhirMapper.mapQuestionnaireResponseForUpdate(questionnaireResponse.get());
+        model.setExaminationStatus(examinationStatus);
+
+        // Save the updated QuestionnaireResponse
+        fhirClient.updateQuestionnaireResponse(fhirMapper.mapQuestionnaireResponseModelForUpdate(model));
     }
 }

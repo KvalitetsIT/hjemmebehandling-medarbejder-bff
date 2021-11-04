@@ -1,8 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
@@ -70,5 +72,41 @@ public class QuestionnaireResponseServiceTest {
 
         // Assert
         assertEquals(0, result.size());
+    }
+
+    @Test
+    public void updateExaminationStatus_resourceNotFound_throwsException() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
+
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.empty());
+
+        // Act
+
+        // Assert
+        assertThrows(ServiceException.class, () -> subject.updateExaminationStatus(id, status));
+    }
+
+    @Test
+    public void updateExaminationStatus_successfulUpdate() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
+
+        QuestionnaireResponseModel model = new QuestionnaireResponseModel();
+        Mockito.when(fhirMapper.mapQuestionnaireResponseForUpdate(response)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
+
+        Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
+
+        // Act
+        subject.updateExaminationStatus(id, status);
+
+        // Assert
+        assertEquals(status, model.getExaminationStatus());
     }
 }
