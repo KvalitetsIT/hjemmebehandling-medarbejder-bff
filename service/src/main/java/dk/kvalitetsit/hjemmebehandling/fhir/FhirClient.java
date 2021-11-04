@@ -44,6 +44,10 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
+        return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
+    }
+
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
@@ -86,9 +90,11 @@ public class FhirClient {
     }
 
     public void updateCarePlan(CarePlan carePlan) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        update(carePlan);
+    }
 
-        client.update().resource(carePlan).prettyPrint().execute();
+    public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        update(questionnaireResponse);
     }
 
     private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
@@ -147,5 +153,10 @@ public class FhirClient {
             throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
         }
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
+    }
+
+    private <T extends Resource> void update(Resource resource) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        client.update().resource(resource).execute();
     }
 }

@@ -1,7 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Patient;
@@ -20,9 +22,12 @@ public class QuestionnaireResponseService {
 
     private FhirMapper fhirMapper;
 
-    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper) {
+    private FhirObjectBuilder fhirObjectBuilder;
+
+    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder) {
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
+        this.fhirObjectBuilder = fhirObjectBuilder;
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String cpr, List<String> questionnaireIds) throws ServiceException {
@@ -49,5 +54,19 @@ public class QuestionnaireResponseService {
                 .stream()
                 .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, questionnairesById.get(qr.getQuestionnaire()), patient.get()))
                 .collect(Collectors.toList());
+    }
+
+    public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException {
+        // Look up the QuestionnaireResponse
+        Optional<QuestionnaireResponse> questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
+        if(!questionnaireResponse.isPresent()) {
+            throw new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId));
+        }
+
+        // Update the Questionnaireresponse
+        fhirObjectBuilder.updateExaminationStatusForQuestionnaireResponse(questionnaireResponse.get(), examinationStatus);
+
+        // Save the updated QuestionnaireResponse
+        fhirClient.updateQuestionnaireResponse(questionnaireResponse.get());
     }
 }

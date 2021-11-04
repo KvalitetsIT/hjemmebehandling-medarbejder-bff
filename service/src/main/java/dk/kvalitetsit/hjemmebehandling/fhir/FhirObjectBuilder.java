@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
@@ -48,6 +50,19 @@ public class FhirObjectBuilder {
         for(Questionnaire questionnaire : questionnaires) {
             carePlan.addActivity(buildActivity(questionnaire, frequencies));
         }
+    }
+
+    public void updateExaminationStatusForQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, ExaminationStatus examinationStatus) {
+        if(questionnaireResponse.getExtension() == null) {
+            throw new IllegalStateException("Trying to update ExaminationStatus on QuestionnaireResponse, but no extension list was present.");
+        }
+        for(Extension extension : questionnaireResponse.getExtension()) {
+            if(extension.getUrl().equals(Systems.EXAMINATION_STATUS)) {
+                extension.setValue(new StringType(examinationStatus.toString()));
+                return;
+            }
+        }
+        throw new IllegalStateException(String.format("Could not update ExaminationStatus on QuestionnaireResponse: Extension of url %s not found!", Systems.EXAMINATION_STATUS));
     }
 
     private CarePlan.CarePlanActivityComponent buildActivity(PlanDefinition.PlanDefinitionActionComponent action) {

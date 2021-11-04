@@ -9,13 +9,11 @@ import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -100,8 +98,8 @@ public class FhirMapper {
         }
 
         questionnaireResponseModel.setQuestionAnswerPairs(answers);
-
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
+        questionnaireResponseModel.setExaminationStatus(toExaminationStatus(questionnaireResponse.getExtension()));
         questionnaireResponseModel.setPatient(mapPatient(patient));
 
         return questionnaireResponseModel;
@@ -292,11 +290,15 @@ public class FhirMapper {
     }
 
     private Extension toExtension(ExaminationStatus examinationStatus) {
-        Extension extension = new Extension();
+        return new Extension(Systems.EXAMINATION_STATUS, new StringType(examinationStatus.toString()));
+    }
 
-        extension.setUrl(Systems.EXAMINATION_STATUS);
-        extension.setValue(new StringType(examinationStatus.toString().toLowerCase()));
-
-        return extension;
+    private ExaminationStatus toExaminationStatus(List<Extension> extensions) {
+        for(Extension extension : extensions) {
+            if(extension.getUrl().equals(Systems.EXAMINATION_STATUS)) {
+                return Enum.valueOf(ExaminationStatus.class, extension.getValue().toString());
+            }
+        }
+        throw new IllegalStateException("Could not look up ExaminationStatus among the candidate extensions!");
     }
 }
