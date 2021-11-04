@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
@@ -42,7 +43,7 @@ public class FhirMapperTest {
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(model);
 
         // Assert
-        assertEquals(1, result.getExtension().size());
+        assertEquals(2, result.getExtension().size());
         assertEquals(Systems.EXAMINATION_STATUS, result.getExtension().get(0).getUrl());
         assertEquals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString(), result.getExtension().get(0).getValue().toString());
     }
@@ -56,6 +57,7 @@ public class FhirMapperTest {
         questionnaireResponse.getItem().add(buildIntegerItem(2, "2"));
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
+        questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
 
         Questionnaire questionnaire = new Questionnaire();
         questionnaire.getItem().add(buildQuestionItem("1"));
@@ -115,6 +117,8 @@ public class FhirMapperTest {
         answer.setValue("2");
 
         model.getQuestionAnswerPairs().add(new QuestionAnswerPairModel(question, answer));
+
+        model.setTriagingCategory(TriagingCategory.GREEN);
 
         PatientModel patientModel = new PatientModel();
         patientModel.setId("patient-1");

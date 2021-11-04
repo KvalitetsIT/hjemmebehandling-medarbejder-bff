@@ -63,7 +63,7 @@ public class DtoMapper {
         return patientDto;
     }
 
-    public QuestionnaireDto mapQuestionnaireResponseModel(QuestionnaireModel questionnaireModel) {
+    public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
         questionnaireDto.setId(questionnaireModel.getId());
@@ -84,6 +84,7 @@ public class DtoMapper {
         questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
         questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
         questionnaireResponseDto.setExaminationStatus(questionnaireResponseModel.getExaminationStatus());
+        questionnaireResponseDto.setTriagingCategory(questionnaireResponseModel.getTriagingCategory());
         questionnaireResponseDto.setPatient(mapPatientModel(questionnaireResponseModel.getPatient()));
 
         return questionnaireResponseDto;
@@ -147,7 +148,7 @@ public class DtoMapper {
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
         QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
 
-        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireResponseModel(questionnaireWrapper.getQuestionnaire()));
+        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireModel(questionnaireWrapper.getQuestionnaire()));
         questionnaireWrapperDto.setFrequency(mapFrequencyModel(questionnaireWrapper.getFrequency()));
 
         return questionnaireWrapperDto;

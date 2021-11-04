@@ -5,6 +5,9 @@
     <extension url="http://hjemmebehandling.rm.dk/examination-status">
         <valueString value="NOT_EXAMINED"/>
     </extension>
+    <extension url="http://hjemmebehandling.rm.dk/triaging-category">
+        <valueString value="YELLOW"/>
+    </extension>
     <questionnaire value="Questionnaire/questionnaire-1"/>
     <subject>
         <reference value="Patient/patient-1"/>
