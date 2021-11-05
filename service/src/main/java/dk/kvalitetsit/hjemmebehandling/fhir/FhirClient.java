@@ -12,6 +12,7 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -44,6 +45,11 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public List<Patient> lookupPatientsById(Collection<String> patientIds) {
+        throw new UnsupportedOperationException();
+        //return lookupById(patientId, Patient.class);
+    }
+
     public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
         return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
     }
@@ -53,6 +59,11 @@ public class FhirClient {
         var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
 
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
+    }
+
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(List<ExaminationStatus> statuses) {
+        throw new UnsupportedOperationException();
+
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(ExaminationStatus status) {
@@ -76,7 +87,7 @@ public class FhirClient {
         return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
-    public List<Questionnaire> lookupQuestionnaires(List<String> questionnaireIds) {
+    public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         Bundle bundle = (Bundle) client

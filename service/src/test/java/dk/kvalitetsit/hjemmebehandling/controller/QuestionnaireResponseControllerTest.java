@@ -113,6 +113,70 @@ public class QuestionnaireResponseControllerTest {
     }
 
     @Test
+    public void getQuestionnaireResponsesByStatus_parameterMissing_400() {
+        // Arrange
+        List<ExaminationStatus> statuses = null;
+
+        // Act
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
+    public void getQuestionnaireResponsesByStatus_responsesPresent_200() throws Exception {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
+
+        QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
+        QuestionnaireResponseModel responseModel2 = new QuestionnaireResponseModel();
+        QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
+        QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
+
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenReturn(List.of(responseModel1, responseModel2));
+        Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
+        Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
+
+        // Act
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(2, result.getBody().size());
+        assertTrue(result.getBody().contains(responseDto1));
+        assertTrue(result.getBody().contains(responseDto2));
+    }
+
+    @Test
+    public void getQuestionnaireResponsesByStatus_responsesMissing_204() throws Exception {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION);
+
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenReturn(List.of());
+
+        // Act
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+    }
+
+    @Test
+    public void getQuestionnaireResponsesByStatus_failureToFetch_500() throws Exception {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED);
+
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenThrow(ServiceException.class);
+
+        // Act
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+    }
+
+    @Test
     public void patchQuestionnaireResponse_malformedRequest_400() {
         // Arrange
         String id = "questionnaireresponse-1";
