@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
@@ -36,8 +37,8 @@ public class QuestionnaireResponseController {
         throw new UnsupportedOperationException();
     }
 
-    @GetMapping(value = "/v1/questionnaireresponse")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponses(@RequestParam("cpr") String cpr, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
+    @GetMapping(value = "/v1/questionnaireresponse/{cpr}")
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCpr(@PathVariable("cpr") String cpr, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
         if(cpr == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -53,6 +54,11 @@ public class QuestionnaireResponseController {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping(value = "/v1/questionnaireresponse")
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses) {
+        throw new UnsupportedOperationException();
     }
 
     @PatchMapping(value = "/v1/questionnaireresponse/{id}")
