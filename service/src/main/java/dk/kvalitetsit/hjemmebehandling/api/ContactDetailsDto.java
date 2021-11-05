@@ -4,6 +4,7 @@ public class ContactDetailsDto {
     private String street;
     private String postalCode;
     private String country;
+    private String city;
     private String primaryPhone;
     private String secondaryPhone;
     private String emailAddress;
@@ -55,4 +56,12 @@ public class ContactDetailsDto {
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
     }
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
 }

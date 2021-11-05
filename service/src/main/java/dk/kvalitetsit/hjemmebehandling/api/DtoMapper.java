@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.springframework.stereotype.Component;
 
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 @Component
@@ -62,6 +63,33 @@ public class DtoMapper {
 
         return patientDto;
     }
+    
+    public PersonDto mapPersonModel(PersonModel person) {
+        PersonDto personDto = new PersonDto();
+
+        personDto.setCpr(person.getIdentifier().getId());
+        personDto.setFamilyName(person.getName().getFamily());
+        for (Iterator<String> iterator = person.getName().getGiven().iterator(); iterator.hasNext();) {
+        	String givenName = iterator.next();
+        	if(personDto.getGivenName()!=null) {
+        		personDto.setGivenName(givenName);
+        	} else {
+        		personDto.setGivenName(personDto.getGivenName()+" "+givenName);
+        	}
+		}
+        personDto.setBirthDate(person.getBirthDate());
+        personDto.setDeceasedBoolean(person.isDeceasedBoolean());
+        personDto.setGender(person.getGender());
+        
+        personDto.setPatientContactDetails(new ContactDetailsDto());
+        personDto.getPatientContactDetails().setCountry(person.getAddress().getCountry());
+        personDto.getPatientContactDetails().setPostalCode(person.getAddress().getPostalCode());
+        personDto.getPatientContactDetails().setStreet(person.getAddress().getLine());
+        personDto.getPatientContactDetails().setCity(person.getAddress().getCity());
+
+        return personDto;
+    }
+    
 
     public QuestionnaireDto mapQuestionnaireResponseModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();

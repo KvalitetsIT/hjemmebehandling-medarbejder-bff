@@ -1,19 +1,21 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 @Configuration
 public class ServiceConfiguration {
@@ -25,6 +27,11 @@ public class ServiceConfiguration {
     @Bean
     public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
         return new PatientService(client, mapper);
+    }
+    
+    @Bean
+    public PersonService getPersonService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+    	return new PersonService(new RestTemplate());
     }
 
     @Bean
