@@ -1,7 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -9,10 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,5 +53,22 @@ public class QuestionnaireResponseController {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PatchMapping(value = "/v1/questionnaireresponse/{id}")
+    public ResponseEntity<Void> patchQuestionnaireResponse(@PathVariable String id, @RequestBody PartialUpdateQuestionnaireResponseRequest request) {
+        if(request.getExaminationStatus() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus());
+        }
+        catch(ServiceException e) {
+            // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
+            logger.error("Could not update questionnaire response", e);
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.ok().build();
     }
 }

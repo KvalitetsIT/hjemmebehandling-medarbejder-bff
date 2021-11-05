@@ -1,5 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -8,7 +11,8 @@ public class QuestionnaireResponseModel {
     private String questionnaireId;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
-    //private QuestionnaireResponseStatus status; // TODO - figure out how this should work.
+    private ExaminationStatus examinationStatus;
+    private TriagingCategory triagingCategory;
     private PatientModel patient;
 
     public String getId() {
@@ -41,6 +45,22 @@ public class QuestionnaireResponseModel {
 
     public void setAnswered(Instant answered) {
         this.answered = answered;
+    }
+
+    public ExaminationStatus getExaminationStatus() {
+        return examinationStatus;
+    }
+
+    public void setExaminationStatus(ExaminationStatus examinationStatus) {
+        this.examinationStatus = examinationStatus;
+    }
+
+    public TriagingCategory getTriagingCategory() {
+        return triagingCategory;
+    }
+
+    public void setTriagingCategory(TriagingCategory triagingCategory) {
+        this.triagingCategory = triagingCategory;
     }
 
     public PatientModel getPatient() {

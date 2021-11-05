@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
@@ -190,6 +191,63 @@ public class FhirClientTest {
         assertTrue(result.contains(questionnaireResponse2));
     }
 
+    @Test
+    public void saveCarePlan_created_returnsId() {
+        //Arrange
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
+
+        setupSaveClient(carePlan, true);
+
+        // Act
+        String result = subject.saveCarePlan(carePlan);
+
+        // Assert
+        assertEquals("1", result);
+    }
+
+    @Test
+    public void saveCarePlan_notCreated_throwsException() {
+        //Arrange
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
+
+        setupSaveClient(carePlan, false);
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
+    }
+
+    @Test
+    public void saveQuestionnaireResponse_created_returnsId() {
+        //Arrange
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setId("1");
+
+        setupSaveClient(questionnaireResponse, true);
+
+        // Act
+        String result = subject.saveQuestionnaireResponse(questionnaireResponse);
+
+        // Assert
+        assertEquals("1", result);
+    }
+
+    @Test
+    public void saveQuestionnaireResponse_notCreated_throwsException() {
+        //Arrange
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        setupSaveClient(questionnaireResponse, false);
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.saveQuestionnaireResponse(questionnaireResponse));
+    }
+
     private void setupReadCarePlanClient(String carePlanId, CarePlan carePlan) {
         setupReadClient(carePlanId, carePlan, CarePlan.class);
     }
@@ -264,6 +322,22 @@ public class FhirClientTest {
                     .where(Mockito.any(ICriterion.class))
                     .execute())
                     .thenReturn(bundle);
+        }
+
+        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
+    }
+
+    private void setupSaveClient(Resource resource, boolean shouldSucceed) {
+        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
+
+        MethodOutcome outcome = new MethodOutcome();
+        if(shouldSucceed) {
+            outcome.setCreated(true);
+            outcome.setId(new IdType(resource.getResourceType().name(), resource.getId()));
+            Mockito.when(client.create().resource(resource).execute()).thenReturn(outcome);
+        }
+        else {
+            outcome.setCreated(false);
         }
 
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);

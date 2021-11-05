@@ -1,5 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -8,6 +11,8 @@ public class QuestionnaireResponseDto {
     private String questionnaireId;
     private List<QuestionAnswerPairDto> questionAnswerPairs;
     private Instant answered;
+    private ExaminationStatus examinationStatus;
+    private TriagingCategory triagingCategory;
     private PatientDto patient;
 
     public String getId() {
@@ -40,6 +45,22 @@ public class QuestionnaireResponseDto {
 
     public void setAnswered(Instant answered) {
         this.answered = answered;
+    }
+
+    public ExaminationStatus getExaminationStatus() {
+        return examinationStatus;
+    }
+
+    public void setExaminationStatus(ExaminationStatus examinationStatus) {
+        this.examinationStatus = examinationStatus;
+    }
+
+    public TriagingCategory getTriagingCategory() {
+        return triagingCategory;
+    }
+
+    public void setTriagingCategory(TriagingCategory triagingCategory) {
+        this.triagingCategory = triagingCategory;
     }
 
     public PatientDto getPatient() {

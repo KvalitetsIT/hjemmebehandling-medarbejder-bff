@@ -4,13 +4,16 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
+import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,17 +26,6 @@ public class FhirClient {
     public FhirClient(FhirContext context, String endpoint) {
         this.context = context;
         this.endpoint = endpoint;
-    }
-
-    public String saveCarePlan(CarePlan carePlan) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        MethodOutcome outcome = client.create().resource(carePlan).prettyPrint().execute();
-
-        if(!outcome.getCreated()) {
-            throw new IllegalStateException("Tried to create CarePlan, but it was not created!");
-        }
-        return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
@@ -52,6 +44,10 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
+        return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
+    }
+
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
@@ -59,10 +55,21 @@ public class FhirClient {
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
     }
 
-    public void savePatient(Patient patient) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(ExaminationStatus status) {
+        var criterion = new TokenClientParam("examination_status").exactly().code(status.toString().toLowerCase());
+        return lookupByCriterion(QuestionnaireResponse.class, criterion);
+    }
 
-        MethodOutcome outcome = client.create().resource(patient).prettyPrint().execute();
+    public String saveCarePlan(CarePlan carePlan) {
+        return save(carePlan);
+    }
+
+    public String savePatient(Patient patient) {
+        return save(patient);
+    }
+
+    public String saveQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        return save(questionnaireResponse);
     }
 
     public Optional<PlanDefinition> lookupPlanDefinition(String planDefinitionId) {
@@ -83,9 +90,11 @@ public class FhirClient {
     }
 
     public void updateCarePlan(CarePlan carePlan) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        update(carePlan);
+    }
 
-        client.update().resource(carePlan).prettyPrint().execute();
+    public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        update(questionnaireResponse);
     }
 
     private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
@@ -134,5 +143,20 @@ public class FhirClient {
             // Swallow the exception - corresponds to a 404 response
             return Optional.empty();
         }
+    }
+
+    private <T extends Resource> String save(Resource resource) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        MethodOutcome outcome = client.create().resource(resource).execute();
+        if(!outcome.getCreated()) {
+            throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
+        }
+        return outcome.getId().toUnqualifiedVersionless().getIdPart();
+    }
+
+    private <T extends Resource> void update(Resource resource) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        client.update().resource(resource).execute();
     }
 }

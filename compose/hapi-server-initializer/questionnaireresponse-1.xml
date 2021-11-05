@@ -2,6 +2,12 @@
 
 <QuestionnaireResponse xmlns="http://hl7.org/fhir">
     <id value="questionnaireresponse-1"/>
+    <extension url="http://hjemmebehandling.rm.dk/examination-status">
+        <valueString value="EXAMINED"/>
+    </extension>
+    <extension url="http://hjemmebehandling.rm.dk/triaging-category">
+        <valueString value="RED"/>
+    </extension>
     <questionnaire value="Questionnaire/questionnaire-1"/>
     <subject>
         <reference value="Patient/patient-1"/>

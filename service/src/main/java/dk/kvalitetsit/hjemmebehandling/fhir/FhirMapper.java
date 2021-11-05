@@ -1,17 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -65,6 +63,22 @@ public class FhirMapper {
         return questionnaireModel;
     }
 
+    public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        questionnaireResponse.setId(questionnaireResponseModel.getId());
+        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
+        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
+            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
+        }
+        questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
+        questionnaireResponse.getExtension().add(mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
+        questionnaireResponse.getExtension().add(mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
+        questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
+
+        return questionnaireResponse;
+    }
+
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
@@ -81,8 +95,9 @@ public class FhirMapper {
         }
 
         questionnaireResponseModel.setQuestionAnswerPairs(answers);
-
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
+        questionnaireResponseModel.setExaminationStatus(extractExaminationStatus(questionnaireResponse.getExtension()));
+        questionnaireResponseModel.setTriagingCategory(extractTriagingCategoory(questionnaireResponse.getExtension()));
         questionnaireResponseModel.setPatient(mapPatient(patient));
 
         return questionnaireResponseModel;
@@ -238,5 +253,62 @@ public class FhirMapper {
             default:
                 throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", type));
         }
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
+        var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
+
+        item.getAnswer().add(getAnswerItem(answer));
+
+        return item;
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(AnswerModel answer) {
+        var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
+
+        answerItem.setValue(getValue(answer));
+        // TODO - handle linkId (possibly by extending AnswerModel with such a field.)
+
+        return answerItem;
+    }
+
+    private Type getValue(AnswerModel answer) {
+        Type value = null;
+        switch(answer.getAnswerType()) {
+            case INTEGER:
+                value = new IntegerType(answer.getValue());
+                break;
+            case STRING:
+                value = new StringType(answer.getValue());
+                break;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
+        }
+        return value;
+    }
+
+    private Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
+        return new Extension(Systems.EXAMINATION_STATUS, new StringType(examinationStatus.toString()));
+    }
+
+    private Extension mapTriagingCategory(TriagingCategory triagingCategory) {
+        return new Extension(Systems.TRIAGING_CATEGORY, new StringType(triagingCategory.toString()));
+    }
+
+    private ExaminationStatus extractExaminationStatus(List<Extension> extensions) {
+        return extractEnumFromExtensions(extensions, Systems.EXAMINATION_STATUS, ExaminationStatus.class);
+    }
+
+    private TriagingCategory extractTriagingCategoory(List<Extension> extensions) {
+        return extractEnumFromExtensions(extensions, Systems.TRIAGING_CATEGORY, TriagingCategory.class);
+    }
+
+    private <T extends Enum<T>> T extractEnumFromExtensions(List<Extension> extensions, String url, Class<T> type) {
+        for(Extension extension : extensions) {
+            if(extension.getUrl().equals(url)) {
+                return Enum.valueOf(type, extension.getValue().toString());
+            }
+        }
+        throw new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url));
     }
 }

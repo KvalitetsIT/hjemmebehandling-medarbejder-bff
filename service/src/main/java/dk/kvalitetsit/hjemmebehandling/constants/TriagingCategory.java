@@ -1,5 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.constants;
 
-public enum QuestionnaireResponseStatus {
-
+public enum TriagingCategory {
+    RED, YELLOW, GREEN
 }
