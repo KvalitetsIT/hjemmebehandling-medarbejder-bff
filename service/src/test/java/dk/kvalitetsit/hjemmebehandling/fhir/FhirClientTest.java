@@ -5,6 +5,7 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -180,7 +181,7 @@ public class FhirClientTest {
 
         QuestionnaireResponse questionnaireResponse1 = new QuestionnaireResponse();
         QuestionnaireResponse questionnaireResponse2 = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(questionnaireResponse1, questionnaireResponse2);
+        setupSearchQuestionnaireResponseClient(2, questionnaireResponse1, questionnaireResponse2);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(cpr, List.of(questionnaireId));
@@ -189,6 +190,54 @@ public class FhirClientTest {
         assertEquals(2, result.size());
         assertTrue(result.contains(questionnaireResponse1));
         assertTrue(result.contains(questionnaireResponse2));
+    }
+
+    @Test
+    public void lookupQuestionnaireResponsesByStatus_oneStatus_success() {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
+
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
+
+        // Act
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
+    }
+
+    @Test
+    public void lookupQuestionnaireResponsesByStatus_twoStatuses_success() {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION);
+
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
+
+        // Act
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
+    }
+
+    @Test
+    public void lookupQuestionnaireResponsesByStatus_duplicateStatuses_success() {
+        // Arrange
+        List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED, ExaminationStatus.EXAMINED);
+
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        setupSearchQuestionnaireResponseClient(3, questionnaireResponse);
+
+        // Act
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
     }
 
     @Test
@@ -286,15 +335,15 @@ public class FhirClientTest {
         setupSearchClient(Patient.class, patients);
     }
 
-    private void setupSearchQuestionnaireResponseClient(QuestionnaireResponse... questionnaireResponses) {
-        setupSearchClient(true, QuestionnaireResponse.class, questionnaireResponses);
+    private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {
+        setupSearchClient(criteriaCount, QuestionnaireResponse.class, questionnaireResponses);
     }
 
     private void setupSearchClient(Class<? extends Resource> resourceClass, Resource... resources) {
-        setupSearchClient(false, resourceClass, resources);
+        setupSearchClient(1, resourceClass, resources);
     }
 
-    private void setupSearchClient(boolean additionalCriterion, Class<? extends Resource> resourceClass, Resource... resources) {
+    private void setupSearchClient(int criteriaCount, Class<? extends Resource> resourceClass, Resource... resources) {
         IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
 
         Bundle bundle = new Bundle();
@@ -306,23 +355,13 @@ public class FhirClientTest {
         }
         bundle.setTotal(resources.length);
 
-        if(additionalCriterion) {
-            Mockito.when(client
-                    .search()
-                    .forResource(resourceClass)
-                    .where(Mockito.any(ICriterion.class))
-                    .and(Mockito.any(ICriterion.class))
-                    .execute())
-                    .thenReturn(bundle);
+        var query = client.search().forResource(resourceClass).where(Mockito.any(ICriterion.class));
+        for(var i = 1; i < criteriaCount; i++) {
+            query = query.and(Mockito.any(ICriterion.class));
         }
-        else {
-            Mockito.when(client
-                    .search()
-                    .forResource(resourceClass)
-                    .where(Mockito.any(ICriterion.class))
-                    .execute())
-                    .thenReturn(bundle);
-        }
+        Mockito.when(query
+                .execute())
+                .thenReturn(bundle);
 
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }

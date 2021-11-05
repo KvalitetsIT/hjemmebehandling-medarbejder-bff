@@ -7,13 +7,14 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,10 @@ public class FhirClient {
         return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
     }
 
+    public List<Patient> lookupPatientsById(Collection<String> patientIds) {
+        return lookupByCriterion(Patient.class, Patient.RES_ID.exactly().codes(patientIds));
+    }
+
     public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
         return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
     }
@@ -55,9 +60,17 @@ public class FhirClient {
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(ExaminationStatus status) {
-        var criterion = new TokenClientParam("examination_status").exactly().code(status.toString().toLowerCase());
-        return lookupByCriterion(QuestionnaireResponse.class, criterion);
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
+        var criteria = statuses
+                .stream()
+                .distinct()
+                .map(s -> new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().code(s.toString()))
+                .collect(Collectors.toList());
+        return lookupByCriteria(QuestionnaireResponse.class, criteria.toArray(new ICriterion<?>[criteria.size()]));
+    }
+
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {
+        return lookupQuestionnaireResponsesByStatus(List.of(status));
     }
 
     public String saveCarePlan(CarePlan carePlan) {
@@ -76,17 +89,8 @@ public class FhirClient {
         return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
-    public List<Questionnaire> lookupQuestionnaires(List<String> questionnaireIds) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        Bundle bundle = (Bundle) client
-                .search()
-                .forResource(Questionnaire.class)
-                .where(Questionnaire.RES_ID.exactly().systemAndValues(null, questionnaireIds))
-                .prettyPrint()
-                .execute();
-
-        return bundle.getEntry().stream().map(e -> (Questionnaire) e.getResource()).collect(Collectors.toList());
+    public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {
+        return lookupByCriterion(Questionnaire.class, Questionnaire.RES_ID.exactly().codes(questionnaireIds));
     }
 
     public void updateCarePlan(CarePlan carePlan) {
@@ -110,18 +114,20 @@ public class FhirClient {
     }
 
     private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
-        return lookupByCriteria(resourceClass, criterion, null);
+        return lookupByCriteria(resourceClass, criterion);
     }
 
-    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?> firstCriterion, ICriterion<?> secondCriterion) {
+    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?>... criteria) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
                 .search()
-                .forResource(resourceClass)
-                .where(firstCriterion);
-        if(secondCriterion != null) {
-            query = query.and(secondCriterion);
+                .forResource(resourceClass);
+        if(criteria.length > 0) {
+            query = query.where(criteria[0]);
+            for(int i = 1; i < criteria.length; i++) {
+                query = query.and(criteria[i]);
+            }
         }
 
         Bundle bundle = (Bundle) query.execute();

@@ -1,11 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -36,8 +34,8 @@ public class QuestionnaireResponseController {
         throw new UnsupportedOperationException();
     }
 
-    @GetMapping(value = "/v1/questionnaireresponse")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponses(@RequestParam("cpr") String cpr, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
+    @GetMapping(value = "/v1/questionnaireresponse/{cpr}")
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCpr(@PathVariable("cpr") String cpr, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
         if(cpr == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -51,6 +49,25 @@ public class QuestionnaireResponseController {
         }
         catch(ServiceException e) {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping(value = "/v1/questionnaireresponse")
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses) {
+        if(statuses == null || statuses.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses);
+            if(questionnaireResponses.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
+        }
+        catch(ServiceException e) {
+            logger.error("Could not look up questionnaire responses by status", e);
             return ResponseEntity.internalServerError().build();
         }
     }
