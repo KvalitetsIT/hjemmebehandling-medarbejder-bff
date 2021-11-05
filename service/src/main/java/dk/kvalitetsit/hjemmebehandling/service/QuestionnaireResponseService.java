@@ -99,7 +99,7 @@ public class QuestionnaireResponseService {
 
         Map<String, Patient> patientsById = fhirClient.lookupPatientsById(distinctIds)
                 .stream()
-                .collect(Collectors.toMap(p -> p.getId(), p -> p));
+                .collect(Collectors.toMap(p -> p.getIdElement().toUnqualifiedVersionless().toString(), p -> p));
 
         if(!distinctIds.equals(patientsById.keySet())) {
             throw new IllegalStateException("Could not look up every patient when retrieving questionnaireResponses!");

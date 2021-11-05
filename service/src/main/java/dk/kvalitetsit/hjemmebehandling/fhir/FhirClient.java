@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -47,8 +46,7 @@ public class FhirClient {
     }
 
     public List<Patient> lookupPatientsById(Collection<String> patientIds) {
-        throw new UnsupportedOperationException();
-        //return lookupById(patientId, Patient.class);
+        return lookupByCriterion(Patient.class, Patient.RES_ID.exactly().codes(patientIds));
     }
 
     public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
@@ -92,16 +90,7 @@ public class FhirClient {
     }
 
     public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        Bundle bundle = (Bundle) client
-                .search()
-                .forResource(Questionnaire.class)
-                .where(Questionnaire.RES_ID.exactly().systemAndValues(null, questionnaireIds))
-                .prettyPrint()
-                .execute();
-
-        return bundle.getEntry().stream().map(e -> (Questionnaire) e.getResource()).collect(Collectors.toList());
+        return lookupByCriterion(Questionnaire.class, Questionnaire.RES_ID.exactly().codes(questionnaireIds));
     }
 
     public void updateCarePlan(CarePlan carePlan) {

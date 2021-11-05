@@ -35,6 +35,18 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
     }
 
     @Test
+    public void getQuestionnaireResponsesByStatus_success() throws Exception {
+        // Arrange
+        List<String> statuses = List.of("NOT_EXAMINED");
+
+        // Act
+        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByStatusWithHttpInfo(statuses);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
     public void patchQuestionnaireResponse_success() throws Exception {
         // Arrange
         //String id = "QuestionnaireResponse/questionnaireresponse-2";
