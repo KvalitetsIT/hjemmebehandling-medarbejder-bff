@@ -61,12 +61,12 @@ public class FhirClient {
         return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(List<ExaminationStatus> statuses) {
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
         throw new UnsupportedOperationException();
 
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByExaminationStatus(ExaminationStatus status) {
+    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {
         var criterion = new TokenClientParam("examination_status").exactly().code(status.toString().toLowerCase());
         return lookupByCriterion(QuestionnaireResponse.class, criterion);
     }

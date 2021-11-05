@@ -50,7 +50,7 @@ public class QuestionnaireResponseService {
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
         // Get the questionnaires by status
-        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByExaminationStatus(statuses);
+        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
         if(responses.isEmpty()) {
             return List.of();
         }
