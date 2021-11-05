@@ -45,7 +45,7 @@ public class QuestionnaireResponseService {
             throw new IllegalStateException(String.format("Could not look up patient for cpr %s!", cpr));
         }
 
-        return constructResult(responses, questionnairesById, Map.of(patient.get().getId(), patient.get()));
+        return constructResult(responses, questionnairesById, Map.of(patient.get().getIdElement().toUnqualifiedVersionless().toString(), patient.get()));
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {

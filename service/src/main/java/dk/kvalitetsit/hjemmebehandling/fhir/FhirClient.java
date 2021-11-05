@@ -7,6 +7,7 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -62,13 +63,16 @@ public class FhirClient {
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
-        throw new UnsupportedOperationException();
-
+        var criteria = statuses
+                .stream()
+                .distinct()
+                .map(s -> new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().code(s.toString()))
+                .collect(Collectors.toList());
+        return lookupByCriteria(QuestionnaireResponse.class, criteria.toArray(new ICriterion<?>[criteria.size()]));
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {
-        var criterion = new TokenClientParam("examination_status").exactly().code(status.toString().toLowerCase());
-        return lookupByCriterion(QuestionnaireResponse.class, criterion);
+        return lookupQuestionnaireResponsesByStatus(List.of(status));
     }
 
     public String saveCarePlan(CarePlan carePlan) {
@@ -121,18 +125,20 @@ public class FhirClient {
     }
 
     private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
-        return lookupByCriteria(resourceClass, criterion, null);
+        return lookupByCriteria(resourceClass, criterion);
     }
 
-    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?> firstCriterion, ICriterion<?> secondCriterion) {
+    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?>... criteria) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
                 .search()
-                .forResource(resourceClass)
-                .where(firstCriterion);
-        if(secondCriterion != null) {
-            query = query.and(secondCriterion);
+                .forResource(resourceClass);
+        if(criteria.length > 0) {
+            query = query.where(criteria[0]);
+            for(int i = 1; i < criteria.length; i++) {
+                query = query.and(criteria[i]);
+            }
         }
 
         Bundle bundle = (Bundle) query.execute();
