@@ -9,6 +9,7 @@ import java.util.List;
 public class QuestionnaireResponseDto {
     private String id;
     private String questionnaireId;
+    private String questionnaireName;
     private List<QuestionAnswerPairDto> questionAnswerPairs;
     private Instant answered;
     private ExaminationStatus examinationStatus;
@@ -29,6 +30,14 @@ public class QuestionnaireResponseDto {
 
     public void setQuestionnaireId(String questionnaireId) {
         this.questionnaireId = questionnaireId;
+    }
+
+    public String getQuestionnaireName() {
+        return questionnaireName;
+    }
+
+    public void setQuestionnaireName(String questionnaireName) {
+        this.questionnaireName = questionnaireName;
     }
 
     public List<QuestionAnswerPairDto> getQuestionAnswerPairs() {

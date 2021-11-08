@@ -109,6 +109,7 @@ public class DtoMapper {
 
         questionnaireResponseDto.setId(questionnaireResponseModel.getId());
         questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId());
+        questionnaireResponseDto.setQuestionnaireName(questionnaireResponseModel.getQuestionnaireName());
         questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
         questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
         questionnaireResponseDto.setExaminationStatus(questionnaireResponseModel.getExaminationStatus());

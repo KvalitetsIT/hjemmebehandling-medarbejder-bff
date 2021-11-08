@@ -61,12 +61,9 @@ public class FhirClient {
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
-        var criteria = statuses
-                .stream()
-                .distinct()
-                .map(s -> new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().code(s.toString()))
-                .collect(Collectors.toList());
-        return lookupByCriteria(QuestionnaireResponse.class, criteria.toArray(new ICriterion<?>[criteria.size()]));
+        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
+        var criterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+        return lookupByCriterion(QuestionnaireResponse.class, criterion);
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {

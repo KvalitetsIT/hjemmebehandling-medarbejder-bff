@@ -214,7 +214,7 @@ public class FhirClientTest {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
+        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
@@ -230,7 +230,7 @@ public class FhirClientTest {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED, ExaminationStatus.EXAMINED);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(3, questionnaireResponse);
+        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
