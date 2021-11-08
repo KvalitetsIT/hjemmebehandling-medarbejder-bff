@@ -8,6 +8,7 @@ public class CarePlanModel {
     private String status;
     private PatientModel patient;
     private List<QuestionnaireWrapperModel> questionnaires;
+    private List<PlanDefinitionModel> planDefinitions;
 
     public String getId() {
         return id;
@@ -47,5 +48,13 @@ public class CarePlanModel {
 
     public void setQuestionnaires(List<QuestionnaireWrapperModel> questionnaires) {
         this.questionnaires = questionnaires;
+    }
+
+    public List<PlanDefinitionModel> getPlanDefinitions() {
+        return planDefinitions;
+    }
+
+    public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
+        this.planDefinitions = planDefinitions;
     }
 }

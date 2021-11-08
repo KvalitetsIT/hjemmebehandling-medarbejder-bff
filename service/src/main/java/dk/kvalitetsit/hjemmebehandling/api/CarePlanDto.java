@@ -10,6 +10,7 @@ public class CarePlanDto {
     private String status;
     private PatientDto patientDto;
     private List<QuestionnaireWrapperDto> questionnaires;
+    private List<PlanDefinitionDto> planDefinitions;
 
     @Schema(required = true, description = "Id of the CarePlan", example = "10")
     public String getId() {
@@ -50,5 +51,13 @@ public class CarePlanDto {
 
     public void setQuestionnaires(List<QuestionnaireWrapperDto> questionnaires) {
         this.questionnaires = questionnaires;
+    }
+
+    public List<PlanDefinitionDto> getPlanDefinitions() {
+        return planDefinitions;
+    }
+
+    public void setPlanDefinitions(List<PlanDefinitionDto> planDefinitions) {
+        this.planDefinitions = planDefinitions;
     }
 }

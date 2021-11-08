@@ -3,11 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +72,8 @@ public class CarePlanService {
 
         // Look up the questionnaires and include them in the result.
         Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
+        // Look up the plan definitions and include them in the result
+        Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
         for(CarePlanModel carePlanModel : result) {
             if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
                 // The Careplan simply may not have any questionnaires attached, so we continue.
@@ -82,6 +81,9 @@ public class CarePlanService {
             }
             List<QuestionnaireWrapperModel> questionnaires = questionnairesByCarePlanId.get(carePlanModel.getId());
             carePlanModel.setQuestionnaires(questionnaires);
+
+            List<PlanDefinitionModel> planDefinitions = planDefinitionsByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setPlanDefinitions(planDefinitions);
         }
 
         return result;
@@ -106,6 +108,10 @@ public class CarePlanService {
         // Look up the questionnaires and include them in the result.
         List<QuestionnaireWrapperModel> questionnaires = getQuestionnaires(carePlan.get());
         carePlanModel.setQuestionnaires(questionnaires);
+
+        // Look up the plan definitions and include them in the result
+        Map<String, List<PlanDefinitionModel>> planDefinitions = getPlanDefinitionsByCarePlanId(List.of(carePlan.get()));
+        carePlanModel.setPlanDefinitions(planDefinitions.get(carePlan.get().getId()));
 
         return Optional.of(carePlanModel);
     }
@@ -203,6 +209,38 @@ public class CarePlanService {
         }
 
         return result;
+    }
+
+    private Map<String, List<PlanDefinitionModel>> getPlanDefinitionsByCarePlanId(List<CarePlan> carePlans) {
+        // We want a map from carePlanIds to their planDefinitions, and we would like to make only one invocation of the FhirClient.
+
+        // Get the planDefinitionIds
+        List<String> planDefinitionIds = getPlanDefinitionIds(carePlans);
+
+        // Fetch the Questionnaires
+        List<PlanDefinitionModel> planDefinitions = fhirClient.lookupPlanDefinitions(planDefinitionIds)
+                .stream()
+                .map(pd -> fhirMapper.mapPlanDefinition(pd))
+                .collect(Collectors.toList());
+
+        // Build the result
+        return carePlans
+                .stream()
+                .collect(Collectors.toMap(cp -> cp.getId(), cp -> getPlanDefinitionsForCarePlan(cp, planDefinitions)));
+    }
+
+    private List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {
+        return carePlans
+                .stream()
+                .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(ic -> ic.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    private List<PlanDefinitionModel> getPlanDefinitionsForCarePlan(CarePlan carePlan, List<PlanDefinitionModel> planDefinitionModels) {
+        return planDefinitionModels
+                .stream()
+                .filter(pd -> carePlan.getInstantiatesCanonical().contains(pd.getId()))
+                .collect(Collectors.toList());
     }
 
     private Map<String, FrequencyModel> getFrequenciesById(CarePlan carePlan) {

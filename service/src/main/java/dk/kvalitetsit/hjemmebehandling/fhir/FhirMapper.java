@@ -55,6 +55,16 @@ public class FhirMapper {
         return patientModel;
     }
 
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+
+        planDefinitionModel.setId(planDefinition.getIdElement().toUnqualifiedVersionless().getValue());
+        planDefinitionModel.setName(planDefinition.getName());
+        planDefinitionModel.setTitle(planDefinition.getTitle());
+
+        return planDefinitionModel;
+    }
+
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 

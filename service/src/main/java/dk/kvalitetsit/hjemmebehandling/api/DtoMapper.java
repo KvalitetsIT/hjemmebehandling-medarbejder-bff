@@ -20,6 +20,7 @@ public class DtoMapper {
         carePlanDto.setStatus(carePlan.getStatus());
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));
+        carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
 
         return carePlanDto;
     }
@@ -63,6 +64,16 @@ public class DtoMapper {
 
         return patientDto;
     }
+
+    public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+
+        planDefinitionDto.setId(planDefinitionModel.getId());
+        planDefinitionDto.setName(planDefinitionModel.getName());
+        planDefinitionDto.setTitle(planDefinitionModel.getTitle());
+
+        return planDefinitionDto;
+    }
     
     public PersonDto mapPersonModel(PersonModel person) {
         PersonDto personDto = new PersonDto();
@@ -89,7 +100,6 @@ public class DtoMapper {
 
         return personDto;
     }
-    
 
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();

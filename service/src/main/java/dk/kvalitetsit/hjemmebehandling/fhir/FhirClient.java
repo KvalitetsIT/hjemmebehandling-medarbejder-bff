@@ -86,6 +86,10 @@ public class FhirClient {
         return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
+    public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
+        return lookupByCriterion(PlanDefinition.class, PlanDefinition.RES_ID.exactly().codes(planDefinitionIds));
+    }
+
     public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {
         return lookupByCriterion(Questionnaire.class, Questionnaire.RES_ID.exactly().codes(questionnaireIds));
     }
