@@ -18,9 +18,9 @@ curl -i -X PUT -d '@/hapi-server-initializer/questionnaireresponse-1.xml' -H 'Co
 curl -i -X PUT -d '@/hapi-server-initializer/questionnaireresponse-2.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/QuestionnaireResponse/questionnaireresponse-2?_format=xml
 curl -i -X PUT -d '@/hapi-server-initializer/questionnaireresponse-3.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/QuestionnaireResponse/questionnaireresponse-3?_format=xml
 
-curl -i -X PUT -d '@/hapi-server-initializer/careplan-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/CarePlan/careplan-1?_format=xml
-
 curl -i -X PUT -d '@/hapi-server-initializer/plandefinition-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/PlanDefinition/plandefinition-1?_format=xml
+
+curl -i -X PUT -d '@/hapi-server-initializer/careplan-1.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/CarePlan/careplan-1?_format=xml
 
 curl -i -X PUT -d '@/hapi-server-initializer/searchparameter-examination-status.xml' -H 'Content-Type: application/fhir+xml' http://hapi-server:8080/fhir/SearchParameter/searchparameter-examination-status?_format=xml
 
