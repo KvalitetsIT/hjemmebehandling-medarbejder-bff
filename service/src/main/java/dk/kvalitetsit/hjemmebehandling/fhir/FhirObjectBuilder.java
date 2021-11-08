@@ -15,6 +15,8 @@ public class FhirObjectBuilder {
     public CarePlan buildCarePlan(Patient patient, PlanDefinition planDefinition) {
         CarePlan carePlan = new CarePlan();
 
+        carePlan.getInstantiatesCanonical().add(new CanonicalType(planDefinition.getIdElement().toUnqualifiedVersionless().getValue()));
+
         carePlan.setTitle(planDefinition.getTitle());
 
         Reference subjectReference = new Reference(patient.getId());
