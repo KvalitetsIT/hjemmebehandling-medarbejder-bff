@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Questionnaire;
@@ -53,6 +54,10 @@ public class QuestionnaireResponseService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
+        return getQuestionnaireResponsesByStatus(statuses, null);
+    }
+
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, PageDetails pageDetails) throws ServiceException {
         // Get the questionnaires by status
         List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
         if(responses.isEmpty()) {
@@ -65,9 +70,13 @@ public class QuestionnaireResponseService {
         // require a server extension. So for now, we do it here.
         responses = filterResponses(responses);
 
-        // ordering
-        
-        // pagination
+        // Sort the responses by priority.
+        responses = sortResponses(responses);
+
+        // Perform paging if required.
+        if(pageDetails != null) {
+            responses = pageResponses(responses, pageDetails);
+        }
 
         // Extract the questionnaireIds, get the questionnaires
         Set<String> questionnaireIds = responses.stream().map(qr -> qr.getQuestionnaire()).collect(Collectors.toSet());
@@ -108,6 +117,21 @@ public class QuestionnaireResponseService {
         return groupedResponses.values()
                 .stream()
                 .map(rs -> extractMaximalPriorityResponse(rs))
+                .collect(Collectors.toList());
+    }
+
+    private List<QuestionnaireResponse> sortResponses(List<QuestionnaireResponse> responses) {
+        return responses
+                .stream()
+                .sorted(priorityComparator)
+                .collect(Collectors.toList());
+    }
+
+    private List<QuestionnaireResponse> pageResponses(List<QuestionnaireResponse> responses, PageDetails pageDetails) {
+        return responses
+                .stream()
+                .skip((pageDetails.getPageNumber() - 1) * pageDetails.getPageSize())
+                .limit(pageDetails.getPageSize())
                 .collect(Collectors.toList());
     }
 
