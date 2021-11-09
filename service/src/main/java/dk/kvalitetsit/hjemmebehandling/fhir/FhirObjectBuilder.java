@@ -2,7 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -12,6 +14,9 @@ import java.util.Map;
 
 @Component
 public class FhirObjectBuilder {
+    @Autowired
+    private DateProvider dateProvider;
+
     public CarePlan buildCarePlan(Patient patient, PlanDefinition planDefinition) {
         CarePlan carePlan = new CarePlan();
 
@@ -23,8 +28,10 @@ public class FhirObjectBuilder {
         carePlan.setSubject(subjectReference);
 
         Period period = new Period();
-        period.setStart(Date.from(Instant.now()));
+        period.setStart(dateProvider.now());
         carePlan.setPeriod(period);
+
+        carePlan.setCreated(dateProvider.now());
 
         // TODO - figure out how to set the author-field (possibly look up Practitioner based on token?).
 

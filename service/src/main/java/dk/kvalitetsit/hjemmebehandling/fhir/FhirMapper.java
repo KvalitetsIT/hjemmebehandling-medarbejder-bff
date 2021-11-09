@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,11 @@ public class FhirMapper {
         carePlanModel.setId(carePlan.getId());
         carePlanModel.setTitle(carePlan.getTitle());
         //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
+        carePlanModel.setCreated(carePlan.getCreated().toInstant());
+        carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
+        if(carePlan.getPeriod().getEnd() != null) {
+            carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
+        }
 
         return carePlanModel;
     }

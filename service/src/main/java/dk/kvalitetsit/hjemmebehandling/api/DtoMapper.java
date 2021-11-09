@@ -18,6 +18,9 @@ public class DtoMapper {
         carePlanDto.setId(carePlan.getId());
         carePlanDto.setTitle(carePlan.getTitle());
         carePlanDto.setStatus(carePlan.getStatus());
+        carePlanDto.setCreated(carePlan.getCreated());
+        carePlanDto.setStartDate(carePlan.getStartDate());
+        carePlanDto.setEndDate(carePlan.getEndDate());
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));
         carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionModel(pd)).collect(Collectors.toList()));

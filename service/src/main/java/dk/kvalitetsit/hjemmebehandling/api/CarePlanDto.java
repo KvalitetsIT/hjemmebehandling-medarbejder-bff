@@ -2,12 +2,17 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Instant;
+import java.time.Period;
 import java.util.List;
 
 public class CarePlanDto {
     private String id;
     private String title;
     private String status;
+    private Instant created;
+    private Instant startDate;
+    private Instant endDate;
     private PatientDto patientDto;
     private List<QuestionnaireWrapperDto> questionnaires;
     private List<PlanDefinitionDto> planDefinitions;
@@ -35,6 +40,30 @@ public class CarePlanDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Instant getCreated() {
+        return created;
+    }
+
+    public void setCreated(Instant created) {
+        this.created = created;
+    }
+
+    public Instant getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Instant startDate) {
+        this.startDate = startDate;
+    }
+
+    public Instant getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Instant endDate) {
+        this.endDate = endDate;
     }
 
     public PatientDto getPatientDto() {
