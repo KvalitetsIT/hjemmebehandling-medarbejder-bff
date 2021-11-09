@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,13 +55,13 @@ public class QuestionnaireResponseController {
     }
 
     @GetMapping(value = "/v1/questionnaireresponse")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses) {
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses, @RequestParam("pageDetails") PageDetails pageDetails) {
         if(statuses == null || statuses.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses);
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails);
             if(questionnaireResponses.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }

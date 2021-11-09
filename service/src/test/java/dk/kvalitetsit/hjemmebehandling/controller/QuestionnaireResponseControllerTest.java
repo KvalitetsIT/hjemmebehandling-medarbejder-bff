@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -116,9 +117,10 @@ public class QuestionnaireResponseControllerTest {
     public void getQuestionnaireResponsesByStatus_parameterMissing_400() {
         // Arrange
         List<ExaminationStatus> statuses = null;
+        PageDetails pageDetails = null;
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
@@ -128,18 +130,19 @@ public class QuestionnaireResponseControllerTest {
     public void getQuestionnaireResponsesByStatus_responsesPresent_200() throws Exception {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
+        PageDetails pageDetails = new PageDetails(1, 10);
 
         QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
         QuestionnaireResponseModel responseModel2 = new QuestionnaireResponseModel();
         QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
         QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenReturn(List.of(responseModel1, responseModel2));
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenReturn(List.of(responseModel1, responseModel2));
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -152,11 +155,12 @@ public class QuestionnaireResponseControllerTest {
     public void getQuestionnaireResponsesByStatus_responsesMissing_204() throws Exception {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION);
+        PageDetails pageDetails = new PageDetails(1, 10);
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenReturn(List.of());
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
@@ -166,11 +170,12 @@ public class QuestionnaireResponseControllerTest {
     public void getQuestionnaireResponsesByStatus_failureToFetch_500() throws Exception {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED);
+        PageDetails pageDetails = new PageDetails(1, 10);
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses)).thenThrow(ServiceException.class);
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenThrow(ServiceException.class);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
