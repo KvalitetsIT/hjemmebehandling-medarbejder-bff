@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
@@ -24,10 +25,13 @@ public class QuestionnaireResponseService {
 
     private FhirObjectBuilder fhirObjectBuilder;
 
-    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder) {
+    private Comparator<QuestionnaireResponse> priorityComparator;
+
+    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, Comparator<QuestionnaireResponse> priorityComparator) {
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
+        this.priorityComparator = priorityComparator;
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String cpr, List<String> questionnaireIds) throws ServiceException {
@@ -55,6 +59,16 @@ public class QuestionnaireResponseService {
             return List.of();
         }
 
+        // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
+        // and in case of multiple entries, we want the 'most important' one.
+        // Grouping, ordring and pagination should ideally happen in the FHIR-server, but the grouping part seems to
+        // require a server extension. So for now, we do it here.
+        responses = filterResponses(responses);
+
+        // ordering
+        
+        // pagination
+
         // Extract the questionnaireIds, get the questionnaires
         Set<String> questionnaireIds = responses.stream().map(qr -> qr.getQuestionnaire()).collect(Collectors.toSet());
         Map<String, Questionnaire> questionnairesById = getQuestionnairesById(questionnaireIds);
@@ -79,6 +93,32 @@ public class QuestionnaireResponseService {
 
         // Save the updated QuestionnaireResponse
         fhirClient.updateQuestionnaireResponse(questionnaireResponse.get());
+    }
+
+    private List<QuestionnaireResponse> filterResponses(List<QuestionnaireResponse> responses) {
+        // Given the list of responses, ensure that only one QuestionnaireResponse exists for each <patientId, questionnaireId>-pair,
+        // and in case of duplicates, the one with the highest priority is retained.
+
+        // Group the responses by  <patientId, questionnaireId>.
+        var groupedResponses = responses
+                .stream()
+                .collect(Collectors.groupingBy(r -> new ImmutablePair<>(r.getSubject().getReference(), r.getQuestionnaire())));
+
+        // For each of the pairs, retain only the response with maximal priority.
+        return groupedResponses.values()
+                .stream()
+                .map(rs -> extractMaximalPriorityResponse(rs))
+                .collect(Collectors.toList());
+    }
+
+    private QuestionnaireResponse extractMaximalPriorityResponse(List<QuestionnaireResponse> responses) {
+        var response = responses
+                .stream()
+                .max(priorityComparator);
+        if(!response.isPresent()) {
+            throw new IllegalStateException("Could not extract QuestionnaireResponse of maximal priority - the list was empty!");
+        }
+        return response.get();
     }
 
     private Map<String, Questionnaire> getQuestionnairesById(Collection<String> questionnaireIds) {

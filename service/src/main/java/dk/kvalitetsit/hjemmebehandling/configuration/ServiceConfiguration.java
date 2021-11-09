@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,8 +36,9 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder) {
-        return new QuestionnaireResponseService(client, mapper, builder);
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator) {
+        // Reverse the comporator: We want responses by descending priority.
+        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed());
     }
 
     @Bean
