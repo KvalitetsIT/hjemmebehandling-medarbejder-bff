@@ -237,9 +237,14 @@ public class CarePlanService {
     }
 
     private List<PlanDefinitionModel> getPlanDefinitionsForCarePlan(CarePlan carePlan, List<PlanDefinitionModel> planDefinitionModels) {
+        List<String> planDefinitionIds = carePlan.getInstantiatesCanonical()
+                .stream()
+                .map(ct -> ct.getValue())
+                .collect(Collectors.toList());
+
         return planDefinitionModels
                 .stream()
-                .filter(pd -> carePlan.getInstantiatesCanonical().contains(pd.getId()))
+                .filter(pd -> planDefinitionIds.contains(pd.getId()))
                 .collect(Collectors.toList());
     }
 
