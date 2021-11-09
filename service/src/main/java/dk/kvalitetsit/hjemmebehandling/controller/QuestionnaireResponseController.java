@@ -55,13 +55,13 @@ public class QuestionnaireResponseController {
     }
 
     @GetMapping(value = "/v1/questionnaireresponse")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses, @RequestParam("pageDetails") PageDetails pageDetails) {
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(@RequestParam("status") List<ExaminationStatus> statuses, int pageNumber, int pageSize) {
         if(statuses == null || statuses.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails);
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, new PageDetails(pageNumber, pageSize));
             if(questionnaireResponses.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }

@@ -120,7 +120,7 @@ public class QuestionnaireResponseControllerTest {
         PageDetails pageDetails = null;
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, 1, 10);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
@@ -142,7 +142,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -160,7 +160,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize());
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
@@ -175,7 +175,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenThrow(ServiceException.class);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize());
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

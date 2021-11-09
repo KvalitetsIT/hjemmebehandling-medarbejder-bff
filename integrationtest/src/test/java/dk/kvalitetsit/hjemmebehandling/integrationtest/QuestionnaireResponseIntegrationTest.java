@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.QuestionnaireResponseApi;
-import org.openapitools.client.model.PageDetails;
 import org.openapitools.client.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.client.model.QuestionnaireResponseDto;
 
@@ -39,12 +38,11 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
     public void getQuestionnaireResponsesByStatus_success() throws Exception {
         // Arrange
         List<String> statuses = List.of("NOT_EXAMINED");
-        PageDetails pageDetails = new PageDetails();
-        pageDetails.setPageNumber(1);
-        pageDetails.setPageSize(10);;
+        int pageNumber = 1;
+        int pageSize = 10;
 
         // Act
-        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByStatusWithHttpInfo(statuses, pageDetails);
+        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByStatusWithHttpInfo(statuses, pageNumber, pageSize);
 
         // Assert
         assertEquals(200, response.getStatusCode());
