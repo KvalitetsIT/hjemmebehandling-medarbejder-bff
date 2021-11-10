@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import org.hl7.fhir.r4.model.PlanDefinition;
@@ -32,7 +33,7 @@ public class PlanDefinitionServiceTest {
         PlanDefinition planDefinition = new PlanDefinition();
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
-        Mockito.when(fhirClient.lookupPlanDefinitions()).thenReturn(List.of(planDefinition));
+        Mockito.when(fhirClient.lookupPlanDefinitions()).thenReturn(FhirLookupResult.fromResource(planDefinition));
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition)).thenReturn(planDefinitionModel);
 
         // Act

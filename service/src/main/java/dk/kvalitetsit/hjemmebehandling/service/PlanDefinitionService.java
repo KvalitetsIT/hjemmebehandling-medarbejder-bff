@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -26,8 +27,8 @@ public class PlanDefinitionService {
     }
 
     public List<PlanDefinitionModel> getPlanDefinitions() throws ServiceException {
-        List<PlanDefinition> planDefinitions = fhirClient.lookupPlanDefinitions();
+        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions();
 
-        return planDefinitions.stream().map(pd -> fhirMapper.mapPlanDefinition(pd)).collect(Collectors.toList());
+        return lookupResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd)).collect(Collectors.toList());
     }
 }

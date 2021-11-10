@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.api.Include;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
@@ -180,11 +181,11 @@ public class FhirClientTest {
         setupSearchPlanDefinitionClient(planDefinition);
 
         // Act
-        List<PlanDefinition> result = subject.lookupPlanDefinitions();
+        FhirLookupResult result = subject.lookupPlanDefinitions();
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals(planDefinition, result.get(0));
+        assertEquals(1, result.getPlanDefinitions().size());
+        assertEquals(planDefinition, result.getPlanDefinitions().get(0));
     }
 
     @Test
@@ -350,18 +351,18 @@ public class FhirClientTest {
     }
 
     private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
-        setupSearchClient(0, PlanDefinition.class, planDefinitions);
+        setupSearchClient(0, 1, PlanDefinition.class, planDefinitions);
     }
 
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {
-        setupSearchClient(criteriaCount, QuestionnaireResponse.class, questionnaireResponses);
+        setupSearchClient(criteriaCount, 0, QuestionnaireResponse.class, questionnaireResponses);
     }
 
     private void setupSearchClient(Class<? extends Resource> resourceClass, Resource... resources) {
-        setupSearchClient(1, resourceClass, resources);
+        setupSearchClient(1, 0, resourceClass, resources);
     }
 
-    private void setupSearchClient(int criteriaCount, Class<? extends Resource> resourceClass, Resource... resources) {
+    private void setupSearchClient(int criteriaCount, int includeCount, Class<? extends Resource> resourceClass, Resource... resources) {
         IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
 
         Bundle bundle = new Bundle();
@@ -379,6 +380,9 @@ public class FhirClientTest {
         }
         for(var i = 1; i < criteriaCount; i++) {
             query = query.and(Mockito.any(ICriterion.class));
+        }
+        for(var i = 0; i < includeCount; i++) {
+            query = query.include(Mockito.any(Include.class));
         }
         Mockito.when(query
                 .execute())

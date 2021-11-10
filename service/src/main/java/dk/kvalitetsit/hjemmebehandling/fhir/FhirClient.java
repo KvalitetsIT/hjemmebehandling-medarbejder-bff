@@ -86,8 +86,17 @@ public class FhirClient {
         return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
-    public List<PlanDefinition> lookupPlanDefinitions() {
-        return lookupAll(PlanDefinition.class);
+    public FhirLookupResult lookupPlanDefinitions() {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        var query = client
+                .search()
+                .forResource(PlanDefinition.class)
+                .include(PlanDefinition.INCLUDE_DEFINITION);
+
+        Bundle bundle = (Bundle) query.execute();
+
+        return FhirLookupResult.fromBundle(bundle);
     }
 
     public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
