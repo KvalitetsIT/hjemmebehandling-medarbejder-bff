@@ -174,6 +174,20 @@ public class FhirClientTest {
     }
 
     @Test
+    public void lookupPlanDefinitions_success() {
+        // Arrange
+        PlanDefinition planDefinition = new PlanDefinition();
+        setupSearchPlanDefinitionClient(planDefinition);
+
+        // Act
+        List<PlanDefinition> result = subject.lookupPlanDefinitions();
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(planDefinition, result.get(0));
+    }
+
+    @Test
     public void lookupQuestionnaireResponses_patientAndQuestionnairesPresent_success() {
         // Arrange
         String cpr = "0101010101";
@@ -335,6 +349,10 @@ public class FhirClientTest {
         setupSearchClient(Patient.class, patients);
     }
 
+    private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
+        setupSearchClient(0, PlanDefinition.class, planDefinitions);
+    }
+
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {
         setupSearchClient(criteriaCount, QuestionnaireResponse.class, questionnaireResponses);
     }
@@ -355,7 +373,10 @@ public class FhirClientTest {
         }
         bundle.setTotal(resources.length);
 
-        var query = client.search().forResource(resourceClass).where(Mockito.any(ICriterion.class));
+        var query = client.search().forResource(resourceClass);
+        if(criteriaCount > 0) {
+            query = query.where(Mockito.any(ICriterion.class));
+        }
         for(var i = 1; i < criteriaCount; i++) {
             query = query.and(Mockito.any(ICriterion.class));
         }

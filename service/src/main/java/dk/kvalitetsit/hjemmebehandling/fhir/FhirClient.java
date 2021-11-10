@@ -86,6 +86,10 @@ public class FhirClient {
         return lookupById(planDefinitionId, PlanDefinition.class);
     }
 
+    public List<PlanDefinition> lookupPlanDefinitions() {
+        return lookupAll(PlanDefinition.class);
+    }
+
     public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
         return lookupByCriterion(PlanDefinition.class, PlanDefinition.RES_ID.exactly().codes(planDefinitionIds));
     }
@@ -112,6 +116,10 @@ public class FhirClient {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", resourceClass.getName()));
         }
         return Optional.of(result.get(0));
+    }
+
+    private <T extends Resource> List<T> lookupAll(Class<T> resourceClass) {
+        return lookupByCriteria(resourceClass);
     }
 
     private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
