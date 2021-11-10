@@ -5,6 +5,7 @@
     <subject>
         <reference value="Patient/patient-1"/>
     </subject>
+    <created value="2021-10-28"/>
     <period>
         <start value="2021-10-18"/>
     </period>
