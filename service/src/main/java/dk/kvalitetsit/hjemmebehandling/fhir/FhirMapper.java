@@ -9,7 +9,6 @@ import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,6 +68,30 @@ public class FhirMapper {
         planDefinitionModel.setTitle(planDefinition.getTitle());
 
         return planDefinitionModel;
+    }
+
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+
+        planDefinitionModel.setId(planDefinition.getIdElement().toUnqualifiedVersionless().getValue());
+        planDefinitionModel.setName(planDefinition.getName());
+        planDefinitionModel.setTitle(planDefinition.getTitle());
+
+        // Map actions to questionnaires, along with their frequencies
+        planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
+
+        return planDefinitionModel;
+    }
+
+    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
+        var wrapper = new QuestionnaireWrapperModel();
+
+        wrapper.setFrequency(mapTiming(action.getTimingTiming()));
+
+        Questionnaire questionnaire = lookupResult.getQuestionnaire(action.getDefinitionCanonicalType().getValue());
+        wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
+
+        return wrapper;
     }
 
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
