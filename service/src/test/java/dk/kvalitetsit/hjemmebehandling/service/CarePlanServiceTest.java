@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +62,54 @@ public class CarePlanServiceTest {
 
         // Assert
         assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+    }
+
+    @Test
+    public void createCarePlan_activePlanExists_throwsException() throws Exception {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Patient patient = new Patient();
+        patient.setId("patient-1");
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(new PlanDefinition()));
+
+        CarePlan existingCareplan = new CarePlan();
+        existingCareplan.setPeriod(new Period());
+        existingCareplan.getPeriod().setStart(Date.valueOf("2021-11-09"));
+        Mockito.when(fhirClient.lookupCarePlansByPatientId("patient-1")).thenReturn(List.of(existingCareplan));
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+    }
+
+    @Test
+    public void createCarePlan_inactivePlanExists_succeeds() throws Exception {
+        // Arrange
+        String cpr = "0101010101";
+        String planDefinitionId = "plandefinition-1";
+
+        Patient patient = new Patient();
+        patient.setId("patient-1");
+        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(new PlanDefinition()));
+
+        CarePlan existingCareplan = new CarePlan();
+        existingCareplan.setPeriod(new Period());
+        existingCareplan.getPeriod().setStart(Date.valueOf("2021-11-09"));
+        existingCareplan.getPeriod().setEnd(Date.valueOf("2021-11-10"));
+        Mockito.when(fhirClient.lookupCarePlansByPatientId("patient-1")).thenReturn(List.of(existingCareplan));
+
+        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+
+        // Act
+        String result = subject.createCarePlan(cpr, planDefinitionId);
+
+        // Assert
+        assertEquals("1", result);
     }
 
     @Test

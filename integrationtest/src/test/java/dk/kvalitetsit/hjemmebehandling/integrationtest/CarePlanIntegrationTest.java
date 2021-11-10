@@ -23,7 +23,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void createCarePlan_success() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest()
-                .cpr("0101010101")
+                .cpr("0202020202")
                 .planDefinitionId("plandefinition-1");
 
         // Act

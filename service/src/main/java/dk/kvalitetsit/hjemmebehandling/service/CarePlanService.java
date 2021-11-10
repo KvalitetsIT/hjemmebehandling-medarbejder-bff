@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.controller.CarePlanController;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -39,6 +40,14 @@ public class CarePlanService {
         Optional<PlanDefinition> planDefinition = fhirClient.lookupPlanDefinition(planDefinitionId);
         if(!planDefinition.isPresent()) {
             throw new IllegalStateException(String.format("Could not look up PlanDefinition by id %s!", planDefinitionId));
+        }
+
+        // Check that no existing careplan exists for the patient
+        List<CarePlan> existingCarePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getId());
+        for(CarePlan cp : existingCarePlans) {
+            if(isActive(cp)) {
+                throw new IllegalStateException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr));
+            }
         }
 
         // Based on that, build a CarePlan
@@ -290,5 +299,9 @@ public class CarePlanService {
         wrapper.setFrequency(frequenciesById.get(questionnaireId));
 
         return wrapper;
+    }
+
+    private boolean isActive(CarePlan carePlan) {
+        return carePlan.getPeriod().getEnd() == null;
     }
 }
