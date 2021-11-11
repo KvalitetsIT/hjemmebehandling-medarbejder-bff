@@ -98,6 +98,9 @@ public class FhirMapper {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         questionnaireModel.setId(questionnaire.getIdElement().toUnqualifiedVersionless ().toString());
+        questionnaireModel.setTitle(questionnaire.getTitle());
+        questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
+        questionnaireModel.setQuestions(questionnaire.getItem().stream().map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
 
         return questionnaireModel;
     }
@@ -218,21 +221,12 @@ public class FhirMapper {
     }
 
     private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
-        QuestionModel question = new QuestionModel();
-
         var item = getQuestionnaireItem(questionnaire, linkId);
         if(item == null) {
             throw new IllegalStateException(String.format("Malformed QuestionnaireResponse: Question for linkId %s not found in Questionnaire %s!", linkId, questionnaire.getId()));
         }
 
-        question.setText(item.getText());
-        question.setRequired(item.getRequired());
-        if(item.getAnswerOption() != null) {
-            question.setOptions(mapOptions(item.getAnswerOption()));
-        }
-        question.setQuestionType(mapQuestionType(item.getType()));
-
-        return question;
+        return mapQuestionnaireItem(item);
     }
 
     private Questionnaire.QuestionnaireItemComponent getQuestionnaireItem(Questionnaire questionnaire, String linkId) {
@@ -242,6 +236,19 @@ public class FhirMapper {
             }
         }
         return null;
+    }
+
+    private QuestionModel mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
+        QuestionModel question = new QuestionModel();
+
+        question.setText(item.getText());
+        question.setRequired(item.getRequired());
+        if(item.getAnswerOption() != null) {
+            question.setOptions(mapOptions(item.getAnswerOption()));
+        }
+        question.setQuestionType(mapQuestionType(item.getType()));
+
+        return question;
     }
 
     private List<String> mapOptions(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
