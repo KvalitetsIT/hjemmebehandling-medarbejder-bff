@@ -26,8 +26,8 @@ if [[ -z $CORRELATION_ID ]]; then
 fi
 
 if [[ -z $SERVICE_ID ]]; then
-  echo "Default SERVICE_ID = rim-medarbejder-bff"
-  export SERVICE_ID=rim-medarbejder-bff
+  echo "Default SERVICE_ID = hjemmebehandling-medarbejder-bff"
+  export SERVICE_ID=hjemmebehandling-medarbejder-bff
 fi
 
 JAR_FILE=web.jar
