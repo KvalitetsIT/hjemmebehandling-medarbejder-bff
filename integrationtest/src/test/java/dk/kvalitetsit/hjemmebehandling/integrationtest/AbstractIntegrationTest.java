@@ -13,7 +13,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import java.util.Collections;
 
 public abstract class AbstractIntegrationTest {
-    private static final Logger serviceLogger = LoggerFactory.getLogger("rim-medarbejder-bff");
+    private static final Logger serviceLogger = LoggerFactory.getLogger("hjemmebehandling-medarbejder-bff");
     private static final Logger hapiLogger = LoggerFactory.getLogger("hapi-server");
 
     private static String host = "localhost";
@@ -30,7 +30,7 @@ public abstract class AbstractIntegrationTest {
 
             VolumesFrom volumesFrom = new VolumesFrom(resourcesContainerName);
 
-            GenericContainer service = new GenericContainer("kvalitetsit/rim-medarbejder-bff:dev")
+            GenericContainer service = new GenericContainer("kvalitetsit/hjemmebehandling-medarbejder-bff:dev")
                     .withNetwork(network)
                     .withNetworkAliases("medarbejder-bff")
                     .withExposedPorts(8080)

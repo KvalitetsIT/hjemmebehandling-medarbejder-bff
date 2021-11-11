@@ -10,7 +10,7 @@ services:
      ports:
       - 8080:80
    helloservice:
-     image: kvalitetsit/rim-medarbejder-bff:latest
+     image: kvalitetsit/hjemmebehandling-medarbejder-bff:latest
      environment:
       - usercontext_header_name=X-Test-Auth
 
@@ -22,7 +22,7 @@ services:
       - userrole_monitor_values=monitorrole
       - userrole_provisioner_values=provisionerrole
    documenatation-and-test:
-     image: kvalitetsit/rim-medarbejder-bff-documentation:latest
+     image: kvalitetsit/hjemmebehandling-medarbejder-bff-documentation:latest
      environment:
       - BASE_URL=/test
      ports:
