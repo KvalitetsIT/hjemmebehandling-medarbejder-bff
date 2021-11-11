@@ -18,7 +18,7 @@ public class QuestionDto {
         this.text = text;
     }
 
-    public boolean isRequired() {
+    public boolean getRequired() {
         return required;
     }
 

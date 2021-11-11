@@ -6,6 +6,9 @@ import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.CarePlanDto;
 import org.openapitools.client.model.CreateCarePlanRequest;
+import org.openapitools.client.model.PatientDto;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,9 +25,11 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void createCarePlan_success() throws Exception {
         // Arrange
+        CarePlanDto carePlanDto = new CarePlanDto();
+        carePlanDto.setPatientDto(new PatientDto());
+        carePlanDto.getPatientDto().setCpr("0606060606");
         CreateCarePlanRequest request = new CreateCarePlanRequest()
-                .cpr("0202020202")
-                .planDefinitionId("plandefinition-1");
+                .carePlan(carePlanDto);
 
         // Act
         ApiResponse<Void> response = subject.createCarePlanWithHttpInfo(request);
@@ -41,6 +46,18 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         // Act
         ApiResponse<CarePlanDto> response = subject.getCarePlanByIdWithHttpInfo(carePlanId);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void getCarePlansByCpr_success() throws Exception {
+        // Arrange
+        String cpr = "0101010101";
+
+        // Act
+        ApiResponse<List<CarePlanDto>> response = subject.getCarePlansByCprWithHttpInfo(cpr);
 
         // Assert
         assertEquals(200, response.getStatusCode());

@@ -89,7 +89,7 @@ public class CarePlanController {
     public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
-            carePlanId = carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId());
+            carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
         }
         catch(ServiceException e) {
             logger.error("Error creating CarePlan", e);

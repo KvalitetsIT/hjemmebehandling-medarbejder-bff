@@ -35,126 +35,112 @@ public class CarePlanServiceTest {
     @Mock
     private FhirObjectBuilder fhirObjectBuilder;
 
-    @Test
-    public void createCarePlan_patientMissing_throwsException() {
-        // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
+    private static final String CPR_1 = "0101010101";
 
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.empty());
+    private static final String PATIENT_ID_1 = "patient-1";
+
+    @Test
+    public void createCarePlan_patientExists_patientIsNotCreated() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Patient patient = new Patient();
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
 
         // Act
+        String result = subject.createCarePlan(carePlanModel);
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+        Mockito.verify(fhirClient).saveCarePlan(carePlan);
     }
 
     @Test
-    public void createCarePlan_planDefinitionMissing_throwsException() {
+    public void createCarePlan_patientDoesNotExist_patientIsCreated() throws Exception {
         // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
 
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(new Patient()));
-        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.empty());
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Patient patient = new Patient();
+        Mockito.when(fhirMapper.mapPatientModel(carePlanModel.getPatient())).thenReturn(patient);
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
 
         // Act
+        String result = subject.createCarePlan(carePlanModel);
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+        Mockito.verify(fhirClient).saveCarePlan(carePlan, patient);
     }
 
     @Test
     public void createCarePlan_activePlanExists_throwsException() throws Exception {
         // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
 
         Patient patient = new Patient();
-        patient.setId("patient-1");
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(new PlanDefinition()));
+        patient.setId(PATIENT_ID_1);
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
 
         CarePlan existingCareplan = new CarePlan();
         existingCareplan.setPeriod(new Period());
         existingCareplan.getPeriod().setStart(Date.valueOf("2021-11-09"));
-        Mockito.when(fhirClient.lookupCarePlansByPatientId("patient-1")).thenReturn(List.of(existingCareplan));
+        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1)).thenReturn(List.of(existingCareplan));
 
         // Act
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
+        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test
     public void createCarePlan_inactivePlanExists_succeeds() throws Exception {
         // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
 
         Patient patient = new Patient();
-        patient.setId("patient-1");
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(new PlanDefinition()));
+        patient.setId(PATIENT_ID_1);
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
 
         CarePlan existingCareplan = new CarePlan();
         existingCareplan.setPeriod(new Period());
         existingCareplan.getPeriod().setStart(Date.valueOf("2021-11-09"));
         existingCareplan.getPeriod().setEnd(Date.valueOf("2021-11-10"));
-        Mockito.when(fhirClient.lookupCarePlansByPatientId("patient-1")).thenReturn(List.of(existingCareplan));
+        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1)).thenReturn(List.of(existingCareplan));
 
         Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
 
         // Act
-        String result = subject.createCarePlan(cpr, planDefinitionId);
+        String result = subject.createCarePlan(carePlanModel);
 
         // Assert
         assertEquals("1", result);
     }
 
     @Test
-    public void createCarePlan_persistingFails_throwsException() {
+    public void createCarePlan_persistingFails_throwsException() throws Exception {
         // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
-
-        Patient patient = new Patient();
-        PlanDefinition planDefinition = new PlanDefinition();
-
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(planDefinition));
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
 
         CarePlan carePlan = new CarePlan();
-        Mockito.when(fhirObjectBuilder.buildCarePlan(patient, planDefinition)).thenReturn(carePlan);
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Patient patient = new Patient();
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+
         Mockito.when(fhirClient.saveCarePlan(carePlan)).thenThrow(IllegalStateException.class);
 
         // Act
 
         // Assert
-        assertThrows(ServiceException.class, () -> subject.createCarePlan(cpr, planDefinitionId));
-    }
-
-    @Test
-    public void createCarePlan_persistingSucceeds_returnsId() throws Exception {
-        // Arrange
-        String cpr = "0101010101";
-        String planDefinitionId = "plandefinition-1";
-
-        Patient patient = new Patient();
-        PlanDefinition planDefinition = new PlanDefinition();
-
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupPlanDefinition(planDefinitionId)).thenReturn(Optional.of(planDefinition));
-
-        CarePlan carePlan = new CarePlan();
-        Mockito.when(fhirObjectBuilder.buildCarePlan(patient, planDefinition)).thenReturn(carePlan);
-        Mockito.when(fhirClient.saveCarePlan(carePlan)).thenReturn("careplan-1");
-
-        // Act
-        String result = subject.createCarePlan(cpr, planDefinitionId);
-
-        // Assert
-        assertEquals("careplan-1", result);
+        assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test
@@ -279,6 +265,15 @@ public class CarePlanServiceTest {
         assertEquals(carePlanModel, result.get());
         assertEquals(1, result.get().getQuestionnaires().size());
         assertEquals(questionnaireModel, result.get().getQuestionnaires().get(0).getQuestionnaire());
+    }
+
+    private CarePlanModel buildCarePlanModel(String cpr) {
+        CarePlanModel carePlanModel = new CarePlanModel();
+
+        carePlanModel.setPatient(new PatientModel());
+        carePlanModel.getPatient().setCpr(CPR_1);
+
+        return carePlanModel;
     }
 
     private void setupCarePlanForPatient(String carePlanId, String patientId) {

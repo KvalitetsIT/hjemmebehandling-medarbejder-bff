@@ -9,6 +9,7 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -282,6 +283,19 @@ public class FhirClientTest {
 
         // Assert
         assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
+    }
+
+    @Test
+    @Disabled
+    public void savePatientAndCarePlan_success() {
+        // Arrange
+        CarePlan carePlan = new CarePlan();
+
+        Patient patient = new Patient();
+        patient.setGender(Enumerations.AdministrativeGender.FEMALE);
+
+        // Act
+        String result = subject.saveCarePlan(carePlan, patient);
     }
 
     @Test

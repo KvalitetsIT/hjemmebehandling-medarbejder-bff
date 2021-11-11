@@ -44,8 +44,7 @@ public class CarePlanControllerTest {
     public void createCarePlan_success_201() {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
-        request.setCpr("0101010101");
-        request.setPlanDefinitionId("plandefinition-1");
+        request.setCarePlan(new CarePlanDto());
 
         // Act
         ResponseEntity<?> result = subject.createCarePlan(request);
@@ -58,10 +57,11 @@ public class CarePlanControllerTest {
     public void createCarePlan_success_setsLocationHeader() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
-        request.setCpr("0101010101");
-        request.setPlanDefinitionId("plandefinition-1");
+        request.setCarePlan(new CarePlanDto());
 
-        Mockito.when(carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId())).thenReturn("careplan-1");
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenReturn("careplan-1");
 
         String location = "http://localhost:8080/api/v1/careplan/careplan-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("careplan-1")).thenReturn(URI.create(location));
@@ -78,10 +78,12 @@ public class CarePlanControllerTest {
     public void createCarePlan_failure_500() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
-        request.setCpr("0101010101");
-        request.setPlanDefinitionId("plandefinition-1");
+        request.setCarePlan(new CarePlanDto());
 
-        Mockito.when(carePlanService.createCarePlan(request.getCpr(), request.getPlanDefinitionId())).thenThrow(ServiceException.class);
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
+
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(ServiceException.class);
 
         // Act
 

@@ -5,13 +5,36 @@ import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class DtoMapper {
+    public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
+        CarePlanModel carePlanModel = new CarePlanModel();
+
+        carePlanModel.setId(carePlanDto.getId());
+        carePlanModel.setTitle(carePlanDto.getTitle());
+        carePlanModel.setStatus(carePlanDto.getStatus());
+        carePlanModel.setCreated(carePlanDto.getCreated());
+        carePlanModel.setStartDate(carePlanDto.getStartDate());
+        carePlanModel.setEndDate(carePlanDto.getEndDate());
+        carePlanModel.setPatient(mapPatientDto(carePlanDto.getPatientDto()));
+        if(carePlanDto.getQuestionnaires() != null) {
+            carePlanModel.setQuestionnaires(carePlanDto.getQuestionnaires().stream().map(q -> mapQuestionnaireWrapperDto(q)).collect(Collectors.toList()));
+        }
+        if(carePlanDto.getPlanDefinitions() != null) {
+            carePlanModel.setPlanDefinitions(carePlanDto.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionDto(pd)).collect(Collectors.toList()));
+        }
+
+        return carePlanModel;
+    }
+
     public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
 
@@ -68,6 +91,20 @@ public class DtoMapper {
         return patientDto;
     }
 
+    public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+
+        planDefinitionModel.setId(planDefinitionDto.getId());
+        planDefinitionModel.setName(planDefinitionDto.getName());
+        planDefinitionModel.setTitle(planDefinitionDto.getTitle());
+        // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
+        if(planDefinitionDto.getQuestionnaires() != null) {
+            planDefinitionModel.setQuestionnaires(planDefinitionDto.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperDto(qw)).collect(Collectors.toList()));
+        }
+
+        return planDefinitionModel;
+    }
+
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
 
@@ -106,6 +143,19 @@ public class DtoMapper {
         personDto.getPatientContactDetails().setCity(person.getAddress().getCity());
 
         return personDto;
+    }
+
+    public QuestionnaireModel mapQuestionnaireDto(QuestionnaireDto questionnaireDto) {
+        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+
+        questionnaireModel.setId(questionnaireDto.getId());
+        questionnaireModel.setTitle(questionnaireDto.getTitle());
+        questionnaireModel.setStatus(questionnaireDto.getStatus());
+        if(questionnaireDto.getQuestions() != null) {
+            questionnaireModel.setQuestions(questionnaireDto.getQuestions().stream().map(q -> mapQuestionDto(q)).collect(Collectors.toList()));
+        }
+
+        return questionnaireModel;
     }
 
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
@@ -171,6 +221,17 @@ public class DtoMapper {
         return questionAnswerPairDto;
     }
 
+    private QuestionModel mapQuestionDto(QuestionDto questionDto) {
+        QuestionModel questionModel = new QuestionModel();
+
+        questionModel.setText(questionDto.getText());
+        questionModel.setRequired(questionDto.getRequired());
+        questionModel.setOptions(questionDto.getOptions());
+        questionModel.setQuestionType(questionDto.getQuestionType());
+
+        return questionModel;
+    }
+
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
 
@@ -189,6 +250,15 @@ public class DtoMapper {
         answerDto.setAnswerType(answerModel.getAnswerType());
 
         return answerDto;
+    }
+
+    private QuestionnaireWrapperModel mapQuestionnaireWrapperDto(QuestionnaireWrapperDto questionnaireWrapper) {
+        QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
+
+        questionnaireWrapperModel.setQuestionnaire(mapQuestionnaireDto(questionnaireWrapper.getQuestionnaire()));
+        questionnaireWrapperModel.setFrequency(mapFrequencyDto(questionnaireWrapper.getFrequency()));
+
+        return questionnaireWrapperModel;
     }
 
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {

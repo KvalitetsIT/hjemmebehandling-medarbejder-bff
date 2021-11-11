@@ -29,33 +29,33 @@ public class CarePlanService {
         this.fhirObjectBuilder = fhirObjectBuilder;
     }
 
-    public String createCarePlan(String cpr, String planDefinitionId) throws ServiceException {
-        // Look up the Patient identified by the cpr.
+    public String createCarePlan(CarePlanModel carePlan) throws ServiceException {
+        // Try to look up the patient in the careplan
+        String cpr = carePlan.getPatient().getCpr();
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up Patient by cpr %s!", cpr));
-        }
 
-        // Look up the PlanDefinition based on the planDefinitionId
-        Optional<PlanDefinition> planDefinition = fhirClient.lookupPlanDefinition(planDefinitionId);
-        if(!planDefinition.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up PlanDefinition by id %s!", planDefinitionId));
-        }
-
-        // Check that no existing careplan exists for the patient
-        List<CarePlan> existingCarePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getId());
-        for(CarePlan cp : existingCarePlans) {
-            if(isActive(cp)) {
-                throw new IllegalStateException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr));
+        // TODO: More validations should be performed - possibly?
+        // If the patient did exist, check that no existing careplan exists for the patient
+        if(patient.isPresent()) {
+            List<CarePlan> existingCarePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getIdElement().toUnqualifiedVersionless().getValue());
+            for(CarePlan cp : existingCarePlans) {
+                if(isActive(cp)) {
+                    throw new IllegalStateException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr));
+                }
             }
+
+            // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
+            carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
         }
 
-        // Based on that, build a CarePlan
-        CarePlan carePlan = fhirObjectBuilder.buildCarePlan(patient.get(), planDefinition.get());
-
-        // Save the carePlan, return the id.
         try {
-            return fhirClient.saveCarePlan(carePlan);
+            // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
+            if(!patient.isPresent()) {
+                return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
+            }
+            else {
+                return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
+            }
         }
         catch(Exception e) {
             throw new ServiceException("Error saving CarePlan", e);

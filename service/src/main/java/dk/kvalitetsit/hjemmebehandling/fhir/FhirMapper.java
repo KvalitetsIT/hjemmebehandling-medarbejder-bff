@@ -5,15 +5,55 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Enumeration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class FhirMapper {
+    @Autowired
+    private DateProvider dateProvider;
+
+    public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
+        CarePlan carePlan = new CarePlan();
+
+        carePlan.setId(carePlanModel.getId());
+        carePlan.setTitle(carePlanModel.getTitle());
+        carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+        carePlan.setCreated(dateProvider.now());
+        carePlan.setPeriod(new Period());
+        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.now());
+
+        // Set the subject
+        if(carePlanModel.getPatient() != null) {
+            carePlan.setSubject(new Reference(carePlanModel.getPatient().getId()));
+        }
+
+        // Map questionnaires to activities
+        if(carePlanModel.getQuestionnaires() != null) {
+            carePlan.setActivity(carePlanModel.getQuestionnaires()
+                    .stream()
+                    .map(q -> buildCarePlanActivity(q))
+                    .collect(Collectors.toList()));
+        }
+
+        if(carePlanModel.getPlanDefinitions() != null) {
+            // Add references to planDefinitions
+            carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
+                    .stream()
+                    .map(pd -> new CanonicalType(pd.getId()))
+                    .collect(Collectors.toList()));
+        }
+
+        return carePlan;
+    }
+
     public CarePlanModel mapCarePlan(CarePlan carePlan) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
@@ -52,6 +92,7 @@ public class FhirMapper {
     public PatientModel mapPatient(Patient patient) {
         PatientModel patientModel = new PatientModel();
 
+        patientModel.setId(patient.getIdElement().toUnqualifiedVersionless().getValue());
         patientModel.setCpr(extractCpr(patient));
         patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setGivenName(extractGivenNames(patient));
@@ -300,6 +341,31 @@ public class FhirMapper {
             default:
                 throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", type));
         }
+    }
+
+    private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
+        CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId());
+        Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
+
+        return buildActivity(instantiatesCanonical, timing);
+    }
+
+    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing) {
+        CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
+
+        activity.setDetail(buildDetail(instantiatesCanonical, timing));
+
+        return activity;
+    }
+
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing) {
+        CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
+
+        detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
+        detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
+        detail.setScheduled(timing);
+
+        return detail;
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {

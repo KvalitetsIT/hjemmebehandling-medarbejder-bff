@@ -74,6 +74,55 @@ public class FhirClient {
         return save(carePlan);
     }
 
+    public String saveCarePlan(CarePlan carePlan, Patient patient) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+        //IGenericClient client = FhirContext.forR4().newRestfulGenericClient("http://localhost:8082/fhir");
+
+        // Build a transaction bundle.
+        var bundle = new Bundle();
+        bundle.setType(Bundle.BundleType.TRANSACTION);
+
+        // Build the CarePlan entry.
+        // Alter the subject reference to refer to the Patient entry in the bundle (the Patient does not exist yet).
+        carePlan.getSubject().setReference("Patient/patient-entry");
+
+        var carePlanEntry = new Bundle.BundleEntryComponent();
+        carePlanEntry.setFullUrl("careplan-entry");
+        carePlanEntry.setRequest(new Bundle.BundleEntryRequestComponent());
+        carePlanEntry.getRequest().setMethod(Bundle.HTTPVerb.POST);
+        carePlanEntry.setResource(carePlan);
+
+        bundle.addEntry(carePlanEntry);
+
+        // Build the Patient entry.
+        var patientEntry = new Bundle.BundleEntryComponent();
+        patientEntry.setFullUrl("patient-entry");
+        patientEntry.setRequest(new Bundle.BundleEntryRequestComponent());
+        patientEntry.getRequest().setMethod(Bundle.HTTPVerb.POST);
+        patientEntry.setResource(patient);
+
+        bundle.addEntry(patientEntry);
+
+        // Execute the transaction
+        var responseBundle = client.transaction().withBundle(bundle).execute();
+
+        // Locate the CarePlan entry in the response
+        var id = "";
+        for(var responseEntry : responseBundle.getEntry()) {
+            var status = responseEntry.getResponse().getStatus();
+            var location = responseEntry.getResponse().getLocation();
+            if(!status.equals("201 Created")) {
+                throw new IllegalStateException(String.format("Creating CarePlan with Patient failed. Received unwanted http statuscode: %s", status));
+            }
+            if(location.startsWith("CarePlan")) {
+                id = location.replaceFirst("/_history.*$", "");
+            }
+        }
+
+        // TODO - extract the
+        return id;
+    }
+
     public String savePatient(Patient patient) {
         return save(patient);
     }
