@@ -120,7 +120,7 @@ public class CarePlanService {
 
         // Look up the plan definitions and include them in the result
         Map<String, List<PlanDefinitionModel>> planDefinitions = getPlanDefinitionsByCarePlanId(List.of(carePlan.get()));
-        carePlanModel.setPlanDefinitions(planDefinitions.get(carePlan.get().getId()));
+        carePlanModel.setPlanDefinitions(planDefinitions.get(carePlan.get().getIdElement().toUnqualifiedVersionless().getValue()));
 
         return Optional.of(carePlanModel);
     }
