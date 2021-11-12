@@ -53,11 +53,10 @@ public class FhirClient {
         return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponses(String cpr, List<String> questionnaireIds) {
+    public List<QuestionnaireResponse> lookupQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
-        var subjectCriterion = QuestionnaireResponse.SUBJECT.hasChainedProperty("Patient", Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
-
-        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, subjectCriterion);
+        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
+        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
@@ -119,7 +118,6 @@ public class FhirClient {
             }
         }
 
-        // TODO - extract the
         return id;
     }
 

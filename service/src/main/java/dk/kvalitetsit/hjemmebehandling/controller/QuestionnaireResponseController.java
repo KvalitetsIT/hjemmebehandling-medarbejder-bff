@@ -35,14 +35,14 @@ public class QuestionnaireResponseController {
         throw new UnsupportedOperationException();
     }
 
-    @GetMapping(value = "/v1/questionnaireresponse/{cpr}")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCpr(@PathVariable("cpr") String cpr, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
-        if(cpr == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
+    @GetMapping(value = "/v1/questionnaireresponse/{carePlanId}")
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCarePlanId(@PathVariable("carePlanId") String carePlanId, @RequestParam("questionnaireIds") List<String> questionnaireIds) {
+        if(carePlanId == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(cpr, questionnaireIds);
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
             if(questionnaireResponses.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }

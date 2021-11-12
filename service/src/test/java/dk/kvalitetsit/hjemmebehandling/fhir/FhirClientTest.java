@@ -190,9 +190,9 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupQuestionnaireResponses_patientAndQuestionnairesPresent_success() {
+    public void lookupQuestionnaireResponses_carePlanAndQuestionnairesPresent_success() {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         String questionnaireId = "questionnaire-1";
 
         QuestionnaireResponse questionnaireResponse1 = new QuestionnaireResponse();
@@ -200,7 +200,7 @@ public class FhirClientTest {
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse1, questionnaireResponse2);
 
         // Act
-        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(cpr, List.of(questionnaireId));
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
 
         // Assert
         assertEquals(2, result.size());

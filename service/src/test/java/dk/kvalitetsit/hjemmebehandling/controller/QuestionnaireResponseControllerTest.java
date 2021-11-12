@@ -35,11 +35,11 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByCpr_cprParameterMissing_400() {
         // Arrange
-        String cpr = null;
+        String carePlanId = null;
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCpr(cpr, questionnaireIds);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
@@ -48,11 +48,11 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByCpr_questionnaireIdsParameterMissing_400() {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         List<String> questionnaireIds = null;
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCpr(cpr, questionnaireIds);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
@@ -61,7 +61,7 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByCpr_responsesPresent_200() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
@@ -69,12 +69,12 @@ public class QuestionnaireResponseControllerTest {
         QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
         QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(cpr, questionnaireIds)).thenReturn(List.of(responseModel1, responseModel2));
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(responseModel1, responseModel2));
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCpr(cpr, questionnaireIds);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -86,13 +86,13 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByCpr_responsesMissing_204() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(cpr, questionnaireIds)).thenReturn(List.of());
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCpr(cpr, questionnaireIds);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
@@ -101,13 +101,13 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByCpr_failureToFetch_500() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(cpr, questionnaireIds)).thenThrow(ServiceException.class);
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(ServiceException.class);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCpr(cpr, questionnaireIds);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

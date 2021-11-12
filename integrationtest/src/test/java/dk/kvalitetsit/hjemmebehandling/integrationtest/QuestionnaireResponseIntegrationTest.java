@@ -22,13 +22,13 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
     }
 
     @Test
-    public void getQuestionnaireResponsesByCpr_success() throws Exception {
+    public void getQuestionnaireResponsesByCarePlanId_success() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("Questionnaire/questionnaire-1");
 
         // Act
-        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCprWithHttpInfo(cpr, questionnaireIds);
+        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(200, response.getStatusCode());

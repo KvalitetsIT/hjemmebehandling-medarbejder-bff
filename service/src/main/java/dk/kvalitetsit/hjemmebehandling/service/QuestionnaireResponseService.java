@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
@@ -35,8 +36,8 @@ public class QuestionnaireResponseService {
         this.priorityComparator = priorityComparator;
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String cpr, List<String> questionnaireIds) throws ServiceException {
-        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponses(cpr, questionnaireIds);
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException {
+        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         if(responses.isEmpty()) {
             return List.of();
         }
@@ -44,13 +45,14 @@ public class QuestionnaireResponseService {
         // Look up questionnaires
         Map<String, Questionnaire> questionnairesById = getQuestionnairesById(questionnaireIds);
 
-        // Look up patient
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up patient for cpr %s!", cpr));
-        }
+        // Look up careplan
+        CarePlan carePlan = fhirClient.lookupCarePlanById(carePlanId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up CarePlan for id %s!", carePlanId)));
 
-        return constructResult(responses, questionnairesById, Map.of(patient.get().getIdElement().toUnqualifiedVersionless().toString(), patient.get()));
+        // Extract the patientId, get the patient
+        String patientId = carePlan.getSubject().getReference();
+        Patient patient = fhirClient.lookupPatientById(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for id %s!", patientId)));
+
+        return constructResult(responses, questionnairesById, Map.of(patient.getIdElement().toUnqualifiedVersionless().toString(), patient));
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {

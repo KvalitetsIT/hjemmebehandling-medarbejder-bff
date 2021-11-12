@@ -8,6 +8,9 @@
     <extension url="http://hjemmebehandling.rm.dk/triaging-category">
         <valueString value="GREEN"/>
     </extension>
+    <basedOn>
+        <reference value="CarePlan/careplan-1"/>
+    </basedOn>
     <questionnaire value="Questionnaire/questionnaire-1"/>
     <subject>
         <reference value="Patient/patient-1"/>

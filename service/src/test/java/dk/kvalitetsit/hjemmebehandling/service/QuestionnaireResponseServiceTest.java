@@ -8,10 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePrio
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
-import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -43,6 +40,7 @@ public class QuestionnaireResponseServiceTest {
     @Mock
     private QuestionnaireResponsePriorityComparator priorityComparator;
 
+    private static final String CAREPLAN_ID_1 = "careplan-1";
     private static final String PATIENT_ID = "patient-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "questionnaire-2";
@@ -51,23 +49,28 @@ public class QuestionnaireResponseServiceTest {
     @Test
     public void getQuestionnaireResponses_responsesPresent_returnsResponses() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = CAREPLAN_ID_1;
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(cpr, questionnaireIds)).thenReturn(List.of(response));
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
 
         setupQuestionnaires(QUESTIONNAIRE_ID_1);
 
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId(CAREPLAN_ID_1);
+        carePlan.setSubject(new Reference(PATIENT_ID));
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+
         Patient patient = new Patient();
         patient.setId(PATIENT_ID);
-        Mockito.when(fhirClient.lookupPatientByCpr(cpr)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPatientById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
         QuestionnaireResponseModel responseModel = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(responseModel);
 
         // Act
-        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(cpr, questionnaireIds);
+        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(1, result.size());
@@ -77,16 +80,74 @@ public class QuestionnaireResponseServiceTest {
     @Test
     public void getQuestionnaireResponses_responsesMissing_returnsEmptyList() throws Exception {
         // Arrange
-        String cpr = "0101010101";
+        String carePlanId = CAREPLAN_ID_1;
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(cpr, questionnaireIds)).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of());
 
         // Act
-        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(cpr, questionnaireIds);
+        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
 
         // Assert
         assertEquals(0, result.size());
+    }
+
+    @Test
+    public void getQuestionnaireResponses_questionnairesMissing_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = CAREPLAN_ID_1;
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
+    }
+
+    @Test
+    public void getQuestionnaireResponses_carePlanMissing_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = CAREPLAN_ID_1;
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+
+        setupQuestionnaires(QUESTIONNAIRE_ID_1);
+
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.empty());
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
+    }
+
+    @Test
+    public void getQuestionnaireResponses_patientMissing_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = CAREPLAN_ID_1;
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+
+        setupQuestionnaires(QUESTIONNAIRE_ID_1);
+
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId(CAREPLAN_ID_1);
+        carePlan.setSubject(new Reference(PATIENT_ID));
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+
+        Mockito.when(fhirClient.lookupPatientById(PATIENT_ID)).thenReturn(Optional.empty());
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
     }
 
     @Test
