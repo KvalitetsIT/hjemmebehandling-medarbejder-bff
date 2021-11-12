@@ -76,6 +76,12 @@ public class DtoMapper {
         if(patient.getPatientContactDetails() != null) {
             patientModel.setPatientContactDetails(mapContactDetailsDto(patient.getPatientContactDetails()));
         }
+        if(patient.getPrimaryRelativeContactDetails() != null) {
+            patientModel.setPrimaryRelativeContactDetails(mapContactDetailsDto(patient.getPrimaryRelativeContactDetails()));
+        }
+        if(patient.getAdditionalRelativeContactDetails() != null) {
+            patientModel.setAdditionalRelativeContactDetails(patient.getAdditionalRelativeContactDetails().stream().map(cd -> mapContactDetailsDto(cd)).collect(Collectors.toList()));
+        }
 
         return patientModel;
     }

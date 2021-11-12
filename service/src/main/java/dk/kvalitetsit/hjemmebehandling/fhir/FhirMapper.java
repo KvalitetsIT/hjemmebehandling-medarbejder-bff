@@ -84,6 +84,12 @@ public class FhirMapper {
     public Patient mapPatientModel(PatientModel patientModel) {
         Patient patient = new Patient();
 
+        patient.setId(patientModel.getId());
+
+        var name = new HumanName();
+        name.addGiven(patientModel.getGivenName());
+        name.setFamily(patientModel.getFamilyName());
+        patient.addName(name);
         patient.getIdentifier().add(makeCprIdentifier(patientModel.getCpr()));
 
         return patient;

@@ -1,11 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.api.ContactDetailsDto;
+
+import java.util.List;
+
 public class PatientModel {
     private String id;
     private String givenName;
     private String familyName;
     private String cpr;
     private ContactDetailsModel patientContactDetails;
+    private ContactDetailsModel primaryRelativeContactDetails;
+    private List<ContactDetailsModel> additionalRelativeContactDetails;
 
     public String getId() {
         return id;
@@ -45,5 +51,21 @@ public class PatientModel {
 
     public void setPatientContactDetails(ContactDetailsModel patientContactDetails) {
         this.patientContactDetails = patientContactDetails;
+    }
+
+    public ContactDetailsModel getPrimaryRelativeContactDetails() {
+        return primaryRelativeContactDetails;
+    }
+
+    public void setPrimaryRelativeContactDetails(ContactDetailsModel primaryRelativeContactDetails) {
+        this.primaryRelativeContactDetails = primaryRelativeContactDetails;
+    }
+
+    public List<ContactDetailsModel> getAdditionalRelativeContactDetails() {
+        return additionalRelativeContactDetails;
+    }
+
+    public void setAdditionalRelativeContactDetails(List<ContactDetailsModel> additionalRelativeContactDetails) {
+        this.additionalRelativeContactDetails = additionalRelativeContactDetails;
     }
 }
