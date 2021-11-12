@@ -1,0 +1,11 @@
+[
+  {
+    "httpRequest": {
+      "path": "/Patient/.*",
+      "method": "GET"
+    },
+    "httpResponse": {
+      "body": {"name": { "family": "Dent", "given": ["Arthur"] }, "address": { "line": "Fiskergade 66, 1.", "city": "Aarhus", "postalCode": "8000", "country": "DK" }, "identifier": { "id": "0101010101" }}
+    }
+  }
+]

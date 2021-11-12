@@ -6,6 +6,8 @@ services:
       - 8080:8080
       - 5005:5005
      environment:
+      - cpr_url=http://person-service:1081/Patient/
+
       - allowed_origins=http://localhost:3000
 
       - usercontext_header_name=X-Test-Auth
@@ -38,3 +40,13 @@ services:
      volumes:
       - ./hapi-server-initializer:/hapi-server-initializer
      command: "/hapi-server-initializer/init.sh"
+
+   person-service:
+     image: mockserver/mockserver
+     command: -logLevel DEBUG -serverPort 1081
+     environment:
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/initializerJson.json
+     ports:
+      - 1081:1081
+     volumes:
+      - ./person-service/initializerJson.json:/config/initializerJson.json
