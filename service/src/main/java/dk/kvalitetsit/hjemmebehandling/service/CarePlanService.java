@@ -186,7 +186,7 @@ public class CarePlanService {
         // Build the result
         return carePlans
                 .stream()
-                .collect(Collectors.toMap(cp -> cp.getId(), cp -> getQuestionnairesForCarePlan(cp, questionnaires)));
+                .collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> getQuestionnairesForCarePlan(cp, questionnaires)));
     }
 
     private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
@@ -235,7 +235,7 @@ public class CarePlanService {
         // Build the result
         return carePlans
                 .stream()
-                .collect(Collectors.toMap(cp -> cp.getId(), cp -> getPlanDefinitionsForCarePlan(cp, planDefinitions)));
+                .collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> getPlanDefinitionsForCarePlan(cp, planDefinitions)));
     }
 
     private List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {

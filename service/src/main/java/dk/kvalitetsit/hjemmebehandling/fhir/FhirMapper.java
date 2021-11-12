@@ -57,7 +57,7 @@ public class FhirMapper {
     public CarePlanModel mapCarePlan(CarePlan carePlan) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
-        carePlanModel.setId(carePlan.getId());
+        carePlanModel.setId(carePlan.getIdElement().toUnqualifiedVersionless().getValue());
         carePlanModel.setTitle(carePlan.getTitle());
         //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
         carePlanModel.setCreated(carePlan.getCreated().toInstant());
