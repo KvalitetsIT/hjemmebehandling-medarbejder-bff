@@ -47,7 +47,7 @@ public class FhirMapper {
             // Add references to planDefinitions
             carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
                     .stream()
-                    .map(pd -> new CanonicalType(pd.getId()))
+                    .map(pd -> new CanonicalType(FhirUtils.qualifyId(pd.getId(), ResourceType.PlanDefinition)))
                     .collect(Collectors.toList()));
         }
 
@@ -350,7 +350,7 @@ public class FhirMapper {
     }
 
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId());
+        CanonicalType instantiatesCanonical = new CanonicalType(FhirUtils.qualifyId(questionnaireWrapperModel.getQuestionnaire().getId(), ResourceType.Questionnaire));
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
 
         return buildActivity(instantiatesCanonical, timing);

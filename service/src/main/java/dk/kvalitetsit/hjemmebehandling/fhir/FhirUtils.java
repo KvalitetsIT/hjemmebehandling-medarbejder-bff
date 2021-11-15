@@ -21,14 +21,22 @@ public class FhirUtils {
     }
 
     public static String qualifyId(String id, ResourceType qualifier) {
+        if(isQualifiedId(id, qualifier)) {
+            return id;
+        }
         if(!isPlainId(id)) {
             throw new IllegalArgumentException(String.format("Cannot qualify id: %s", id));
         }
-        return qualifier.toString() + '/' + id;
+        return qualifier.toString() + "/" + id;
     }
 
     private static boolean isPlainId(String id) {
         Pattern p = Pattern.compile("^[a-z0-9\\-]+$");
         return p.matcher(id).matches();
+    }
+
+    private static boolean isQualifiedId(String id, ResourceType qualifier) {
+        String prefix = qualifier.toString() + "/";
+        return id.startsWith(prefix) && isPlainId(id.substring(prefix.length()));
     }
 }
