@@ -33,21 +33,21 @@ function create {
   fi
 }
 
-delete 'SearchParameter/searchparameter-examination-status'
-
-delete 'QuestionnaireResponse/questionnaireresponse-3'
-delete 'QuestionnaireResponse/questionnaireresponse-2'
-delete 'QuestionnaireResponse/questionnaireresponse-1'
-
-delete 'CarePlan/careplan-1'
-
-delete 'PlanDefinition/plandefinition-1'
-
-delete 'Questionnaire/questionnaire-2'
-delete 'Questionnaire/questionnaire-1'
-
-delete 'Patient/patient-2'
-delete 'Patient/patient-1'
+#delete 'SearchParameter/searchparameter-examination-status'
+#
+#delete 'QuestionnaireResponse/questionnaireresponse-3'
+#delete 'QuestionnaireResponse/questionnaireresponse-2'
+#delete 'QuestionnaireResponse/questionnaireresponse-1'
+#
+#delete 'CarePlan/careplan-1'
+#
+#delete 'PlanDefinition/plandefinition-1'
+#
+#delete 'Questionnaire/questionnaire-2'
+#delete 'Questionnaire/questionnaire-1'
+#
+#delete 'Patient/patient-2'
+#delete 'Patient/patient-1'
 
 create 'patient-1.xml' 'Patient/patient-1'
 create 'patient-2.xml' 'Patient/patient-2'
