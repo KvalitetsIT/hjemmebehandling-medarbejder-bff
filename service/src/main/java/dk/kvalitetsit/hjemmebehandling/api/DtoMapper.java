@@ -196,7 +196,6 @@ public class DtoMapper {
         ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
 
         contactDetailsModel.setCountry(contactDetails.getCountry());
-        contactDetailsModel.setEmailAddress(contactDetails.getEmailAddress());
         contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
         contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
         contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
@@ -209,7 +208,6 @@ public class DtoMapper {
         ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
 
         contactDetailsDto.setCountry(contactDetails.getCountry());
-        contactDetailsDto.setEmailAddress(contactDetails.getEmailAddress());
         contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
         contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
         contactDetailsDto.setPostalCode(contactDetails.getPostalCode());

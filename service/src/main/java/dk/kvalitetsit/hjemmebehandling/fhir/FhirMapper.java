@@ -238,7 +238,6 @@ public class FhirMapper {
         ContactDetailsModel contactDetails = new ContactDetailsModel();
 
         contactDetails.setPrimaryPhone(extractPrimaryPhone(patient));
-        contactDetails.setEmailAddress(extractEmailAddress(patient));
 
         return contactDetails;
     }
@@ -249,18 +248,6 @@ public class FhirMapper {
         }
         for(ContactPoint cp : patient.getTelecom()) {
             if(!cp.getValue().contains("@")) {
-                return cp.getValue();
-            }
-        }
-        return null;
-    }
-
-    private String extractEmailAddress(Patient patient) {
-        if(patient.getTelecom() == null || patient.getTelecom().isEmpty()) {
-            return null;
-        }
-        for(ContactPoint cp : patient.getTelecom()) {
-            if(cp.getValue().contains("@")) {
                 return cp.getValue();
             }
         }

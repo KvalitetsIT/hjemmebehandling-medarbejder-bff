@@ -7,7 +7,6 @@ public class ContactDetailsDto {
     private String city;
     private String primaryPhone;
     private String secondaryPhone;
-    private String emailAddress;
 
     public String getStreet() {
         return street;
@@ -47,14 +46,6 @@ public class ContactDetailsDto {
 
     public void setSecondaryPhone(String secondaryPhone) {
         this.secondaryPhone = secondaryPhone;
-    }
-
-    public String getEmailAddress() {
-        return emailAddress;
-    }
-
-    public void setEmailAddress(String emailAddress) {
-        this.emailAddress = emailAddress;
     }
 
 	public String getCity() {
