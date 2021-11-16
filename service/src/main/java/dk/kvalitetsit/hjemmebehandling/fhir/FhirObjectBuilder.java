@@ -17,40 +17,6 @@ public class FhirObjectBuilder {
     @Autowired
     private DateProvider dateProvider;
 
-    public CarePlan buildCarePlan(Patient patient, PlanDefinition planDefinition) {
-        CarePlan carePlan = new CarePlan();
-
-        carePlan.getInstantiatesCanonical().add(new CanonicalType(planDefinition.getIdElement().toUnqualifiedVersionless().getValue()));
-
-        carePlan.setTitle(planDefinition.getTitle());
-
-        Reference subjectReference = new Reference(patient.getId());
-        carePlan.setSubject(subjectReference);
-
-        Period period = new Period();
-        period.setStart(dateProvider.now());
-        carePlan.setPeriod(period);
-
-        carePlan.setCreated(dateProvider.now());
-
-        // TODO - figure out how to set the author-field (possibly look up Practitioner based on token?).
-
-        // TODO - figure out how to determine and set CareTeam (again, possibly based on the token?)
-
-        // Each action on the PlanDefinition is mapped to an activity on the CarePlan
-        for(PlanDefinition.PlanDefinitionActionComponent action : planDefinition.getAction()) {
-            // Figure out whether this action denotes a Questionnaire or not.
-            if(action.getDefinition() == null || !action.getDefinition().primitiveValue().contains("Questionnaire")) {
-                // Not a Questionnaire reference.
-                continue;
-            }
-
-            carePlan.addActivity(buildActivity(action));
-        }
-
-        return carePlan;
-    }
-
     public void setQuestionnairesForCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, Map<String, Timing> frequencies) {
         // Clear existing Activity list
         carePlan.getActivity().clear();
@@ -90,7 +56,7 @@ public class FhirObjectBuilder {
     }
 
     private CanonicalType getInstantiatesCanonical(Questionnaire questionnaire) {
-        return new CanonicalType(questionnaire.getIdElement().toVersionless().getValue());
+        return new CanonicalType(FhirUtils.qualifyId(questionnaire.getIdElement().toVersionless().getValue(), ResourceType.Questionnaire));
     }
 
     private Timing getTiming(Questionnaire questionnaire, Map<String, Timing> frequencies) {
