@@ -130,14 +130,7 @@ public class DtoMapper {
 
         personDto.setCpr(person.getIdentifier().getId());
         personDto.setFamilyName(person.getName().getFamily());
-        for (Iterator<String> iterator = person.getName().getGiven().iterator(); iterator.hasNext();) {
-        	String givenName = iterator.next();
-        	if(personDto.getGivenName()!=null) {
-        		personDto.setGivenName(givenName);
-        	} else {
-        		personDto.setGivenName(personDto.getGivenName()+" "+givenName);
-        	}
-		}
+        personDto.setGivenName(String.join(" ", person.getName().getGiven()));
         personDto.setBirthDate(person.getBirthDate());
         personDto.setDeceasedBoolean(person.isDeceasedBoolean());
         personDto.setGender(person.getGender());
