@@ -286,16 +286,49 @@ public class FhirClientTest {
     }
 
     @Test
-    @Disabled
-    public void savePatientAndCarePlan_success() {
+    public void saveCarePlanWithPatient_returnsCarePlanId() {
         // Arrange
         CarePlan carePlan = new CarePlan();
-
         Patient patient = new Patient();
-        patient.setGender(Enumerations.AdministrativeGender.FEMALE);
+
+        Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
+        setupTransactionClient(responseBundle);
 
         // Act
         String result = subject.saveCarePlan(carePlan, patient);
+
+        // Assert
+        assertEquals("CarePlan/2", result);
+    }
+
+    @Test
+    public void saveCarePlanWithPatient_carePlanLocationMissing_throwsException() {
+        // Arrange
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
+
+        Bundle responseBundle = buildResponseBundle("201", "Questionnaire/4", "201", "Patient/3");
+        setupTransactionClient(responseBundle);
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
+    }
+
+    @Test
+    public void saveCarePlanWithPatient_unwantedHttpStatus_throwsException() {
+        // Arrange
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
+
+        Bundle responseBundle = buildResponseBundle("400", null, "400", null);
+        setupTransactionClient(responseBundle);
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
     }
 
     @Test
@@ -417,6 +450,30 @@ public class FhirClientTest {
         else {
             outcome.setCreated(false);
         }
+
+        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
+    }
+
+    private Bundle buildResponseBundle(String carePlanStatus, String careplanLocation, String patientStatus, String patientLocaton) {
+        Bundle responseBundle = new Bundle();
+
+        var carePlanEntry = responseBundle.addEntry();
+        carePlanEntry.setResponse(new Bundle.BundleEntryResponseComponent());
+        carePlanEntry.getResponse().setStatus(carePlanStatus);
+        carePlanEntry.getResponse().setLocation(careplanLocation);
+
+        var patientEntry = responseBundle.addEntry();
+        patientEntry.setResponse(new Bundle.BundleEntryResponseComponent());
+        patientEntry.getResponse().setStatus(patientStatus);
+        patientEntry.getResponse().setLocation(patientLocaton);
+
+        return responseBundle;
+    }
+
+    private void setupTransactionClient(Bundle responseBundle) {
+        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
+
+        Mockito.when(client.transaction().withBundle(Mockito.any(Bundle.class)).execute()).thenReturn(responseBundle);
 
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }

@@ -74,51 +74,10 @@ public class FhirClient {
     }
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-        //IGenericClient client = FhirContext.forR4().newRestfulGenericClient("http://localhost:8082/fhir");
-
         // Build a transaction bundle.
-        var bundle = new Bundle();
-        bundle.setType(Bundle.BundleType.TRANSACTION);
+        var bundle = new BundleBuilder().buildCarePlanBundle(carePlan, patient);
 
-        // Build the CarePlan entry.
-        // Alter the subject reference to refer to the Patient entry in the bundle (the Patient does not exist yet).
-        carePlan.getSubject().setReference("Patient/patient-entry");
-
-        var carePlanEntry = new Bundle.BundleEntryComponent();
-        carePlanEntry.setFullUrl("careplan-entry");
-        carePlanEntry.setRequest(new Bundle.BundleEntryRequestComponent());
-        carePlanEntry.getRequest().setMethod(Bundle.HTTPVerb.POST);
-        carePlanEntry.setResource(carePlan);
-
-        bundle.addEntry(carePlanEntry);
-
-        // Build the Patient entry.
-        var patientEntry = new Bundle.BundleEntryComponent();
-        patientEntry.setFullUrl("patient-entry");
-        patientEntry.setRequest(new Bundle.BundleEntryRequestComponent());
-        patientEntry.getRequest().setMethod(Bundle.HTTPVerb.POST);
-        patientEntry.setResource(patient);
-
-        bundle.addEntry(patientEntry);
-
-        // Execute the transaction
-        var responseBundle = client.transaction().withBundle(bundle).execute();
-
-        // Locate the CarePlan entry in the response
-        var id = "";
-        for(var responseEntry : responseBundle.getEntry()) {
-            var status = responseEntry.getResponse().getStatus();
-            var location = responseEntry.getResponse().getLocation();
-            if(!status.equals("201 Created")) {
-                throw new IllegalStateException(String.format("Creating CarePlan with Patient failed. Received unwanted http statuscode: %s", status));
-            }
-            if(location.startsWith("CarePlan")) {
-                id = location.replaceFirst("/_history.*$", "");
-            }
-        }
-
-        return id;
+        return saveInTransaction(bundle, ResourceType.CarePlan);
     }
 
     public String savePatient(Patient patient) {
@@ -224,6 +183,31 @@ public class FhirClient {
             throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
         }
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
+    }
+
+    private String saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        // Execute the transaction
+        var responseBundle = client.transaction().withBundle(transactionBundle).execute();
+
+        // Locate the 'primary' entry in the response
+        var id = "";
+        for(var responseEntry : responseBundle.getEntry()) {
+            var status = responseEntry.getResponse().getStatus();
+            var location = responseEntry.getResponse().getLocation();
+            if(!status.startsWith("201")) {
+                throw new IllegalStateException(String.format("Creating %s failed. Received unwanted http statuscode: %s", resourceType, status));
+            }
+            if(location.startsWith(resourceType.toString())) {
+                id = location.replaceFirst("/_history.*$", "");
+            }
+        }
+
+        if(id.isEmpty()) {
+            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+        }
+        return id;
     }
 
     private <T extends Resource> void update(Resource resource) {
