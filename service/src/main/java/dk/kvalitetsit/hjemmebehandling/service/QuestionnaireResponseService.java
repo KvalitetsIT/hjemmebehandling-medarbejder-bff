@@ -149,44 +149,26 @@ public class QuestionnaireResponseService {
     }
 
     private Map<String, Questionnaire> getQuestionnairesById(Collection<String> questionnaireIds) {
-        Set<String> distinctIds = questionnaireIds
-                .stream()
-                .map(id -> FhirUtils.unqualifyId(id))
-                .collect(Collectors.toSet());
+        Set<String> distinctIds = asUnqualifiedDistinct(questionnaireIds);
 
         Map<String, Questionnaire> questionnairesById = fhirClient.lookupQuestionnaires(distinctIds)
                 .stream()
                 .collect(Collectors.toMap(q -> q.getIdElement().toUnqualifiedVersionless().getValue(), q -> q));
 
-        if(!distinctIds
-                .stream()
-                .map(id -> FhirUtils.unqualifyId(id))
-                .collect(Collectors.toSet()).equals(questionnairesById.keySet()
-                        .stream()
-                        .map(id -> FhirUtils.unqualifyId(id))
-                        .collect(Collectors.toSet()))) {
+        if(!distinctIds.equals(asUnqualifiedDistinct(questionnairesById.keySet()))) {
             throw new IllegalStateException("Could not look up every questionnaire when retrieving questionnaireResponses!");
         }
         return questionnairesById;
     }
 
     private Map<String, Patient> getPatientsById(Collection<String> patientIds) {
-        Set<String> distinctIds = patientIds
-                .stream()
-                .map(id -> FhirUtils.unqualifyId(id))
-                .collect(Collectors.toSet());
+        Set<String> distinctIds = asUnqualifiedDistinct(patientIds);
 
         Map<String, Patient> patientsById = fhirClient.lookupPatientsById(distinctIds)
                 .stream()
                 .collect(Collectors.toMap(p -> p.getIdElement().toUnqualifiedVersionless().toString(), p -> p));
 
-        if(!distinctIds
-                .stream()
-                .map(id -> FhirUtils.unqualifyId(id))
-                .collect(Collectors.toSet()).equals(patientsById.keySet()
-                        .stream()
-                        .map(id -> FhirUtils.unqualifyId(id))
-                        .collect(Collectors.toSet()))) {
+        if(!distinctIds.equals(asUnqualifiedDistinct(patientsById.keySet()))) {
             throw new IllegalStateException("Could not look up every patient when retrieving questionnaireResponses!");
         }
         return patientsById;
@@ -197,5 +179,12 @@ public class QuestionnaireResponseService {
                 .stream()
                 .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, questionnairesById.get(qr.getQuestionnaire()), patientsById.get(qr.getSubject().getReference())))
                 .collect(Collectors.toList());
+    }
+
+    private Set<String> asUnqualifiedDistinct(Collection<String> ids) {
+        return ids
+                .stream()
+                .map(id -> FhirUtils.unqualifyId(id))
+                .collect(Collectors.toSet());
     }
 }
