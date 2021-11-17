@@ -32,6 +32,8 @@ function create {
   fi
 }
 
+delete 'SearchParameter/searchparameter-organization-questionnaireresponse'
+delete 'SearchParameter/searchparameter-organization-careplan'
 delete 'SearchParameter/searchparameter-examination-status'
 
 delete 'QuestionnaireResponse/questionnaireresponse-3'
@@ -69,5 +71,7 @@ create 'questionnaireresponse-2.xml' 'QuestionnaireResponse/questionnairerespons
 create 'questionnaireresponse-3.xml' 'QuestionnaireResponse/questionnaireresponse-3'
 
 create 'searchparameter-examination-status.xml' 'SearchParameter/searchparameter-examination-status'
+create 'searchparameter-organization-careplan.xml' 'SearchParameter/searchparameter-organization-careplan'
+create 'searchparameter-organization-questionnaireresponse.xml' 'SearchParameter/searchparameter-organization-questionnaireresponse'
 
 echo 'Done initializing hapi-server!';

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CarePlan xmlns="http://hl7.org/fhir">
     <id value="careplan-1"/>
+    <extension url="http://hjemmebehandling.rm.dk/organization">
+        <valueReference>
+            <reference value="Organization/organization-1"/>
+        </valueReference>
+    </extension>
     <instantiatesCanonical value="PlanDefinition/plandefinition-1"/>
     <subject>
         <reference value="Patient/patient-1"/>
