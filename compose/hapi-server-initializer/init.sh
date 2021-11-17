@@ -11,12 +11,11 @@ echo 'Initializing hapi-server ...';
 function delete {
   echo 'Deleting '$1' ...'
 
-  if [ $(curl -s -o /dev/null -w '%{http_code}' -X DELETE 'http://hapi-server:8080/fhir/'$1) -ne '200' ]
+  if [ $(curl -s -o /dev/null -w '%{http_code}' -X DELETE 'http://hapi-server:8080/fhir/'$1) -eq '200' ]
   then
-    echo 'error deleting object, exiting ...'
-    exit 1
-  else
     echo 'successfully deleted '$1'!'
+  else
+    echo 'Nothing to delete ...'
   fi
 }
 
@@ -24,30 +23,36 @@ function create {
   echo 'Creating '$2' ...'
 
   # Using PUT allows us to control the resource id's.
-  if [ $(curl -s -o /dev/null -w '%{http_code}' -X PUT -d '@/hapi-server-initializer/'$1 -H 'Content-Type: application/fhir+xml' 'http://hapi-server:8080/fhir/'$2'?_format=xml') -ne '201' ]
+  if $(echo $(curl -s -o /dev/null -w '%{http_code}' -X PUT -d '@/hapi-server-initializer/'$1 -H 'Content-Type: application/fhir+xml' 'http://hapi-server:8080/fhir/'$2'?_format=xml') | grep -qE '^20(0|1)$');
   then
+    echo 'successfully created '$2'!'
+  else
     echo 'error creating object, exiting ...'
     exit 1
-  else
-      echo 'successfully created '$2'!'
   fi
 }
 
-#delete 'SearchParameter/searchparameter-examination-status'
-#
-#delete 'QuestionnaireResponse/questionnaireresponse-3'
-#delete 'QuestionnaireResponse/questionnaireresponse-2'
-#delete 'QuestionnaireResponse/questionnaireresponse-1'
-#
-#delete 'CarePlan/careplan-1'
-#
-#delete 'PlanDefinition/plandefinition-1'
-#
-#delete 'Questionnaire/questionnaire-2'
-#delete 'Questionnaire/questionnaire-1'
-#
-#delete 'Patient/patient-2'
-#delete 'Patient/patient-1'
+delete 'SearchParameter/searchparameter-examination-status'
+
+delete 'QuestionnaireResponse/questionnaireresponse-3'
+delete 'QuestionnaireResponse/questionnaireresponse-2'
+delete 'QuestionnaireResponse/questionnaireresponse-1'
+
+delete 'CarePlan/careplan-1'
+
+delete 'PlanDefinition/plandefinition-1'
+
+delete 'Questionnaire/questionnaire-2'
+delete 'Questionnaire/questionnaire-1'
+
+delete 'CareTeam/careteam-1'
+
+delete 'Patient/patient-2'
+delete 'Patient/patient-1'
+
+delete 'Organization/organization-1'
+
+create 'organization-1.xml' 'Organization/organization-1'
 
 create 'patient-1.xml' 'Patient/patient-1'
 create 'patient-2.xml' 'Patient/patient-2'
