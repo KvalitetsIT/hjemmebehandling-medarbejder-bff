@@ -9,6 +9,7 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,12 @@ public class FhirClient {
 
     private FhirContext context;
     private String endpoint;
+    private UserContextProvider userContextProvider;
 
-    public FhirClient(FhirContext context, String endpoint) {
+    public FhirClient(FhirContext context, String endpoint, UserContextProvider userContextProvider) {
         this.context = context;
         this.endpoint = endpoint;
+        this.userContextProvider = userContextProvider;
     }
 
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {

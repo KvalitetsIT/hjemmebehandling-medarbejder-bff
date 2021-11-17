@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
+import dk.kvalitetsit.hjemmebehandling.context.UserContextInterceptor;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -43,18 +46,23 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public FhirClient getFhirClient() {
+    public FhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
         FhirContext context = FhirContext.forR4();
         String endpoint = "http://hapi-server:8080/fhir";
-        return new FhirClient(context, endpoint);
+        return new FhirClient(context, endpoint, userContextProvider);
     }
 
     @Bean
-    public WebMvcConfigurer corsConfigurer(@Value("${allowed_origins}") String allowedOrigins) {
+    public WebMvcConfigurer getWebMvcConfigurer(@Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**").allowedOrigins(allowedOrigins).allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
+            }
+
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(new UserContextInterceptor(userContextProvider));
             }
         };
     }

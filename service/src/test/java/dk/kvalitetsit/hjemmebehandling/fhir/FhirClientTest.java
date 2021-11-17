@@ -7,6 +7,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -30,9 +31,12 @@ public class FhirClientTest {
 
     private String endpoint = "http://foo";
 
+    @Mock
+    private UserContextProvider userContextProvider;
+
     @BeforeEach
     public void setup() {
-        subject = new FhirClient(context, endpoint);
+        subject = new FhirClient(context, endpoint, userContextProvider);
     }
 
     @Test
