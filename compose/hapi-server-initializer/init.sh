@@ -42,6 +42,7 @@ delete 'CarePlan/careplan-1'
 
 delete 'PlanDefinition/plandefinition-1'
 
+delete 'Questionnaire/questionnaire-infektionsmedicinsk1'
 delete 'Questionnaire/questionnaire-2'
 delete 'Questionnaire/questionnaire-1'
 
@@ -59,6 +60,7 @@ create 'patient-2.xml' 'Patient/patient-2'
 
 create 'questionnaire-1.xml' 'Questionnaire/questionnaire-1'
 create 'questionnaire-2.xml' 'Questionnaire/questionnaire-2'
+create 'questionnaire-infektionsmedicinsk1.xml' 'Questionnaire/questionnaire-infektionsmedicinsk1'
 
 create 'plandefinition-1.xml' 'PlanDefinition/plandefinition-1'
 
