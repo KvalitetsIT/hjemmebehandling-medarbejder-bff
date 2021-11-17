@@ -3,6 +3,7 @@
 <!-- Generated from unit test - manual pasted into file -->
 
 <Questionnaire xmlns="http://hl7.org/fhir">
+   <id value="questionnaire-infektionsmedicinsk1"></id>
    <language value="da-DK"></language>
    <status value="active"></status>
    <item>

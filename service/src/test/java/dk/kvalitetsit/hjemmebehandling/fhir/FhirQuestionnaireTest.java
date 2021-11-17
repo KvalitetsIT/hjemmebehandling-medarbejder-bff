@@ -21,6 +21,7 @@ public class FhirQuestionnaireTest {
 
 
       Questionnaire questionnaire = new Questionnaire();
+      questionnaire.setId("questionnaire-infektionsmedicinsk1");
       questionnaire.setLanguage("da-DK");
       questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
 
