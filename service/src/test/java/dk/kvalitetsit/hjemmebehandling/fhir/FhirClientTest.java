@@ -194,6 +194,10 @@ public class FhirClientTest {
     public void lookupPlanDefinitions_success() {
         // Arrange
         PlanDefinition planDefinition = new PlanDefinition();
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         setupSearchPlanDefinitionClient(planDefinition);
 
         // Act
@@ -468,7 +472,7 @@ public class FhirClientTest {
     }
 
     private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
-        setupSearchClient(0, 1, PlanDefinition.class, planDefinitions);
+        setupSearchClient(1, 1, PlanDefinition.class, planDefinitions);
     }
 
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {

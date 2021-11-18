@@ -29,8 +29,6 @@ public class PlanDefinitionService {
     public List<PlanDefinitionModel> getPlanDefinitions() throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions();
 
-
-
         return lookupResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, lookupResult)).collect(Collectors.toList());
     }
 }

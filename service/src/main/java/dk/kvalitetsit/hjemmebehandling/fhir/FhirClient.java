@@ -75,8 +75,7 @@ public class FhirClient {
         var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
 
-        String organizationId = getOrganizationId();
-        var organizationCriterion = new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId);
+        var organizationCriterion = buildOrganizationCriterion();
 
         return lookupByCriteria(QuestionnaireResponse.class, statusCriterion, organizationCriterion);
     }
@@ -111,9 +110,12 @@ public class FhirClient {
     public FhirLookupResult lookupPlanDefinitions() {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
+        var organizationCriterion = buildOrganizationCriterion();
+
         var query = client
                 .search()
                 .forResource(PlanDefinition.class)
+                .where(organizationCriterion)
                 .include(PlanDefinition.INCLUDE_DEFINITION);
 
         Bundle bundle = (Bundle) query.execute();
@@ -266,6 +268,11 @@ public class FhirClient {
 
     private boolean excludeFromOrganizationTagging(DomainResource extendable) {
         return UNTAGGED_RESOURCE_TYPES.contains(extendable.getResourceType());
+    }
+
+    private ICriterion<?> buildOrganizationCriterion() {
+        String organizationId = getOrganizationId();
+        return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId);
     }
 
     private String getOrganizationId() {
