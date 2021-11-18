@@ -24,6 +24,10 @@ import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 
 @Configuration
 public class ServiceConfiguration {
+	
+	@Value("${user.context.handler}")
+	private String userContextHandler;
+
     @Bean
     public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder) {
         return new CarePlanService(client, mapper, builder);
@@ -62,7 +66,7 @@ public class ServiceConfiguration {
 
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
-                registry.addInterceptor(new UserContextInterceptor(userContextProvider));
+                registry.addInterceptor(new UserContextInterceptor(userContextProvider,userContextHandler));
             }
         };
     }
