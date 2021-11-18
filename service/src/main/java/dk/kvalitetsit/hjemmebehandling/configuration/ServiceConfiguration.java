@@ -40,9 +40,9 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired UserContextProvider userContextProvider) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed());
+        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), userContextProvider);
     }
 
     @Bean

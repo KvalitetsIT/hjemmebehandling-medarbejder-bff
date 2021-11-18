@@ -1,18 +1,18 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,11 +30,14 @@ public class QuestionnaireResponseService {
 
     private Comparator<QuestionnaireResponse> priorityComparator;
 
-    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, Comparator<QuestionnaireResponse> priorityComparator) {
+    private UserContextProvider userContextProvider;
+
+    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, Comparator<QuestionnaireResponse> priorityComparator, UserContextProvider userContextProvider) {
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
         this.priorityComparator = priorityComparator;
+        this.userContextProvider = userContextProvider;
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException {
@@ -93,18 +96,54 @@ public class QuestionnaireResponseService {
         return constructResult(responses, questionnairesById, patientsById);
     }
 
-    public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException {
+    public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
-        Optional<QuestionnaireResponse> questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
-        if(!questionnaireResponse.isPresent()) {
-            throw new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId));
-        }
+        QuestionnaireResponse questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId)
+                .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId)));
+
+        // Validate that the user is allowed to update the QuestionnaireResponse.
+        validateAccess(questionnaireResponse);
 
         // Update the Questionnaireresponse
-        fhirObjectBuilder.updateExaminationStatusForQuestionnaireResponse(questionnaireResponse.get(), examinationStatus);
+        fhirObjectBuilder.updateExaminationStatusForQuestionnaireResponse(questionnaireResponse, examinationStatus);
 
         // Save the updated QuestionnaireResponse
-        fhirClient.updateQuestionnaireResponse(questionnaireResponse.get());
+        fhirClient.updateQuestionnaireResponse(questionnaireResponse);
+    }
+
+    private void validateAccess(DomainResource resource) throws AccessValidationException {
+        // Validate that the user is allowed to update the Resource.
+        String userOrganizationId = getOrganizationIdForUser();
+        String resourceOrganizationId = getOrganizationIdForResource(resource);
+
+        if(!userOrganizationId.equals(resourceOrganizationId)) {
+            throw new AccessValidationException(String.format("Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
+                    resource.getResourceType(),
+                    resource.getId(),
+                    userOrganizationId,
+                    resourceOrganizationId));
+        }
+    }
+
+    private String getOrganizationIdForUser() {
+        var context = userContextProvider.getUserContext();
+        if(context == null) {
+            throw new IllegalStateException("UserContext was not initialized!");
+        }
+
+        Organization organization = fhirClient.lookupOrganizationBySorCode(context.getSorCode())
+                .orElseThrow(() -> new IllegalStateException(String.format("No organization was present for sorCode %s!", context.getSorCode())));
+
+        return organization.getIdElement().toUnqualifiedVersionless().getValue();
+    }
+
+    private String getOrganizationIdForResource(DomainResource resource) {
+        var extension = resource.getExtension()
+                .stream()
+                .filter(e -> e.getUrl().equals(Systems.ORGANIZATION) && e.getValue() instanceof Reference)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(String.format("No organization id was present on resource %s!", resource.getId())));
+        return ((Reference) extension.getValue()).getReference();
     }
 
     private List<QuestionnaireResponse> filterResponses(List<QuestionnaireResponse> responses) {

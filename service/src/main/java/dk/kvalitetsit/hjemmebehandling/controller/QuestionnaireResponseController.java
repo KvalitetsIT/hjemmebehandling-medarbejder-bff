@@ -6,11 +6,13 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,6 +83,10 @@ public class QuestionnaireResponseController {
 
         try {
             questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus());
+        }
+        catch (AccessValidationException e) {
+            logger.info("Refused to update questionnaireResponse.", e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         catch(ServiceException e) {
             // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).

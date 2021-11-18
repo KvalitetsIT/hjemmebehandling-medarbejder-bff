@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.junit.jupiter.api.Test;
@@ -192,6 +193,22 @@ public class QuestionnaireResponseControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaireResponse_accessViolation_403() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
+        request.setExaminationStatus(ExaminationStatus.UNDER_EXAMINATION);
+
+        Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+
+        // Act
+        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
     }
 
     @Test

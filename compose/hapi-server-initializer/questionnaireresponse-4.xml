@@ -10,7 +10,7 @@
     </extension>
     <extension url="http://hjemmebehandling.rm.dk/organization">
         <valueReference>
-            <reference value="Organization/organization-1"/>
+            <reference value="Organization/organization-2"/>
         </valueReference>
     </extension>
     <basedOn>

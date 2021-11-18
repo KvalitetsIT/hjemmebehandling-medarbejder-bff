@@ -55,9 +55,11 @@ delete 'CareTeam/careteam-1'
 delete 'Patient/patient-2'
 delete 'Patient/patient-1'
 
+delete 'Organization/organization-2'
 delete 'Organization/organization-1'
 
 create 'organization-1.xml' 'Organization/organization-1'
+create 'organization-2.xml' 'Organization/organization-2'
 
 create 'patient-1.xml' 'Patient/patient-1'
 create 'patient-2.xml' 'Patient/patient-2'

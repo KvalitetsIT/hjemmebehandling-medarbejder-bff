@@ -1,11 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.context.UserContext;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.hl7.fhir.r4.model.*;
@@ -40,11 +44,17 @@ public class QuestionnaireResponseServiceTest {
     @Mock
     private QuestionnaireResponsePriorityComparator priorityComparator;
 
+    @Mock
+    private UserContextProvider userContextProvider;
+
     private static final String CAREPLAN_ID_1 = "careplan-1";
+    private static final String ORGANIZATION_ID_1 = "organization-1";
+    private static final String ORGANIZATION_ID_2 = "organization-2";
     private static final String PATIENT_ID = "patient-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "questionnaire-2";
     private static final String QUESTIONNAIRE_ID_3 = "questionnaire-3";
+    private static final String SOR_CODE = "123456";
 
     @Test
     public void getQuestionnaireResponses_responsesPresent_returnsResponses() throws Exception {
@@ -323,12 +333,37 @@ public class QuestionnaireResponseServiceTest {
     }
 
     @Test
+    public void updateExaminationStatus_resourceForDifferentOrganization_throwsException() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-1";
+        ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
+
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(SOR_CODE));
+
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        Mockito.when(fhirClient.lookupOrganizationBySorCode(SOR_CODE)).thenReturn(Optional.of(organization));
+
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.updateExaminationStatus(id, status));
+    }
+
+    @Test
     public void updateExaminationStatus_successfulUpdate() throws Exception {
         // Arrange
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        QuestionnaireResponse response = new QuestionnaireResponse();
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(SOR_CODE));
+
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        Mockito.when(fhirClient.lookupOrganizationBySorCode(SOR_CODE)).thenReturn(Optional.of(organization));
+
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
 
         Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
@@ -340,11 +375,24 @@ public class QuestionnaireResponseServiceTest {
         Mockito.verify(fhirObjectBuilder).updateExaminationStatusForQuestionnaireResponse(response, status);
     }
 
+    private Organization buildOrganization(String organizationId) {
+        Organization organization = new Organization();
+
+        organization.setId(organizationId);
+
+        return organization;
+    }
+
     private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireId, String patientId) {
+        return buildQuestionnaireResponse(questionnaireId, patientId, ORGANIZATION_ID_1);
+    }
+
+    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireId, String patientId, String organizationId) {
         QuestionnaireResponse response = new QuestionnaireResponse();
 
         response.setQuestionnaire(questionnaireId);
         response.setSubject(new Reference(patientId));
+        response.addExtension(Systems.ORGANIZATION, new Reference(organizationId));
 
         return response;
     }
