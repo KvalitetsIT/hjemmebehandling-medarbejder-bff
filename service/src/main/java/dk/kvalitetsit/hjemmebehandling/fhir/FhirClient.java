@@ -4,6 +4,7 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
+import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
@@ -72,8 +73,12 @@ public class FhirClient {
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
         var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
-        var criterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
-        return lookupByCriterion(QuestionnaireResponse.class, criterion);
+        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+
+        String organizationId = getOrganizationId();
+        var organizationCriterion = new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId);
+
+        return lookupByCriteria(QuestionnaireResponse.class, statusCriterion, organizationCriterion);
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {

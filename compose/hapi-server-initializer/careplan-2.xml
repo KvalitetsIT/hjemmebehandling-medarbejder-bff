@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CarePlan xmlns="http://hl7.org/fhir">
+    <id value="careplan-2"/>
+    <extension url="http://hjemmebehandling.rm.dk/organization">
+        <valueReference>
+            <reference value="Organization/organization-1"/>
+        </valueReference>
+    </extension>
+    <instantiatesCanonical value="PlanDefinition/plandefinition-1"/>
+    <subject>
+        <reference value="Patient/patient-2"/>
+    </subject>
+    <created value="2021-11-08"/>
+    <period>
+        <start value="2021-11-08"/>
+    </period>
+    <activity>
+        <detail>
+            <instantiatesCanonical value="Questionnaire/questionnaire-1"/>
+            <status value="not-started"/>
+            <scheduledTiming>
+                <repeat>
+                    <dayOfWeek value="tue"/>
+                </repeat>
+            </scheduledTiming>
+        </detail>
+    </activity>
+</CarePlan>

@@ -36,10 +36,12 @@ delete 'SearchParameter/searchparameter-organization-questionnaireresponse'
 delete 'SearchParameter/searchparameter-organization-careplan'
 delete 'SearchParameter/searchparameter-examination-status'
 
+delete 'QuestionnaireResponse/questionnaireresponse-4'
 delete 'QuestionnaireResponse/questionnaireresponse-3'
 delete 'QuestionnaireResponse/questionnaireresponse-2'
 delete 'QuestionnaireResponse/questionnaireresponse-1'
 
+delete 'CarePlan/careplan-2'
 delete 'CarePlan/careplan-1'
 
 delete 'PlanDefinition/plandefinition-1'
@@ -67,10 +69,12 @@ create 'questionnaire-infektionsmedicinsk1.xml' 'Questionnaire/questionnaire-inf
 create 'plandefinition-1.xml' 'PlanDefinition/plandefinition-1'
 
 create 'careplan-1.xml' 'CarePlan/careplan-1'
+create 'careplan-2.xml' 'CarePlan/careplan-2'
 
 create 'questionnaireresponse-1.xml' 'QuestionnaireResponse/questionnaireresponse-1'
 create 'questionnaireresponse-2.xml' 'QuestionnaireResponse/questionnaireresponse-2'
 create 'questionnaireresponse-3.xml' 'QuestionnaireResponse/questionnaireresponse-3'
+create 'questionnaireresponse-4.xml' 'QuestionnaireResponse/questionnaireresponse-4'
 
 create 'searchparameter-examination-status.xml' 'SearchParameter/searchparameter-examination-status'
 create 'searchparameter-organization-careplan.xml' 'SearchParameter/searchparameter-organization-careplan'

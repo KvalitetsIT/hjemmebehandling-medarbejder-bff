@@ -8,6 +8,11 @@
     <extension url="http://hjemmebehandling.rm.dk/triaging-category">
         <valueString value="YELLOW"/>
     </extension>
+    <extension url="http://hjemmebehandling.rm.dk/organization">
+        <valueReference>
+            <reference value="Organization/organization-1"/>
+        </valueReference>
+    </extension>
     <basedOn>
         <reference value="CarePlan/careplan-1"/>
     </basedOn>

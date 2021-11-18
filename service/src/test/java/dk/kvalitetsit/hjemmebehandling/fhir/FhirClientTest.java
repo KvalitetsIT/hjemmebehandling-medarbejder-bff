@@ -228,8 +228,11 @@ public class FhirClientTest {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
 
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
+        setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
@@ -244,8 +247,11 @@ public class FhirClientTest {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION);
 
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
+        setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
@@ -260,8 +266,11 @@ public class FhirClientTest {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED, ExaminationStatus.EXAMINED);
 
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        setupSearchQuestionnaireResponseClient(1, questionnaireResponse);
+        setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
         List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
