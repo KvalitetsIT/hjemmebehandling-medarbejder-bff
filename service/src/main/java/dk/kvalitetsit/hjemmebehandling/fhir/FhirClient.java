@@ -28,6 +28,8 @@ public class FhirClient {
     private String endpoint;
     private UserContextProvider userContextProvider;
 
+    private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
+
     public FhirClient(FhirContext context, String endpoint, UserContextProvider userContextProvider) {
         this.context = context;
         this.endpoint = endpoint;
@@ -247,11 +249,18 @@ public class FhirClient {
     }
 
     private void addOrganizationTag(DomainResource extendable) {
+        if(excludeFromOrganizationTagging(extendable)) {
+            return;
+        }
         if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
             throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", extendable.getId()));
         }
 
         extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));
+    }
+
+    private boolean excludeFromOrganizationTagging(DomainResource extendable) {
+        return UNTAGGED_RESOURCE_TYPES.contains(extendable.getResourceType());
     }
 
     private String getOrganizationId() {

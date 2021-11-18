@@ -12,7 +12,6 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
@@ -299,7 +298,7 @@ public class FhirClientTest {
         String result = subject.saveCarePlan(carePlan);
 
         // Assert
-        assertTrue(isTagged(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_1, ResourceType.Organization)));
+        assertTrue(isTaggedWithId(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_1, ResourceType.Organization)));
     }
 
     @Test
@@ -375,8 +374,22 @@ public class FhirClientTest {
         String result = subject.saveCarePlan(carePlan, patient);
 
         // Assert
-        assertTrue(isTagged(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
-        assertTrue(isTagged(patient, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
+        assertTrue(isTaggedWithId(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
+        assertFalse(isTagged(patient));
+    }
+
+    @Test
+    public void savePatient_organizationTagIsOmitted() {
+        // Arrange
+        Patient patient = new Patient();
+
+        setupSaveClient(patient, true, null, null);
+
+        // Act
+        String result = subject.savePatient(patient);
+
+        // Assert
+        assertFalse(isTagged(patient));
     }
 
     @Test
@@ -484,12 +497,13 @@ public class FhirClientTest {
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed) {
         setupSaveClient(resource, shouldSucceed, SOR_CODE_1, ORGANIZATION_ID_1);
-
     }
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed, String sorCode, String organizationId) {
-        setupUserContext(sorCode);
-        setupOrganization(sorCode, organizationId);
+        if(sorCode != null && organizationId != null) {
+            setupUserContext(sorCode);
+            setupOrganization(sorCode, organizationId);
+        }
 
         MethodOutcome outcome = new MethodOutcome();
         if(shouldSucceed) {
@@ -541,11 +555,19 @@ public class FhirClientTest {
         setupSearchOrganizationClient(organization);
     }
 
-    private boolean isTagged(DomainResource resource, String organizationId) {
-        return resource.getExtension().stream().anyMatch(e -> isOrganizationTag(e, organizationId));
+    private boolean isTagged(DomainResource resource) {
+        return resource.getExtension().stream().anyMatch(e -> isOrganizationTag(e));
     }
 
-    private boolean isOrganizationTag(Extension e, String organizationId) {
-        return e.getUrl().equals(Systems.ORGANIZATION) && e.getValue() instanceof Reference && ((Reference) e.getValue()).getReference().equals(organizationId);
+    private boolean isTaggedWithId(DomainResource resource, String organizationId) {
+        return resource.getExtension().stream().anyMatch(e -> isOrganizationTag(e) && isTagForOrganization(e, organizationId));
+    }
+
+    private boolean isOrganizationTag(Extension e) {
+        return e.getUrl().equals(Systems.ORGANIZATION);
+    }
+
+    private boolean isTagForOrganization(Extension e, String organizationId) {
+        return e.getValue() instanceof Reference && ((Reference) e.getValue()).getReference().equals(organizationId);
     }
 }
