@@ -7,12 +7,15 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,11 +34,15 @@ public class FhirClientTest {
 
     private String endpoint = "http://foo";
 
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private IGenericClient client;
+
     @Mock
     private UserContextProvider userContextProvider;
 
     @BeforeEach
     public void setup() {
+        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
         subject = new FhirClient(context, endpoint, userContextProvider);
     }
 
@@ -266,6 +273,9 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
 
+        setupUserContext("123456");
+        setupOrganization("123456", "organization-1");
+
         setupSaveClient(carePlan, true);
 
         // Act
@@ -276,10 +286,33 @@ public class FhirClientTest {
     }
 
     @Test
+    public void saveCarePlan_addsOrganizationTag() {
+        //Arrange
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
+
+        setupUserContext("123456");
+        setupOrganization("123456", "organization-1");
+
+        setupSaveClient(carePlan, true);
+
+        // Act
+        String result = subject.saveCarePlan(carePlan);
+
+        // Assert
+        assertEquals(1, carePlan.getExtension().size());
+        assertEquals(Systems.ORGANIZATION, carePlan.getExtension().get(0).getUrl());
+        assertEquals("Organization/organization-1", ((Reference) carePlan.getExtension().get(0).getValue()).getReference());
+    }
+
+    @Test
     public void saveCarePlan_notCreated_throwsException() {
         //Arrange
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
+
+        setupUserContext("123456");
+        setupOrganization("123456", "organization-1");
 
         setupSaveClient(carePlan, false);
 
@@ -341,6 +374,9 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId("1");
 
+        setupUserContext("123456");
+        setupOrganization("123456", "organization-1");
+
         setupSaveClient(questionnaireResponse, true);
 
         // Act
@@ -354,6 +390,9 @@ public class FhirClientTest {
     public void saveQuestionnaireResponse_notCreated_throwsException() {
         //Arrange
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        setupUserContext("123456");
+        setupOrganization("123456", "organization-1");
 
         setupSaveClient(questionnaireResponse, false);
 
@@ -376,8 +415,6 @@ public class FhirClientTest {
     }
 
     private void setupReadClient(String id, Resource resource, Class<? extends Resource> resourceClass) {
-        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
-
         Mockito.when(client
             .read()
             .resource(resourceClass)
@@ -389,12 +426,14 @@ public class FhirClientTest {
                 }
                 return resource;
             });
-
-        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }
 
     private void setupSearchCarePlanClient(CarePlan... carePlans) {
         setupSearchClient(CarePlan.class, carePlans);
+    }
+
+    private void setupSearchOrganizationClient(Organization... organizations) {
+        setupSearchClient(Organization.class, organizations);
     }
 
     private void setupSearchPatientClient(Patient... patients) {
@@ -414,8 +453,6 @@ public class FhirClientTest {
     }
 
     private void setupSearchClient(int criteriaCount, int includeCount, Class<? extends Resource> resourceClass, Resource... resources) {
-        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
-
         Bundle bundle = new Bundle();
 
         for(Resource resource : resources) {
@@ -438,13 +475,9 @@ public class FhirClientTest {
         Mockito.when(query
                 .execute())
                 .thenReturn(bundle);
-
-        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed) {
-        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
-
         MethodOutcome outcome = new MethodOutcome();
         if(shouldSucceed) {
             outcome.setCreated(true);
@@ -454,8 +487,6 @@ public class FhirClientTest {
         else {
             outcome.setCreated(false);
         }
-
-        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
     }
 
     private Bundle buildResponseBundle(String carePlanStatus, String careplanLocation, String patientStatus, String patientLocaton) {
@@ -475,10 +506,18 @@ public class FhirClientTest {
     }
 
     private void setupTransactionClient(Bundle responseBundle) {
-        IGenericClient client = Mockito.mock(IGenericClient.class, Mockito.RETURNS_DEEP_STUBS);
-
         Mockito.when(client.transaction().withBundle(Mockito.any(Bundle.class)).execute()).thenReturn(responseBundle);
+    }
 
-        Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
+    private void setupUserContext(String sorCode) {
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(sorCode));
+    }
+
+    private void setupOrganization(String sorCode, String organizationId) {
+        var organization = new Organization();
+        organization.setId("organization-1");
+        organization.addIdentifier().setSystem(Systems.SOR).setValue("123456");
+
+        setupSearchOrganizationClient(organization);
     }
 }

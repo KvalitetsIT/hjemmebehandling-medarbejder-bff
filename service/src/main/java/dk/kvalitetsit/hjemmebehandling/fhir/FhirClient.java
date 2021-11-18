@@ -10,6 +10,8 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseHasExtensions;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,10 @@ public class FhirClient {
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
         return lookupById(carePlanId, CarePlan.class);
+    }
+
+    public Optional<Organization> lookupOrganizationBySorCode(String sorCode) {
+        return lookupSingletonByCriterion(Organization.class, Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode));
     }
 
     public Optional<Patient> lookupPatientById(String patientId) {
@@ -179,6 +185,8 @@ public class FhirClient {
     }
 
     private <T extends Resource> String save(Resource resource) {
+        addOrganizationTag(resource);
+
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         MethodOutcome outcome = client.create().resource(resource).execute();
@@ -216,5 +224,31 @@ public class FhirClient {
     private <T extends Resource> void update(Resource resource) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
         client.update().resource(resource).execute();
+    }
+
+    private void addOrganizationTag(Resource resource) {
+        if(!(resource instanceof DomainResource)) {
+            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource %s, but the resource was of incorrect type!", resource.getId()));
+        }
+        var extendable = (DomainResource) resource;
+        if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
+            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", resource.getId()));
+        }
+
+        extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));
+
+    }
+
+    private String getOrganizationId() {
+        var context = userContextProvider.getUserContext();
+        if(context == null) {
+            throw new IllegalStateException("UserContext was not initialized!");
+        }
+
+        var organization = lookupOrganizationBySorCode(context.getSorCode())
+                .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getSorCode())));
+
+        var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
+        return FhirUtils.qualifyId(organizationId, ResourceType.Organization);
     }
 }
