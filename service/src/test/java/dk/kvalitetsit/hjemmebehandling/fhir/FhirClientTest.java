@@ -472,8 +472,7 @@ public class FhirClientTest {
     }
 
     private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
-        //setupSearchClient(1, 1, PlanDefinition.class, planDefinitions);
-        setupSearchClient(0, 1, PlanDefinition.class, planDefinitions);
+        setupSearchClient(1, 1, PlanDefinition.class, planDefinitions);
     }
 
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {

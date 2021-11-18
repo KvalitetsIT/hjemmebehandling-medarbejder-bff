@@ -115,7 +115,7 @@ public class FhirClient {
         var query = client
                 .search()
                 .forResource(PlanDefinition.class)
-                //.where(organizationCriterion)
+                .where(organizationCriterion)
                 .include(PlanDefinition.INCLUDE_DEFINITION);
 
         Bundle bundle = (Bundle) query.execute();
