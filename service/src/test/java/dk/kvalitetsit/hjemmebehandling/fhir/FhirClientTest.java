@@ -40,6 +40,11 @@ public class FhirClientTest {
     @Mock
     private UserContextProvider userContextProvider;
 
+    private static final String ORGANIZATION_ID_1 = "organization-1";
+    private static final String ORGANIZATION_ID_2 = "organization-2";
+    private static final String SOR_CODE_1 = "123456";
+    private static final String SOR_CODE_2 = "654321";
+
     @BeforeEach
     public void setup() {
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
@@ -273,9 +278,6 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
 
-        setupUserContext("123456");
-        setupOrganization("123456", "organization-1");
-
         setupSaveClient(carePlan, true);
 
         // Act
@@ -291,18 +293,13 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
 
-        setupUserContext("123456");
-        setupOrganization("123456", "organization-1");
-
         setupSaveClient(carePlan, true);
 
         // Act
         String result = subject.saveCarePlan(carePlan);
 
         // Assert
-        assertEquals(1, carePlan.getExtension().size());
-        assertEquals(Systems.ORGANIZATION, carePlan.getExtension().get(0).getUrl());
-        assertEquals("Organization/organization-1", ((Reference) carePlan.getExtension().get(0).getValue()).getReference());
+        assertTrue(isTagged(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_1, ResourceType.Organization)));
     }
 
     @Test
@@ -310,9 +307,6 @@ public class FhirClientTest {
         //Arrange
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
-
-        setupUserContext("123456");
-        setupOrganization("123456", "organization-1");
 
         setupSaveClient(carePlan, false);
 
@@ -369,13 +363,27 @@ public class FhirClientTest {
     }
 
     @Test
+    public void saveCarePlanWithPatient_addsOrganizationTag() {
+        // Arrange
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
+
+        Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
+        setupTransactionClient(responseBundle, SOR_CODE_2, ORGANIZATION_ID_2);
+
+        // Act
+        String result = subject.saveCarePlan(carePlan, patient);
+
+        // Assert
+        assertTrue(isTagged(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
+        assertTrue(isTagged(patient, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
+    }
+
+    @Test
     public void saveQuestionnaireResponse_created_returnsId() {
         //Arrange
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId("1");
-
-        setupUserContext("123456");
-        setupOrganization("123456", "organization-1");
 
         setupSaveClient(questionnaireResponse, true);
 
@@ -390,9 +398,6 @@ public class FhirClientTest {
     public void saveQuestionnaireResponse_notCreated_throwsException() {
         //Arrange
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-
-        setupUserContext("123456");
-        setupOrganization("123456", "organization-1");
 
         setupSaveClient(questionnaireResponse, false);
 
@@ -478,6 +483,14 @@ public class FhirClientTest {
     }
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed) {
+        setupSaveClient(resource, shouldSucceed, SOR_CODE_1, ORGANIZATION_ID_1);
+
+    }
+
+    private void setupSaveClient(Resource resource, boolean shouldSucceed, String sorCode, String organizationId) {
+        setupUserContext(sorCode);
+        setupOrganization(sorCode, organizationId);
+
         MethodOutcome outcome = new MethodOutcome();
         if(shouldSucceed) {
             outcome.setCreated(true);
@@ -506,6 +519,13 @@ public class FhirClientTest {
     }
 
     private void setupTransactionClient(Bundle responseBundle) {
+        setupTransactionClient(responseBundle, SOR_CODE_1, ORGANIZATION_ID_1);
+    }
+
+    private void setupTransactionClient(Bundle responseBundle, String sorCode, String organizationId) {
+        setupUserContext(sorCode);
+        setupOrganization(sorCode, organizationId);
+
         Mockito.when(client.transaction().withBundle(Mockito.any(Bundle.class)).execute()).thenReturn(responseBundle);
     }
 
@@ -515,9 +535,17 @@ public class FhirClientTest {
 
     private void setupOrganization(String sorCode, String organizationId) {
         var organization = new Organization();
-        organization.setId("organization-1");
-        organization.addIdentifier().setSystem(Systems.SOR).setValue("123456");
+        organization.setId(organizationId);
+        organization.addIdentifier().setSystem(Systems.SOR).setValue(sorCode);
 
         setupSearchOrganizationClient(organization);
+    }
+
+    private boolean isTagged(DomainResource resource, String organizationId) {
+        return resource.getExtension().stream().anyMatch(e -> isOrganizationTag(e, organizationId));
+    }
+
+    private boolean isOrganizationTag(Extension e, String organizationId) {
+        return e.getUrl().equals(Systems.ORGANIZATION) && e.getValue() instanceof Reference && ((Reference) e.getValue()).getReference().equals(organizationId);
     }
 }

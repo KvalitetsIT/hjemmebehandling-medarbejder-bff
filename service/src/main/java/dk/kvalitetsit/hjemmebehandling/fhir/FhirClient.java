@@ -197,6 +197,8 @@ public class FhirClient {
     }
 
     private String saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
+        addOrganizationTag(transactionBundle);
+
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         // Execute the transaction
@@ -227,16 +229,29 @@ public class FhirClient {
     }
 
     private void addOrganizationTag(Resource resource) {
-        if(!(resource instanceof DomainResource)) {
-            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource %s, but the resource was of incorrect type!", resource.getId()));
+        if(resource.getResourceType() == ResourceType.Bundle) {
+            addOrganizationTag((Bundle) resource);
         }
-        var extendable = (DomainResource) resource;
+        if(resource instanceof DomainResource) {
+            addOrganizationTag((DomainResource) resource);
+        }
+        else {
+            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource %s, but the resource was of incorrect type %s!", resource.getId(), resource.getResourceType()));
+        }
+    }
+
+    private void addOrganizationTag(Bundle bundle) {
+        for(var entry : bundle.getEntry()) {
+            addOrganizationTag(entry.getResource());
+        }
+    }
+
+    private void addOrganizationTag(DomainResource extendable) {
         if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
-            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", resource.getId()));
+            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", extendable.getId()));
         }
 
         extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));
-
     }
 
     private String getOrganizationId() {
