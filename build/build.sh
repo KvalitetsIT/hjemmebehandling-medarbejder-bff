@@ -5,6 +5,7 @@ docker build -t resources -f ./integrationtest/docker/Dockerfile-resources --no-
 docker run -d --name hjemmebehandling-medarbejder-bff-resources resources
 
 # Build hapi-server resource container and start it
+docker rmi -f hapi-server-resources
 docker build -t hapi-server-resources -f ./compose/Dockerfile-hapi-server-resources --no-cache ./compose
 docker run -d --name hapi-server-resources hapi-server-resources
 
