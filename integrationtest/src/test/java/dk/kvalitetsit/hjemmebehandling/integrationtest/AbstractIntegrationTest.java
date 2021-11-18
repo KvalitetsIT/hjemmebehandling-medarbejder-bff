@@ -19,9 +19,15 @@ public abstract class AbstractIntegrationTest {
     private static String host = "localhost";
     private static String exposedServicePort = "8080";
 
+    private static boolean started = false;
+
     @BeforeAll
     public static void setupEnvironment() throws Exception {
-        if(Boolean.getBoolean("startDocker")) {
+        System.out.print("Inside AbstractIntegrationTest.setupEnvironment");
+
+        if(Boolean.getBoolean("startDocker") && !started) {
+            System.out.println("Starting containers!");
+
             Network network = Network.newNetwork();
 
             var resourcesContainerName = "hapi-server-resources";
@@ -62,6 +68,8 @@ public abstract class AbstractIntegrationTest {
             exposedServicePort = Integer.toString(service.getMappedPort(8080));
             System.out.println("Sleeping for a little while, until hapi-server is definitely initialized.");
             Thread.sleep(5000);
+
+            started = true;
         }
     }
 
