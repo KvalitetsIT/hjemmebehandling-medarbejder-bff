@@ -38,7 +38,10 @@ public class FhirClient {
     }
 
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
-        return lookupByCriterion(CarePlan.class, CarePlan.PATIENT.hasId(patientId));
+        var patientCriterion = CarePlan.PATIENT.hasId(patientId);
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupByCriteria(CarePlan.class, patientCriterion, organizationCriterion);
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {

@@ -85,6 +85,9 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         setupSearchCarePlanClient(carePlan);
 
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         // Act
         List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
 
@@ -98,6 +101,9 @@ public class FhirClientTest {
         // Arrange
         String patientId = "patient-1";
         setupSearchCarePlanClient();
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
         List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
@@ -460,7 +466,7 @@ public class FhirClientTest {
     }
 
     private void setupSearchCarePlanClient(CarePlan... carePlans) {
-        setupSearchClient(CarePlan.class, carePlans);
+        setupSearchClient(2, 0, CarePlan.class, carePlans);
     }
 
     private void setupSearchOrganizationClient(Organization... organizations) {

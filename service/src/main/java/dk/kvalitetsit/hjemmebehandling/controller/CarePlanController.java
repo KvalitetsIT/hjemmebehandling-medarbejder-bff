@@ -82,7 +82,6 @@ public class CarePlanController {
             carePlan = carePlanService.getCarePlanById(id);
         }
         catch (AccessValidationException e) {
-            logger.info("Refused to update questionnaireResponse.", e);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         catch(ServiceException e) {
