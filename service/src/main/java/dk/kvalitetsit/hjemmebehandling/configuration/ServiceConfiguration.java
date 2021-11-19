@@ -34,8 +34,8 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
-        return new PatientService(client, mapper);
+    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+        return new PatientService(client, mapper, accessValidator);
     }
     
     @Bean

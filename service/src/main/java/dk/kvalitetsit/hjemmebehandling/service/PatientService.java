@@ -5,6 +5,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.hl7.fhir.r4.model.Bundle;
@@ -15,14 +16,16 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 
-public class PatientService {
+public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
     private FhirClient fhirClient;
 
     private FhirMapper fhirMapper;
 
-    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper) {
+    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
+        super(accessValidator);
+
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
     }

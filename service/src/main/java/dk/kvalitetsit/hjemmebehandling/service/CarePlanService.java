@@ -1,6 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.controller.CarePlanController;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -16,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CarePlanService {
+public class CarePlanService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
     private FhirClient fhirClient;
@@ -25,13 +24,12 @@ public class CarePlanService {
 
     private FhirObjectBuilder fhirObjectBuilder;
 
-    private AccessValidator accessValidator;
-
     public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, AccessValidator accessValidator) {
+        super(accessValidator);
+
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
-        this.accessValidator = accessValidator;
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException {
@@ -111,7 +109,7 @@ public class CarePlanService {
         }
 
         // Validate that the user is allowed to update the QuestionnaireResponse.
-        accessValidator.validateAccess(carePlan.get());
+        validateAccess(carePlan.get());
 
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan.get());
 

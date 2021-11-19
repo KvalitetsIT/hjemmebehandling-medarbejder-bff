@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class QuestionnaireResponseService {
+public class QuestionnaireResponseService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
     private FhirClient fhirClient;
@@ -29,14 +29,13 @@ public class QuestionnaireResponseService {
 
     private Comparator<QuestionnaireResponse> priorityComparator;
 
-    private AccessValidator accessValidator;
-
     public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, Comparator<QuestionnaireResponse> priorityComparator, AccessValidator accessValidator) {
+        super(accessValidator);
+
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
         this.priorityComparator = priorityComparator;
-        this.accessValidator = accessValidator;
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException {
@@ -101,7 +100,7 @@ public class QuestionnaireResponseService {
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId)));
 
         // Validate that the user is allowed to update the QuestionnaireResponse.
-        accessValidator.validateAccess(questionnaireResponse);
+        validateAccess(questionnaireResponse);
 
         // Update the Questionnaireresponse
         fhirObjectBuilder.updateExaminationStatusForQuestionnaireResponse(questionnaireResponse, examinationStatus);
