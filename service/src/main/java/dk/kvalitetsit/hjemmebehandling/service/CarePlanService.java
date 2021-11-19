@@ -134,18 +134,24 @@ public class CarePlanService extends AccessValidatingService {
         return Optional.of(carePlanModel);
     }
 
-    public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException {
+    public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaires == null || questionnaires.size() != questionnaireIds.size()) {
             throw new ServiceException("Could not look up questionnaires to update!");
         }
 
+        // Validate that the client is allowed to reference the questionnaires.
+        validateAccess(questionnaires);
+
         // Look up the CarePlan, throw an exception in case it does not exist.
         Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
         if(!carePlan.isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId));
         }
+
+        // Validate that the client is allowed to update the carePlan.
+        validateAccess(carePlan.get());
 
         // Update the carePlan
         Map<String, Timing> timings = mapFrequencies(frequencies);

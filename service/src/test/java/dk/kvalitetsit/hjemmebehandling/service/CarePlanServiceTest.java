@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -326,6 +327,45 @@ public class CarePlanServiceTest {
         assertEquals(carePlanModel, result.get());
         assertEquals(1, result.get().getQuestionnaires().size());
         assertEquals(questionnaireModel, result.get().getQuestionnaires().get(0).getQuestionnaire());
+    }
+
+    @Test
+    public void updateQuestionnaires_questionnaireAccessViolation_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+        Map<String, FrequencyModel> frequencies = Map.of();
+
+        Questionnaire questionnaire = new Questionnaire();
+        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(List.of(questionnaire));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaires(carePlanId, questionnaireIds, frequencies));
+    }
+
+    @Test
+    public void updateQuestionnaires_carePlanAccessViolation_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> questionnaireIds = List.of();
+        Map<String, FrequencyModel> frequencies = Map.of();
+
+        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(List.of());
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.of(carePlan));
+
+        Mockito.doNothing().when(accessValidator).validateAccess(List.of());
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaires(carePlanId, questionnaireIds, frequencies));
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {

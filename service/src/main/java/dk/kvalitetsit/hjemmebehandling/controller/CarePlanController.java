@@ -127,20 +127,23 @@ public class CarePlanController {
     }
 
     @PatchMapping(value = "/v1/careplan/{id}")
-    public void patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
+    public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
         if(request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
-            throw new BadRequestException(String.format("Both questionnaireIds and questionnaireFrequencies must be supplied!"));
+            return ResponseEntity.badRequest().build();
         }
 
         try {
             carePlanService.updateQuestionnaires(id, request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
         }
+        catch(AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         catch(ServiceException e) {
             // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
-            throw new InternalServerErrorException();
+            return ResponseEntity.internalServerError().build();
         }
 
-        // TODO: Return an appropriate status code.
+        return ResponseEntity.ok().build();
     }
 
     private Map<String, FrequencyModel> mapFrequencies(Map<String, FrequencyDto> frequencyDtos) {
