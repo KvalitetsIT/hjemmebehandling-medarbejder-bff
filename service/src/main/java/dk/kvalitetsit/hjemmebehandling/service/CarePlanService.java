@@ -5,6 +5,8 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -23,10 +25,13 @@ public class CarePlanService {
 
     private FhirObjectBuilder fhirObjectBuilder;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder) {
+    private AccessValidator accessValidator;
+
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, AccessValidator accessValidator) {
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
+        this.accessValidator = accessValidator;
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException {
@@ -98,12 +103,15 @@ public class CarePlanService {
         return result;
     }
 
-    public Optional<CarePlanModel> getCarePlanById(String carePlanId) {
+    public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
         Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
 
         if(!carePlan.isPresent()) {
             return Optional.empty();
         }
+
+        // Validate that the user is allowed to update the QuestionnaireResponse.
+        accessValidator.validateAccess(carePlan.get());
 
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan.get());
 

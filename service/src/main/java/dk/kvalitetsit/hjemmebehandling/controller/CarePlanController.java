@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundExce
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,8 +20,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.function.ServerRequest;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -71,13 +74,27 @@ public class CarePlanController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public CarePlanDto getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public ResponseEntity<CarePlanDto> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
-        Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(id);
-        if(!carePlan.isPresent()) {
-            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id));
+        Optional<CarePlanModel> carePlan = Optional.empty();
+
+        try {
+            carePlan = carePlanService.getCarePlanById(id);
         }
-        return dtoMapper.mapCarePlanModel(carePlan.get());
+        catch (AccessValidationException e) {
+            logger.info("Refused to update questionnaireResponse.", e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        catch(ServiceException e) {
+            // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
+            logger.error("Could not update questionnaire response", e);
+            return ResponseEntity.internalServerError().build();
+        }
+
+        if(!carePlan.isPresent()) {
+            return ResponseEntity.notFound().header("Reason", String.format("CarePlan with id %s not found.", id)).build();
+        }
+        return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
     }
 
     @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")

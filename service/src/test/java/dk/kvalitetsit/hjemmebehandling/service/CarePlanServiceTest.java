@@ -4,6 +4,8 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Disabled;
@@ -33,7 +35,7 @@ public class CarePlanServiceTest {
     private FhirMapper fhirMapper;
 
     @Mock
-    private FhirObjectBuilder fhirObjectBuilder;
+    private AccessValidator accessValidator;
 
     private static final String CPR_1 = "0101010101";
 
@@ -201,12 +203,13 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanById_carePlanPresent_returnsCarePlan() {
+    public void getCarePlanById_carePlanPresent_returnsCarePlan() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
 
-        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId);
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId);
+        CarePlanModel carePlanModel = setupCarePlan(carePlan);
         PatientModel patientModel = setupPatient(patientId);
 
         // Act
@@ -218,12 +221,30 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanById_patientMissing_throwsException() {
+    public void getCarePlanById_carePlanForDifferentOrganization_throwsException() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
 
-        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId);
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId);
+        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.getCarePlanById(carePlanId));
+    }
+
+    @Test
+    public void getCarePlanById_patientMissing_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        String patientId = "Patient/patient-1";
+
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId);
+        CarePlanModel carePlanModel = setupCarePlan(carePlan);
         Mockito.when(fhirClient.lookupPatientById(patientId)).thenReturn(Optional.empty());
 
         // Act
@@ -233,7 +254,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanById_carePlanMissing_returnsEmpty() {
+    public void getCarePlanById_carePlanMissing_returnsEmpty() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
 
@@ -247,7 +268,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanById_carePlanPresent_includesQuestionnaires() {
+    public void getCarePlanById_carePlanPresent_includesQuestionnaires() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         String patientId = "Patient/patient-1";
@@ -255,7 +276,8 @@ public class CarePlanServiceTest {
 
         setupPatient(patientId);
 
-        CarePlanModel carePlanModel = setupCarePlan(carePlanId, patientId, questionnaireId);
+        CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
+        CarePlanModel carePlanModel = setupCarePlan(carePlan);
         QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
 
         // Act
@@ -289,13 +311,8 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
     }
 
-    private CarePlanModel setupCarePlan(String carePlanId, String patientId) {
-        return setupCarePlan(carePlanId, patientId, null);
-    }
-
-    private CarePlanModel setupCarePlan(String carePlanId, String patientId, String questionnaireId) {
-        CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
-        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.of(carePlan));
+    private CarePlanModel setupCarePlan(CarePlan carePlan) {
+        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
 
         CarePlanModel carePlanModel = new CarePlanModel();
         Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
@@ -336,6 +353,10 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapTiming(Mockito.any())).thenReturn(frequencyModel);
 
         return questionnaireModel;
+    }
+
+    private CarePlan buildCarePlan(String carePlanId, String patientId) {
+        return buildCarePlan(carePlanId, patientId, null);
     }
 
     private CarePlan buildCarePlan(String carePlanId, String patientId, String questionnaireId) {

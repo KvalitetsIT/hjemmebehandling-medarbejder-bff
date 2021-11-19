@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundExce
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,7 +93,7 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void getCarePlanById_carePlanPresent_200() {
+    public void getCarePlanById_carePlanPresent_200() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
 
@@ -102,22 +103,53 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlanDto);
 
         // Act
-        CarePlanDto result = subject.getCarePlanById(carePlanId);
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
-        assertEquals(carePlanDto, result);
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(carePlanDto, result.getBody());
     }
 
     @Test
-    public void getCarePlanById_carePlanMissing_404() {
+    public void getCarePlanById_carePlanMissing_404() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
 
         Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.empty());
+
         // Act
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
-        assertThrows(ResourceNotFoundException.class, () -> subject.getCarePlanById(carePlanId));
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+    }
+
+    @Test
+    public void getCarePlanById_accessViolation_403() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doThrow(AccessValidationException.class).when(carePlanService).getCarePlanById(carePlanId);
+
+        // Act
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+    }
+
+    @Test
+    public void getCarePlanById_failure_500() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doThrow(ServiceException.class).when(carePlanService).getCarePlanById(carePlanId);
+
+        // Act
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
     }
 
     @Test
