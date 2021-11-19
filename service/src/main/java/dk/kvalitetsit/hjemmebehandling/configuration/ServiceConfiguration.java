@@ -4,7 +4,6 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextInterceptor;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -45,9 +44,9 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired UserContextProvider userContextProvider) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), userContextProvider);
+        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), accessValidator);
     }
 
     @Bean
