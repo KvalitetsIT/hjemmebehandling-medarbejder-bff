@@ -50,6 +50,9 @@ public class QuestionnaireResponseController {
             }
             return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
         }
+        catch(AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         catch(ServiceException e) {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
             return ResponseEntity.internalServerError().build();

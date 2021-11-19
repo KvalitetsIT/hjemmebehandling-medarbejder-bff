@@ -38,11 +38,14 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         this.priorityComparator = priorityComparator;
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
         List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         if(responses.isEmpty()) {
             return List.of();
         }
+
+        // Validate that the user is allowed to retrieve the QuestionnaireResponses.
+        validateAccess(responses);
 
         // Look up questionnaires
         Map<String, Questionnaire> questionnairesById = getQuestionnairesById(questionnaireIds);

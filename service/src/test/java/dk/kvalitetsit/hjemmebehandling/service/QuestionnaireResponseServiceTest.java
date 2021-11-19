@@ -102,6 +102,23 @@ public class QuestionnaireResponseServiceTest {
     }
 
     @Test
+    public void getQuestionnaireResponses_accessViolation_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = CAREPLAN_ID_1;
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(response));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
+    }
+
+    @Test
     public void getQuestionnaireResponses_questionnairesMissing_throwsException() throws Exception {
         // Arrange
         String carePlanId = CAREPLAN_ID_1;
