@@ -281,8 +281,8 @@ public class FhirClient {
             throw new IllegalStateException("UserContext was not initialized!");
         }
 
-        var organization = lookupOrganizationBySorCode(context.getSorCode())
-                .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getSorCode())));
+        var organization = lookupOrganizationBySorCode(context.getOrgId())
+                .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getOrgId())));
 
         var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
         return FhirUtils.qualifyId(organizationId, ResourceType.Organization);

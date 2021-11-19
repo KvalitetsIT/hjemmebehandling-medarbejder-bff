@@ -131,8 +131,8 @@ public class QuestionnaireResponseService {
             throw new IllegalStateException("UserContext was not initialized!");
         }
 
-        Organization organization = fhirClient.lookupOrganizationBySorCode(context.getSorCode())
-                .orElseThrow(() -> new IllegalStateException(String.format("No organization was present for sorCode %s!", context.getSorCode())));
+        Organization organization = fhirClient.lookupOrganizationBySorCode(context.getOrgId())
+                .orElseThrow(() -> new IllegalStateException(String.format("No organization was present for sorCode %s!", context.getOrgId())));
 
         return organization.getIdElement().toUnqualifiedVersionless().getValue();
     }

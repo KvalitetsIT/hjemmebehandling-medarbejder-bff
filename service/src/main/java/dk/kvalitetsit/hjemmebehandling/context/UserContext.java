@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 public class UserContext {
 
 	
-	private String sorCode;
+	private String orgId;
 	private String firstName;
 	private String lastName;
 	private String fullName;
@@ -18,15 +18,15 @@ public class UserContext {
     }
 
     public UserContext(String sorCode) {
-        this.sorCode = sorCode;
+        this.orgId = sorCode;
     }
 
-    public String getSorCode() {
-        return sorCode;
+    public String getOrgId() {
+        return orgId;
     }
 
-    public void setSorCode(String sorCode) {
-        this.sorCode = sorCode;
+    public void setOrgId(String sorCode) {
+        this.orgId = sorCode;
     }
 
 	public String getFirstName() {
