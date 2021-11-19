@@ -76,6 +76,24 @@ public class CarePlanControllerTest {
     }
 
     @Test
+    public void createCarePlan_accessViolation_400() throws Exception {
+        // Arrange
+        CreateCarePlanRequest request = new CreateCarePlanRequest();
+        request.setCarePlan(new CarePlanDto());
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
+
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(AccessValidationException.class);
+
+        // Act
+        ResponseEntity<Void> result = subject.createCarePlan(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
     public void createCarePlan_failure_500() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
@@ -87,9 +105,10 @@ public class CarePlanControllerTest {
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(ServiceException.class);
 
         // Act
+        ResponseEntity<Void> result = subject.createCarePlan(request);
 
         // Assert
-        assertThrows(InternalServerErrorException.class, () -> subject.createCarePlan(request));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
     }
 
     @Test

@@ -9,6 +9,8 @@ import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Reference;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class AccessValidator {
     private UserContextProvider userContextProvider;
@@ -20,16 +22,23 @@ public class AccessValidator {
     }
 
     public void validateAccess(DomainResource resource) throws AccessValidationException {
-        // Validate that the user is allowed to update the Resource.
-        String userOrganizationId = getOrganizationIdForUser();
-        String resourceOrganizationId = getOrganizationIdForResource(resource);
+        validateAccess(List.of(resource));
+    }
 
-        if(!userOrganizationId.equals(resourceOrganizationId)) {
-            throw new AccessValidationException(String.format("Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
-                    resource.getResourceType(),
-                    resource.getId(),
-                    userOrganizationId,
-                    resourceOrganizationId));
+    public void validateAccess(List<? extends DomainResource> resources) throws AccessValidationException {
+        // Validate that the user is allowed to access all the resources.
+        String userOrganizationId = getOrganizationIdForUser();
+
+        for(var resource : resources) {
+            String resourceOrganizationId = getOrganizationIdForResource(resource);
+
+            if(!userOrganizationId.equals(resourceOrganizationId)) {
+                throw new AccessValidationException(String.format("Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
+                        resource.getResourceType(),
+                        resource.getId(),
+                        userOrganizationId,
+                        resourceOrganizationId));
+            }
         }
     }
 

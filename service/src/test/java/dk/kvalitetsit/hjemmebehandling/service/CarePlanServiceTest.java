@@ -20,6 +20,7 @@ import java.sql.Date;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,6 +41,8 @@ public class CarePlanServiceTest {
     private static final String CPR_1 = "0101010101";
 
     private static final String PATIENT_ID_1 = "patient-1";
+    private static final String PLANDEFINITION__ID_1 = "plandefinition-1";
+    private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
 
     @Test
     public void createCarePlan_patientExists_patientIsNotCreated() throws Exception {
@@ -97,6 +100,42 @@ public class CarePlanServiceTest {
 
         // Assert
         assertThrows(IllegalStateException.class, () -> subject.createCarePlan(carePlanModel));
+    }
+
+    @Test
+    public void createCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of());
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Questionnaire questionnaire = new Questionnaire();
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.createCarePlan(carePlanModel));
+    }
+
+    @Test
+    public void createCarePlan_planDefinitionAccessViolation_throwsException() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(), List.of(PLANDEFINITION__ID_1));
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION__ID_1))).thenReturn(List.of(planDefinition));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(planDefinition));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test
@@ -290,12 +329,39 @@ public class CarePlanServiceTest {
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {
+        return buildCarePlanModel(cpr, null, null);
+    }
+
+    private CarePlanModel buildCarePlanModel(String cpr, List<String> questionnaireIds, List<String> planDefinitionIds) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         carePlanModel.setPatient(new PatientModel());
         carePlanModel.getPatient().setCpr(CPR_1);
+        if(questionnaireIds != null) {
+            carePlanModel.setQuestionnaires(questionnaireIds.stream().map(id -> buildQuestionnaireWrapperModel(id)).collect(Collectors.toList()));
+        }
+        if(planDefinitionIds != null) {
+            carePlanModel.setPlanDefinitions(planDefinitionIds.stream().map(id -> buildPlanDefinitionModel(id)).collect(Collectors.toList()));
+        }
 
         return carePlanModel;
+    }
+
+    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId) {
+        var model = new QuestionnaireWrapperModel();
+
+        model.setQuestionnaire(new QuestionnaireModel());
+        model.getQuestionnaire().setId(questionnaireId);
+
+        return model;
+    }
+
+    private PlanDefinitionModel buildPlanDefinitionModel(String planDefinitionId) {
+        var model = new PlanDefinitionModel();
+
+        model.setId(planDefinitionId);
+
+        return model;
     }
 
     private void setupCarePlanForPatient(String carePlanId, String patientId) {

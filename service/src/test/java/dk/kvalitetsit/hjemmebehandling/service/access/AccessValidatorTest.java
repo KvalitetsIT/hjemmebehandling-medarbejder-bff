@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -112,6 +113,42 @@ public class AccessValidatorTest {
 
         // Assert
         assertDoesNotThrow(() -> subject.validateAccess(resource));
+    }
+
+    @Test
+    public void validateAccess_conjunction_failure() {
+        // Arrange
+        var resource1 = buildResource(ORGANIZATION_ID_1);
+        var resource2 = buildResource(ORGANIZATION_ID_2);
+
+        var context = new UserContext(SOR_CODE_1);
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
+
+        var organization = buildOrganization(ORGANIZATION_ID_1);
+        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId())).thenReturn(Optional.of(organization));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.validateAccess(List.of(resource1, resource2)));
+    }
+
+    @Test
+    public void validateAccess_conjunction_success() {
+        // Arrange
+        var resource1 = buildResource(ORGANIZATION_ID_1);
+        var resource2 = buildResource(ORGANIZATION_ID_1);
+
+        var context = new UserContext(SOR_CODE_1);
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
+
+        var organization = buildOrganization(ORGANIZATION_ID_1);
+        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId())).thenReturn(Optional.of(organization));
+
+        // Act
+
+        // Assert
+        assertDoesNotThrow(() -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
     private DomainResource buildResource() {

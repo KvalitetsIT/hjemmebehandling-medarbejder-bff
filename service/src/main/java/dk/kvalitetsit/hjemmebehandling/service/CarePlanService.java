@@ -32,7 +32,7 @@ public class CarePlanService extends AccessValidatingService {
         this.fhirObjectBuilder = fhirObjectBuilder;
     }
 
-    public String createCarePlan(CarePlanModel carePlan) throws ServiceException {
+    public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
@@ -50,6 +50,9 @@ public class CarePlanService extends AccessValidatingService {
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
             carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
         }
+
+        // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
+        validateReferences(carePlan);
 
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
@@ -309,5 +312,19 @@ public class CarePlanService extends AccessValidatingService {
 
     private boolean isActive(CarePlan carePlan) {
         return carePlan.getPeriod().getEnd() == null;
+    }
+
+    private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
+        // Validate questionnaires
+        if(carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
+            List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
+            validateAccess(questionnaires);
+        }
+
+        // Validate planDefinitions
+        if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
+            List<PlanDefinition> planDefinitions = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
+            validateAccess(planDefinitions);
+        }
     }
 }

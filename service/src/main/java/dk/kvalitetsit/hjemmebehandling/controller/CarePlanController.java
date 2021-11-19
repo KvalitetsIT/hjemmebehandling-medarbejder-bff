@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.function.ServerRequest;
 
 import java.net.URI;
+import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,14 +103,18 @@ public class CarePlanController {
             @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content)
     })
     @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
-    public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
+    public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
         }
+        catch(AccessValidationException e) {
+            logger.info("Detected access violation.", e);
+            return ResponseEntity.badRequest().build();
+        }
         catch(ServiceException e) {
             logger.error("Error creating CarePlan", e);
-            throw new InternalServerErrorException();
+            return ResponseEntity.internalServerError().build();
         }
 
         URI location = locationHeaderBuilder.buildLocationHeader(carePlanId);
