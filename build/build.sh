@@ -9,5 +9,8 @@ docker rmi -f hapi-server-resources
 docker build -t hapi-server-resources -f ./compose/Dockerfile-hapi-server-resources --no-cache ./compose
 docker run -d --name hapi-server-resources hapi-server-resources
 
+echo 'Testing docker-compose'
+docker-compose version
+
 # Build inside docker container
 docker run -v /var/run/docker.sock:/var/run/docker.sock  -v $HOME/.docker/config.json:/root/.docker/config.json -v $(pwd):/src -v $HOME/.m2:/root/.m2 --volumes-from hjemmebehandling-medarbejder-bff-resources --volumes-from hapi-server-resources maven:3-jdk-11 /src/build/maven.sh
