@@ -4,6 +4,11 @@
 
 <Questionnaire xmlns="http://hl7.org/fhir">
    <id value="questionnaire-infektionsmedicinsk1"></id>
+   <extension url="http://hjemmebehandling.rm.dk/organization">
+      <valueReference>
+         <reference value="Organization/organization-1"/>
+      </valueReference>
+   </extension>
    <language value="da-DK"></language>
    <status value="active"></status>
    <item>
