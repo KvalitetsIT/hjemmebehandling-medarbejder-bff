@@ -49,7 +49,7 @@ public class FhirClient {
 
     public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
-        var satisfiedUntilCriterion = new DateClientParam("careplan_satisfied_until").before().millis(Date.from(pointInTime));
+        var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupByCriteria(CarePlan.class, satisfiedUntilCriterion, organizationCriterion);
