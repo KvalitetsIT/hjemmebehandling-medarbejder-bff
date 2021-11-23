@@ -27,6 +27,8 @@
             <scheduledTiming>
                 <repeat>
                     <dayOfWeek value="mon"/>
+                    <dayOfWeek value="wed"/>
+                    <timeOfDay value="14:33"/>
                 </repeat>
             </scheduledTiming>
         </detail>

@@ -27,6 +27,7 @@
             <scheduledTiming>
                 <repeat>
                     <dayOfWeek value="tue"/>
+                    <timeOfDay value="15:43"/>
                 </repeat>
             </scheduledTiming>
         </detail>

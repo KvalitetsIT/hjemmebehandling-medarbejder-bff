@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.Questionnaire;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +57,8 @@ public class DtoMapper {
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        frequencyModel.setWeekday(frequencyDto.getWeekday());
+        frequencyModel.setWeekdays(frequencyDto.getWeekdays());
+        frequencyModel.setTimeOfDay(LocalTime.parse(frequencyDto.getTimeOfDay()));
 
         return frequencyModel;
     }
@@ -64,7 +66,8 @@ public class DtoMapper {
     public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
         FrequencyDto frequencyDto = new FrequencyDto();
 
-        frequencyDto.setWeekday(frequencyModel.getWeekday());
+        frequencyDto.setWeekdays(frequencyModel.getWeekdays());
+        frequencyDto.setTimeOfDay(frequencyModel.getTimeOfDay().toString());
 
         return frequencyDto;
     }

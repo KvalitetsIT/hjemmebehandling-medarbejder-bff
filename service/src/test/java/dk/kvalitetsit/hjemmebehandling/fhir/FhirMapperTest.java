@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -168,7 +169,8 @@ public class FhirMapperTest {
     private FrequencyModel buildFrequencyModel() {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        frequencyModel.setWeekday(Weekday.FRI);
+        frequencyModel.setWeekdays(List.of(Weekday.FRI));
+        frequencyModel.setTimeOfDay(LocalTime.parse("05:00"));
 
         return frequencyModel;
     }

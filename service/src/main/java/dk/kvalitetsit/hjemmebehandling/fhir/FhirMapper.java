@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,8 @@ public class FhirMapper {
         Timing.TimingRepeatComponent repeat = new Timing.TimingRepeatComponent();
 
         EnumFactory<Timing.DayOfWeek> factory = new Timing.DayOfWeekEnumFactory();
-        repeat.setDayOfWeek(List.of(new Enumeration<>(factory, frequencyModel.getWeekday().toString().toLowerCase())));
+        repeat.setDayOfWeek(frequencyModel.getWeekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).collect(Collectors.toList()));
+        repeat.setTimeOfDay(List.of(new TimeType(frequencyModel.getTimeOfDay().toString())));
         timing.setRepeat(repeat);
 
         return timing;
@@ -197,10 +199,8 @@ public class FhirMapper {
 
         if(timing.getRepeat() != null) {
             Timing.TimingRepeatComponent repeat = timing.getRepeat();
-            if(repeat.getDayOfWeek() == null || repeat.getDayOfWeek().size() != 1) {
-                throw new IllegalStateException("Only repeats of one day a week is supperted (yet)!");
-            }
-            frequencyModel.setWeekday(Enum.valueOf(Weekday.class, repeat.getDayOfWeek().get(0).getValue().toString()));
+            frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).collect(Collectors.toList()));
+            frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
         }
 
         return frequencyModel;

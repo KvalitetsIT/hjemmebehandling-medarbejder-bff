@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -138,7 +139,8 @@ public class DtoMapperTest {
     private FrequencyDto buildFrequencyDto() {
         FrequencyDto frequencyDto = new FrequencyDto();
 
-        frequencyDto.setWeekday(Weekday.FRI);
+        frequencyDto.setWeekdays(List.of(Weekday.FRI));
+        frequencyDto.setTimeOfDay("04:00");
 
         return frequencyDto;
     }
@@ -146,7 +148,8 @@ public class DtoMapperTest {
     private FrequencyModel buildFrequencyModel() {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        frequencyModel.setWeekday(Weekday.FRI);
+        frequencyModel.setWeekdays(List.of(Weekday.FRI));
+        frequencyModel.setTimeOfDay(LocalTime.parse("04:00"));
 
         return frequencyModel;
     }
