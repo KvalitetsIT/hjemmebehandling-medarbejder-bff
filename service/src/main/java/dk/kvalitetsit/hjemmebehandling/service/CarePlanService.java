@@ -134,6 +134,10 @@ public class CarePlanService extends AccessValidatingService {
         return Optional.of(carePlanModel);
     }
 
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
+        throw new UnsupportedOperationException();
+    }
+
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);

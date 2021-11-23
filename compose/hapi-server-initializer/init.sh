@@ -36,6 +36,7 @@ delete 'SearchParameter/searchparameter-organization-questionnaireresponse'
 delete 'SearchParameter/searchparameter-organization-plandefinition'
 delete 'SearchParameter/searchparameter-organization-careplan'
 delete 'SearchParameter/searchparameter-examination-status'
+delete 'SearchParameter/searchparameter-careplan-satisfied-until'
 
 delete 'QuestionnaireResponse/questionnaireresponse-4'
 delete 'QuestionnaireResponse/questionnaireresponse-3'
@@ -81,6 +82,7 @@ create 'questionnaireresponse-2.xml' 'QuestionnaireResponse/questionnairerespons
 create 'questionnaireresponse-3.xml' 'QuestionnaireResponse/questionnaireresponse-3'
 create 'questionnaireresponse-4.xml' 'QuestionnaireResponse/questionnaireresponse-4'
 
+create 'searchparameter-careplan-satisfied-until.xml' 'SearchParameter/searchparameter-careplan-satisfied-until'
 create 'searchparameter-examination-status.xml' 'SearchParameter/searchparameter-examination-status'
 create 'searchparameter-organization-careplan.xml' 'SearchParameter/searchparameter-organization-careplan'
 create 'searchparameter-organization-plandefinition.xml' 'SearchParameter/searchparameter-organization-plandefinition'

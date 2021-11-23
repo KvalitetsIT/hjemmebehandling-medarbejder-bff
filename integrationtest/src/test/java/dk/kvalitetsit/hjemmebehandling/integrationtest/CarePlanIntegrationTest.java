@@ -57,7 +57,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         String cpr = "0101010101";
 
         // Act
-        ApiResponse<List<CarePlanDto>> response = subject.getCarePlansByCprWithHttpInfo(cpr);
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null);
 
         // Assert
         assertEquals(200, response.getStatusCode());

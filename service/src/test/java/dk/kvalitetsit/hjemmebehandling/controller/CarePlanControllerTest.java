@@ -3,13 +3,12 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
 import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.checkerframework.checker.nullness.Opt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -172,21 +171,23 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void getCarePlansByCpr_parameterMissing_400() {
+    public void searchCarePlans_badParameterCombination_400() {
         // Arrange
         Optional<String> cpr = Optional.empty();
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
     }
 
     @Test
-    public void getCarePlansByCpr_carePlansPresent_200() throws Exception {
+    public void searchCarePlans_carePlansPresentForCpr_200() throws Exception {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
 
         CarePlanModel carePlanModel1 = new CarePlanModel();
         CarePlanModel carePlanModel2 = new CarePlanModel();
@@ -198,7 +199,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -208,28 +209,55 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void getCarePlansByCpr_carePlansMissing_204() throws Exception {
+    public void searchCarePlans_unsatisfiedCarePlansPresent_200() throws Exception {
+        // Arrange
+        Optional<String> cpr = Optional.empty();
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.of(true);
+
+        CarePlanModel carePlanModel1 = new CarePlanModel();
+        CarePlanModel carePlanModel2 = new CarePlanModel();
+        CarePlanDto carePlanDto1 = new CarePlanDto();
+        CarePlanDto carePlanDto2 = new CarePlanDto();
+
+        Mockito.when(carePlanService.getCarePlansWithUnsatisfiedSchedules()).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
+        Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
+
+        // Act
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(2, result.getBody().size());
+        assertTrue(result.getBody().contains(carePlanDto1));
+        assertTrue(result.getBody().contains(carePlanDto2));
+    }
+
+    @Test
+    public void searchCarePlans_carePlansMissing_204() throws Exception {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
 
         Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules);
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
     }
 
     @Test
-    public void getCarePlansByCpr_failureToFetch_500() throws Exception {
+    public void searchCarePlans_failureToFetch_500() throws Exception {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
 
         Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenThrow(ServiceException.class);
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.getCarePlansByCpr(cpr);
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

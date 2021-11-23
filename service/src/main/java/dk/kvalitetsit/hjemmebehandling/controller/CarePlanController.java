@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -23,10 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.function.ServerRequest;
 
 import java.net.URI;
-import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +37,9 @@ public class CarePlanController {
     private DtoMapper dtoMapper;
     private LocationHeaderBuilder locationHeaderBuilder;
 
-    private static final String QUESTIONNAIRES_KEY = "questionnaires";
+    private enum SearchType {
+        CPR, UNSATISFIED_CAREPLANS
+    }
 
     public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
@@ -51,13 +48,22 @@ public class CarePlanController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> getCarePlansByCpr(@RequestParam("cpr") Optional<String> cpr) {
-        if(!cpr.isPresent()) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules) {
+        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules);
+        if(!searchType.isPresent()) {
+            logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            List<CarePlanModel> carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+            List<CarePlanModel> carePlans = null;
+            if(cpr.isPresent()) {
+                carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+            }
+            else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
+                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules();
+            }
+
             if(carePlans.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }
@@ -154,5 +160,20 @@ public class CarePlanController {
         }
 
         return frequencies;
+    }
+
+    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules) {
+        boolean sameParameterPresence = cpr.isPresent() == onlyUnsatisfiedSchedules.isPresent();
+        boolean requestAllCarePlans = onlyUnsatisfiedSchedules.isPresent() && !onlyUnsatisfiedSchedules.get();
+
+        if(sameParameterPresence || requestAllCarePlans) {
+            return Optional.empty();
+        }
+        else if(cpr.isPresent()) {
+            return Optional.of(SearchType.CPR);
+        }
+        else {
+            return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
+        }
     }
 }
