@@ -11,7 +11,6 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,9 +25,9 @@ public class FhirMapper {
         carePlan.setId(carePlanModel.getId());
         carePlan.setTitle(carePlanModel.getTitle());
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-        carePlan.setCreated(dateProvider.now());
+        carePlan.setCreated(dateProvider.today());
         carePlan.setPeriod(new Period());
-        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.now());
+        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
 
         // Set the subject
         if(carePlanModel.getPatient() != null) {

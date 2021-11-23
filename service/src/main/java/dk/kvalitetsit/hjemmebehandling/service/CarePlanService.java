@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +25,15 @@ public class CarePlanService extends AccessValidatingService {
 
     private FhirObjectBuilder fhirObjectBuilder;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, AccessValidator accessValidator) {
+    private DateProvider dateProvider;
+
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, DateProvider dateProvider, AccessValidator accessValidator) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
+        this.dateProvider = dateProvider;
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
@@ -80,28 +84,12 @@ public class CarePlanService extends AccessValidatingService {
             return List.of();
         }
 
-        List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
-
-        // Set patient on each careplan in the result.
-        result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient.get())));
-
-        // Look up the questionnaires and include them in the result.
-        Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
-        // Look up the plan definitions and include them in the result
-        Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
-        for(CarePlanModel carePlanModel : result) {
-            if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
-                // The Careplan simply may not have any questionnaires attached, so we continue.
-                continue;
-            }
-            List<QuestionnaireWrapperModel> questionnaires = questionnairesByCarePlanId.get(carePlanModel.getId());
-            carePlanModel.setQuestionnaires(questionnaires);
-
-            List<PlanDefinitionModel> planDefinitions = planDefinitionsByCarePlanId.get(carePlanModel.getId());
-            carePlanModel.setPlanDefinitions(planDefinitions);
-        }
-
+        List<CarePlanModel> result = mapCarePlans(carePlans, patient.get());
         return result;
+    }
+
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
+        throw new UnsupportedOperationException();
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
@@ -114,28 +102,14 @@ public class CarePlanService extends AccessValidatingService {
         // Validate that the user is allowed to update the QuestionnaireResponse.
         validateAccess(carePlan.get());
 
-        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan.get());
-
         // Look up the subject and include it in the result.
         Optional<Patient> patient = fhirClient.lookupPatientById(carePlan.get().getSubject().getReference());
         if(!patient.isPresent()) {
             throw new IllegalStateException(String.format("Could not look up subject for CarePlan %s!", carePlanId));
         }
-        carePlanModel.setPatient(fhirMapper.mapPatient(patient.get()));
 
-        // Look up the questionnaires and include them in the result.
-        List<QuestionnaireWrapperModel> questionnaires = getQuestionnaires(carePlan.get());
-        carePlanModel.setQuestionnaires(questionnaires);
-
-        // Look up the plan definitions and include them in the result
-        Map<String, List<PlanDefinitionModel>> planDefinitions = getPlanDefinitionsByCarePlanId(List.of(carePlan.get()));
-        carePlanModel.setPlanDefinitions(planDefinitions.get(carePlan.get().getIdElement().toUnqualifiedVersionless().getValue()));
-
+        CarePlanModel carePlanModel = mapCarePlan(carePlan.get(), patient.get());
         return Optional.of(carePlanModel);
-    }
-
-    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
-        throw new UnsupportedOperationException();
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
@@ -163,6 +137,39 @@ public class CarePlanService extends AccessValidatingService {
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(carePlan.get());
+    }
+
+    private CarePlanModel mapCarePlan(CarePlan carePlan, Patient patient) {
+        return mapCarePlans(List.of(carePlan), patient).get(0);
+    }
+
+    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Patient patient) {
+        if(carePlans.isEmpty()) {
+            return List.of();
+        }
+
+        List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
+
+        // Set patient on each careplan in the result.
+        result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient)));
+
+        // Look up the questionnaires and include them in the result.
+        Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
+        // Look up the plan definitions and include them in the result
+        Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
+        for(CarePlanModel carePlanModel : result) {
+            if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
+                // The Careplan simply may not have any questionnaires attached, so we continue.
+                continue;
+            }
+            List<QuestionnaireWrapperModel> questionnaires = questionnairesByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setQuestionnaires(questionnaires);
+
+            List<PlanDefinitionModel> planDefinitions = planDefinitionsByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setPlanDefinitions(planDefinitions);
+        }
+
+        return result;
     }
 
     private Map<String, Timing> mapFrequencies(Map<String, FrequencyModel> frequencies) {

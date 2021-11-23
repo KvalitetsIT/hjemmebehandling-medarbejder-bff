@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
@@ -17,6 +18,7 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +44,18 @@ public class FhirClient {
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupByCriteria(CarePlan.class, patientCriterion, organizationCriterion);
+    }
+
+    public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
+//        var client = FhirContext.forR4().newRestfulGenericClient("http://localhost:8082/fhir");
+//
+//        var bundle = client
+//                .search()
+//                .forResource(CarePlan.class)
+//                .where(new DateClientParam("careplan_satisfied_until").before().now())
+//                .execute();
+
+        throw new UnsupportedOperationException();
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {

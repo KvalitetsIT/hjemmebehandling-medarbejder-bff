@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextInterceptor;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,8 +30,8 @@ public class ServiceConfiguration {
 	private String userContextHandler;
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired AccessValidator accessValidator) {
-        return new CarePlanService(client, mapper, builder, accessValidator);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
+        return new CarePlanService(client, mapper, builder, dateProvider, accessValidator);
     }
 
     @Bean

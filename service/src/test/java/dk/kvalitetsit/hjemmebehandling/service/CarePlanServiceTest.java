@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ public class CarePlanServiceTest {
     private FhirMapper fhirMapper;
 
     @Mock
+    private DateProvider dateProvider;
+
+    @Mock
     private AccessValidator accessValidator;
 
     private static final String CPR_1 = "0101010101";
@@ -44,6 +48,8 @@ public class CarePlanServiceTest {
     private static final String PATIENT_ID_1 = "patient-1";
     private static final String PLANDEFINITION__ID_1 = "plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
+
+    private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
     @Test
     public void createCarePlan_patientExists_patientIsNotCreated() throws Exception {
@@ -204,7 +210,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanByCpr_carePlansPresent_returnsEmptyList() throws Exception {
+    public void getCarePlanByCpr_carePlansMissing_returnsEmptyList() throws Exception {
         // Arrange
         String cpr = "0101010101";
         String patientId = "patient-1";
@@ -240,6 +246,44 @@ public class CarePlanServiceTest {
         assertEquals(1, result.size());
         assertEquals(1, result.get(0).getQuestionnaires().size());
         assertEquals(questionnaireModel, result.get(0).getQuestionnaires().get(0).getQuestionnaire());
+    }
+
+    @Test
+    @Disabled
+    public void getCarePlansWithUnsatisfiedSchedules_carePlansPresent_returnsCarePlans() throws Exception {
+        // Arrange
+        Instant pointInTime = POINT_IN_TIME;
+        Mockito.when(dateProvider.now()).thenReturn(pointInTime);
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime)).thenReturn(List.of(carePlan));
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
+
+        // Act
+        List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules();
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(carePlanModel, result.get(0));
+    }
+
+    @Test
+    @Disabled
+    public void getCarePlansWithUnsatisfiedSchedules_carePlansMissing_returnsEmptyList() throws Exception {
+        // Arrange
+        Instant pointInTime = POINT_IN_TIME;
+        Mockito.when(dateProvider.now()).thenReturn(pointInTime);
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime)).thenReturn(List.of(carePlan));
+
+        // Act
+        List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules();
+
+        // Assert
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -284,7 +328,8 @@ public class CarePlanServiceTest {
         String patientId = "Patient/patient-1";
 
         CarePlan carePlan = buildCarePlan(carePlanId, patientId);
-        CarePlanModel carePlanModel = setupCarePlan(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
+
         Mockito.when(fhirClient.lookupPatientById(patientId)).thenReturn(Optional.empty());
 
         // Act
@@ -421,6 +466,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
 
         CarePlanModel carePlanModel = new CarePlanModel();
+        carePlanModel.setId(carePlan.getId());
         Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
 
         return carePlanModel;
