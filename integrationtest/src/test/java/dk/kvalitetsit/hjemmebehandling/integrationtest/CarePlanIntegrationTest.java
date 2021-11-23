@@ -62,4 +62,16 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         // Assert
         assertEquals(200, response.getStatusCode());
     }
+
+    @Test
+    public void getCarePlansWithUnsatisfiedSchedules_success() throws Exception {
+        // Arrange
+        boolean onlyUnsatisfiedSchedules = true;
+
+        // Act
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(null, onlyUnsatisfiedSchedules);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
 }

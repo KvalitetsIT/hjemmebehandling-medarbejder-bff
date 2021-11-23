@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,6 +108,42 @@ public class FhirClientTest {
 
         // Act
         List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
+
+        // Assert
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    public void lookupCarePlansUnsatisfiedAt_success() {
+        // Arrange
+        Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+
+        CarePlan carePlan = new CarePlan();
+        setupSearchCarePlanClient(carePlan);
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
+        // Act
+        List<CarePlan> result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(carePlan, result.get(0));
+    }
+
+    @Test
+    public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() {
+        // Arrange
+        Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+
+        setupSearchCarePlanClient();
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
+        // Act
+        List<CarePlan> result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
 
         // Assert
         assertEquals(0, result.size());

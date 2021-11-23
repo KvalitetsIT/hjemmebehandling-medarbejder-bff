@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -47,15 +48,11 @@ public class FhirClient {
     }
 
     public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
-//        var client = FhirContext.forR4().newRestfulGenericClient("http://localhost:8082/fhir");
-//
-//        var bundle = client
-//                .search()
-//                .forResource(CarePlan.class)
-//                .where(new DateClientParam("careplan_satisfied_until").before().now())
-//                .execute();
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var satisfiedUntilCriterion = new DateClientParam("careplan_satisfied_until").before().millis(Date.from(pointInTime));
+        var organizationCriterion = buildOrganizationCriterion();
 
-        throw new UnsupportedOperationException();
+        return lookupByCriteria(CarePlan.class, satisfiedUntilCriterion, organizationCriterion);
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {

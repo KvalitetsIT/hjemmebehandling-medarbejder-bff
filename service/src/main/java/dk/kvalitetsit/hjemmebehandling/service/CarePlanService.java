@@ -201,7 +201,7 @@ public class CarePlanService extends AccessValidatingService {
 
         Map<String, Patient> patientsById = fhirClient.lookupPatientsById(patientIds)
                 .stream()
-                .collect(Collectors.toMap(p -> p.getId(), p -> p));
+                .collect(Collectors.toMap(p -> p.getIdElement().toUnqualifiedVersionless().getValue(), p -> p));
 
         return carePlans
                 .stream()
