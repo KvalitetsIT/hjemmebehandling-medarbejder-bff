@@ -29,6 +29,7 @@ public class FhirMapper {
         carePlan.setCreated(dateProvider.today());
         carePlan.setPeriod(new Period());
         carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
 
         // Set the subject
         if(carePlanModel.getPatient() != null) {
@@ -65,6 +66,7 @@ public class FhirMapper {
         if(carePlan.getPeriod().getEnd() != null) {
             carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
         }
+        carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
 
         return carePlanModel;
     }
@@ -338,23 +340,25 @@ public class FhirMapper {
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
         CanonicalType instantiatesCanonical = new CanonicalType(FhirUtils.qualifyId(questionnaireWrapperModel.getQuestionnaire().getId(), ResourceType.Questionnaire));
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
+        Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
 
-        return buildActivity(instantiatesCanonical, timing);
+        return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil);
     }
 
-    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing) {
+    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
 
-        activity.setDetail(buildDetail(instantiatesCanonical, timing));
+        activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil));
 
         return activity;
     }
 
-    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing) {
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
 
         detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
         detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
+        detail.addExtension(activitySatisfiedUntil);
         detail.setScheduled(timing);
 
         return detail;

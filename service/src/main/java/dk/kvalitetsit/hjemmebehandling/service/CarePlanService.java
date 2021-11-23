@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -59,6 +60,9 @@ public class CarePlanService extends AccessValidatingService {
 
         // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
         validateReferences(carePlan);
+
+        // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
+        initializeFrequencyTimestamps(carePlan);
 
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
@@ -259,7 +263,8 @@ public class CarePlanService extends AccessValidatingService {
         Map<String, QuestionnaireModel> questionnairesById = questionnaires.stream().collect(Collectors.toMap(q -> q.getId(), q -> q));
 
         for(var activity : carePlan.getActivity()) {
-            String questionnaireId = getQuestionnaireId(activity.getDetail());
+            var detail = activity.getDetail();
+            String questionnaireId = getQuestionnaireId(detail);
 
             // Get the questionnaire
             if(!questionnairesById.containsKey(questionnaireId)) {
@@ -268,9 +273,12 @@ public class CarePlanService extends AccessValidatingService {
             QuestionnaireModel questionnaire = questionnairesById.get(questionnaireId);
 
             // Get the frequency
-            FrequencyModel frequency = getFrequencyModel(activity.getDetail());
+            FrequencyModel frequency = getFrequencyModel(detail);
 
-            result.add(new QuestionnaireWrapperModel(questionnaire, frequency));
+            // Get the satisfied-timestamp
+            Instant activitySatisfiedUntil = getActivitySatisfiedUntil(detail);
+
+            result.add(new QuestionnaireWrapperModel(questionnaire, frequency, activitySatisfiedUntil));
         }
 
         return result;
@@ -343,6 +351,10 @@ public class CarePlanService extends AccessValidatingService {
         return fhirMapper.mapTiming((Timing) detail.getScheduled());
     }
 
+    private Instant getActivitySatisfiedUntil(CarePlan.CarePlanActivityDetailComponent detail) {
+        return ExtensionMapper.extractActivitySatisfiedUntil(detail.getExtension());
+    }
+
     private QuestionnaireWrapperModel wrapQuestionnaire(Questionnaire questionnaire, Map<String, FrequencyModel> frequenciesById) {
         QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
 
@@ -373,5 +385,15 @@ public class CarePlanService extends AccessValidatingService {
             List<PlanDefinition> planDefinitions = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
             validateAccess(planDefinitions);
         }
+    }
+
+    private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
+        // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
+        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+            var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapper.getFrequency()).next().next().getPointInTime();
+            questionnaireWrapper.setSatisfiedUntil(nextDeadline);
+        }
+        var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getSatisfiedUntil()).min(Comparator.naturalOrder()).orElse(Instant.MAX);
+        carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
 }

@@ -8,6 +8,8 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
+import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Disabled;
@@ -20,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -192,6 +195,28 @@ public class CarePlanServiceTest {
 
         // Assert
         assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
+    }
+
+    @Test
+    public void createCarePlan_populatesSatisfiedUntil() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION__ID_1));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
+        // Act
+        String result = subject.createCarePlan(carePlanModel);
+
+        // Assert
+        var wrapper = carePlanModel.getQuestionnaires().get(0);
+        var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().next().getPointInTime();
+        assertEquals(expectedPointInTime, wrapper.getSatisfiedUntil());
+        assertEquals(expectedPointInTime, carePlanModel.getSatisfiedUntil());
     }
 
     @Test
@@ -458,9 +483,11 @@ public class CarePlanServiceTest {
 
         carePlanModel.setPatient(new PatientModel());
         carePlanModel.getPatient().setCpr(CPR_1);
+        carePlanModel.setQuestionnaires(List.of());
         if(questionnaireIds != null) {
             carePlanModel.setQuestionnaires(questionnaireIds.stream().map(id -> buildQuestionnaireWrapperModel(id)).collect(Collectors.toList()));
         }
+        carePlanModel.setPlanDefinitions(List.of());
         if(planDefinitionIds != null) {
             carePlanModel.setPlanDefinitions(planDefinitionIds.stream().map(id -> buildPlanDefinitionModel(id)).collect(Collectors.toList()));
         }
@@ -473,6 +500,11 @@ public class CarePlanServiceTest {
 
         model.setQuestionnaire(new QuestionnaireModel());
         model.getQuestionnaire().setId(questionnaireId);
+
+        FrequencyModel frequencyModel = new FrequencyModel();
+        frequencyModel.setWeekdays(List.of(Weekday.TUE));
+        frequencyModel.setTimeOfDay(LocalTime.parse("04:00"));
+        model.setFrequency(frequencyModel);
 
         return model;
     }
