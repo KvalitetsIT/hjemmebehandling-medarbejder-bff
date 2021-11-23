@@ -4,12 +4,25 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdSet;
+import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Type;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ExtensionMapper {
+    public static Extension mapActivitySatisfiedUntil(Instant pointInTime) {
+        return buildExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime.toString());
+    }
+
+    public static Extension mapCarePlanSatisfiedUntil(Instant pointInTime) {
+        return buildExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime.toString());
+    }
+
     public static Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
         return buildExtension(Systems.EXAMINATION_STATUS, examinationStatus.toString());
     }
@@ -36,6 +49,14 @@ public class ExtensionMapper {
             result.addExtension(thresholdItem);
         }
         return result;
+    }
+
+    public static Instant extractActivitySatisfiedUntil(List<Extension> extensions) {
+        return extractInstantFromExtensions(extensions, Systems.ACTIVITY_SATISFIED_UNTIL);
+    }
+
+    public static Instant extractCarePlanSatisfiedUntil(List<Extension> extensions) {
+        return extractInstantFromExtensions(extensions, Systems.CAREPLAN_SATISFIED_UNTIL);
     }
 
     public static ExaminationStatus extractExaminationStatus(List<Extension> extensions) {
@@ -77,9 +98,17 @@ public class ExtensionMapper {
     }
 
     private static <T extends Enum<T>> T extractEnumFromExtensions(List<Extension> extensions, String url, Class<T> type) {
+        return extractFromExtensions(extensions, url, v -> Enum.valueOf(type, v.toString()));
+    }
+
+    private static Instant extractInstantFromExtensions(List<Extension> extensions, String url) {
+        return extractFromExtensions(extensions, url, v -> Instant.parse(v.primitiveValue()));
+    }
+
+    private static <T> T extractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
         for(Extension extension : extensions) {
             if(extension.getUrl().equals(url)) {
-                return Enum.valueOf(type, extension.getValue().toString());
+                return extractor.apply(extension.getValue());
             }
         }
         throw new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url));

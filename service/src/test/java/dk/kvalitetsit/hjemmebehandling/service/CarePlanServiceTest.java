@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
@@ -241,6 +242,8 @@ public class CarePlanServiceTest {
         setupCarePlanForPatient(carePlanId, patientId, questionnaireId);
         QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
 
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
         // Act
         List<CarePlanModel> result = subject.getCarePlansByCpr(cpr);
 
@@ -248,6 +251,30 @@ public class CarePlanServiceTest {
         assertEquals(1, result.size());
         assertEquals(1, result.get(0).getQuestionnaires().size());
         assertEquals(questionnaireModel, result.get(0).getQuestionnaires().get(0).getQuestionnaire());
+    }
+
+    @Test
+    public void getCarePlanByCpr_carePlansPresent_computesExceededQuestionnaires() throws Exception {
+        // Arrange
+        String cpr = "0101010101";
+        String carePlanId = "careplan-1";
+        String patientId = "patient-1";
+        String questionnaireId = "questionnaire-1";
+
+        setupPatientForCpr(cpr, patientId);
+
+        setupCarePlanForPatient(carePlanId, patientId, questionnaireId);
+        QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME.plusSeconds(4));
+
+        // Act
+        List<CarePlanModel> result = subject.getCarePlansByCpr(cpr);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getQuestionnairesWithUnsatisfiedSchedule().size());
+        assertEquals(questionnaireId, result.get(0).getQuestionnairesWithUnsatisfiedSchedule().get(0));
     }
 
     @Test
@@ -371,6 +398,8 @@ public class CarePlanServiceTest {
         CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
         CarePlanModel carePlanModel = setupCarePlan(carePlan);
         QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         // Act
         Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
@@ -528,6 +557,7 @@ public class CarePlanServiceTest {
             CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
             detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
             detail.setScheduled(new Timing());
+            detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
             carePlan.addActivity().setDetail(detail);
         }
 

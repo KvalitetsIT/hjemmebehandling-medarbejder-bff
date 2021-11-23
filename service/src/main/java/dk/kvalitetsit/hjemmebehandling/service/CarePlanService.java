@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -12,6 +13,7 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -88,7 +90,8 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
-        List<CarePlan> carePlans = fhirClient.lookupCarePlansUnsatisfiedAt(dateProvider.now());
+        Instant pointInTime = dateProvider.now();
+        List<CarePlan> carePlans = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime);
 
         if(carePlans.isEmpty()) {
             return List.of();
@@ -97,7 +100,7 @@ public class CarePlanService extends AccessValidatingService {
         // Look up patients
         Map<String, Patient> patientsByCarePlanId = getPatientsByCarePlanId(carePlans);
 
-        return mapCarePlans(carePlans, patientsByCarePlanId);
+        return mapCarePlans(carePlans, patientsByCarePlanId, pointInTime);
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
@@ -153,21 +156,23 @@ public class CarePlanService extends AccessValidatingService {
 
     private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Patient patient) {
         Map<String, Patient> patientsByCarePlanId = carePlans.stream().collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> patient));
-        return mapCarePlans(carePlans, patientsByCarePlanId);
+        return mapCarePlans(carePlans, patientsByCarePlanId, dateProvider.now());
     }
 
-    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Map<String, Patient> patientsByCarePlanId) {
+    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Map<String, Patient> patientsByCarePlanId, Instant pointInTime) {
         if(carePlans.isEmpty()) {
             return List.of();
         }
 
-        List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
+        List<CarePlanModel> result = new ArrayList<>();
 
         // Look up the questionnaires and include them in the result.
         Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
         // Look up the plan definitions and include them in the result
         Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
-        for(CarePlanModel carePlanModel : result) {
+        for(var carePlan : carePlans) {
+            var carePlanModel = fhirMapper.mapCarePlan(carePlan);
+
             if(!patientsByCarePlanId.containsKey(carePlanModel.getId())) {
                 throw new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId()));
             }
@@ -183,6 +188,20 @@ public class CarePlanService extends AccessValidatingService {
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionsByCarePlanId.get(carePlanModel.getId());
             carePlanModel.setPlanDefinitions(planDefinitions);
+
+            // Populate 'exceededQuestionnaires' list
+            carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(new ArrayList<>());
+            for(var activity : carePlan.getActivity()) {
+                // Check whether the 'activity-satisfied-until' extension has a value that is in the past.
+                // If so, the activity has not been fulfilled before its deadline.
+                var activitySatisfiedUntil = ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension());
+                if(activitySatisfiedUntil.isBefore(pointInTime)) {
+                    String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
+                    carePlanModel.getQuestionnairesWithUnsatisfiedSchedule().add(questionnaireId);
+                }
+            }
+
+            result.add(carePlanModel);
         }
 
         return result;

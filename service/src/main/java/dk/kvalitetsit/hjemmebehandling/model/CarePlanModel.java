@@ -13,6 +13,7 @@ public class CarePlanModel {
     private PatientModel patient;
     private List<QuestionnaireWrapperModel> questionnaires;
     private List<PlanDefinitionModel> planDefinitions;
+    private List<String> questionnairesWithUnsatisfiedSchedule;
 
     public String getId() {
         return id;
@@ -84,5 +85,13 @@ public class CarePlanModel {
 
     public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
         this.planDefinitions = planDefinitions;
+    }
+
+    public List<String> getQuestionnairesWithUnsatisfiedSchedule() {
+        return questionnairesWithUnsatisfiedSchedule;
+    }
+
+    public void setQuestionnairesWithUnsatisfiedSchedule(List<String> questionnairesWithUnsatisfiedSchedule) {
+        this.questionnairesWithUnsatisfiedSchedule = questionnairesWithUnsatisfiedSchedule;
     }
 }

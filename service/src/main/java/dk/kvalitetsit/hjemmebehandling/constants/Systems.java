@@ -7,6 +7,8 @@ public class Systems {
     public static final String EXAMINATION_STATUS = "http://hjemmebehandling.rm.dk/examination-status";
     public static final String ORGANIZATION = "http://hjemmebehandling.rm.dk/organization";
     public static final String TRIAGING_CATEGORY = "http://hjemmebehandling.rm.dk/triaging-category";
+    public static final String ACTIVITY_SATISFIED_UNTIL = "http://hjemmebehandling.rm.dk/activity-satisfied-until";
+    public static final String CAREPLAN_SATISFIED_UNTIL = "http://hjemmebehandling.rm.dk/careplan-satisfied-until";
     public static final String THRESHOLDSET = "http://hjemmebehandling.rm.dk/thresholdset";
     public static final String THRESHOLDSET_QUESTIONNAIRE_ID = "http://hjemmebehandling.rm.dk/thresholdset-questionnaire-id";
     public static final String THRESHOLD = "http://hjemmebehandling.rm.dk/threshold";
