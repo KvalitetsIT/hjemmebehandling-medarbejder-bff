@@ -84,12 +84,20 @@ public class CarePlanService extends AccessValidatingService {
             return List.of();
         }
 
-        List<CarePlanModel> result = mapCarePlans(carePlans, patient.get());
-        return result;
+        return mapCarePlans(carePlans, patient.get());
     }
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
-        throw new UnsupportedOperationException();
+        List<CarePlan> carePlans = fhirClient.lookupCarePlansUnsatisfiedAt(dateProvider.now());
+
+        if(carePlans.isEmpty()) {
+            return List.of();
+        }
+
+        // Look up patients
+        Map<String, Patient> patientsByCarePlanId = getPatientsByCarePlanId(carePlans);
+
+        return mapCarePlans(carePlans, patientsByCarePlanId);
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
@@ -144,20 +152,28 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Patient patient) {
+        Map<String, Patient> patientsByCarePlanId = carePlans.stream().collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> patient));
+        return mapCarePlans(carePlans, patientsByCarePlanId);
+    }
+
+    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Map<String, Patient> patientsByCarePlanId) {
         if(carePlans.isEmpty()) {
             return List.of();
         }
 
         List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
 
-        // Set patient on each careplan in the result.
-        result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient)));
-
         // Look up the questionnaires and include them in the result.
         Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
         // Look up the plan definitions and include them in the result
         Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
         for(CarePlanModel carePlanModel : result) {
+            if(!patientsByCarePlanId.containsKey(carePlanModel.getId())) {
+                throw new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId()));
+            }
+            Patient patient = patientsByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setPatient(fhirMapper.mapPatient(patient));
+
             if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
                 // The Careplan simply may not have any questionnaires attached, so we continue.
                 continue;
@@ -180,21 +196,16 @@ public class CarePlanService extends AccessValidatingService {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
-    private List<QuestionnaireWrapperModel> getQuestionnaires(CarePlan carePlan) {
-        // We want to fetch all the questionnaires using one invocation of the FhirClient.
+    private Map<String, Patient> getPatientsByCarePlanId(List<CarePlan> carePlans) {
+        Set<String> patientIds = carePlans.stream().map(cp -> cp.getSubject().getReference()).collect(Collectors.toSet());
 
-        // Build a map from id's to frequencies so that we may associate questionnaires to their frequency later on.
-        final Map<String, FrequencyModel> frequenciesById = getFrequenciesById(carePlan);
-
-        // Fetch the questionnaires
-        List<String> questionnaireIds = frequenciesById.keySet().stream().collect(Collectors.toList());
-        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
-
-        // Associate questionnaires with their frequencies.
-        return questionnaires
+        Map<String, Patient> patientsById = fhirClient.lookupPatientsById(patientIds)
                 .stream()
-                .map(q -> wrapQuestionnaire(q, frequenciesById))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(p -> p.getId(), p -> p));
+
+        return carePlans
+                .stream()
+                .collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> patientsById.get(cp.getSubject().getReference())));
     }
 
     private Map<String, List<QuestionnaireWrapperModel>> getQuestionnairesByCarePlanId(List<CarePlan> carePlans) {
