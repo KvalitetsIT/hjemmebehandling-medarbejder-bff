@@ -28,6 +28,9 @@ public class ServiceConfiguration {
 	
 	@Value("${user.context.handler}")
 	private String userContextHandler;
+	
+	@Value("${fhir.server.url}")
+	private String fhirServerUrl;
 
     @Bean
     public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
@@ -53,8 +56,7 @@ public class ServiceConfiguration {
     @Bean
     public FhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
         FhirContext context = FhirContext.forR4();
-        String endpoint = "http://hapi-server:8080/fhir";
-        return new FhirClient(context, endpoint, userContextProvider);
+        return new FhirClient(context, fhirServerUrl, userContextProvider);
     }
 
     @Bean
