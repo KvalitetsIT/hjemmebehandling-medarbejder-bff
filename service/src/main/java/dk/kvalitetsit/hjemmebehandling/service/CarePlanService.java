@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -74,7 +75,7 @@ public class CarePlanService extends AccessValidatingService {
             }
         }
         catch(Exception e) {
-            throw new ServiceException("Error saving CarePlan", e);
+            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -127,11 +128,15 @@ public class CarePlanService extends AccessValidatingService {
         return Optional.of(carePlanModel);
     }
 
+    public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
+
+    }
+
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaires == null || questionnaires.size() != questionnaireIds.size()) {
-            throw new ServiceException("Could not look up questionnaires to update!");
+            throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST);
         }
 
         // Validate that the client is allowed to reference the questionnaires.
@@ -140,7 +145,7 @@ public class CarePlanService extends AccessValidatingService {
         // Look up the CarePlan, throw an exception in case it does not exist.
         Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
         if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId));
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId), ErrorKind.BAD_REQUEST);
         }
 
         // Validate that the client is allowed to update the carePlan.
