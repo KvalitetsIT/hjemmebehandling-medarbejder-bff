@@ -39,7 +39,7 @@ public class ServiceConfiguration {
     }
     
     @Bean
-    public PersonService getPersonService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+    public PersonService getPersonService() {
     	return new PersonService(new RestTemplate());
     }
 

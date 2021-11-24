@@ -1,21 +1,16 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
 public class UserContext {
-
-	
 	private String orgId;
 	private String firstName;
 	private String lastName;
 	private String fullName;
 	private String[] autorisationsids;
-	private String userid;
+	private String userId;
 	private String email;
 	private String[] entitlements;
 
-
-    public UserContext() {
-
-    }
+    public UserContext() {}
 
     public UserContext(String sorCode) {
         this.orgId = sorCode;
@@ -61,12 +56,12 @@ public class UserContext {
 		this.autorisationsids = autorisationsids;
 	}
 
-	public String getUserID() {
-		return userid;
+	public String getUserId() {
+		return userId;
 	}
 
-	public void setUserID(String userId) {
-		this.userid = userId;
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 
 	public String getEmail() {

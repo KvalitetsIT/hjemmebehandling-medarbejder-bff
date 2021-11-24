@@ -22,7 +22,7 @@ public class DIASUserContextHandler implements IUserContextHandler {
         context.setFirstName(jwt.getClaim(DIASUserContextHandler.FIRST_NAME) !=null ? jwt.getClaim(DIASUserContextHandler.FIRST_NAME).asString() : null );
         context.setLastName(jwt.getClaim(DIASUserContextHandler.SUR_NAME) !=null ? jwt.getClaim(DIASUserContextHandler.SUR_NAME).asString() : null );
         context.setOrgId(jwt.getClaim(DIASUserContextHandler.SOR_ID) !=null ? jwt.getClaim(DIASUserContextHandler.SOR_ID).asString() : null );
-        context.setUserID(jwt.getClaim(DIASUserContextHandler.REGIONS_ID) !=null ? jwt.getClaim(DIASUserContextHandler.REGIONS_ID).asString() : null );
+        context.setUserId(jwt.getClaim(DIASUserContextHandler.REGIONS_ID) !=null ? jwt.getClaim(DIASUserContextHandler.REGIONS_ID).asString() : null );
         context.setEmail(jwt.getClaim(DIASUserContextHandler.EMAIL) !=null ? jwt.getClaim(DIASUserContextHandler.EMAIL).asString() : null );
         context.setEntitlements(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS) !=null ? jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS).asArray(String.class) : null );
         context.setAutorisationsids(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS) !=null ? jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS).asArray(String.class) : null );
