@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.configuration;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextInterceptor;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,13 +30,13 @@ public class ServiceConfiguration {
 	private String userContextHandler;
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder) {
-        return new CarePlanService(client, mapper, builder);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
+        return new CarePlanService(client, mapper, builder, dateProvider, accessValidator);
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
-        return new PatientService(client, mapper);
+    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+        return new PatientService(client, mapper, accessValidator);
     }
     
     @Bean
@@ -44,9 +45,9 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired UserContextProvider userContextProvider) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), userContextProvider);
+        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), accessValidator);
     }
 
     @Bean

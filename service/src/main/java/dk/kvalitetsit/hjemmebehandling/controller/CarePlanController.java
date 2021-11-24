@@ -1,12 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +37,9 @@ public class CarePlanController {
     private DtoMapper dtoMapper;
     private LocationHeaderBuilder locationHeaderBuilder;
 
-    private static final String QUESTIONNAIRES_KEY = "questionnaires";
+    private enum SearchType {
+        CPR, UNSATISFIED_CAREPLANS
+    }
 
     public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
@@ -47,13 +48,22 @@ public class CarePlanController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> getCarePlansByCpr(@RequestParam("cpr") Optional<String> cpr) {
-        if(!cpr.isPresent()) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules) {
+        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules);
+        if(!searchType.isPresent()) {
+            logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            List<CarePlanModel> carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+            List<CarePlanModel> carePlans = null;
+            if(cpr.isPresent()) {
+                carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+            }
+            else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
+                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules();
+            }
+
             if(carePlans.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }
@@ -71,13 +81,26 @@ public class CarePlanController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public CarePlanDto getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public ResponseEntity<CarePlanDto> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
-        Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(id);
-        if(!carePlan.isPresent()) {
-            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id));
+        Optional<CarePlanModel> carePlan = Optional.empty();
+
+        try {
+            carePlan = carePlanService.getCarePlanById(id);
         }
-        return dtoMapper.mapCarePlanModel(carePlan.get());
+        catch (AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        catch(ServiceException e) {
+            // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
+            logger.error("Could not update questionnaire response", e);
+            return ResponseEntity.internalServerError().build();
+        }
+
+        if(!carePlan.isPresent()) {
+            return ResponseEntity.notFound().header("Reason", String.format("CarePlan with id %s not found.", id)).build();
+        }
+        return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
     }
 
     @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")
@@ -86,14 +109,18 @@ public class CarePlanController {
             @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content)
     })
     @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
-    public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
+    public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
         }
+        catch(AccessValidationException e) {
+            logger.info("Detected access violation.", e);
+            return ResponseEntity.badRequest().build();
+        }
         catch(ServiceException e) {
             logger.error("Error creating CarePlan", e);
-            throw new InternalServerErrorException();
+            return ResponseEntity.internalServerError().build();
         }
 
         URI location = locationHeaderBuilder.buildLocationHeader(carePlanId);
@@ -106,20 +133,42 @@ public class CarePlanController {
     }
 
     @PatchMapping(value = "/v1/careplan/{id}")
-    public void patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
+    public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
         if(request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
-            throw new BadRequestException(String.format("Both questionnaireIds and questionnaireFrequencies must be supplied!"));
+            return ResponseEntity.badRequest().build();
         }
 
         try {
             carePlanService.updateQuestionnaires(id, request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
         }
+        catch(AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         catch(ServiceException e) {
             // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
-            throw new InternalServerErrorException();
+            return ResponseEntity.internalServerError().build();
         }
 
-        // TODO: Return an appropriate status code.
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping(value = "/v1/careplan/{id}/resolve-alarm")
+    public ResponseEntity<Void> resolveAlarm(@PathVariable String id) {
+        try {
+            carePlanService.resolveAlarm(id);
+        }
+        catch(AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        catch(ServiceException e) {
+            return switch(e.getErrorKind()) {
+                case BAD_REQUEST -> ResponseEntity.badRequest().build();
+                case INTERNAL_SERVER_ERROR -> ResponseEntity.internalServerError().build();
+                default -> ResponseEntity.internalServerError().build();
+            };
+        }
+
+        return ResponseEntity.ok().build();
     }
 
     private Map<String, FrequencyModel> mapFrequencies(Map<String, FrequencyDto> frequencyDtos) {
@@ -130,5 +179,20 @@ public class CarePlanController {
         }
 
         return frequencies;
+    }
+
+    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules) {
+        boolean sameParameterPresence = cpr.isPresent() == onlyUnsatisfiedSchedules.isPresent();
+        boolean requestAllCarePlans = onlyUnsatisfiedSchedules.isPresent() && !onlyUnsatisfiedSchedules.get();
+
+        if(sameParameterPresence || requestAllCarePlans) {
+            return Optional.empty();
+        }
+        else if(cpr.isPresent()) {
+            return Optional.of(SearchType.CPR);
+        }
+        else {
+            return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
+        }
     }
 }

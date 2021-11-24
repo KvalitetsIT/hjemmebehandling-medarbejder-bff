@@ -100,6 +100,21 @@ public class QuestionnaireResponseControllerTest {
     }
 
     @Test
+    public void getQuestionnaireResponsesByCpr_accessViolation_403() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> questionnaireIds = List.of("questionnaire-1");
+
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(AccessValidationException.class);
+
+        // Act
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+    }
+
+    @Test
     public void getQuestionnaireResponsesByCpr_failureToFetch_500() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";

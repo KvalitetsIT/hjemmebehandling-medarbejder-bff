@@ -2,13 +2,12 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.context.UserContext;
-import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
@@ -45,7 +44,7 @@ public class QuestionnaireResponseServiceTest {
     private QuestionnaireResponsePriorityComparator priorityComparator;
 
     @Mock
-    private UserContextProvider userContextProvider;
+    private AccessValidator accessValidator;
 
     private static final String CAREPLAN_ID_1 = "careplan-1";
     private static final String ORGANIZATION_ID_1 = "organization-1";
@@ -100,6 +99,23 @@ public class QuestionnaireResponseServiceTest {
 
         // Assert
         assertEquals(0, result.size());
+    }
+
+    @Test
+    public void getQuestionnaireResponses_accessViolation_throwsException() throws Exception {
+        // Arrange
+        String carePlanId = CAREPLAN_ID_1;
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(response));
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
     }
 
     @Test
@@ -333,18 +349,15 @@ public class QuestionnaireResponseServiceTest {
     }
 
     @Test
-    public void updateExaminationStatus_resourceForDifferentOrganization_throwsException() throws Exception {
+    public void updateExaminationStatus_accessViolation_throwsException() throws Exception {
         // Arrange
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(SOR_CODE));
-
-        Organization organization = buildOrganization(ORGANIZATION_ID_1);
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(SOR_CODE)).thenReturn(Optional.of(organization));
-
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(response);
 
         // Act
 
@@ -358,11 +371,6 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(SOR_CODE));
-
-        Organization organization = buildOrganization(ORGANIZATION_ID_1);
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(SOR_CODE)).thenReturn(Optional.of(organization));
-
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
 
@@ -373,14 +381,6 @@ public class QuestionnaireResponseServiceTest {
 
         // Assert
         Mockito.verify(fhirObjectBuilder).updateExaminationStatusForQuestionnaireResponse(response, status);
-    }
-
-    private Organization buildOrganization(String organizationId) {
-        Organization organization = new Organization();
-
-        organization.setId(organizationId);
-
-        return organization;
     }
 
     private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireId, String patientId) {

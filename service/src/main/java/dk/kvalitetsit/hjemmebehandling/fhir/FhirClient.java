@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
@@ -17,6 +18,8 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Date;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +41,18 @@ public class FhirClient {
     }
 
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
-        return lookupByCriterion(CarePlan.class, CarePlan.PATIENT.hasId(patientId));
+        var patientCriterion = CarePlan.PATIENT.hasId(patientId);
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupByCriteria(CarePlan.class, patientCriterion, organizationCriterion);
+    }
+
+    public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupByCriteria(CarePlan.class, satisfiedUntilCriterion, organizationCriterion);
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {

@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.Questionnaire;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,12 +26,15 @@ public class DtoMapper {
         carePlanModel.setStartDate(carePlanDto.getStartDate());
         carePlanModel.setEndDate(carePlanDto.getEndDate());
         carePlanModel.setPatient(mapPatientDto(carePlanDto.getPatientDto()));
+        carePlanModel.setQuestionnaires(List.of());
         if(carePlanDto.getQuestionnaires() != null) {
             carePlanModel.setQuestionnaires(carePlanDto.getQuestionnaires().stream().map(q -> mapQuestionnaireWrapperDto(q)).collect(Collectors.toList()));
         }
+        carePlanModel.setPlanDefinitions(List.of());
         if(carePlanDto.getPlanDefinitions() != null) {
             carePlanModel.setPlanDefinitions(carePlanDto.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionDto(pd)).collect(Collectors.toList()));
         }
+        carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanDto.getQuestionnairesWithUnsatisfiedSchedule());
 
         return carePlanModel;
     }
@@ -47,6 +51,7 @@ public class DtoMapper {
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));
         carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
+        carePlanDto.setQuestionnairesWithUnsatisfiedSchedule(carePlan.getQuestionnairesWithUnsatisfiedSchedule());
 
         return carePlanDto;
     }
@@ -54,7 +59,8 @@ public class DtoMapper {
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        frequencyModel.setWeekday(frequencyDto.getWeekday());
+        frequencyModel.setWeekdays(frequencyDto.getWeekdays());
+        frequencyModel.setTimeOfDay(LocalTime.parse(frequencyDto.getTimeOfDay()));
 
         return frequencyModel;
     }
@@ -62,7 +68,8 @@ public class DtoMapper {
     public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
         FrequencyDto frequencyDto = new FrequencyDto();
 
-        frequencyDto.setWeekday(frequencyModel.getWeekday());
+        frequencyDto.setWeekdays(frequencyModel.getWeekdays());
+        frequencyDto.setTimeOfDay(frequencyModel.getTimeOfDay().toString());
 
         return frequencyDto;
     }

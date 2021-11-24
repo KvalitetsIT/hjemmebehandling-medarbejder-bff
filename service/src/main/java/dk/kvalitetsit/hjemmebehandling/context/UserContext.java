@@ -12,16 +12,16 @@ public class UserContext {
 
     public UserContext() {}
 
-    public UserContext(String sorCode) {
-        this.orgId = sorCode;
+    public UserContext(String orgId) {
+        this.orgId = orgId;
     }
 
     public String getOrgId() {
         return orgId;
     }
 
-    public void setOrgId(String sorCode) {
-        this.orgId = sorCode;
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
     }
 
 	public String getFirstName() {

@@ -11,7 +11,7 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,9 +26,10 @@ public class FhirMapper {
         carePlan.setId(carePlanModel.getId());
         carePlan.setTitle(carePlanModel.getTitle());
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-        carePlan.setCreated(dateProvider.now());
+        carePlan.setCreated(dateProvider.today());
         carePlan.setPeriod(new Period());
-        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.now());
+        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
 
         // Set the subject
         if(carePlanModel.getPatient() != null) {
@@ -65,6 +66,7 @@ public class FhirMapper {
         if(carePlan.getPeriod().getEnd() != null) {
             carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
         }
+        carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
 
         return carePlanModel;
     }
@@ -75,7 +77,8 @@ public class FhirMapper {
         Timing.TimingRepeatComponent repeat = new Timing.TimingRepeatComponent();
 
         EnumFactory<Timing.DayOfWeek> factory = new Timing.DayOfWeekEnumFactory();
-        repeat.setDayOfWeek(List.of(new Enumeration<>(factory, frequencyModel.getWeekday().toString().toLowerCase())));
+        repeat.setDayOfWeek(frequencyModel.getWeekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).collect(Collectors.toList()));
+        repeat.setTimeOfDay(List.of(new TimeType(frequencyModel.getTimeOfDay().toString())));
         timing.setRepeat(repeat);
 
         return timing;
@@ -198,10 +201,8 @@ public class FhirMapper {
 
         if(timing.getRepeat() != null) {
             Timing.TimingRepeatComponent repeat = timing.getRepeat();
-            if(repeat.getDayOfWeek() == null || repeat.getDayOfWeek().size() != 1) {
-                throw new IllegalStateException("Only repeats of one day a week is supperted (yet)!");
-            }
-            frequencyModel.setWeekday(Enum.valueOf(Weekday.class, repeat.getDayOfWeek().get(0).getValue().toString()));
+            frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).collect(Collectors.toList()));
+            frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
         }
 
         return frequencyModel;
@@ -339,23 +340,25 @@ public class FhirMapper {
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
         CanonicalType instantiatesCanonical = new CanonicalType(FhirUtils.qualifyId(questionnaireWrapperModel.getQuestionnaire().getId(), ResourceType.Questionnaire));
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
+        Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
 
-        return buildActivity(instantiatesCanonical, timing);
+        return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil);
     }
 
-    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing) {
+    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
 
-        activity.setDetail(buildDetail(instantiatesCanonical, timing));
+        activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil));
 
         return activity;
     }
 
-    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing) {
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
 
         detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
         detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
+        detail.addExtension(activitySatisfiedUntil);
         detail.setScheduled(timing);
 
         return detail;

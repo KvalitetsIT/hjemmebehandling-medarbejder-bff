@@ -7,7 +7,9 @@ import java.util.Date;
 
 @Component
 public class DateProvider {
-    public Date now() {
+    public Date today() {
         return Date.from(Instant.now());
     }
+
+    public Instant now() { return Instant.now(); }
 }

@@ -16,6 +16,7 @@ public class CarePlanDto {
     private PatientDto patientDto;
     private List<QuestionnaireWrapperDto> questionnaires;
     private List<PlanDefinitionDto> planDefinitions;
+    private List<String> questionnairesWithUnsatisfiedSchedule;
 
     @Schema(required = true, description = "Id of the CarePlan", example = "10")
     public String getId() {
@@ -88,5 +89,13 @@ public class CarePlanDto {
 
     public void setPlanDefinitions(List<PlanDefinitionDto> planDefinitions) {
         this.planDefinitions = planDefinitions;
+    }
+
+    public List<String> getQuestionnairesWithUnsatisfiedSchedule() {
+        return questionnairesWithUnsatisfiedSchedule;
+    }
+
+    public void setQuestionnairesWithUnsatisfiedSchedule(List<String> questionnairesWithUnsatisfiedSchedule) {
+        this.questionnairesWithUnsatisfiedSchedule = questionnairesWithUnsatisfiedSchedule;
     }
 }

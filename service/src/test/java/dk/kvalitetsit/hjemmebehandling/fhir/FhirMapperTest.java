@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -51,6 +52,7 @@ public class FhirMapperTest {
         carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setEnd(Date.from(Instant.parse("2021-10-29T00:00:00Z")));
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
 
         // Act
         CarePlanModel result = subject.mapCarePlan(carePlan);
@@ -153,6 +155,7 @@ public class FhirMapperTest {
         carePlanModel.setPatient(buildPatientModel());
         carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
         carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
+        carePlanModel.setSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z"));
 
         return carePlanModel;
     }
@@ -168,7 +171,8 @@ public class FhirMapperTest {
     private FrequencyModel buildFrequencyModel() {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        frequencyModel.setWeekday(Weekday.FRI);
+        frequencyModel.setWeekdays(List.of(Weekday.FRI));
+        frequencyModel.setTimeOfDay(LocalTime.parse("05:00"));
 
         return frequencyModel;
     }
@@ -247,6 +251,7 @@ public class FhirMapperTest {
 
         questionnaireWrapperModel.setQuestionnaire(buildQuestionnaireModel());
         questionnaireWrapperModel.setFrequency(buildFrequencyModel());
+        questionnaireWrapperModel.setSatisfiedUntil(Instant.parse("2021-12-08T10:11:12.124Z"));
 
         return questionnaireWrapperModel;
     }

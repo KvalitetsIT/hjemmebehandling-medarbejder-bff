@@ -1,20 +1,26 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.controller.CarePlanController;
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CarePlanService {
+public class CarePlanService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
     private FhirClient fhirClient;
@@ -23,13 +29,18 @@ public class CarePlanService {
 
     private FhirObjectBuilder fhirObjectBuilder;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder) {
+    private DateProvider dateProvider;
+
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, DateProvider dateProvider, AccessValidator accessValidator) {
+        super(accessValidator);
+
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.fhirObjectBuilder = fhirObjectBuilder;
+        this.dateProvider = dateProvider;
     }
 
-    public String createCarePlan(CarePlanModel carePlan) throws ServiceException {
+    public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
@@ -48,6 +59,12 @@ public class CarePlanService {
             carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
         }
 
+        // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
+        validateReferences(carePlan);
+
+        // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
+        initializeFrequencyTimestamps(carePlan);
+
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
             if(!patient.isPresent()) {
@@ -58,7 +75,7 @@ public class CarePlanService {
             }
         }
         catch(Exception e) {
-            throw new ServiceException("Error saving CarePlan", e);
+            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -74,16 +91,103 @@ public class CarePlanService {
             return List.of();
         }
 
-        List<CarePlanModel> result = carePlans.stream().map(cp -> fhirMapper.mapCarePlan(cp)).collect(Collectors.toList());
+        return mapCarePlans(carePlans, patient.get());
+    }
 
-        // Set patient on each careplan in the result.
-        result.forEach(cp -> cp.setPatient(fhirMapper.mapPatient(patient.get())));
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
+        Instant pointInTime = dateProvider.now();
+        List<CarePlan> carePlans = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime);
+
+        if(carePlans.isEmpty()) {
+            return List.of();
+        }
+
+        // Look up patients
+        Map<String, Patient> patientsByCarePlanId = getPatientsByCarePlanId(carePlans);
+
+        return mapCarePlans(carePlans, patientsByCarePlanId, pointInTime);
+    }
+
+    public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
+
+        if(!carePlan.isPresent()) {
+            return Optional.empty();
+        }
+
+        // Validate that the user is allowed to update the QuestionnaireResponse.
+        validateAccess(carePlan.get());
+
+        // Look up the subject and include it in the result.
+        Optional<Patient> patient = fhirClient.lookupPatientById(carePlan.get().getSubject().getReference());
+        if(!patient.isPresent()) {
+            throw new IllegalStateException(String.format("Could not look up subject for CarePlan %s!", carePlanId));
+        }
+
+        CarePlanModel carePlanModel = mapCarePlan(carePlan.get(), patient.get());
+        return Optional.of(carePlanModel);
+    }
+
+    public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
+        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
+        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
+        if(questionnaires == null || questionnaires.size() != questionnaireIds.size()) {
+            throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST);
+        }
+
+        // Validate that the client is allowed to reference the questionnaires.
+        validateAccess(questionnaires);
+
+        // Look up the CarePlan, throw an exception in case it does not exist.
+        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
+        if(!carePlan.isPresent()) {
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId), ErrorKind.BAD_REQUEST);
+        }
+
+        // Validate that the client is allowed to update the carePlan.
+        validateAccess(carePlan.get());
+
+        // Update the carePlan
+        Map<String, Timing> timings = mapFrequencies(frequencies);
+        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaires, timings);
+
+        // Save the updated CarePlan
+        fhirClient.updateCarePlan(carePlan.get());
+    }
+
+    private CarePlanModel mapCarePlan(CarePlan carePlan, Patient patient) {
+        return mapCarePlans(List.of(carePlan), patient).get(0);
+    }
+
+    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Patient patient) {
+        Map<String, Patient> patientsByCarePlanId = carePlans.stream().collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> patient));
+        return mapCarePlans(carePlans, patientsByCarePlanId, dateProvider.now());
+    }
+
+    private List<CarePlanModel> mapCarePlans(List<CarePlan> carePlans, Map<String, Patient> patientsByCarePlanId, Instant pointInTime) {
+        if(carePlans.isEmpty()) {
+            return List.of();
+        }
+
+        List<CarePlanModel> result = new ArrayList<>();
 
         // Look up the questionnaires and include them in the result.
         Map<String, List<QuestionnaireWrapperModel>> questionnairesByCarePlanId = getQuestionnairesByCarePlanId(carePlans);
         // Look up the plan definitions and include them in the result
         Map<String, List<PlanDefinitionModel>> planDefinitionsByCarePlanId = getPlanDefinitionsByCarePlanId(carePlans);
-        for(CarePlanModel carePlanModel : result) {
+        for(var carePlan : carePlans) {
+            var carePlanModel = fhirMapper.mapCarePlan(carePlan);
+
+            if(!patientsByCarePlanId.containsKey(carePlanModel.getId())) {
+                throw new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId()));
+            }
+            Patient patient = patientsByCarePlanId.get(carePlanModel.getId());
+            carePlanModel.setPatient(fhirMapper.mapPatient(patient));
+
             if(!questionnairesByCarePlanId.containsKey(carePlanModel.getId())) {
                 // The Careplan simply may not have any questionnaires attached, so we continue.
                 continue;
@@ -93,57 +197,23 @@ public class CarePlanService {
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionsByCarePlanId.get(carePlanModel.getId());
             carePlanModel.setPlanDefinitions(planDefinitions);
+
+            // Populate 'exceededQuestionnaires' list
+            carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(new ArrayList<>());
+            for(var activity : carePlan.getActivity()) {
+                // Check whether the 'activity-satisfied-until' extension has a value that is in the past.
+                // If so, the activity has not been fulfilled before its deadline.
+                var activitySatisfiedUntil = ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension());
+                if(activitySatisfiedUntil.isBefore(pointInTime)) {
+                    String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
+                    carePlanModel.getQuestionnairesWithUnsatisfiedSchedule().add(questionnaireId);
+                }
+            }
+
+            result.add(carePlanModel);
         }
 
         return result;
-    }
-
-    public Optional<CarePlanModel> getCarePlanById(String carePlanId) {
-        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
-
-        if(!carePlan.isPresent()) {
-            return Optional.empty();
-        }
-
-        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan.get());
-
-        // Look up the subject and include it in the result.
-        Optional<Patient> patient = fhirClient.lookupPatientById(carePlan.get().getSubject().getReference());
-        if(!patient.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up subject for CarePlan %s!", carePlanId));
-        }
-        carePlanModel.setPatient(fhirMapper.mapPatient(patient.get()));
-
-        // Look up the questionnaires and include them in the result.
-        List<QuestionnaireWrapperModel> questionnaires = getQuestionnaires(carePlan.get());
-        carePlanModel.setQuestionnaires(questionnaires);
-
-        // Look up the plan definitions and include them in the result
-        Map<String, List<PlanDefinitionModel>> planDefinitions = getPlanDefinitionsByCarePlanId(List.of(carePlan.get()));
-        carePlanModel.setPlanDefinitions(planDefinitions.get(carePlan.get().getIdElement().toUnqualifiedVersionless().getValue()));
-
-        return Optional.of(carePlanModel);
-    }
-
-    public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException {
-        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
-        if(questionnaires == null || questionnaires.size() != questionnaireIds.size()) {
-            throw new ServiceException("Could not look up questionnaires to update!");
-        }
-
-        // Look up the CarePlan, throw an exception in case it does not exist.
-        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
-        if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId));
-        }
-
-        // Update the carePlan
-        Map<String, Timing> timings = mapFrequencies(frequencies);
-        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaires, timings);
-
-        // Save the updated CarePlan
-        fhirClient.updateCarePlan(carePlan.get());
     }
 
     private Map<String, Timing> mapFrequencies(Map<String, FrequencyModel> frequencies) {
@@ -154,21 +224,16 @@ public class CarePlanService {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
-    private List<QuestionnaireWrapperModel> getQuestionnaires(CarePlan carePlan) {
-        // We want to fetch all the questionnaires using one invocation of the FhirClient.
+    private Map<String, Patient> getPatientsByCarePlanId(List<CarePlan> carePlans) {
+        Set<String> patientIds = carePlans.stream().map(cp -> cp.getSubject().getReference()).collect(Collectors.toSet());
 
-        // Build a map from id's to frequencies so that we may associate questionnaires to their frequency later on.
-        final Map<String, FrequencyModel> frequenciesById = getFrequenciesById(carePlan);
-
-        // Fetch the questionnaires
-        List<String> questionnaireIds = frequenciesById.keySet().stream().collect(Collectors.toList());
-        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
-
-        // Associate questionnaires with their frequencies.
-        return questionnaires
+        Map<String, Patient> patientsById = fhirClient.lookupPatientsById(patientIds)
                 .stream()
-                .map(q -> wrapQuestionnaire(q, frequenciesById))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(p -> p.getIdElement().toUnqualifiedVersionless().getValue(), p -> p));
+
+        return carePlans
+                .stream()
+                .collect(Collectors.toMap(cp -> cp.getIdElement().toUnqualifiedVersionless().getValue(), cp -> patientsById.get(cp.getSubject().getReference())));
     }
 
     private Map<String, List<QuestionnaireWrapperModel>> getQuestionnairesByCarePlanId(List<CarePlan> carePlans) {
@@ -203,7 +268,8 @@ public class CarePlanService {
         Map<String, QuestionnaireModel> questionnairesById = questionnaires.stream().collect(Collectors.toMap(q -> q.getId(), q -> q));
 
         for(var activity : carePlan.getActivity()) {
-            String questionnaireId = getQuestionnaireId(activity.getDetail());
+            var detail = activity.getDetail();
+            String questionnaireId = getQuestionnaireId(detail);
 
             // Get the questionnaire
             if(!questionnairesById.containsKey(questionnaireId)) {
@@ -212,9 +278,12 @@ public class CarePlanService {
             QuestionnaireModel questionnaire = questionnairesById.get(questionnaireId);
 
             // Get the frequency
-            FrequencyModel frequency = getFrequencyModel(activity.getDetail());
+            FrequencyModel frequency = getFrequencyModel(detail);
 
-            result.add(new QuestionnaireWrapperModel(questionnaire, frequency));
+            // Get the satisfied-timestamp
+            Instant activitySatisfiedUntil = getActivitySatisfiedUntil(detail);
+
+            result.add(new QuestionnaireWrapperModel(questionnaire, frequency, activitySatisfiedUntil));
         }
 
         return result;
@@ -287,6 +356,10 @@ public class CarePlanService {
         return fhirMapper.mapTiming((Timing) detail.getScheduled());
     }
 
+    private Instant getActivitySatisfiedUntil(CarePlan.CarePlanActivityDetailComponent detail) {
+        return ExtensionMapper.extractActivitySatisfiedUntil(detail.getExtension());
+    }
+
     private QuestionnaireWrapperModel wrapQuestionnaire(Questionnaire questionnaire, Map<String, FrequencyModel> frequenciesById) {
         QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
 
@@ -303,5 +376,29 @@ public class CarePlanService {
 
     private boolean isActive(CarePlan carePlan) {
         return carePlan.getPeriod().getEnd() == null;
+    }
+
+    private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
+        // Validate questionnaires
+        if(carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
+            List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
+            validateAccess(questionnaires);
+        }
+
+        // Validate planDefinitions
+        if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
+            List<PlanDefinition> planDefinitions = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
+            validateAccess(planDefinitions);
+        }
+    }
+
+    private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
+        // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
+        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+            var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapper.getFrequency()).next().next().getPointInTime();
+            questionnaireWrapper.setSatisfiedUntil(nextDeadline);
+        }
+        var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getSatisfiedUntil()).min(Comparator.naturalOrder()).orElse(Instant.MAX);
+        carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
 }

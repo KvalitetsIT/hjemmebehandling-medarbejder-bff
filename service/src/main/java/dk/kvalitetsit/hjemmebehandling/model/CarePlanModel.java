@@ -13,6 +13,8 @@ public class CarePlanModel {
     private PatientModel patient;
     private List<QuestionnaireWrapperModel> questionnaires;
     private List<PlanDefinitionModel> planDefinitions;
+    private List<String> questionnairesWithUnsatisfiedSchedule;
+    private Instant satisfiedUntil;
 
     public String getId() {
         return id;
@@ -84,5 +86,21 @@ public class CarePlanModel {
 
     public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
         this.planDefinitions = planDefinitions;
+    }
+
+    public List<String> getQuestionnairesWithUnsatisfiedSchedule() {
+        return questionnairesWithUnsatisfiedSchedule;
+    }
+
+    public void setQuestionnairesWithUnsatisfiedSchedule(List<String> questionnairesWithUnsatisfiedSchedule) {
+        this.questionnairesWithUnsatisfiedSchedule = questionnairesWithUnsatisfiedSchedule;
+    }
+
+    public Instant getSatisfiedUntil() {
+        return satisfiedUntil;
+    }
+
+    public void setSatisfiedUntil(Instant satisfiedUntil) {
+        this.satisfiedUntil = satisfiedUntil;
     }
 }
