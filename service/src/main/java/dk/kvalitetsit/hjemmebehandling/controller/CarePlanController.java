@@ -152,6 +152,25 @@ public class CarePlanController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping(value = "/v1/careplan/{id}/resolve-alarm")
+    public ResponseEntity<Void> resolveAlarm(@PathVariable String id) {
+        try {
+            carePlanService.resolveAlarm(id);
+        }
+        catch(AccessValidationException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        catch(ServiceException e) {
+            return switch(e.getErrorKind()) {
+                case BAD_REQUEST -> ResponseEntity.badRequest().build();
+                case INTERNAL_SERVER_ERROR -> ResponseEntity.internalServerError().build();
+                default -> ResponseEntity.internalServerError().build();
+            };
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
     private Map<String, FrequencyModel> mapFrequencies(Map<String, FrequencyDto> frequencyDtos) {
         Map<String, FrequencyModel> frequencies = new HashMap<>();
 

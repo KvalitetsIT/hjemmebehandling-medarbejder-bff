@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.checkerframework.checker.nullness.Opt;
 import org.junit.jupiter.api.Test;
@@ -165,6 +166,62 @@ public class CarePlanControllerTest {
 
         // Act
         ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+    }
+
+    @Test
+    public void resolveAlarm_success_200() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doNothing().when(carePlanService).resolveAlarm(carePlanId);
+
+        // Act
+        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    public void resolveAlarm_badRequest_400() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doThrow(new ServiceException("error", ErrorKind.BAD_REQUEST)).when(carePlanService).resolveAlarm(carePlanId);
+
+        // Act
+        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
+    public void resolveAlarm_accessViolation_403() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doThrow(AccessValidationException.class).when(carePlanService).resolveAlarm(carePlanId);
+
+        // Act
+        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+    }
+
+    @Test
+    public void resolveAlarm_failureToUpdate_500() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+
+        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR)).when(carePlanService).resolveAlarm(carePlanId);
+
+        // Act
+        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

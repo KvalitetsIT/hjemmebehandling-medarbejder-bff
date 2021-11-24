@@ -129,7 +129,7 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
-
+        throw new UnsupportedOperationException();
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
