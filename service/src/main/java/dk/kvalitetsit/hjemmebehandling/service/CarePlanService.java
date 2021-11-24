@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
@@ -283,7 +284,10 @@ public class CarePlanService extends AccessValidatingService {
             // Get the satisfied-timestamp
             Instant activitySatisfiedUntil = getActivitySatisfiedUntil(detail);
 
-            result.add(new QuestionnaireWrapperModel(questionnaire, frequency, activitySatisfiedUntil));
+            // Get the thresholds
+            List<ThresholdModel> thresholds = getThresholds(activity.getDetail());
+
+            result.add(new QuestionnaireWrapperModel(questionnaire, frequency, activitySatisfiedUntil, thresholds));
         }
 
         return result;
@@ -358,6 +362,10 @@ public class CarePlanService extends AccessValidatingService {
 
     private Instant getActivitySatisfiedUntil(CarePlan.CarePlanActivityDetailComponent detail) {
         return ExtensionMapper.extractActivitySatisfiedUntil(detail.getExtension());
+    }
+
+    private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
+        return ExtensionMapper.extractThresholds(detail.getExtensionsByUrl(Systems.THRESHOLD));
     }
 
     private QuestionnaireWrapperModel wrapQuestionnaire(Questionnaire questionnaire, Map<String, FrequencyModel> frequenciesById) {

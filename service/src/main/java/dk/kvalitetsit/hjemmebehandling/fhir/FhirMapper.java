@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -127,7 +128,7 @@ public class FhirMapper {
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
 
-        // Map actions to questionnaires, along with their frequencies
+        // Map actions to questionnaires, along with their frequencies and thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
 
         return planDefinitionModel;
@@ -140,6 +141,9 @@ public class FhirMapper {
 
         Questionnaire questionnaire = lookupResult.getQuestionnaire(action.getDefinitionCanonicalType().getValue());
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
+
+        List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
+        wrapper.setThresholds(thresholds);
 
         return wrapper;
     }
@@ -303,6 +307,8 @@ public class FhirMapper {
                 return QuestionType.QUANTITY;
             case STRING:
                 return QuestionType.STRING;
+            case BOOLEAN:
+                return QuestionType.BOOLEAN;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
         }
