@@ -161,11 +161,14 @@ public class CarePlanController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         catch(ServiceException e) {
-            return switch(e.getErrorKind()) {
-                case BAD_REQUEST -> ResponseEntity.badRequest().build();
-                case INTERNAL_SERVER_ERROR -> ResponseEntity.internalServerError().build();
-                default -> ResponseEntity.internalServerError().build();
-            };
+            switch(e.getErrorKind()) {
+                case BAD_REQUEST:
+                    return ResponseEntity.badRequest().build();
+                case INTERNAL_SERVER_ERROR:
+                    return ResponseEntity.internalServerError().build();
+                default:
+                    return ResponseEntity.internalServerError().build();
+            }
         }
 
         return ResponseEntity.ok().build();
