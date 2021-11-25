@@ -191,13 +191,14 @@ public class CarePlanService extends AccessValidatingService {
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-        List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
-        if(questionnaires == null || questionnaires.size() != questionnaireIds.size()) {
+        //List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
+        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires_new(questionnaireIds);
+        if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
             throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST);
         }
 
         // Validate that the client is allowed to reference the questionnaires.
-        validateAccess(questionnaires);
+        validateAccess(questionnaireResult.getQuestionnaires());
 
         // Look up the CarePlan, throw an exception in case it does not exist.
         Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
@@ -210,7 +211,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Update the carePlan
         Map<String, Timing> timings = mapFrequencies(frequencies);
-        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaires, timings);
+        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaireResult.getQuestionnaires(), timings);
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(carePlan.get());

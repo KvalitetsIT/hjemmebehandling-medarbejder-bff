@@ -422,7 +422,7 @@ public class CarePlanServiceTest {
         Map<String, FrequencyModel> frequencies = Map.of();
 
         Questionnaire questionnaire = new Questionnaire();
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnaires_new(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
 
@@ -439,7 +439,7 @@ public class CarePlanServiceTest {
         List<String> questionnaireIds = List.of();
         Map<String, FrequencyModel> frequencies = Map.of();
 
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupQuestionnaires_new(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         CarePlan carePlan = new CarePlan();
         Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.of(carePlan));
