@@ -291,22 +291,16 @@ public class CarePlanServiceTest {
     @Test
     public void getCarePlansWithUnsatisfiedSchedules_carePlansPresent_returnsCarePlans() throws Exception {
         // Arrange
-        Instant pointInTime = POINT_IN_TIME;
-        Mockito.when(dateProvider.now()).thenReturn(pointInTime);
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId(CAREPLAN_ID_1);
-        carePlan.setSubject(new Reference(PATIENT_ID_1));
-        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime)).thenReturn(List.of(carePlan));
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(carePlan);
+        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt_new(POINT_IN_TIME)).thenReturn(lookupResult);
 
-        Patient patient = new Patient();
-        patient.setId(PATIENT_ID_1);
-        Set<String> patientIds = Set.of(PATIENT_ID_1);
-        Mockito.when(fhirClient.lookupPatientsById(patientIds)).thenReturn(List.of(patient));
+        Mockito.when(fhirClient.lookupQuestionnaires_new(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         CarePlanModel carePlanModel = new CarePlanModel();
-        carePlanModel.setId(CAREPLAN_ID_1);
-        Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
+        Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
         List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules();
@@ -319,10 +313,9 @@ public class CarePlanServiceTest {
     @Test
     public void getCarePlansWithUnsatisfiedSchedules_carePlansMissing_returnsEmptyList() throws Exception {
         // Arrange
-        Instant pointInTime = POINT_IN_TIME;
-        Mockito.when(dateProvider.now()).thenReturn(pointInTime);
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
-        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime)).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt_new(POINT_IN_TIME)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules();

@@ -66,6 +66,26 @@ public class FhirClient {
         return lookupByCriteria(CarePlan.class, patientCriterion, organizationCriterion);
     }
 
+    public FhirLookupResult lookupCarePlansUnsatisfiedAt_new(Instant pointInTime) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
+        var organizationCriterion = buildOrganizationCriterion();
+
+        var query = client
+                .search()
+                .forResource(CarePlan.class)
+                .where(satisfiedUntilCriterion)
+                .and(organizationCriterion)
+                .include(CarePlan.INCLUDE_SUBJECT)
+                .include(CarePlan.INCLUDE_INSTANTIATES_CANONICAL);
+
+        Bundle bundle = (Bundle) query.execute();
+
+        return FhirLookupResult.fromBundle(bundle);
+    }
+
     public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));

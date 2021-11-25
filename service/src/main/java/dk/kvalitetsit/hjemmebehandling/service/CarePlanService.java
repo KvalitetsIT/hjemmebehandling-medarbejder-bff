@@ -85,37 +85,33 @@ public class CarePlanService extends AccessValidatingService {
 
         // Look up the careplans along with related resources needed for mapping.
         String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
-        FhirLookupResult lookupResult = lookupCarePlans(patientId);
+        FhirLookupResult lookupResult = lookupCarePlansByPatientId(patientId);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
 
         // Map the resourecs
-        List<CarePlanModel> result = lookupResult.getCarePlans()
+        List<CarePlanModel> mappedCarePlans = lookupResult.getCarePlans()
                 .stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
                 .collect(Collectors.toList());
 
-        // Populate 'exceededQuestionnaires' list
-        for(var carePlanModel : result) {
-            if(carePlanModel.getQuestionnaires() != null) {
-                carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanModel.getQuestionnaires()
-                        .stream()
-                        .filter(qw -> qw.getSatisfiedUntil().isBefore(dateProvider.now()))
-                        .map(qw -> qw.getQuestionnaire().getId())
-                        .collect(Collectors.toList()));
-            }
-        }
-
-        return result;
+        return decorateCarePlans(mappedCarePlans);
     }
 
-    private FhirLookupResult lookupCarePlans(String patientId) {
+    private FhirLookupResult lookupCarePlansByPatientId(String patientId) {
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
+        return augmentWithQuestionnaires(carePlanResult);
+    }
+
+    private FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlansUnsatisfiedAt_new(pointInTime);
+        return augmentWithQuestionnaires(carePlanResult);
+    }
+
+    private FhirLookupResult augmentWithQuestionnaires(FhirLookupResult carePlanResult) {
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server,  not the questionnaire-resources. Se wo look up those in a separate call.
-
-        // Get the careplan-resources.
-        FhirLookupResult carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
         if(carePlanResult.getCarePlans().isEmpty()) {
             return carePlanResult;
         }
@@ -130,16 +126,33 @@ public class CarePlanService extends AccessValidatingService {
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
         Instant pointInTime = dateProvider.now();
-        List<CarePlan> carePlans = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime);
-
-        if(carePlans.isEmpty()) {
+        FhirLookupResult lookupResult = lookupCarePlansUnsatisfiedAt(pointInTime);
+        if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
 
-        // Look up patients
-        Map<String, Patient> patientsByCarePlanId = getPatientsByCarePlanId(carePlans);
+        // Map the resourecs
+        List<CarePlanModel> mappedCarePlans = lookupResult.getCarePlans()
+                .stream()
+                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
+                .collect(Collectors.toList());
 
-        return mapCarePlans(carePlans, patientsByCarePlanId, pointInTime);
+        return decorateCarePlans(mappedCarePlans);
+    }
+
+    private List<CarePlanModel> decorateCarePlans(List<CarePlanModel> carePlans) {
+        // Populate 'exceededQuestionnaires' list
+        for(var carePlanModel : carePlans) {
+            if(carePlanModel.getQuestionnaires() != null) {
+                carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanModel.getQuestionnaires()
+                        .stream()
+                        .filter(qw -> qw.getSatisfiedUntil().isBefore(dateProvider.now()))
+                        .map(qw -> qw.getQuestionnaire().getId())
+                        .collect(Collectors.toList()));
+            }
+        }
+
+        return carePlans;
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
