@@ -90,17 +90,22 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @Disabled
     public void patchCarePlan_success() throws Exception {
         // Arrange
-        String id = "careplan-1";
+        String id = "careplan-2";
         PartialUpdateCareplanRequest request = new PartialUpdateCareplanRequest();
-        request.addQuestionnaireIdsItem("questionnaire-1");
+        request.addQuestionnaireIdsItem("Questionnaire/questionnaire-1");
+        request.addQuestionnaireIdsItem("Questionnaire/questionnaire-2");
 
-        FrequencyDto frequencyDto = new FrequencyDto();
-        frequencyDto.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
-        frequencyDto.setTimeOfDay("04:00");
-        request.putQuestionnaireFrequenciesItem("questionnaire-1", frequencyDto);
+        FrequencyDto frequencyDto1 = new FrequencyDto();
+        frequencyDto1.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
+        frequencyDto1.setTimeOfDay("04:00");
+        request.putQuestionnaireFrequenciesItem("Questionnaire/questionnaire-1", frequencyDto1);
+
+        FrequencyDto frequencyDto2 = new FrequencyDto();
+        frequencyDto2.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.WED));
+        frequencyDto2.setTimeOfDay("05:00");
+        request.putQuestionnaireFrequenciesItem("Questionnaire/questionnaire-2", frequencyDto2);
 
         // Act
         ApiResponse<Void> response = subject.patchCarePlanWithHttpInfo(id, request);
