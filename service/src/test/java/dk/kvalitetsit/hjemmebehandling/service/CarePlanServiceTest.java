@@ -435,14 +435,16 @@ public class CarePlanServiceTest {
     @Test
     public void updateQuestionnaires_carePlanAccessViolation_throwsException() throws Exception {
         // Arrange
-        String carePlanId = "careplan-1";
+        String carePlanId = "CarePlan/careplan-1";
         List<String> questionnaireIds = List.of();
         Map<String, FrequencyModel> frequencies = Map.of();
 
         Mockito.when(fhirClient.lookupQuestionnaires_new(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         CarePlan carePlan = new CarePlan();
-        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.of(carePlan));
+        carePlan.setId(carePlanId);
+        Mockito.when(fhirClient.lookupCarePlanById_new(carePlanId)).thenReturn(FhirLookupResult.fromResource(carePlan));
+        Mockito.when(fhirClient.lookupQuestionnaires_new(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.doNothing().when(accessValidator).validateAccess(List.of());
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);

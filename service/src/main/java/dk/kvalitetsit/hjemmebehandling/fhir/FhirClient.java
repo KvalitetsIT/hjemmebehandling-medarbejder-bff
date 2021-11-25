@@ -94,6 +94,23 @@ public class FhirClient {
         return lookupByCriteria(CarePlan.class, satisfiedUntilCriterion, organizationCriterion);
     }
 
+    public FhirLookupResult lookupCarePlanById_new(String carePlanId) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        var idCriterion = CarePlan.RES_ID.exactly().code(carePlanId);
+
+        var query = client
+                .search()
+                .forResource(CarePlan.class)
+                .where(idCriterion)
+                .include(CarePlan.INCLUDE_SUBJECT)
+                .include(CarePlan.INCLUDE_INSTANTIATES_CANONICAL);
+
+        Bundle bundle = (Bundle) query.execute();
+
+        return FhirLookupResult.fromBundle(bundle);
+    }
+
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
         return lookupById(carePlanId, CarePlan.class);
     }

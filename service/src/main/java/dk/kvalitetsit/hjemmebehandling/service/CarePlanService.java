@@ -99,6 +99,11 @@ public class CarePlanService extends AccessValidatingService {
         return decorateCarePlans(mappedCarePlans);
     }
 
+    private FhirLookupResult lookupCarePlanById(String carePlanId) {
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById_new(carePlanId);
+        return augmentWithQuestionnaires(carePlanResult);
+    }
+
     private FhirLookupResult lookupCarePlansByPatientId(String patientId) {
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
         return augmentWithQuestionnaires(carePlanResult);
@@ -201,20 +206,46 @@ public class CarePlanService extends AccessValidatingService {
         validateAccess(questionnaireResult.getQuestionnaires());
 
         // Look up the CarePlan, throw an exception in case it does not exist.
-        Optional<CarePlan> carePlan = fhirClient.lookupCarePlanById(carePlanId);
-        if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId), ErrorKind.BAD_REQUEST);
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult careplanResult = lookupCarePlanById(qualifiedId);
+        if(careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent()) {
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
         }
+        CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
 
         // Validate that the client is allowed to update the carePlan.
-        validateAccess(carePlan.get());
+        validateAccess(carePlan);
 
         // Update the carePlan
-        Map<String, Timing> timings = mapFrequencies(frequencies);
-        fhirObjectBuilder.setQuestionnairesForCarePlan(carePlan.get(), questionnaireResult.getQuestionnaires(), timings);
+        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult));
+        Set<String> existingQuestionnaireIds = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toSet());
+        for(var questionnaireId : questionnaireIds) {
+            if(existingQuestionnaireIds.contains(questionnaireId)) {
+                continue;
+            }
+
+            var wrapper = buildQuestionnaireWrapperModel(questionnaireId, frequencies, questionnaireResult);
+            carePlanModel.getQuestionnaires().add(wrapper);
+        }
 
         // Save the updated CarePlan
-        fhirClient.updateCarePlan(carePlan.get());
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
+    }
+
+    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId, Map<String, FrequencyModel> frequencies, FhirLookupResult lookupResult) {
+        var wrapper = new QuestionnaireWrapperModel();
+
+        // Set the questionnaire
+        var questionnaire = lookupResult.getQuestionnaire(questionnaireId).orElseThrow();
+        wrapper.setQuestionnaire(fhirMapper.mapQuestionnaire(questionnaire));
+
+        // Set the frequency
+        wrapper.setFrequency(frequencies.get(questionnaireId));
+
+        // Initialize the 'satisfied-until' timestamp-
+        initializeFrequencyTimestamp(wrapper);
+
+        return wrapper;
     }
 
     private CarePlanModel mapCarePlan(CarePlan carePlan, Patient patient) {
@@ -453,10 +484,14 @@ public class CarePlanService extends AccessValidatingService {
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
         // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-            var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapper.getFrequency()).next().next().getPointInTime();
-            questionnaireWrapper.setSatisfiedUntil(nextDeadline);
+            initializeFrequencyTimestamp(questionnaireWrapper);
         }
         var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getSatisfiedUntil()).min(Comparator.naturalOrder()).orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
+    }
+
+    private void initializeFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
+        var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().next().getPointInTime();
+        questionnaireWrapperModel.setSatisfiedUntil(nextDeadline);
     }
 }

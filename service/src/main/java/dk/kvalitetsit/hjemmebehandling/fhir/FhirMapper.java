@@ -115,6 +115,8 @@ public class FhirMapper {
             carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
         }
 
+        carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
+
         return carePlanModel;
     }
 
