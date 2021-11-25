@@ -55,7 +55,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void getCarePlan_success() throws Exception {
         // Arrange
-        String carePlanId = "23";
+        String carePlanId = "careplan-1";
 
         // Act
         ApiResponse<CarePlanDto> response = subject.getCarePlanByIdWithHttpInfo(carePlanId);
