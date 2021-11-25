@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CarePlan xmlns="http://hl7.org/fhir">
-    <id value="careplan-3"/>
+    <id value="careplan-infektionsmedicinsk-1"/>
     <extension url="http://hjemmebehandling.rm.dk/organization">
         <valueReference>
             <reference value="Organization/organization-1"/>
         </valueReference>
     </extension>
-    <instantiatesCanonical value="PlanDefinition/plandefinition-3"/>
+    <extension url="http://hjemmebehandling.rm.dk/careplan-satisfied-until">
+        <valueDate value="2021-11-27T10:11:12.123Z" />
+    </extension>
+    <instantiatesCanonical value="PlanDefinition/plandefinition-infektionsmedicinsk-1"/>
     <subject>
         <reference value="Patient/patient-1"/>
     </subject>
@@ -16,11 +19,15 @@
     </period>
     <activity>
         <detail>
-            <instantiatesCanonical value="Questionnaire/questionnaire-infektionsmedicinsk1"/>
+            <instantiatesCanonical value="Questionnaire/questionnaire-infektionsmedicinsk-1"/>
             <status value="not-started"/>
+            <extension url="http://hjemmebehandling.rm.dk/activity-satisfied-until">
+                <valueDate value="2021-11-27T10:11:12.123Z" />
+            </extension>
             <scheduledTiming>
                 <repeat>
                     <dayOfWeek value="mon"/>
+                    <timeOfDay value="11:00"/>
                 </repeat>
             </scheduledTiming>
             <extension url="http://hjemmebehandling.rm.dk/threshold">

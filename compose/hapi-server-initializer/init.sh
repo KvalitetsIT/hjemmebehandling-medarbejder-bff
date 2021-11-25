@@ -3,15 +3,27 @@
 echo 'Installing curl ...';
 apk add curl;
 
-echo 'Waiting for hapi-server to be ready ...';
-curl -o /dev/null --retry 5 --retry-max-time 40 --retry-connrefused http://hapi-server:8080
+if [ ! -z $data_dir ]
+then
+  #echo 'changing dir to: '$data_dir
+  cd $data_dir
+fi
+
+if [ -z $hapi_server_base_url ]
+then
+  echo 'hapi-server url not defined. Using default: http://hapi-server:8080'
+  hapi_server_base_url=http://hapi-server:8080
+fi
+
+echo 'Waiting for hapi-server ('$hapi_server_base_url') to be ready ...';
+curl -o /dev/null --retry 5 --retry-max-time 40 --retry-connrefused $hapi_server_base_url
 
 echo 'Initializing hapi-server ...';
 
 function delete {
   echo 'Deleting '$1' ...'
 
-  if [ $(curl -s -o /dev/null -w '%{http_code}' -X DELETE 'http://hapi-server:8080/fhir/'$1) -eq '200' ]
+  if [ $(curl -s -o /dev/null -w '%{http_code}' -X DELETE $hapi_server_base_url'/fhir/'$1) -eq '200' ]
   then
     echo 'successfully deleted '$1'!'
   else
@@ -22,8 +34,9 @@ function delete {
 function create {
   echo 'Creating '$2' ...'
 
+  echo $PWD
   # Using PUT allows us to control the resource id's.
-  if $(echo $(curl -s -o /dev/null -w '%{http_code}' -X PUT -d '@/hapi-server-initializer/'$1 -H 'Content-Type: application/fhir+xml' 'http://hapi-server:8080/fhir/'$2'?_format=xml') | grep -qE '^20(0|1)$');
+  if $(echo $(curl -s -o /dev/null -w '%{http_code}' -X PUT -d '@./'$1 -H 'Content-Type: application/fhir+xml' $hapi_server_base_url'/fhir/'$2'?_format=xml') | grep -qE '^20(0|1)$');
   then
     echo 'successfully created '$2'!'
   else
@@ -43,13 +56,15 @@ delete 'QuestionnaireResponse/questionnaireresponse-3'
 delete 'QuestionnaireResponse/questionnaireresponse-2'
 delete 'QuestionnaireResponse/questionnaireresponse-1'
 
+delete 'CarePlan/careplan-infektionsmedicinsk-1'
 delete 'CarePlan/careplan-2'
 delete 'CarePlan/careplan-1'
 
+delete 'PlanDefinition/plandefinition-infektionsmedicinsk-1'
 delete 'PlanDefinition/plandefinition-2'
 delete 'PlanDefinition/plandefinition-1'
 
-delete 'Questionnaire/questionnaire-infektionsmedicinsk1'
+delete 'Questionnaire/questionnaire-infektionsmedicinsk-1'
 delete 'Questionnaire/questionnaire-2'
 delete 'Questionnaire/questionnaire-1'
 
@@ -69,13 +84,15 @@ create 'patient-2.xml' 'Patient/patient-2'
 
 create 'questionnaire-1.xml' 'Questionnaire/questionnaire-1'
 create 'questionnaire-2.xml' 'Questionnaire/questionnaire-2'
-create 'questionnaire-infektionsmedicinsk1.xml' 'Questionnaire/questionnaire-infektionsmedicinsk1'
+create 'questionnaire-infektionsmedicinsk-1.xml' 'Questionnaire/questionnaire-infektionsmedicinsk-1'
 
 create 'plandefinition-1.xml' 'PlanDefinition/plandefinition-1'
 create 'plandefinition-2.xml' 'PlanDefinition/plandefinition-2'
+create 'plandefinition-infektionsmedicinsk-1.xml' 'PlanDefinition/plandefinition-infektionsmedicinsk-1'
 
 create 'careplan-1.xml' 'CarePlan/careplan-1'
 create 'careplan-2.xml' 'CarePlan/careplan-2'
+create 'careplan-infektionsmedicinsk-1.xml' 'CarePlan/careplan-infektionsmedicinsk-1'
 
 create 'questionnaireresponse-1.xml' 'QuestionnaireResponse/questionnaireresponse-1'
 create 'questionnaireresponse-2.xml' 'QuestionnaireResponse/questionnaireresponse-2'

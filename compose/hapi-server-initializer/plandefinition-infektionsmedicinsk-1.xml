@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PlanDefinition xmlns="http://hl7.org/fhir">
-    <id value="plandefinition-3"/>
+    <id value="plandefinition-infektionsmedicinsk-1"/>
     <extension url="http://hjemmebehandling.rm.dk/organization">
         <valueReference>
             <reference value="Organization/organization-1"/>
@@ -31,9 +31,10 @@
         <timingTiming>
             <repeat>
                 <dayOfWeek value="mon"/>
+                <timeOfDay value="11:00"/>
             </repeat>
         </timingTiming>
-        <definitionCanonical value="Questionnaire/questionnaire-infektionsmedicinsk1"/>
+        <definitionCanonical value="Questionnaire/questionnaire-infektionsmedicinsk-1"/>
         <extension url="http://hjemmebehandling.rm.dk/threshold">
             <extension url="http://hjemmebehandling.rm.dk/threshold-questionnaire-item-linkid">
                 <valueString value="temperature"/>
