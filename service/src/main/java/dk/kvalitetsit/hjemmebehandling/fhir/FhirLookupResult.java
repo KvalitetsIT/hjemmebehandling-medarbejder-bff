@@ -13,12 +13,14 @@ public class FhirLookupResult {
     private Map<String, Patient> patientsById;
     private Map<String, PlanDefinition> planDefinitionsById;
     private Map<String, Questionnaire> questionnairesById;
+    private Map<String, QuestionnaireResponse> questionnaireResponsesById;
 
     private FhirLookupResult() {
         carePlansById = new HashMap<>();
         patientsById = new HashMap<>();
         planDefinitionsById = new HashMap<>();
         questionnairesById = new HashMap<>();
+        questionnaireResponsesById = new HashMap<>();
     }
 
     public static FhirLookupResult fromBundle(Bundle bundle) {
@@ -75,6 +77,14 @@ public class FhirLookupResult {
         return getResources(questionnairesById);
     }
 
+    public Optional<QuestionnaireResponse> getQuestionnaireResponse(String questionnaireResponseId) {
+        return getResource(questionnaireResponseId, questionnaireResponsesById);
+    }
+
+    public List<QuestionnaireResponse> getQuestionnaireResponses() {
+        return getResources(questionnaireResponsesById);
+    }
+
     public FhirLookupResult merge(FhirLookupResult result) {
         for(CarePlan carePlan : result.carePlansById.values()) {
             addResource(carePlan);
@@ -87,6 +97,9 @@ public class FhirLookupResult {
         }
         for(Questionnaire questionnaire: result.questionnairesById.values()) {
             addResource(questionnaire);
+        }
+        for(QuestionnaireResponse questionnaireResponse: result.questionnaireResponsesById.values()) {
+            addResource(questionnaireResponse);
         }
 
         return this;
@@ -117,6 +130,9 @@ public class FhirLookupResult {
                 break;
             case Questionnaire:
                 questionnairesById.put(resourceId, (Questionnaire) resource);
+                break;
+            case QuestionnaireResponse:
+                questionnaireResponsesById.put(resourceId, (QuestionnaireResponse) resource);
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown resource type: %s", resource.getResourceType().toString()));

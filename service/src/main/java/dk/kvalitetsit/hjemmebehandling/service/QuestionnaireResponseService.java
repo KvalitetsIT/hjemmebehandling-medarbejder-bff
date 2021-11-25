@@ -1,10 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -40,7 +37,8 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
-        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds);
+        List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
             return List.of();
         }
@@ -48,17 +46,11 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
         validateAccess(responses);
 
-        // Look up questionnaires
-        Map<String, Questionnaire> questionnairesById = getQuestionnairesById(questionnaireIds);
-
-        // Look up careplan
-        CarePlan carePlan = fhirClient.lookupCarePlanById(carePlanId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up CarePlan for id %s!", carePlanId)));
-
-        // Extract the patientId, get the patient
-        String patientId = carePlan.getSubject().getReference();
-        Patient patient = fhirClient.lookupPatientById(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for id %s!", patientId)));
-
-        return constructResult(responses, questionnairesById, Map.of(patient.getIdElement().toUnqualifiedVersionless().toString(), patient));
+        // Map and return the responses
+        return responses
+                .stream()
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult))
+                .collect(Collectors.toList());
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
@@ -74,7 +66,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
         // and in case of multiple entries, we want the 'most important' one.
-        // Grouping, ordring and pagination should ideally happen in the FHIR-server, but the grouping part seems to
+        // Grouping, ordering and pagination should ideally happen in the FHIR-server, but the grouping part seems to
         // require a server extension. So for now, we do it here.
         responses = filterResponses(responses);
 

@@ -223,6 +223,39 @@ public class FhirMapper {
         return questionnaireResponse;
     }
 
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
+        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
+
+        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+
+        String questionnaireId = questionnaireResponse.getQuestionnaire();
+        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId)
+                .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireId)));
+        questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
+        questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
+
+        // Populate questionAnswerMap
+        List<QuestionAnswerPairModel> answers = new ArrayList<>();
+
+        for(var item : questionnaireResponse.getItem()) {
+            QuestionModel question = getQuestion(questionnaire, item.getLinkId());
+            AnswerModel answer = getAnswer(item);
+            answers.add(new QuestionAnswerPairModel(question, answer));
+        }
+
+        questionnaireResponseModel.setQuestionAnswerPairs(answers);
+        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
+        questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
+        questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));
+
+        String patientId = questionnaireResponse.getSubject().getReference();
+        Patient patient = lookupResult.getPatient(patientId)
+                .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
+        questionnaireResponseModel.setPatient(mapPatient(patient));
+
+        return questionnaireResponseModel;
+    }
+
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 

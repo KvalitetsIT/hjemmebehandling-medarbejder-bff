@@ -115,10 +115,17 @@ public class FhirClient {
         return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
     }
 
+    public FhirLookupResult lookupQuestionnaireResponses_new(String carePlanId, List<String> questionnaireIds) {
+        var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
+        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
+
+        return lookup_new(QuestionnaireResponse.class, List.of(questionnaireCriterion, basedOnCriterion), List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT));
+    }
+
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
-        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
+        return  lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {

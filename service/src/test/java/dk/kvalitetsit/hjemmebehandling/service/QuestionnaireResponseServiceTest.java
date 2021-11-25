@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
@@ -62,21 +63,11 @@ public class QuestionnaireResponseServiceTest {
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
-
-        setupQuestionnaires(QUESTIONNAIRE_ID_1);
-
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId(CAREPLAN_ID_1);
-        carePlan.setSubject(new Reference(PATIENT_ID));
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
-
-        Patient patient = new Patient();
-        patient.setId(PATIENT_ID);
-        Mockito.when(fhirClient.lookupPatientById(PATIENT_ID)).thenReturn(Optional.of(patient));
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel responseModel = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(responseModel);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(responseModel);
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
@@ -92,7 +83,7 @@ public class QuestionnaireResponseServiceTest {
         String carePlanId = CAREPLAN_ID_1;
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
@@ -108,7 +99,8 @@ public class QuestionnaireResponseServiceTest {
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
         QuestionnaireResponse response = new QuestionnaireResponse();
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(response));
 
@@ -116,64 +108,6 @@ public class QuestionnaireResponseServiceTest {
 
         // Assert
         assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
-    }
-
-    @Test
-    public void getQuestionnaireResponses_questionnairesMissing_throwsException() throws Exception {
-        // Arrange
-        String carePlanId = CAREPLAN_ID_1;
-        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-
-        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
-
-        // Act
-
-        // Assert
-        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
-    }
-
-    @Test
-    public void getQuestionnaireResponses_carePlanMissing_throwsException() throws Exception {
-        // Arrange
-        String carePlanId = CAREPLAN_ID_1;
-        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-
-        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
-
-        setupQuestionnaires(QUESTIONNAIRE_ID_1);
-
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.empty());
-
-        // Act
-
-        // Assert
-        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
-    }
-
-    @Test
-    public void getQuestionnaireResponses_patientMissing_throwsException() throws Exception {
-        // Arrange
-        String carePlanId = CAREPLAN_ID_1;
-        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-
-        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
-
-        setupQuestionnaires(QUESTIONNAIRE_ID_1);
-
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId(CAREPLAN_ID_1);
-        carePlan.setSubject(new Reference(PATIENT_ID));
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
-
-        Mockito.when(fhirClient.lookupPatientById(PATIENT_ID)).thenReturn(Optional.empty());
-
-        // Act
-
-        // Assert
-        assertThrows(IllegalStateException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
     }
 
     @Test

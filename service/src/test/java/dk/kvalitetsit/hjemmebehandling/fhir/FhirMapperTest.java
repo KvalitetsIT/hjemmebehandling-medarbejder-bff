@@ -168,7 +168,7 @@ public class FhirMapperTest {
         patient.getIdentifier().add(new Identifier());
 
         // Act
-        QuestionnaireResponseModel result = subject.mapQuestionnaireResponse(questionnaireResponse, questionnaire, patient);
+        QuestionnaireResponseModel result = subject.mapQuestionnaireResponse(questionnaireResponse, FhirLookupResult.fromResources(questionnaireResponse, questionnaire, patient));
 
         // Assert
         assertEquals(2, result.getQuestionAnswerPairs().size());
