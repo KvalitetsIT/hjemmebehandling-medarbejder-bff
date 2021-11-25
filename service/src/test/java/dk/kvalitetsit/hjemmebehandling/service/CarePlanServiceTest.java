@@ -235,7 +235,7 @@ public class CarePlanServiceTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPatientByCpr_new(CPR_1)).thenReturn(Optional.of(patient));
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient);
         Mockito.when(fhirClient.lookupCarePlansByPatientId_new(PATIENT_ID_1)).thenReturn(lookupResult);
@@ -257,7 +257,7 @@ public class CarePlanServiceTest {
         // Arrange
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPatientByCpr_new(CPR_1)).thenReturn(Optional.of(patient));
         Mockito.when(fhirClient.lookupCarePlansByPatientId_new(PATIENT_ID_1)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
@@ -273,7 +273,7 @@ public class CarePlanServiceTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+        Mockito.when(fhirClient.lookupPatientByCpr_new(CPR_1)).thenReturn(Optional.of(patient));
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient);
         Mockito.when(fhirClient.lookupCarePlansByPatientId_new(PATIENT_ID_1)).thenReturn(lookupResult);
@@ -338,29 +338,28 @@ public class CarePlanServiceTest {
     @Test
     public void getCarePlanById_carePlanPresent_returnsCarePlan() throws Exception {
         // Arrange
-        String carePlanId = "careplan-1";
+        String carePlanId = "CarePlan/careplan-1";
         String patientId = "Patient/patient-1";
 
         CarePlan carePlan = buildCarePlan(carePlanId, patientId);
         CarePlanModel carePlanModel = setupCarePlan(carePlan);
-        PatientModel patientModel = setupPatient(patientId);
 
         // Act
         Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(carePlanModel, result.get());
-        assertEquals(patientModel, result.get().getPatient());
     }
 
     @Test
     public void getCarePlanById_carePlanForDifferentOrganization_throwsException() throws Exception {
         // Arrange
-        String carePlanId = "careplan-1";
+        String carePlanId = "CarePlan/careplan-1";
         String patientId = "Patient/patient-1";
 
         CarePlan carePlan = buildCarePlan(carePlanId, patientId);
-        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.lookupCarePlanById_new(carePlan.getId())).thenReturn(FhirLookupResult.fromResource(carePlan));
+        Mockito.when(fhirClient.lookupQuestionnaires_new(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
 
@@ -371,58 +370,17 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanById_patientMissing_throwsException() throws Exception {
-        // Arrange
-        String carePlanId = "careplan-1";
-        String patientId = "Patient/patient-1";
-
-        CarePlan carePlan = buildCarePlan(carePlanId, patientId);
-        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
-
-        Mockito.when(fhirClient.lookupPatientById(patientId)).thenReturn(Optional.empty());
-
-        // Act
-
-        // Assert
-        assertThrows(IllegalStateException.class, () -> subject.getCarePlanById(carePlanId));
-    }
-
-    @Test
     public void getCarePlanById_carePlanMissing_returnsEmpty() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
 
-        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.empty());
+        Mockito.when(fhirClient.lookupCarePlanById_new(carePlanId)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertFalse(result.isPresent());
-    }
-
-    @Test
-    public void getCarePlanById_carePlanPresent_includesQuestionnaires() throws Exception {
-        // Arrange
-        String carePlanId = "careplan-1";
-        String patientId = "Patient/patient-1";
-        String questionnaireId = "questionnaire-1";
-
-        setupPatient(patientId);
-
-        CarePlan carePlan = buildCarePlan(carePlanId, patientId, questionnaireId);
-        CarePlanModel carePlanModel = setupCarePlan(carePlan);
-        QuestionnaireModel questionnaireModel = setupQuestionnaire(questionnaireId);
-
-        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-
-        // Act
-        Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
-
-        // Assert
-        assertEquals(carePlanModel, result.get());
-        assertEquals(1, result.get().getQuestionnaires().size());
-        assertEquals(questionnaireModel, result.get().getQuestionnaires().get(0).getQuestionnaire());
     }
 
     @Test
@@ -538,11 +496,12 @@ public class CarePlanServiceTest {
     }
 
     private CarePlanModel setupCarePlan(CarePlan carePlan) {
-        Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.lookupCarePlanById_new(carePlan.getId())).thenReturn(FhirLookupResult.fromResource(carePlan));
+        Mockito.when(fhirClient.lookupQuestionnaires_new(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         CarePlanModel carePlanModel = new CarePlanModel();
         carePlanModel.setId(carePlan.getId());
-        Mockito.when(fhirMapper.mapCarePlan(carePlan)).thenReturn(carePlanModel);
+        Mockito.when(fhirMapper.mapCarePlan(Mockito.any(CarePlan.class), Mockito.any(FhirLookupResult.class))).thenReturn(carePlanModel);
 
         return carePlanModel;
     }
