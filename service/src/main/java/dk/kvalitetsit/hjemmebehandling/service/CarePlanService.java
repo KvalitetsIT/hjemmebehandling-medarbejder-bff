@@ -40,14 +40,16 @@ public class CarePlanService extends AccessValidatingService {
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        var patient = fhirClient.lookupPatientByCpr_new(cpr);
 
         // TODO: More validations should be performed - possibly?
         // If the patient did exist, check that no existing careplan exists for the patient
         if(patient.isPresent()) {
-            List<CarePlan> existingCarePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getIdElement().toUnqualifiedVersionless().getValue());
-            for(CarePlan cp : existingCarePlans) {
-                if(isActive(cp)) {
+            String patientId = patient.get().getIdElement().toUnqualifiedVersionless().getValue();
+            var carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
+            for(CarePlan cp : carePlanResult.getCarePlans()) {
+                var carePlanModel = fhirMapper.mapCarePlan(cp, carePlanResult);
+                if(isActive(carePlanModel)) {
                     throw new IllegalStateException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr));
                 }
             }
@@ -463,21 +465,21 @@ public class CarePlanService extends AccessValidatingService {
         return wrapper;
     }
 
-    private boolean isActive(CarePlan carePlan) {
-        return carePlan.getPeriod().getEnd() == null;
+    private boolean isActive(CarePlanModel carePlan) {
+        return carePlan.getEndDate() == null;
     }
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
         // Validate questionnaires
         if(carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
-            List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
-            validateAccess(questionnaires);
+            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires_new(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
+            validateAccess(lookupResult.getQuestionnaires());
         }
 
         // Validate planDefinitions
         if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
-            List<PlanDefinition> planDefinitions = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
-            validateAccess(planDefinitions);
+            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions_new(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
+            validateAccess(lookupResult.getPlanDefinitions());
         }
     }
 

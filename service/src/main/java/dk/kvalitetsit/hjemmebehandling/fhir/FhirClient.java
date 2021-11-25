@@ -87,8 +87,24 @@ public class FhirClient {
         return lookupById(patientId, Patient.class);
     }
 
+    public Optional<Patient> lookupPatientByCpr_new(String cpr) {
+        var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
+
+        var lookupResult = lookup_new(Patient.class, List.of(cprCriterion));
+
+        if(lookupResult.getPatients().isEmpty()) {
+            return Optional.empty();
+        }
+        if(lookupResult.getPatients().size() > 1) {
+            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
+        }
+        return Optional.of(lookupResult.getPatients().get(0));
+    }
+
     public Optional<Patient> lookupPatientByCpr(String cpr) {
-        return lookupSingletonByCriterion(Patient.class, Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr));
+        var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
+
+        return lookupSingletonByCriterion(Patient.class, cprCriterion);
     }
 
     public List<Patient> lookupPatientsById(Collection<String> patientIds) {
@@ -147,6 +163,12 @@ public class FhirClient {
         var definitionInclude = PlanDefinition.INCLUDE_DEFINITION;
 
         return lookup_new(PlanDefinition.class, List.of(organizationCriterion), List.of(definitionInclude));
+    }
+
+    public FhirLookupResult lookupPlanDefinitions_new(Collection<String> planDefinitionIds) {
+        var idCriterion = PlanDefinition.RES_ID.exactly().codes(planDefinitionIds);
+
+        return lookup_new(PlanDefinition.class, List.of(idCriterion));
     }
 
     public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
