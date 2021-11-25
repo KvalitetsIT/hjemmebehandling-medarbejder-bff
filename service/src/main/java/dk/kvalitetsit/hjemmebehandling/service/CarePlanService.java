@@ -23,16 +23,13 @@ public class CarePlanService extends AccessValidatingService {
 
     private FhirMapper fhirMapper;
 
-    private FhirObjectBuilder fhirObjectBuilder;
-
     private DateProvider dateProvider;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, DateProvider dateProvider, AccessValidator accessValidator) {
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
-        this.fhirObjectBuilder = fhirObjectBuilder;
         this.dateProvider = dateProvider;
     }
 

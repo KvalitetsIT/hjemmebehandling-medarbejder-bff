@@ -36,9 +36,6 @@ public class QuestionnaireResponseServiceTest {
     private FhirMapper fhirMapper;
 
     @Mock
-    private FhirObjectBuilder fhirObjectBuilder;
-
-    @Mock
     private QuestionnaireResponsePriorityComparator priorityComparator;
 
     @Mock

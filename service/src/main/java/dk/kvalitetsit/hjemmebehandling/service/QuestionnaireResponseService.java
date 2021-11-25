@@ -23,16 +23,13 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     private FhirMapper fhirMapper;
 
-    private FhirObjectBuilder fhirObjectBuilder;
-
     private Comparator<QuestionnaireResponse> priorityComparator;
 
-    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, FhirObjectBuilder fhirObjectBuilder, Comparator<QuestionnaireResponse> priorityComparator, AccessValidator accessValidator) {
+    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, Comparator<QuestionnaireResponse> priorityComparator, AccessValidator accessValidator) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
-        this.fhirObjectBuilder = fhirObjectBuilder;
         this.priorityComparator = priorityComparator;
     }
 

@@ -17,7 +17,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
@@ -30,8 +29,8 @@ public class ServiceConfiguration {
 	private String userContextHandler;
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
-        return new CarePlanService(client, mapper, builder, dateProvider, accessValidator);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
+        return new CarePlanService(client, mapper, dateProvider, accessValidator);
     }
 
     @Bean
@@ -45,9 +44,9 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired FhirObjectBuilder builder, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, builder, priorityComparator.reversed(), accessValidator);
+        return new QuestionnaireResponseService(client, mapper, priorityComparator.reversed(), accessValidator);
     }
 
     @Bean
