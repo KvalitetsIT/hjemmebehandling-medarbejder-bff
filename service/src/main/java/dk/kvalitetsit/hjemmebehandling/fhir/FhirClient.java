@@ -43,7 +43,7 @@ public class FhirClient {
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
 
-        return lookup_new(CarePlan.class, List.of(patientCriterion, organizationCriterion), List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+        return lookupCarePlansByCriteria(List.of(patientCriterion, organizationCriterion));
     }
 
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
@@ -58,7 +58,7 @@ public class FhirClient {
         var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
         var organizationCriterion = buildOrganizationCriterion();
 
-        return lookup_new(CarePlan.class, List.of(satisfiedUntilCriterion, organizationCriterion), List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+        return lookupCarePlansByCriteria(List.of(satisfiedUntilCriterion, organizationCriterion));
     }
 
     public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
@@ -72,7 +72,7 @@ public class FhirClient {
     public FhirLookupResult lookupCarePlanById_new(String carePlanId) {
         var idCriterion = CarePlan.RES_ID.exactly().code(carePlanId);
 
-        return lookup_new(CarePlan.class, List.of(idCriterion), List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+        return lookupCarePlansByCriteria(List.of(idCriterion));
     }
 
     public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
@@ -192,6 +192,37 @@ public class FhirClient {
 
     public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
         update(questionnaireResponse);
+    }
+
+    private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) {
+        var carePlanResult = lookup_new(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+
+        // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
+        // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
+        if(carePlanResult.getCarePlans().isEmpty()) {
+            return carePlanResult;
+        }
+
+        // Get the related questionnaire-resources
+        List<String> questionnaireIds = getQuestionnaireIds(carePlanResult.getCarePlans());
+        FhirLookupResult questionnaireResult = lookupQuestionnaires_new(questionnaireIds);
+
+        // Merge the results
+        return carePlanResult.merge(questionnaireResult);
+    }
+
+    private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
+        return carePlans
+                .stream()
+                .flatMap(cp -> cp.getActivity().stream().map(a -> getQuestionnaireId(a.getDetail())))
+                .collect(Collectors.toList());
+    }
+
+    private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
+        if(detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
+            throw new IllegalStateException("Expected InstantiatesCanonical to be present, and to contain exactly one value!");
+        }
+        return detail.getInstantiatesCanonical().get(0).getValue();
     }
 
     private <T extends Resource> FhirLookupResult lookup_new(Class<T> resourceClass, List<ICriterion<?>> criteria) {
