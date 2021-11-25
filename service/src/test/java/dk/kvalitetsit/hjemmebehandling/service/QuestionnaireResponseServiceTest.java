@@ -2,10 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -238,7 +235,7 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.empty());
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
 
@@ -252,8 +249,8 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
+        QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(FhirLookupResult.fromResource(response));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(response);
 
@@ -269,8 +266,13 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
+        QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(lookupResult);
+
+        QuestionnaireResponseModel model = new QuestionnaireResponseModel();
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
 
         Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
 
@@ -278,7 +280,7 @@ public class QuestionnaireResponseServiceTest {
         subject.updateExaminationStatus(id, status);
 
         // Assert
-        Mockito.verify(fhirObjectBuilder).updateExaminationStatusForQuestionnaireResponse(response, status);
+        assertEquals(status, model.getExaminationStatus());
     }
 
     private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patientId) {

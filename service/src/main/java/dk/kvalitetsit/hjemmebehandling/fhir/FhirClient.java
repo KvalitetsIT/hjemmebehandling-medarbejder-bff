@@ -111,6 +111,11 @@ public class FhirClient {
         return lookupByCriterion(Patient.class, Patient.RES_ID.exactly().codes(patientIds));
     }
 
+    public FhirLookupResult lookupQuestionnaireResponseById_new(String questionnaireResponseId) {
+        var idCriterion = QuestionnaireResponse.RES_ID.exactly().code(questionnaireResponseId);
+        return lookupQuestionnaireResponseByCriteria(List.of(idCriterion));
+    }
+
     public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
         return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
     }
