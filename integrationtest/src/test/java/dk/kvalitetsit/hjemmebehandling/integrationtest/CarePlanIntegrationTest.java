@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
@@ -83,6 +84,26 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         // Act
         ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(null, onlyUnsatisfiedSchedules);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    @Disabled
+    public void patchCarePlan_success() throws Exception {
+        // Arrange
+        String id = "careplan-1";
+        PartialUpdateCareplanRequest request = new PartialUpdateCareplanRequest();
+        request.addQuestionnaireIdsItem("questionnaire-1");
+
+        FrequencyDto frequencyDto = new FrequencyDto();
+        frequencyDto.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
+        frequencyDto.setTimeOfDay("04:00");
+        request.putQuestionnaireFrequenciesItem("questionnaire-1", frequencyDto);
+
+        // Act
+        ApiResponse<Void> response = subject.patchCarePlanWithHttpInfo(id, request);
 
         // Assert
         assertEquals(200, response.getStatusCode());

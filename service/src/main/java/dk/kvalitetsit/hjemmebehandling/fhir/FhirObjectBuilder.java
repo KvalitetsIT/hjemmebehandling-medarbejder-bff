@@ -56,7 +56,7 @@ public class FhirObjectBuilder {
     }
 
     private CanonicalType getInstantiatesCanonical(Questionnaire questionnaire) {
-        return new CanonicalType(FhirUtils.qualifyId(questionnaire.getIdElement().toVersionless().getValue(), ResourceType.Questionnaire));
+        return new CanonicalType(FhirUtils.qualifyId(questionnaire.getIdElement().toUnqualifiedVersionless().getValue(), ResourceType.Questionnaire));
     }
 
     private Timing getTiming(Questionnaire questionnaire, Map<String, Timing> frequencies) {
