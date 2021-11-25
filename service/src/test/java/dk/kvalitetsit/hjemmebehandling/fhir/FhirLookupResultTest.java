@@ -31,7 +31,7 @@ public class FhirLookupResultTest {
 
         // Assert
         assertEquals(1, result.getPlanDefinitions().size());
-        assertEquals(planDefinition, result.getPlanDefinition(PLANDEFINITION_ID_1));
+        assertEquals(planDefinition, result.getPlanDefinition(PLANDEFINITION_ID_1).get());
     }
 
     @Test
@@ -43,7 +43,8 @@ public class FhirLookupResultTest {
         FhirLookupResult result = FhirLookupResult.fromBundle(bundle);
 
         // Assert
-        assertThrows(IllegalArgumentException.class, () -> result.getPlanDefinition(PLANDEFINITION_ID_1));
+        assertEquals(0, result.getPlanDefinitions().size());
+        assertFalse(result.getPlanDefinition(PLANDEFINITION_ID_1).isPresent());
     }
 
     @Test
@@ -57,7 +58,7 @@ public class FhirLookupResultTest {
 
         // Assert
         assertEquals(1, result.getQuestionnaires().size());
-        assertEquals(questionnaire, result.getQuestionnaire(QUESTIONNAIRE_ID_1));
+        assertEquals(questionnaire, result.getQuestionnaire(QUESTIONNAIRE_ID_1).get());
     }
 
     @Test
@@ -69,7 +70,8 @@ public class FhirLookupResultTest {
         FhirLookupResult result = FhirLookupResult.fromBundle(bundle);
 
         // Assert
-        assertThrows(IllegalArgumentException.class, () -> result.getQuestionnaire(PLANDEFINITION_ID_1));
+        assertEquals(0, result.getQuestionnaires().size());
+        assertFalse(result.getQuestionnaire(QUESTIONNAIRE_ID_1).isPresent());
     }
 
     private PlanDefinition buildPlanDefinition(String planDefinitionId) {

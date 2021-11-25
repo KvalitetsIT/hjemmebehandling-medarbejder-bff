@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,7 +67,53 @@ public class FhirMapper {
         if(carePlan.getPeriod().getEnd() != null) {
             carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
         }
+
         carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
+
+        return carePlanModel;
+    }
+
+    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult) {
+        CarePlanModel carePlanModel = new CarePlanModel();
+
+        carePlanModel.setId(carePlan.getIdElement().toUnqualifiedVersionless().getValue());
+        carePlanModel.setTitle(carePlan.getTitle());
+        //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
+        carePlanModel.setCreated(carePlan.getCreated().toInstant());
+        carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
+        if(carePlan.getPeriod().getEnd() != null) {
+            carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
+        }
+
+        String patientId = carePlan.getSubject().getReference();
+        Patient patient = lookupResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId())));
+        carePlanModel.setPatient(mapPatient(patient));
+
+        carePlanModel.setQuestionnaires(new ArrayList<>());
+        for(var activity : carePlan.getActivity()) {
+            String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
+            var questionnaire = lookupResult
+                    .getQuestionnaire(questionnaireId)
+                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire for CarePlan %s!", carePlanModel.getId())));
+
+            var questionnaireModel = mapQuestionnaire(questionnaire);
+            var frequencyModel = mapTiming(activity.getDetail().getScheduledTiming());
+
+            var wrapper = new QuestionnaireWrapperModel();
+            wrapper.setQuestionnaire(questionnaireModel);
+            wrapper.setFrequency(frequencyModel);
+            wrapper.setSatisfiedUntil(ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()));
+
+            carePlanModel.getQuestionnaires().add(wrapper);
+        }
+
+        carePlanModel.setPlanDefinitions(new ArrayList<>());
+        for(var ic : carePlan.getInstantiatesCanonical()) {
+            var planDefinition = lookupResult
+                    .getPlanDefinition(ic.getValue())
+                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
+            carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
+        }
 
         return carePlanModel;
     }
@@ -138,7 +185,10 @@ public class FhirMapper {
 
         wrapper.setFrequency(mapTiming(action.getTimingTiming()));
 
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(action.getDefinitionCanonicalType().getValue());
+        String questionnaireId = action.getDefinitionCanonicalType().getValue();
+        Questionnaire questionnaire = lookupResult
+                .getQuestionnaire(questionnaireId)
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
 
         return wrapper;

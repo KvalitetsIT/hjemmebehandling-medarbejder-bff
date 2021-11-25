@@ -40,6 +40,25 @@ public class FhirClient {
         this.userContextProvider = userContextProvider;
     }
 
+    public FhirLookupResult lookupCarePlansByPatientId_new(String patientId) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        var patientCriterion = CarePlan.PATIENT.hasId(patientId);
+        var organizationCriterion = buildOrganizationCriterion();
+
+        var query = client
+                .search()
+                .forResource(CarePlan.class)
+                .where(patientCriterion)
+                .and(organizationCriterion)
+                .include(CarePlan.INCLUDE_SUBJECT)
+                .include(CarePlan.INCLUDE_INSTANTIATES_CANONICAL);
+
+        Bundle bundle = (Bundle) query.execute();
+
+        return FhirLookupResult.fromBundle(bundle);
+    }
+
     public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
@@ -139,6 +158,23 @@ public class FhirClient {
 
     public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
         return lookupByCriterion(PlanDefinition.class, PlanDefinition.RES_ID.exactly().codes(planDefinitionIds));
+    }
+
+    public FhirLookupResult lookupQuestionnaires_new(Collection<String> questionnaireIds) {
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds);
+        var organizationCriterion = buildOrganizationCriterion();
+
+        var query = client
+                .search()
+                .forResource(Questionnaire.class)
+                .where(idCriterion)
+                .and(organizationCriterion);
+
+        Bundle bundle = (Bundle) query.execute();
+
+        return FhirLookupResult.fromBundle(bundle);
     }
 
     public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {

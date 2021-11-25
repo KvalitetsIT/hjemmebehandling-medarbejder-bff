@@ -5,15 +5,18 @@ import org.hl7.fhir.r4.model.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FhirLookupResult {
     private Map<String, CarePlan> carePlansById;
+    private Map<String, Patient> patientsById;
     private Map<String, PlanDefinition> planDefinitionsById;
     private Map<String, Questionnaire> questionnairesById;
 
     private FhirLookupResult() {
         carePlansById = new HashMap<>();
+        patientsById = new HashMap<>();
         planDefinitionsById = new HashMap<>();
         questionnairesById = new HashMap<>();
     }
@@ -27,14 +30,36 @@ public class FhirLookupResult {
     }
 
     public static FhirLookupResult fromResource(Resource resource) {
+        return fromResources(resource);
+    }
+
+    public static FhirLookupResult fromResources(Resource... resources) {
         FhirLookupResult result = new FhirLookupResult();
 
-        result.addResource(resource);
+        for(Resource resource : resources) {
+            result.addResource(resource);
+        }
 
         return result;
     }
 
-    public PlanDefinition getPlanDefinition(String planDefinitionId) {
+    public Optional<CarePlan> getCarePlan(String carePlanId) {
+        return getResource(carePlanId, carePlansById);
+    }
+
+    public List<CarePlan> getCarePlans() {
+        return getResources(carePlansById);
+    }
+
+    public Optional<Patient> getPatient(String patientId) {
+        return getResource(patientId, patientsById);
+    }
+
+    public List<Patient> getPatients() {
+        return getResources(patientsById);
+    }
+
+    public Optional<PlanDefinition> getPlanDefinition(String planDefinitionId) {
         return getResource(planDefinitionId, planDefinitionsById);
     }
 
@@ -42,7 +67,7 @@ public class FhirLookupResult {
         return getResources(planDefinitionsById);
     }
 
-    public Questionnaire getQuestionnaire(String questionnaireId) {
+    public Optional<Questionnaire> getQuestionnaire(String questionnaireId) {
         return getResource(questionnaireId, questionnairesById);
     }
 
@@ -50,11 +75,28 @@ public class FhirLookupResult {
         return getResources(questionnairesById);
     }
 
-    private <T extends Resource> T getResource(String resourceId, Map<String, T> resourcesById) {
-        if(!resourcesById.containsKey(resourceId)) {
-            throw new IllegalArgumentException(String.format("No resource with id %s was present!", resourceId));
+    public FhirLookupResult merge(FhirLookupResult result) {
+        for(CarePlan carePlan : result.carePlansById.values()) {
+            addResource(carePlan);
         }
-        return resourcesById.get(resourceId);
+        for(Patient patient : result.patientsById.values()) {
+            addResource(patient);
+        }
+        for(PlanDefinition planDefinition : result.planDefinitionsById.values()) {
+            addResource(planDefinition);
+        }
+        for(Questionnaire questionnaire: result.questionnairesById.values()) {
+            addResource(questionnaire);
+        }
+
+        return this;
+    }
+
+    private <T extends Resource> Optional<T> getResource(String resourceId, Map<String, T> resourcesById) {
+        if(!resourcesById.containsKey(resourceId)) {
+            return Optional.empty();
+        }
+        return Optional.of(resourcesById.get(resourceId));
     }
 
     private <T extends Resource> List<T> getResources(Map<String, T> resourcesById) {
@@ -64,6 +106,12 @@ public class FhirLookupResult {
     private void addResource(Resource resource) {
         String resourceId = resource.getIdElement().toUnqualifiedVersionless().getValue();
         switch(resource.getResourceType()) {
+            case CarePlan:
+                carePlansById.put(resourceId, (CarePlan) resource);
+                break;
+            case Patient:
+                patientsById.put(resourceId, (Patient) resource);
+                break;
             case PlanDefinition:
                 planDefinitionsById.put(resourceId, (PlanDefinition) resource);
                 break;

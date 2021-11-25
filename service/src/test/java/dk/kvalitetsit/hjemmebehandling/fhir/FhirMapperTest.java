@@ -10,10 +10,12 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -31,6 +33,8 @@ public class FhirMapperTest {
 
     @Mock
     private DateProvider dateProvider;
+
+    private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
     @Test
     public void mapCarePlanModel_mapsSubject() {
@@ -60,6 +64,42 @@ public class FhirMapperTest {
         // Assert
         assertEquals(result.getStartDate(), Instant.parse("2021-10-28T00:00:00Z"));
         assertEquals(result.getEndDate(), Instant.parse("2021-10-29T00:00:00Z"));
+    }
+
+    @Test
+    public void mapCarePlan_includesQuestionnaires() {
+        // Arrange
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("careplan-1");
+        carePlan.setSubject(new Reference("Patient/patient-1"));
+        carePlan.setPeriod(new Period());
+        carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
+        carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
+        carePlan.getPeriod().setEnd(Date.from(Instant.parse("2021-10-29T00:00:00Z")));
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
+
+        var detail = new CarePlan.CarePlanActivityDetailComponent();
+        detail.setInstantiatesCanonical(List.of(new CanonicalType("Questionnaire/questionnaire-1")));
+        detail.setScheduled(buildTiming());
+        detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
+        carePlan.addActivity().setDetail(detail);
+
+
+
+        Patient patient = buildPatient("Patient/patient-1", "0101010101");
+
+        Questionnaire questionnaire = new Questionnaire();
+        questionnaire.setId("Questionnaire/questionnaire-1");
+        questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+
+        // Act
+        CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
+
+        // Assert
+        assertEquals(1, result.getQuestionnaires().size());
+        assertEquals("Questionnaire/questionnaire-1", result.getQuestionnaires().get(0).getQuestionnaire().getId());
     }
 
     @Test
@@ -177,6 +217,19 @@ public class FhirMapperTest {
         return frequencyModel;
     }
 
+    private Patient buildPatient(String patientId, String cpr) {
+        Patient patient = new Patient();
+
+        patient.setId(patientId);
+
+        var identifier = new Identifier();
+        identifier.setSystem(Systems.CPR);
+        identifier.setValue(cpr);
+        patient.setIdentifier(List.of(identifier));
+
+        return patient;
+    }
+
     private PatientModel buildPatientModel() {
         PatientModel patientModel = new PatientModel();
 
@@ -274,5 +327,17 @@ public class FhirMapperTest {
         item.setLinkId(linkId);
 
         return item;
+    }
+
+    private Timing buildTiming() {
+        Timing timing = new Timing();
+
+        var repeat = new Timing.TimingRepeatComponent();
+        repeat.setDayOfWeek(List.of());
+        repeat.setTimeOfDay(List.of(new TimeType("04:00")));
+
+        timing.setRepeat(repeat);
+
+        return timing;
     }
 }

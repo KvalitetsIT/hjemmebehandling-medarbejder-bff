@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirObjectBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -86,12 +83,49 @@ public class CarePlanService extends AccessValidatingService {
             throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
         }
 
-        List<CarePlan> carePlans = fhirClient.lookupCarePlansByPatientId(patient.get().getIdElement().toUnqualifiedVersionless().toString());
-        if(carePlans.isEmpty()) {
+        // Look up the careplans along with related resources needed for mapping.
+        String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
+        FhirLookupResult lookupResult = lookupCarePlans(patientId);
+        if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
 
-        return mapCarePlans(carePlans, patient.get());
+        // Map the resourecs
+        List<CarePlanModel> result = lookupResult.getCarePlans()
+                .stream()
+                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
+                .collect(Collectors.toList());
+
+        // Populate 'exceededQuestionnaires' list
+        for(var carePlanModel : result) {
+            if(carePlanModel.getQuestionnaires() != null) {
+                carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanModel.getQuestionnaires()
+                        .stream()
+                        .filter(qw -> qw.getSatisfiedUntil().isBefore(dateProvider.now()))
+                        .map(qw -> qw.getQuestionnaire().getId())
+                        .collect(Collectors.toList()));
+            }
+        }
+
+        return result;
+    }
+
+    private FhirLookupResult lookupCarePlans(String patientId) {
+        // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
+        // but due to limitations of the FHIR server,  not the questionnaire-resources. Se wo look up those in a separate call.
+
+        // Get the careplan-resources.
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
+        if(carePlanResult.getCarePlans().isEmpty()) {
+            return carePlanResult;
+        }
+
+        // Get the related questionnaire-resources
+        List<String> questionnaireIds = getQuestionnaireIds(carePlanResult.getCarePlans());
+        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires_new(questionnaireIds);
+
+        // Merge the results
+        return carePlanResult.merge(questionnaireResult);
     }
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
@@ -129,6 +163,16 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
+        // Get the careplan
+
+        // Validate access
+
+        // Check that the 'satisfiedUntil'-timestamp is indeed in the past, throw an exception if not.
+
+        // Recompute the 'satisfiedUntil'-timestamps
+
+        // Save the updated carePlan
+
         throw new UnsupportedOperationException();
     }
 
