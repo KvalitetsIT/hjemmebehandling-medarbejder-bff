@@ -59,7 +59,8 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, PageDetails pageDetails) throws ServiceException {
         // Get the questionnaires by status
-        List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses);
+        List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
             return List.of();
         }
@@ -78,20 +79,16 @@ public class QuestionnaireResponseService extends AccessValidatingService {
             responses = pageResponses(responses, pageDetails);
         }
 
-        // Extract the questionnaireIds, get the questionnaires
-        Set<String> questionnaireIds = responses.stream().map(qr -> qr.getQuestionnaire()).collect(Collectors.toSet());
-        Map<String, Questionnaire> questionnairesById = getQuestionnairesById(questionnaireIds);
-
-        // Extract the patientIds, get the patients
-        Set<String> patientIds = responses.stream().map(qr -> qr.getSubject().getReference()).collect(Collectors.toSet());
-        Map<String, Patient> patientsById = getPatientsById(patientIds);
-
-        // Return the result
-        return constructResult(responses, questionnairesById, patientsById);
+        // Map and return the responses
+        return responses
+                .stream()
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult))
+                .collect(Collectors.toList());
     }
 
     public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
+
         QuestionnaireResponse questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId)
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST));
 
@@ -144,45 +141,5 @@ public class QuestionnaireResponseService extends AccessValidatingService {
             throw new IllegalStateException("Could not extract QuestionnaireResponse of maximal priority - the list was empty!");
         }
         return response.get();
-    }
-
-    private Map<String, Questionnaire> getQuestionnairesById(Collection<String> questionnaireIds) {
-        Set<String> distinctIds = asUnqualifiedDistinct(questionnaireIds);
-
-        Map<String, Questionnaire> questionnairesById = fhirClient.lookupQuestionnaires(distinctIds)
-                .stream()
-                .collect(Collectors.toMap(q -> q.getIdElement().toUnqualifiedVersionless().getValue(), q -> q));
-
-        if(!distinctIds.equals(asUnqualifiedDistinct(questionnairesById.keySet()))) {
-            throw new IllegalStateException("Could not look up every questionnaire when retrieving questionnaireResponses!");
-        }
-        return questionnairesById;
-    }
-
-    private Map<String, Patient> getPatientsById(Collection<String> patientIds) {
-        Set<String> distinctIds = asUnqualifiedDistinct(patientIds);
-
-        Map<String, Patient> patientsById = fhirClient.lookupPatientsById(distinctIds)
-                .stream()
-                .collect(Collectors.toMap(p -> p.getIdElement().toUnqualifiedVersionless().toString(), p -> p));
-
-        if(!distinctIds.equals(asUnqualifiedDistinct(patientsById.keySet()))) {
-            throw new IllegalStateException("Could not look up every patient when retrieving questionnaireResponses!");
-        }
-        return patientsById;
-    }
-
-    private List<QuestionnaireResponseModel> constructResult(List<QuestionnaireResponse> responses, Map<String, Questionnaire> questionnairesById, Map<String, Patient> patientsById) {
-        return responses
-                .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, questionnairesById.get(qr.getQuestionnaire()), patientsById.get(qr.getSubject().getReference())))
-                .collect(Collectors.toList());
-    }
-
-    private Set<String> asUnqualifiedDistinct(Collection<String> ids) {
-        return ids
-                .stream()
-                .map(id -> FhirUtils.unqualifyId(id))
-                .collect(Collectors.toSet());
     }
 }

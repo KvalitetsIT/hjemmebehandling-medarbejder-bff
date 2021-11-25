@@ -256,31 +256,6 @@ public class FhirMapper {
         return questionnaireResponseModel;
     }
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, Questionnaire questionnaire, Patient patient) {
-        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
-
-        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
-        questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
-        questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
-
-        // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
-
-        for(var item : questionnaireResponse.getItem()) {
-            QuestionModel question = getQuestion(questionnaire, item.getLinkId());
-            AnswerModel answer = getAnswer(item);
-            answers.add(new QuestionAnswerPairModel(question, answer));
-        }
-
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
-        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
-        questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
-        questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));
-        questionnaireResponseModel.setPatient(mapPatient(patient));
-
-        return questionnaireResponseModel;
-    }
-
     public FrequencyModel mapTiming(Timing timing) {
         FrequencyModel frequencyModel = new FrequencyModel();
 

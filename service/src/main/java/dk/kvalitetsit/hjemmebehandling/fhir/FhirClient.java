@@ -119,13 +119,21 @@ public class FhirClient {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
 
-        return lookup_new(QuestionnaireResponse.class, List.of(questionnaireCriterion, basedOnCriterion), List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT));
+        return lookupQuestionnaireResponseByCriteria(List.of(questionnaireCriterion, basedOnCriterion));
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
-        return  lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
+        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
+    }
+
+    public FhirLookupResult lookupQuestionnaireResponsesByStatus_new(List<ExaminationStatus> statuses) {
+        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
+        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
     }
 
     public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
@@ -216,6 +224,10 @@ public class FhirClient {
 
         // Merge the results
         return carePlanResult.merge(questionnaireResult);
+    }
+
+    private FhirLookupResult lookupQuestionnaireResponseByCriteria(List<ICriterion<?>> criteria) {
+        return lookup_new(QuestionnaireResponse.class, criteria, List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT));
     }
 
     private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
