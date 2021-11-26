@@ -34,7 +34,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
             return List.of();
@@ -56,7 +56,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, PageDetails pageDetails) throws ServiceException {
         // Get the questionnaires by status
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
             return List.of();
@@ -85,7 +85,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById_new(questionnaireResponseId);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
         QuestionnaireResponse questionnaireResponse = lookupResult.getQuestionnaireResponse(FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse))
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST));
 

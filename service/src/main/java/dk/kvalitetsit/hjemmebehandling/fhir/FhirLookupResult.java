@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 public class FhirLookupResult {
     private Map<String, CarePlan> carePlansById;
+    private Map<String, Organization> organizationsById;
     private Map<String, Patient> patientsById;
     private Map<String, PlanDefinition> planDefinitionsById;
     private Map<String, Questionnaire> questionnairesById;
@@ -17,6 +18,7 @@ public class FhirLookupResult {
 
     private FhirLookupResult() {
         carePlansById = new HashMap<>();
+        organizationsById = new HashMap<>();
         patientsById = new HashMap<>();
         planDefinitionsById = new HashMap<>();
         questionnairesById = new HashMap<>();
@@ -51,6 +53,14 @@ public class FhirLookupResult {
 
     public List<CarePlan> getCarePlans() {
         return getResources(carePlansById);
+    }
+
+    public Optional<Organization> getOrganization(String organizationId) {
+        return getResource(organizationId, organizationsById);
+    }
+
+    public List<Organization> getOrganizations() {
+        return getResources(organizationsById);
     }
 
     public Optional<Patient> getPatient(String patientId) {
@@ -89,6 +99,9 @@ public class FhirLookupResult {
         for(CarePlan carePlan : result.carePlansById.values()) {
             addResource(carePlan);
         }
+        for(Organization organization : result.organizationsById.values()) {
+            addResource(organization);
+        }
         for(Patient patient : result.patientsById.values()) {
             addResource(patient);
         }
@@ -121,6 +134,9 @@ public class FhirLookupResult {
         switch(resource.getResourceType()) {
             case CarePlan:
                 carePlansById.put(resourceId, (CarePlan) resource);
+                break;
+            case Organization:
+                organizationsById.put(resourceId, (Organization) resource);
                 break;
             case Patient:
                 patientsById.put(resourceId, (Patient) resource);

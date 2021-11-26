@@ -42,6 +42,8 @@ public class FhirClientTest {
 
     private static final String ORGANIZATION_ID_1 = "organization-1";
     private static final String ORGANIZATION_ID_2 = "organization-2";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "questionnaireresponse-1";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "questionnaireresponse-2";
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
 
@@ -56,27 +58,35 @@ public class FhirClientTest {
         // Arrange
         String carePlanId = "careplan-1";
         CarePlan carePlan = new CarePlan();
-        setupReadCarePlanClient(carePlanId, carePlan);
+        carePlan.setId(carePlanId);
+
+        setupSearchCarePlanByIdClient(carePlan);
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals(carePlan, result.get());
+        assertTrue(result.getCarePlan(carePlanId).isPresent());
+        assertEquals(carePlan, result.getCarePlan(carePlanId).get());
     }
 
     @Test
     public void lookupCarePlanById_carePlanMissing_empty() {
         // Arrange
         String carePlanId = "careplan-1";
-        setupReadCarePlanClient(carePlanId, null);
+        CarePlan carePlan = new CarePlan();
+        setupSearchCarePlanByIdClient(carePlan);
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
 
         // Assert
-        assertFalse(result.isPresent());
+        assertFalse(result.getCarePlan(carePlanId).isPresent());
     }
 
     @Test
@@ -90,11 +100,11 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
+        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId);
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals(carePlan, result.get(0));
+        assertEquals(1, result.getCarePlans().size());
+        assertEquals(carePlan, result.getCarePlans().get(0));
     }
 
     @Test
@@ -107,10 +117,10 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId);
+        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId);
 
         // Assert
-        assertEquals(0, result.size());
+        assertEquals(0, result.getCarePlans().size());
     }
 
     @Test
@@ -125,11 +135,11 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        List<CarePlan> result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals(carePlan, result.get(0));
+        assertEquals(1, result.getCarePlans().size());
+        assertEquals(carePlan, result.getCarePlans().get(0));
     }
 
     @Test
@@ -143,10 +153,10 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        List<CarePlan> result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
 
         // Assert
-        assertEquals(0, result.size());
+        assertEquals(0, result.getCarePlans().size());
     }
 
     @Test
@@ -182,7 +192,8 @@ public class FhirClientTest {
         // Arrange
         String id = "patient-1";
         Patient patient = new Patient();
-        setupReadPatientClient(id, patient);
+        patient.setId(id);
+        setupSearchPatientClient(patient);
 
         // Act
         Optional<Patient> result = subject.lookupPatientById(id);
@@ -196,7 +207,7 @@ public class FhirClientTest {
     public void lookupPatientById_patientMissing_empty() {
         // Arrange
         String id = "patient-1";
-        setupReadPatientClient(id, null);
+        setupSearchPatientClient();
 
         // Act
         Optional<Patient> result = subject.lookupPatientById(id);
@@ -210,27 +221,30 @@ public class FhirClientTest {
         // Arrange
         String plandefinitionId = "plandefinition-1";
         PlanDefinition planDefinition = new PlanDefinition();
-        setupReadPlanDefinitionClient(plandefinitionId, planDefinition);
+        planDefinition.setId(plandefinitionId);
+
+        setupSearchPlanDefinitionClient(planDefinition);
 
         // Act
-        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals(planDefinition, result.get());
+        assertTrue(result.getPlanDefinition(plandefinitionId).isPresent());
+        assertEquals(planDefinition, result.getPlanDefinition(plandefinitionId).get());
     }
 
     @Test
     public void lookupPlanDefinitionById_planDefinitionMissing_empty() {
         // Arrange
         String plandefinitionId = "plandefinition-1";
-        setupReadPlanDefinitionClient(plandefinitionId, null);
+
+        setupSearchPlanDefinitionClient();
 
         // Act
-        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
 
         // Assert
-        assertFalse(result.isPresent());
+        assertFalse(result.getPlanDefinition(plandefinitionId).isPresent());
     }
 
     @Test
@@ -258,16 +272,18 @@ public class FhirClientTest {
         String questionnaireId = "questionnaire-1";
 
         QuestionnaireResponse questionnaireResponse1 = new QuestionnaireResponse();
+        questionnaireResponse1.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         QuestionnaireResponse questionnaireResponse2 = new QuestionnaireResponse();
+        questionnaireResponse2.setId(QUESTIONNAIRE_RESPONSE_ID_2);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse1, questionnaireResponse2);
 
         // Act
-        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
+        FhirLookupResult result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
 
         // Assert
-        assertEquals(2, result.size());
-        assertTrue(result.contains(questionnaireResponse1));
-        assertTrue(result.contains(questionnaireResponse2));
+        assertEquals(2, result.getQuestionnaireResponses().size());
+        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse1));
+        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse2));
     }
 
     @Test
@@ -279,14 +295,15 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
-        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
 
         // Assert
-        assertEquals(1, result.size());
-        assertTrue(result.contains(questionnaireResponse));
+        assertEquals(1, result.getQuestionnaireResponses().size());
+        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
     }
 
     @Test
@@ -298,14 +315,15 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
-        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
 
         // Assert
-        assertEquals(1, result.size());
-        assertTrue(result.contains(questionnaireResponse));
+        assertEquals(1, result.getQuestionnaireResponses().size());
+        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
     }
 
     @Test
@@ -317,14 +335,15 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
 
         // Act
-        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
 
         // Assert
-        assertEquals(1, result.size());
-        assertTrue(result.contains(questionnaireResponse));
+        assertEquals(1, result.getQuestionnaireResponses().size());
+        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
     }
 
     @Test
@@ -502,8 +521,20 @@ public class FhirClientTest {
             });
     }
 
+    private void setupSearchCarePlanByIdClient(CarePlan carePlan) {
+        setupSearchCarePlanClient(1, carePlan);
+    }
+
     private void setupSearchCarePlanClient(CarePlan... carePlans) {
-        setupSearchClient(2, 0, CarePlan.class, carePlans);
+        setupSearchCarePlanClient(2, carePlans);
+    }
+
+    private void setupSearchCarePlanClient(int criteriaCount, CarePlan... carePlans) {
+        setupSearchClient(criteriaCount, 2, CarePlan.class, carePlans);
+
+        if(carePlans.length > 0) {
+            setupSearchQuestionnaireClient();
+        }
     }
 
     private void setupSearchOrganizationClient(Organization... organizations) {
@@ -514,12 +545,16 @@ public class FhirClientTest {
         setupSearchClient(Patient.class, patients);
     }
 
+    private void setupSearchQuestionnaireClient(Questionnaire... questionnaires) {
+        setupSearchClient(2, 0, Questionnaire.class, questionnaires);
+    }
+
     private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
         setupSearchClient(1, 1, PlanDefinition.class, planDefinitions);
     }
 
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {
-        setupSearchClient(criteriaCount, 0, QuestionnaireResponse.class, questionnaireResponses);
+        setupSearchClient(criteriaCount, 3, QuestionnaireResponse.class, questionnaireResponses);
     }
 
     private void setupSearchClient(Class<? extends Resource> resourceClass, Resource... resources) {

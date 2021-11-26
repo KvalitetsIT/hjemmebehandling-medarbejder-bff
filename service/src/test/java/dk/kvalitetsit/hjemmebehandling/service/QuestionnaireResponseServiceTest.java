@@ -17,10 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -61,7 +58,7 @@ public class QuestionnaireResponseServiceTest {
 
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel responseModel = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(responseModel);
@@ -80,7 +77,7 @@ public class QuestionnaireResponseServiceTest {
         String carePlanId = CAREPLAN_ID_1;
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
@@ -97,7 +94,7 @@ public class QuestionnaireResponseServiceTest {
 
         QuestionnaireResponse response = new QuestionnaireResponse();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
-        Mockito.when(fhirClient.lookupQuestionnaireResponses_new(carePlanId, questionnaireIds)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(response));
 
@@ -114,7 +111,7 @@ public class QuestionnaireResponseServiceTest {
 
         QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(model);
@@ -132,7 +129,7 @@ public class QuestionnaireResponseServiceTest {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
@@ -149,7 +146,7 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse firstResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID);
         QuestionnaireResponse secondResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_1, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(firstResponse, secondResponse);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult)).thenReturn(model);
@@ -172,7 +169,7 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse firstResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID);
         QuestionnaireResponse secondResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_2, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(firstResponse, secondResponse);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
 
         Mockito.when(fhirMapper.mapQuestionnaireResponse(firstResponse, lookupResult)).thenReturn(new QuestionnaireResponseModel());
         Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult)).thenReturn(new QuestionnaireResponseModel());
@@ -194,7 +191,7 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse response2 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_2, PATIENT_ID);
         QuestionnaireResponse response3 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_3, QUESTIONNAIRE_ID_3, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(response1, response2, response3);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
 
         Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
@@ -215,7 +212,7 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse response2 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_2, PATIENT_ID);
         QuestionnaireResponse response3 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_3, QUESTIONNAIRE_ID_3, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(response1, response2, response3);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus_new(statuses)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
 
         Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
@@ -232,7 +229,7 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
 
@@ -247,7 +244,7 @@ public class QuestionnaireResponseServiceTest {
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
         QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(FhirLookupResult.fromResource(response));
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(FhirLookupResult.fromResource(response));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(response);
 
@@ -265,7 +262,7 @@ public class QuestionnaireResponseServiceTest {
 
         QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
-        Mockito.when(fhirClient.lookupQuestionnaireResponseById_new(id)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(model);
@@ -293,21 +290,5 @@ public class QuestionnaireResponseServiceTest {
         response.addExtension(Systems.ORGANIZATION, new Reference(organizationId));
 
         return response;
-    }
-
-    private void setupQuestionnaires(String... questionnaireIds) {
-        List<Questionnaire> questionnaires = new ArrayList<>();
-        for(String questionnaireId : questionnaireIds) {
-            Questionnaire questionnaire = new Questionnaire();
-            questionnaire.setId(questionnaireId);
-            questionnaires.add(questionnaire);
-        }
-        Mockito.when(fhirClient.lookupQuestionnaires(Set.of(questionnaireIds))).thenReturn(questionnaires);
-    }
-
-    private void setupPatient(String patientId) {
-        Patient patient = new Patient();
-        patient.setId(patientId);
-        Mockito.when(fhirClient.lookupPatientsById(Set.of(patientId))).thenReturn(List.of(patient));
     }
 }

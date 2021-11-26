@@ -36,13 +36,13 @@ public class CarePlanService extends AccessValidatingService {
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
-        var patient = fhirClient.lookupPatientByCpr_new(cpr);
+        var patient = fhirClient.lookupPatientByCpr(cpr);
 
         // TODO: More validations should be performed - possibly?
         // If the patient did exist, check that no existing careplan exists for the patient
         if(patient.isPresent()) {
             String patientId = patient.get().getIdElement().toUnqualifiedVersionless().getValue();
-            var carePlanResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
+            var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId);
             for(CarePlan cp : carePlanResult.getCarePlans()) {
                 var carePlanModel = fhirMapper.mapCarePlan(cp, carePlanResult);
                 if(isActive(carePlanModel)) {
@@ -76,14 +76,14 @@ public class CarePlanService extends AccessValidatingService {
 
     public List<CarePlanModel> getCarePlansByCpr(String cpr) throws ServiceException {
         // Look up the patient so that we may look up careplans by patientId.
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr_new(cpr);
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
         if(!patient.isPresent()) {
             throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
         }
 
         // Look up the careplans along with related resources needed for mapping.
         String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansByPatientId_new(patientId);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansByPatientId(patientId);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
@@ -99,7 +99,7 @@ public class CarePlanService extends AccessValidatingService {
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
         Instant pointInTime = dateProvider.now();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt_new(pointInTime);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
@@ -114,7 +114,7 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById_new(carePlanId);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(carePlanId);
 
         Optional<CarePlan> carePlan = lookupResult.getCarePlan(FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan));
         if(!carePlan.isPresent()) {
@@ -146,7 +146,7 @@ public class CarePlanService extends AccessValidatingService {
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         //List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
-        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires_new(questionnaireIds);
+        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
             throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST);
         }
@@ -156,7 +156,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Look up the CarePlan, throw an exception in case it does not exist.
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById_new(carePlanId);
+        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(carePlanId);
         if(careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
         }
@@ -225,13 +225,13 @@ public class CarePlanService extends AccessValidatingService {
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
         // Validate questionnaires
         if(carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires_new(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
             validateAccess(lookupResult.getQuestionnaires());
         }
 
         // Validate planDefinitions
         if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions_new(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
             validateAccess(lookupResult.getPlanDefinitions());
         }
     }

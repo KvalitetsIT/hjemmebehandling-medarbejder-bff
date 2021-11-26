@@ -8,7 +8,6 @@ import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
-import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
@@ -39,21 +38,14 @@ public class FhirClient {
         this.userContextProvider = userContextProvider;
     }
 
-    public FhirLookupResult lookupCarePlansByPatientId_new(String patientId) {
+    public FhirLookupResult lookupCarePlansByPatientId(String patientId) {
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupCarePlansByCriteria(List.of(patientCriterion, organizationCriterion));
     }
 
-    public List<CarePlan> lookupCarePlansByPatientId(String patientId) {
-        var patientCriterion = CarePlan.PATIENT.hasId(patientId);
-        var organizationCriterion = buildOrganizationCriterion();
-
-        return lookupByCriteria(CarePlan.class, patientCriterion, organizationCriterion);
-    }
-
-    public FhirLookupResult lookupCarePlansUnsatisfiedAt_new(Instant pointInTime) {
+    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
         var organizationCriterion = buildOrganizationCriterion();
@@ -61,79 +53,50 @@ public class FhirClient {
         return lookupCarePlansByCriteria(List.of(satisfiedUntilCriterion, organizationCriterion));
     }
 
-    public List<CarePlan> lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
-        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
-        var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
-        var organizationCriterion = buildOrganizationCriterion();
-
-        return lookupByCriteria(CarePlan.class, satisfiedUntilCriterion, organizationCriterion);
-    }
-
-    public FhirLookupResult lookupCarePlanById_new(String carePlanId) {
+    public FhirLookupResult lookupCarePlanById(String carePlanId) {
         var idCriterion = CarePlan.RES_ID.exactly().code(carePlanId);
 
         return lookupCarePlansByCriteria(List.of(idCriterion));
     }
 
-    public Optional<CarePlan> lookupCarePlanById(String carePlanId) {
-        return lookupById(carePlanId, CarePlan.class);
-    }
-
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) {
-        return lookupSingletonByCriterion(Organization.class, Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode));
+        var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode);
+
+        var lookupResult = lookupByCriteria(Organization.class, List.of(sorCodeCriterion));
+        if(lookupResult.getOrganizations().isEmpty()) {
+            return Optional.empty();
+        }
+        if(lookupResult.getOrganizations().size() > 1) {
+            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Organization.class));
+        }
+        return Optional.of(lookupResult.getOrganizations().get(0));
     }
 
     public Optional<Patient> lookupPatientById(String patientId) {
-        return lookupById(patientId, Patient.class);
-    }
+        var idCriterion = Patient.RES_ID.exactly().code(patientId);
 
-    public Optional<Patient> lookupPatientByCpr_new(String cpr) {
-        var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
-
-        var lookupResult = lookup_new(Patient.class, List.of(cprCriterion));
-
-        if(lookupResult.getPatients().isEmpty()) {
-            return Optional.empty();
-        }
-        if(lookupResult.getPatients().size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
-        }
-        return Optional.of(lookupResult.getPatients().get(0));
+        return lookupPatient(idCriterion);
     }
 
     public Optional<Patient> lookupPatientByCpr(String cpr) {
         var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
 
-        return lookupSingletonByCriterion(Patient.class, cprCriterion);
+        return lookupPatient(cprCriterion);
     }
 
-    public List<Patient> lookupPatientsById(Collection<String> patientIds) {
-        return lookupByCriterion(Patient.class, Patient.RES_ID.exactly().codes(patientIds));
-    }
-
-    public FhirLookupResult lookupQuestionnaireResponseById_new(String questionnaireResponseId) {
+    public FhirLookupResult lookupQuestionnaireResponseById(String questionnaireResponseId) {
         var idCriterion = QuestionnaireResponse.RES_ID.exactly().code(questionnaireResponseId);
         return lookupQuestionnaireResponseByCriteria(List.of(idCriterion));
     }
 
-    public Optional<QuestionnaireResponse> lookupQuestionnaireResponseById(String questionnaireResponseId) {
-        return lookupById(questionnaireResponseId, QuestionnaireResponse.class);
-    }
-
-    public FhirLookupResult lookupQuestionnaireResponses_new(String carePlanId, List<String> questionnaireIds) {
+    public FhirLookupResult lookupQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) {
         var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
 
         return lookupQuestionnaireResponseByCriteria(List.of(questionnaireCriterion, basedOnCriterion));
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) {
-        var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds);
-        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
-        return lookupByCriteria(QuestionnaireResponse.class, questionnaireCriterion, basedOnCriterion);
-    }
-
-    public FhirLookupResult lookupQuestionnaireResponsesByStatus_new(List<ExaminationStatus> statuses) {
+    public FhirLookupResult lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
         var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
         var organizationCriterion = buildOrganizationCriterion();
@@ -141,16 +104,7 @@ public class FhirClient {
         return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
     }
 
-    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
-        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
-        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
-
-        var organizationCriterion = buildOrganizationCriterion();
-
-        return lookupByCriteria(QuestionnaireResponse.class, statusCriterion, organizationCriterion);
-    }
-
-    public List<QuestionnaireResponse> lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {
+    public FhirLookupResult lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {
         return lookupQuestionnaireResponsesByStatus(List.of(status));
     }
 
@@ -173,37 +127,29 @@ public class FhirClient {
         return save(questionnaireResponse);
     }
 
-    public Optional<PlanDefinition> lookupPlanDefinition(String planDefinitionId) {
-        return lookupById(planDefinitionId, PlanDefinition.class);
+    public FhirLookupResult lookupPlanDefinition(String planDefinitionId) {
+        var idCriterion = PlanDefinition.RES_ID.exactly().code(planDefinitionId);
+
+        return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
     }
 
     public FhirLookupResult lookupPlanDefinitions() {
         var organizationCriterion = buildOrganizationCriterion();
-        // Includes the Questionnaire resources.
-        var definitionInclude = PlanDefinition.INCLUDE_DEFINITION;
 
-        return lookup_new(PlanDefinition.class, List.of(organizationCriterion), List.of(definitionInclude));
+        return lookupPlanDefinitionsByCriteria(List.of(organizationCriterion));
     }
 
-    public FhirLookupResult lookupPlanDefinitions_new(Collection<String> planDefinitionIds) {
+    public FhirLookupResult lookupPlanDefinitions(Collection<String> planDefinitionIds) {
         var idCriterion = PlanDefinition.RES_ID.exactly().codes(planDefinitionIds);
 
-        return lookup_new(PlanDefinition.class, List.of(idCriterion));
+        return lookupByCriteria(PlanDefinition.class, List.of(idCriterion));
     }
 
-    public List<PlanDefinition> lookupPlanDefinitions(Collection<String> planDefinitionIds) {
-        return lookupByCriterion(PlanDefinition.class, PlanDefinition.RES_ID.exactly().codes(planDefinitionIds));
-    }
-
-    public FhirLookupResult lookupQuestionnaires_new(Collection<String> questionnaireIds) {
+    public FhirLookupResult lookupQuestionnaires(Collection<String> questionnaireIds) {
         var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds);
         var organizationCriterion = buildOrganizationCriterion();
 
-        return lookup_new(Questionnaire.class, List.of(idCriterion, organizationCriterion));
-    }
-
-    public List<Questionnaire> lookupQuestionnaires(Collection<String> questionnaireIds) {
-        return lookupByCriterion(Questionnaire.class, Questionnaire.RES_ID.exactly().codes(questionnaireIds));
+        return lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
     }
 
     public void updateCarePlan(CarePlan carePlan) {
@@ -215,7 +161,7 @@ public class FhirClient {
     }
 
     private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) {
-        var carePlanResult = lookup_new(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
 
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
@@ -225,14 +171,31 @@ public class FhirClient {
 
         // Get the related questionnaire-resources
         List<String> questionnaireIds = getQuestionnaireIds(carePlanResult.getCarePlans());
-        FhirLookupResult questionnaireResult = lookupQuestionnaires_new(questionnaireIds);
+        FhirLookupResult questionnaireResult = lookupQuestionnaires(questionnaireIds);
 
         // Merge the results
         return carePlanResult.merge(questionnaireResult);
     }
 
+    private Optional<Patient> lookupPatient(ICriterion<?> criterion) {
+        var lookupResult = lookupByCriteria(Patient.class, List.of(criterion));
+
+        if(lookupResult.getPatients().isEmpty()) {
+            return Optional.empty();
+        }
+        if(lookupResult.getPatients().size() > 1) {
+            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
+        }
+        return Optional.of(lookupResult.getPatients().get(0));
+    }
+
+    private FhirLookupResult lookupPlanDefinitionsByCriteria(List<ICriterion<?>> criteria) {
+        // Includes the Questionnaire resources.
+        return lookupByCriteria(PlanDefinition.class, criteria, List.of(PlanDefinition.INCLUDE_DEFINITION));
+    }
+
     private FhirLookupResult lookupQuestionnaireResponseByCriteria(List<ICriterion<?>> criteria) {
-        return lookup_new(QuestionnaireResponse.class, criteria, List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT));
+        return lookupByCriteria(QuestionnaireResponse.class, criteria, List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT));
     }
 
     private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
@@ -249,11 +212,11 @@ public class FhirClient {
         return detail.getInstantiatesCanonical().get(0).getValue();
     }
 
-    private <T extends Resource> FhirLookupResult lookup_new(Class<T> resourceClass, List<ICriterion<?>> criteria) {
-        return lookup_new(resourceClass, criteria, null);
+    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) {
+        return lookupByCriteria(resourceClass, criteria, null);
     }
 
-    private <T extends Resource> FhirLookupResult lookup_new(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
+    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
@@ -273,56 +236,6 @@ public class FhirClient {
 
         Bundle bundle = (Bundle) query.execute();
         return FhirLookupResult.fromBundle(bundle);
-    }
-
-    private <T extends Resource> Optional<T> lookupSingletonByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
-        List<T> result = lookupByCriterion(resourceClass, criterion);
-
-        if(result == null || result.isEmpty()) {
-            return Optional.empty();
-        }
-        if(result.size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", resourceClass.getName()));
-        }
-        return Optional.of(result.get(0));
-    }
-
-    private <T extends Resource> List<T> lookupByCriterion(Class<T> resourceClass, ICriterion<?> criterion) {
-        return lookupByCriteria(resourceClass, criterion);
-    }
-
-    private <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, ICriterion<?>... criteria) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        var query = client
-                .search()
-                .forResource(resourceClass);
-        if(criteria.length > 0) {
-            query = query.where(criteria[0]);
-            for(int i = 1; i < criteria.length; i++) {
-                query = query.and(criteria[i]);
-            }
-        }
-
-        Bundle bundle = (Bundle) query.execute();
-        return bundle.getEntry().stream().map(e -> ((T) e.getResource())).collect(Collectors.toList());
-    }
-
-    private <T extends Resource> Optional<T> lookupById(String id, Class<T> resourceClass) {
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        try {
-            T resource = client
-                    .read()
-                    .resource(resourceClass)
-                    .withId(id)
-                    .execute();
-            return Optional.of(resource);
-        }
-        catch(ResourceNotFoundException e) {
-            // Swallow the exception - corresponds to a 404 response
-            return Optional.empty();
-        }
     }
 
     private <T extends Resource> String save(Resource resource) {
