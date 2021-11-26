@@ -134,16 +134,28 @@ public class CarePlanService extends AccessValidatingService {
 
     public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
         // Get the careplan
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(carePlanId);
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        if(!carePlanResult.getCarePlan(qualifiedId).isPresent()) {
+            throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST);
+        }
+        CarePlan carePlan = carePlanResult.getCarePlan(qualifiedId).get();
 
         // Validate access
+        validateAccess(carePlan);
 
         // Check that the 'satisfiedUntil'-timestamp is indeed in the past, throw an exception if not.
+        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
+        var currentPointInTime = dateProvider.now();
+        if(currentPointInTime.isBefore(carePlanModel.getSatisfiedUntil())) {
+            throw new ServiceException(String.format("Could not resolve alarm for careplan %s! The satisfiedUntil-timestamp was in the future.", carePlanId), ErrorKind.BAD_REQUEST);
+        }
 
         // Recompute the 'satisfiedUntil'-timestamps
+        recomputeFrequencyTimestamps(carePlanModel, currentPointInTime);
 
         // Save the updated carePlan
-
-        throw new UnsupportedOperationException();
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
     }
 
     public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
@@ -244,12 +256,37 @@ public class CarePlanService extends AccessValidatingService {
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
             initializeFrequencyTimestamp(questionnaireWrapper);
         }
-        var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getSatisfiedUntil()).min(Comparator.naturalOrder()).orElse(Instant.MAX);
-        carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
+        refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
     private void initializeFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
+        // Invoke 'next' twice - we want a bit of legroom initially.
         var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().next().getPointInTime();
         questionnaireWrapperModel.setSatisfiedUntil(nextDeadline);
+    }
+
+    private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, Instant currentPointInTime) {
+        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+            // Only recompute the timestamp if its current value is in the past.
+            if(questionnaireWrapper.getSatisfiedUntil().isBefore(currentPointInTime)) {
+                refreshFrequencyTimestamp(questionnaireWrapper);
+            }
+        }
+        refreshFrequencyTimestampForCarePlan(carePlanModel);
+    }
+
+    private void refreshFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
+        // Invoke 'next' once - get the next deadline.
+        var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().getPointInTime();
+        questionnaireWrapperModel.setSatisfiedUntil(nextDeadline);
+    }
+
+    private void refreshFrequencyTimestampForCarePlan(CarePlanModel carePlanModel) {
+        var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires()
+                .stream()
+                .map(qw -> qw.getSatisfiedUntil())
+                .min(Comparator.naturalOrder())
+                .orElse(Instant.MAX);
+        carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
 }

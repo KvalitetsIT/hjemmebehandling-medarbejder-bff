@@ -113,4 +113,16 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         // Assert
         assertEquals(200, response.getStatusCode());
     }
+
+    @Test
+    public void resolveAlarm_success() throws Exception {
+        // Arrange
+        String id = "careplan-2";
+
+        // Act
+        ApiResponse<Void> response = subject.resolveAlarmWithHttpInfo(id);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
 }

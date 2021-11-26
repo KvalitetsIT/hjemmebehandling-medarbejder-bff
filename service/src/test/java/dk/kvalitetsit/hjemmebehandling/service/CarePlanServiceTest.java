@@ -47,6 +47,7 @@ public class CarePlanServiceTest {
     private static final String PATIENT_ID_1 = "patient-1";
     private static final String PLANDEFINITION__ID_1 = "plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
+    private static final String QUESTIONNAIRE_ID_2 = "questionnaire-2";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
@@ -377,6 +378,83 @@ public class CarePlanServiceTest {
     }
 
     @Test
+    public void resolveAlarm_carePlanMissing_throwsException() {
+        // Arrange
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(FhirLookupResult.fromResources());
+
+        // Act
+
+        // Assert
+        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+    }
+
+    @Test
+    public void resolveAlarm_accessViolation_throwsException() throws Exception {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(FhirLookupResult.fromResources(carePlan));
+
+        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+
+        // Act
+
+        // Assert
+        assertThrows(AccessValidationException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+    }
+
+    @Test
+    public void resolveAlarm_carePlanSatisfiedIntoTheFuture_throwsException() throws Exception {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(lookupResult);
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        carePlanModel.setSatisfiedUntil(POINT_IN_TIME.plusSeconds(200));
+        Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
+        // Act
+
+        // Assert
+        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+    }
+
+    @Test
+    public void resolveAlarm_recomputesSatisfiedUntil_savesCarePlan() throws Exception {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(lookupResult);
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        carePlanModel.setSatisfiedUntil(POINT_IN_TIME.minusSeconds(100));
+        carePlanModel.setQuestionnaires(List.of(
+                buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1, POINT_IN_TIME.minusSeconds(100)),
+                buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2, POINT_IN_TIME.plusSeconds(100))
+        ));
+        Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        // Act
+        subject.resolveAlarm(CAREPLAN_ID_1);
+
+        // Assert
+        // Verify that the first questionnaire has its satisfied-timestamp pushed a week into the future,
+        // the second questionnaire has its timestamp left untouched, and the careplan has its timestamp set to
+        // the earliest timestamp (now that of the second questionnaire).
+        assertEquals(Instant.parse("2021-11-23T04:00:00.000Z"), carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+        assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getQuestionnaires().get(1).getSatisfiedUntil());
+        assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getSatisfiedUntil());
+
+        Mockito.verify(fhirClient).updateCarePlan(carePlan);
+    }
+
+    @Test
     public void updateQuestionnaires_questionnaireAccessViolation_throwsException() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
@@ -439,6 +517,10 @@ public class CarePlanServiceTest {
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId) {
+        return buildQuestionnaireWrapperModel(questionnaireId, POINT_IN_TIME);
+    }
+
+    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId, Instant satisfiedUntil) {
         var model = new QuestionnaireWrapperModel();
 
         model.setQuestionnaire(new QuestionnaireModel());
@@ -448,6 +530,7 @@ public class CarePlanServiceTest {
         frequencyModel.setWeekdays(List.of(Weekday.TUE));
         frequencyModel.setTimeOfDay(LocalTime.parse("04:00"));
         model.setFrequency(frequencyModel);
+        model.setSatisfiedUntil(satisfiedUntil);
 
         return model;
     }
