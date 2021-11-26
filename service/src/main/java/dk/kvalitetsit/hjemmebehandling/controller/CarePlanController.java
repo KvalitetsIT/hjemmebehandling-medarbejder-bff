@@ -174,6 +174,18 @@ public class CarePlanController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping(value = "/v1/careplan/{id}/complete")
+    public ResponseEntity<Void> completeCarePlan(@PathVariable String id) {
+        try {
+            carePlanService.completeCarePlan(id);
+        }
+        catch(ServiceException e) {
+          return ResponseEntity.internalServerError().build();
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
     private Map<String, FrequencyModel> mapFrequencies(Map<String, FrequencyDto> frequencyDtos) {
         Map<String, FrequencyModel> frequencies = new HashMap<>();
 
