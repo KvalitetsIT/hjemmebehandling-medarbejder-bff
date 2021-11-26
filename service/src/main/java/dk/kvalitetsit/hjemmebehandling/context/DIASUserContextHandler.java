@@ -17,6 +17,9 @@ public class DIASUserContextHandler implements IUserContextHandler {
 	
 	public UserContext mapTokenToUser(DecodedJWT jwt) {
 		var context = new UserContext();
+		if(jwt==null) {
+			return context;
+		}
 		
         context.setFullName(jwt.getClaim(DIASUserContextHandler.FULL_NAME) !=null ? jwt.getClaim(DIASUserContextHandler.FULL_NAME).asString() : null );
         context.setFirstName(jwt.getClaim(DIASUserContextHandler.FIRST_NAME) !=null ? jwt.getClaim(DIASUserContextHandler.FIRST_NAME).asString() : null );

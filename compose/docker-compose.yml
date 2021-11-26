@@ -39,6 +39,8 @@ services:
        - hapi-server
      volumes:
       - ./hapi-server-initializer:/hapi-server-initializer
+     environment:
+       - data_dir=/hapi-server-initializer
      command: "/hapi-server-initializer/init.sh"
 
    person-service:

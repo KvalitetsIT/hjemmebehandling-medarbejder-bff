@@ -3,7 +3,7 @@
 <!-- Generated from unit test - manual pasted into file -->
 
 <Questionnaire xmlns="http://hl7.org/fhir">
-   <id value="questionnaire-infektionsmedicinsk1"></id>
+   <id value="questionnaire-infektionsmedicinsk-1"></id>
    <extension url="http://hjemmebehandling.rm.dk/organization">
       <valueReference>
          <reference value="Organization/organization-1"/>

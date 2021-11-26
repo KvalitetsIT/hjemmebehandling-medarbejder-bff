@@ -5,7 +5,6 @@ import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import org.hl7.fhir.r4.model.Questionnaire;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -130,6 +129,30 @@ public class DtoMapper {
         }
 
         return planDefinitionDto;
+    }
+
+    public ThresholdModel mapThresholdDto(ThresholdDto thresholdDto) {
+        ThresholdModel thresholdModel = new ThresholdModel();
+
+        thresholdModel.setQuestionnaireItemLinkId(thresholdDto.getQuestionId());
+        thresholdModel.setType(thresholdDto.getType());
+        thresholdModel.setValueBoolean(thresholdDto.getValueBoolean());
+        thresholdModel.setValueQuantityLow(thresholdDto.getValueQuantityLow());
+        thresholdModel.setValueQuantityHigh(thresholdDto.getValueQuantityHigh());
+
+        return thresholdModel;
+    }
+
+    public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
+        ThresholdDto thresholdDto = new ThresholdDto();
+
+        thresholdDto.setQuestionId(thresholdModel.getQuestionnaireItemLinkId());
+        thresholdDto.setType(thresholdModel.getType());
+        thresholdDto.setValueBoolean(thresholdModel.getValueBoolean());
+        thresholdDto.setValueQuantityLow(thresholdModel.getValueQuantityLow());
+        thresholdDto.setValueQuantityHigh(thresholdModel.getValueQuantityHigh());
+
+        return thresholdDto;
     }
     
     public PersonDto mapPersonModel(PersonModel person) {
@@ -261,6 +284,7 @@ public class DtoMapper {
 
         questionnaireWrapperModel.setQuestionnaire(mapQuestionnaireDto(questionnaireWrapper.getQuestionnaire()));
         questionnaireWrapperModel.setFrequency(mapFrequencyDto(questionnaireWrapper.getFrequency()));
+        questionnaireWrapperModel.setThresholds( questionnaireWrapper.getThresholds().stream().map(t -> mapThresholdDto(t)).collect(Collectors.toList()) );
 
         return questionnaireWrapperModel;
     }
@@ -270,6 +294,7 @@ public class DtoMapper {
 
         questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireModel(questionnaireWrapper.getQuestionnaire()));
         questionnaireWrapperDto.setFrequency(mapFrequencyModel(questionnaireWrapper.getFrequency()));
+        questionnaireWrapperDto.setThresholds( questionnaireWrapper.getThresholds().stream().map(t -> mapThresholdModel(t)).collect(Collectors.toList()) );
 
         return questionnaireWrapperDto;
     }

@@ -11,7 +11,6 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -102,6 +101,8 @@ public class FhirMapper {
             var wrapper = new QuestionnaireWrapperModel();
             wrapper.setQuestionnaire(questionnaireModel);
             wrapper.setFrequency(frequencyModel);
+            List<ThresholdModel> thresholds = getThresholds(activity.getDetail());
+            wrapper.setThresholds(thresholds);
             wrapper.setSatisfiedUntil(ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()));
 
             carePlanModel.getQuestionnaires().add(wrapper);
@@ -176,7 +177,7 @@ public class FhirMapper {
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
 
-        // Map actions to questionnaires, along with their frequencies
+        // Map actions to questionnaires, along with their frequencies and thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
 
         return planDefinitionModel;
@@ -192,6 +193,9 @@ public class FhirMapper {
                 .getQuestionnaire(questionnaireId)
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
+
+        List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
+        wrapper.setThresholds(thresholds);
 
         return wrapper;
     }
@@ -266,6 +270,10 @@ public class FhirMapper {
         }
 
         return frequencyModel;
+    }
+
+    private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
+        return ExtensionMapper.extractThresholds(detail.getExtensionsByUrl(Systems.THRESHOLD));
     }
 
     private String extractCpr(Patient patient) {
@@ -363,6 +371,8 @@ public class FhirMapper {
                 return QuestionType.QUANTITY;
             case STRING:
                 return QuestionType.STRING;
+            case BOOLEAN:
+                return QuestionType.BOOLEAN;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
         }

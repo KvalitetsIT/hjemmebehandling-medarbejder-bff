@@ -283,7 +283,7 @@ public class CarePlanServiceTest {
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         questionnaireModel.setId(QUESTIONNAIRE_ID_1);
-        carePlanModel.setQuestionnaires(List.of(new QuestionnaireWrapperModel(questionnaireModel, new FrequencyModel(), POINT_IN_TIME)));
+        carePlanModel.setQuestionnaires(List.of(new QuestionnaireWrapperModel(questionnaireModel, new FrequencyModel(), POINT_IN_TIME, List.of())));
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
