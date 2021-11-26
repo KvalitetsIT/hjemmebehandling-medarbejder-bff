@@ -55,23 +55,6 @@ public class FhirMapper {
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan) {
-        CarePlanModel carePlanModel = new CarePlanModel();
-
-        carePlanModel.setId(carePlan.getIdElement().toUnqualifiedVersionless().getValue());
-        carePlanModel.setTitle(carePlan.getTitle());
-        //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
-        carePlanModel.setCreated(carePlan.getCreated().toInstant());
-        carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
-        if(carePlan.getPeriod().getEnd() != null) {
-            carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
-        }
-
-        carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
-
-        return carePlanModel;
-    }
-
     public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult) {
         CarePlanModel carePlanModel = new CarePlanModel();
 

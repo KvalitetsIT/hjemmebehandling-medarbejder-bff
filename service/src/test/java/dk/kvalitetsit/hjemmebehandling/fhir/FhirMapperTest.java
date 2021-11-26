@@ -58,15 +58,14 @@ public class FhirMapperTest {
     @Test
     public void mapCarePlan_mapsPeriod() {
         // Arrange
-        CarePlan carePlan = new CarePlan();
-        carePlan.setPeriod(new Period());
-        carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
-        carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
-        carePlan.getPeriod().setEnd(Date.from(Instant.parse("2021-10-29T00:00:00Z")));
-        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
 
         // Act
-        CarePlanModel result = subject.mapCarePlan(carePlan);
+        CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
 
         // Assert
         assertEquals(result.getStartDate(), Instant.parse("2021-10-28T00:00:00Z"));
