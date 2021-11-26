@@ -289,4 +289,16 @@ public class CarePlanService extends AccessValidatingService {
                 .orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
+
+    public void completeCarePlan(String carePlanId) throws ServiceException {
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(carePlanId);
+
+        Optional<CarePlan> carePlan = lookupResult.getCarePlan(FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan));
+        if(!carePlan.isPresent()) {
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId), ErrorKind.BAD_REQUEST);
+        }
+
+        CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
+        fhirClient.updateCarePlan(completedCarePlan);
+    }
 }
