@@ -2,10 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import org.hl7.fhir.r4.model.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FhirLookupResult {
@@ -17,12 +14,13 @@ public class FhirLookupResult {
     private Map<String, QuestionnaireResponse> questionnaireResponsesById;
 
     private FhirLookupResult() {
-        carePlansById = new HashMap<>();
-        organizationsById = new HashMap<>();
-        patientsById = new HashMap<>();
-        planDefinitionsById = new HashMap<>();
-        questionnairesById = new HashMap<>();
-        questionnaireResponsesById = new HashMap<>();
+        // Using LinkedHashMap preserves the insertion order (necessary for eg. returning sorted results).
+        carePlansById = new LinkedHashMap<>();
+        organizationsById = new LinkedHashMap<>();
+        patientsById = new LinkedHashMap<>();
+        planDefinitionsById = new LinkedHashMap<>();
+        questionnairesById = new LinkedHashMap<>();
+        questionnaireResponsesById = new LinkedHashMap<>();
     }
 
     public static FhirLookupResult fromBundle(Bundle bundle) {

@@ -151,7 +151,8 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
         Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult)).thenReturn(model);
 
-        Mockito.when(priorityComparator.compare(Mockito.any(), Mockito.any())).thenReturn(1);
+        // Impose that the second response is greater than the first.
+        Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(-1);
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
