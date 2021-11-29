@@ -32,4 +32,19 @@
             </scheduledTiming>
         </detail>
     </activity>
+    <activity>
+        <detail>
+            <extension url="http://hjemmebehandling.rm.dk/activity-satisfied-until">
+                <valueDate value="2021-12-07T10:11:12.123Z" />
+            </extension>
+            <instantiatesCanonical value="Questionnaire/questionnaire-2"/>
+            <status value="not-started"/>
+            <scheduledTiming>
+                <repeat>
+                    <dayOfWeek value="tue"/>
+                    <timeOfDay value="15:43"/>
+                </repeat>
+            </scheduledTiming>
+        </detail>
+    </activity>
 </CarePlan>

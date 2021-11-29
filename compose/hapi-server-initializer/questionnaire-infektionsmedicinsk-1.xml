@@ -9,6 +9,7 @@
          <reference value="Organization/organization-1"/>
       </valueReference>
    </extension>
+   <title value="Infektionsmedicinsk spørgeskema"/>
    <language value="da-DK"></language>
    <status value="active"></status>
    <item>

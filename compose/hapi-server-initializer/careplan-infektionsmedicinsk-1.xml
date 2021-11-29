@@ -7,7 +7,7 @@
         </valueReference>
     </extension>
     <extension url="http://hjemmebehandling.rm.dk/careplan-satisfied-until">
-        <valueDate value="2021-11-27T10:11:12.123Z" />
+        <valueDate value="2021-11-28T10:11:12.123Z" />
     </extension>
     <instantiatesCanonical value="PlanDefinition/plandefinition-infektionsmedicinsk-1"/>
     <subject>
