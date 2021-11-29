@@ -10,6 +10,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
@@ -100,14 +101,16 @@ public class CarePlanService extends AccessValidatingService {
         return decorateCarePlans(mappedCarePlans);
     }
 
-    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules() throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(PageDetails pageDetails) throws ServiceException {
         Instant pointInTime = dateProvider.now();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime);
+        int offset = (pageDetails.getPageNumber() - 1) * pageDetails.getPageSize();
+        int count = pageDetails.getPageSize();
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
 
-        // Map the resourecs
+        // Map the resources
         List<CarePlanModel> mappedCarePlans = lookupResult.getCarePlans()
                 .stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))

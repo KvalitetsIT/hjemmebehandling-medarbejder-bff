@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.Include;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
@@ -127,15 +128,17 @@ public class FhirClientTest {
     public void lookupCarePlansUnsatisfiedAt_success() {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+        int offset = 2;
+        int count = 4;
 
         CarePlan carePlan = new CarePlan();
-        setupSearchCarePlanClient(carePlan);
+        setupSearchCarePlanClient(true, true, true, carePlan);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -146,14 +149,16 @@ public class FhirClientTest {
     public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+        int offset = 2;
+        int count = 4;
 
-        setupSearchCarePlanClient();
+        setupSearchCarePlanClient(true, true, true);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
@@ -522,15 +527,19 @@ public class FhirClientTest {
     }
 
     private void setupSearchCarePlanByIdClient(CarePlan carePlan) {
-        setupSearchCarePlanClient(1, carePlan);
+        setupSearchCarePlanClient(1, false, false, false, carePlan);
     }
 
     private void setupSearchCarePlanClient(CarePlan... carePlans) {
-        setupSearchCarePlanClient(2, carePlans);
+        setupSearchCarePlanClient(2, false, false, false, carePlans);
     }
 
-    private void setupSearchCarePlanClient(int criteriaCount, CarePlan... carePlans) {
-        setupSearchClient(criteriaCount, 2, CarePlan.class, carePlans);
+    private void setupSearchCarePlanClient(boolean withSort, boolean withOffset, boolean withCount, CarePlan... carePlans) {
+        setupSearchCarePlanClient(2, withSort, withOffset, withCount, carePlans);
+    }
+
+    private void setupSearchCarePlanClient(int criteriaCount, boolean withSort, boolean withOffset, boolean withCount, CarePlan... carePlans) {
+        setupSearchClient(criteriaCount, 2, withSort, withOffset, withCount, CarePlan.class, carePlans);
 
         if(carePlans.length > 0) {
             setupSearchQuestionnaireClient();
@@ -561,7 +570,12 @@ public class FhirClientTest {
         setupSearchClient(1, 0, resourceClass, resources);
     }
 
+
     private void setupSearchClient(int criteriaCount, int includeCount, Class<? extends Resource> resourceClass, Resource... resources) {
+        setupSearchClient(criteriaCount, includeCount, false, false, false, resourceClass, resources);
+    }
+
+    private void setupSearchClient(int criteriaCount, int includeCount, boolean withSort, boolean withOffset, boolean withCount, Class<? extends Resource> resourceClass, Resource... resources) {
         Bundle bundle = new Bundle();
 
         for(Resource resource : resources) {
@@ -581,6 +595,16 @@ public class FhirClientTest {
         for(var i = 0; i < includeCount; i++) {
             query = query.include(Mockito.any(Include.class));
         }
+        if(withSort) {
+            query = query.sort(Mockito.any(SortSpec.class));
+        }
+        if(withOffset) {
+            query = query.offset(Mockito.anyInt());
+        }
+        if(withCount) {
+            query = query.count(Mockito.anyInt());
+        }
+
         Mockito.when(query
                 .execute())
                 .thenReturn(bundle);

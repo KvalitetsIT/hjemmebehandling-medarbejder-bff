@@ -3,6 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.Include;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.api.SortOrderEnum;
+import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
@@ -12,10 +14,12 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.html.Option;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.Collection;
@@ -45,12 +49,14 @@ public class FhirClient {
         return lookupCarePlansByCriteria(List.of(patientCriterion, organizationCriterion));
     }
 
-    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime) {
+    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime, int offset, int count) {
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
         var organizationCriterion = buildOrganizationCriterion();
 
-        return lookupCarePlansByCriteria(List.of(satisfiedUntilCriterion, organizationCriterion));
+        var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
+
+        return lookupCarePlansByCriteria(List.of(satisfiedUntilCriterion, organizationCriterion), Optional.of(sortSpec), Optional.of(offset), Optional.of(count));
     }
 
     public FhirLookupResult lookupCarePlanById(String carePlanId) {
@@ -161,7 +167,11 @@ public class FhirClient {
     }
 
     private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) {
-        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL));
+        return lookupCarePlansByCriteria(criteria, Optional.empty(), Optional.empty(), Optional.empty());
+    }
+
+    private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL), sortSpec, offset, count);
 
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
@@ -217,6 +227,10 @@ public class FhirClient {
     }
 
     private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
+        return lookupByCriteria(resourceClass, criteria, includes, Optional.empty(), Optional.empty(), Optional.empty());
+    }
+
+    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
@@ -232,6 +246,15 @@ public class FhirClient {
             for(var include : includes) {
                 query = query.include(include);
             }
+        }
+        if(sortSpec.isPresent()) {
+            query = query.sort(sortSpec.get());
+        }
+        if(offset.isPresent()) {
+            query = query.offset(offset.get());
+        }
+        if(count.isPresent()) {
+            query = query.count(count.get());
         }
 
         Bundle bundle = (Bundle) query.execute();

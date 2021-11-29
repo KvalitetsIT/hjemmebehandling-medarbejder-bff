@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -48,7 +49,7 @@ public class CarePlanController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
         var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
@@ -61,7 +62,7 @@ public class CarePlanController {
                 carePlans = carePlanService.getCarePlansByCpr(cpr.get());
             }
             else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
-                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules();
+                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(new PageDetails(pageNumber.get(), pageSize.get()));
             }
 
             if(carePlans.isEmpty()) {
