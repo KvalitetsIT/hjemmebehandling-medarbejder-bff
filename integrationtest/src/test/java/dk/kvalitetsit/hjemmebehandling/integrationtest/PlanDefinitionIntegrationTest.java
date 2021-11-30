@@ -28,6 +28,6 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
         ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo();
 
         // Assert
-        assertEquals(201, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
     }
 }
