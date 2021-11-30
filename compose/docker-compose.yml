@@ -25,10 +25,10 @@ services:
    hapi-server:
      image: hapiproject/hapi:latest
      environment:
-       - SPRING_CONFIG_LOCATION=file:///data/hapi/application.yaml
+       - hapi.fhir.allow_external_references=true
+       - hapi.fhir.expunge_enabled=true
+       - hapi.fhir.reuse_cached_search_results_millis=1000
        - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
-     volumes:
-       - ./hapi-server/application.yaml:/data/hapi/application.yaml
      ports:
        - 8082:8080
        - 5006:5006
