@@ -12,7 +12,7 @@ if [ -d $SRC_FOLDER ]; then
   mvn clean install
 
   # Start the hapi server
-  docker stop hapi-server
+
   docker rm hapi-server
   docker run -d --volumes-from maven-builder --network rim --name hapi-server hapiproject/hapi:latest
 
@@ -20,7 +20,7 @@ if [ -d $SRC_FOLDER ]; then
   docker run --volumes-from maven-builder --network rim -e data_dir='/src/compose/hapi-server-initializer' alpine:3.11.5 /src/compose/hapi-server-initializer/init.sh
 
   # Start the bff service
-  docker stop medarbejder-bff
+
   docker rm medarbejder-bff
   docker run -d --network rim --name medarbejder-bff -p 8080:8080 --volumes-from maven-builder kvalitetsit/hjemmebehandling-medarbejder-bff:latest
 
@@ -31,6 +31,15 @@ if [ -d $SRC_FOLDER ]; then
   # Run the integration test
   cd integrationtest
   mvn verify -Pintegration-test -Dmedarbejder-bff-host=medarbejder-bff
+
+  # Save the exit code, stop containers
+  exit_code = $?
+  echo 'Exit code: '$exit_code
+
+  docker stop medarbejder-bff
+  docker stop hapi-server
+
+  exit $exit_code
 else
   echo "$SRC_FOLDER folder not found."
   exit 1
