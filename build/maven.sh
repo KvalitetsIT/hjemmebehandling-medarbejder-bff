@@ -33,7 +33,7 @@ if [ -d $SRC_FOLDER ]; then
   mvn verify -Pintegration-test -Dmedarbejder-bff-host=medarbejder-bff
 
   # Save the exit code, stop containers
-  exit_code = $?
+  exit_code=$?
   echo 'Exit code: '$exit_code
 
   docker stop medarbejder-bff
