@@ -2,9 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -18,7 +20,8 @@ public class DtoMapper {
     public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
-        carePlanModel.setId(carePlanDto.getId());
+        mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
+
         carePlanModel.setTitle(carePlanDto.getTitle());
         carePlanModel.setStatus(carePlanDto.getStatus());
         carePlanModel.setCreated(carePlanDto.getCreated());
@@ -41,7 +44,7 @@ public class DtoMapper {
     public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
 
-        carePlanDto.setId(carePlan.getId());
+        carePlanDto.setId(carePlan.getId().toString());
         carePlanDto.setTitle(carePlan.getTitle());
         carePlanDto.setStatus(carePlan.getStatus());
         carePlanDto.setCreated(carePlan.getCreated());
@@ -106,7 +109,8 @@ public class DtoMapper {
     public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
-        planDefinitionModel.setId(planDefinitionDto.getId());
+        mapBaseAttributesToModel(planDefinitionModel, planDefinitionDto, ResourceType.PlanDefinition);
+
         planDefinitionModel.setName(planDefinitionDto.getName());
         planDefinitionModel.setTitle(planDefinitionDto.getTitle());
         // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
@@ -120,7 +124,7 @@ public class DtoMapper {
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
 
-        planDefinitionDto.setId(planDefinitionModel.getId());
+        planDefinitionDto.setId(planDefinitionModel.getId().toString());
         planDefinitionDto.setName(planDefinitionModel.getName());
         planDefinitionDto.setTitle(planDefinitionModel.getTitle());
         // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
@@ -177,7 +181,8 @@ public class DtoMapper {
     public QuestionnaireModel mapQuestionnaireDto(QuestionnaireDto questionnaireDto) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        questionnaireModel.setId(questionnaireDto.getId());
+        mapBaseAttributesToModel(questionnaireModel, questionnaireDto, ResourceType.Questionnaire);
+
         questionnaireModel.setTitle(questionnaireDto.getTitle());
         questionnaireModel.setStatus(questionnaireDto.getStatus());
         if(questionnaireDto.getQuestions() != null) {
@@ -190,7 +195,7 @@ public class DtoMapper {
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
-        questionnaireDto.setId(questionnaireModel.getId());
+        questionnaireDto.setId(questionnaireModel.getId().toString());
         questionnaireDto.setTitle(questionnaireModel.getTitle());
         questionnaireDto.setStatus(questionnaireModel.getStatus());
         if(questionnaireModel.getQuestions() != null) {
@@ -203,8 +208,8 @@ public class DtoMapper {
     public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
 
-        questionnaireResponseDto.setId(questionnaireResponseModel.getId());
-        questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId());
+        questionnaireResponseDto.setId(questionnaireResponseModel.getId().toString());
+        questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId().toString());
         questionnaireResponseDto.setQuestionnaireName(questionnaireResponseModel.getQuestionnaireName());
         questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
         questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
@@ -213,6 +218,23 @@ public class DtoMapper {
         questionnaireResponseDto.setPatient(mapPatientModel(questionnaireResponseModel.getPatient()));
 
         return questionnaireResponseDto;
+    }
+
+    private void mapBaseAttributesToModel(BaseModel target, BaseDto source, ResourceType resourceType) {
+        if(source.getId() == null) {
+            // OK, in case a resource is being created.
+            return;
+        }
+
+        if(FhirUtils.isPlainId(source.getId())) {
+            target.setId(new QualifiedId(source.getId(), resourceType));
+        }
+        else if(FhirUtils.isQualifiedId(source.getId(), resourceType)) {
+            target.setId(new QualifiedId(source.getId()));
+        }
+        else {
+            throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType.toString(), source.getId()));
+        }
     }
 
     private ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {

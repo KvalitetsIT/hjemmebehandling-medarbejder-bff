@@ -33,8 +33,8 @@ public class FhirMapper {
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
 
         // Set the subject
-        if(carePlanModel.getPatient() != null) {
-            carePlan.setSubject(new Reference(carePlanModel.getPatient().getId()));
+        if(carePlanModel.getPatient().getId() != null) {
+            carePlan.setSubject(new Reference(carePlanModel.getPatient().getId().toString()));
         }
 
         // Map questionnaires to activities
@@ -49,7 +49,7 @@ public class FhirMapper {
             // Add references to planDefinitions
             carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
                     .stream()
-                    .map(pd -> new CanonicalType(FhirUtils.qualifyId(pd.getId(), ResourceType.PlanDefinition)))
+                    .map(pd -> new CanonicalType(pd.getId().toString()))
                     .collect(Collectors.toList()));
         }
 
@@ -122,7 +122,10 @@ public class FhirMapper {
     public Patient mapPatientModel(PatientModel patientModel) {
         Patient patient = new Patient();
 
-        patient.setId(patientModel.getId());
+        // Id may be null, in case we are creating the patient.
+        if(patientModel.getId() != null) {
+            patient.setId(patientModel.getId().toString());
+        }
 
         var name = new HumanName();
         name.addGiven(patientModel.getGivenName());
@@ -193,14 +196,14 @@ public class FhirMapper {
 
         mapBaseAttributesToFhir(questionnaireResponse, questionnaireResponseModel);
 
-        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
+        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId().toString());
         for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
             questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
         }
         questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
-        questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
+        questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId().toString()));
 
         return questionnaireResponse;
     }
@@ -256,15 +259,26 @@ public class FhirMapper {
     }
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
-        target.setId(source.getId());
-        // We may be creating the resource, and in that case, it is perfectly ok for it not to have an organization id.
+        // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
+        if(source.getId() != null) {
+            target.setId(source.getId().toString());
+        }
         if(source.getOrganizationId() != null) {
             target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
         }
     }
 
-    private String extractId(DomainResource resource) {
-        return resource.getIdElement().toUnqualifiedVersionless().getValue();
+    private QualifiedId extractId(DomainResource resource) {
+        String unqualifiedVersionless = resource.getIdElement().toUnqualifiedVersionless().getValue();
+        if(FhirUtils.isPlainId(unqualifiedVersionless)) {
+            return new QualifiedId(unqualifiedVersionless, resource.getResourceType());
+        }
+        else if (FhirUtils.isQualifiedId(unqualifiedVersionless, resource.getResourceType())) {
+            return new QualifiedId(unqualifiedVersionless);
+        }
+        else {
+            throw new IllegalArgumentException(String.format("Illegal id for resource of type %s: %s!", resource.getResourceType(), unqualifiedVersionless));
+        }
     }
 
     private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
@@ -403,7 +417,7 @@ public class FhirMapper {
     }
 
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        CanonicalType instantiatesCanonical = new CanonicalType(FhirUtils.qualifyId(questionnaireWrapperModel.getQuestionnaire().getId(), ResourceType.Questionnaire));
+        CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
         Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
 

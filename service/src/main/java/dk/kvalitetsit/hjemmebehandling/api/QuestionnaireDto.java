@@ -4,21 +4,10 @@ import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 
 import java.util.List;
 
-public class QuestionnaireDto {
-    private String id;
+public class QuestionnaireDto extends BaseDto {
     private String title;
     private String status;
     private List<QuestionDto> questions;
-
-    // TODO: Think about thresholds and their relation to questions ...
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return title;

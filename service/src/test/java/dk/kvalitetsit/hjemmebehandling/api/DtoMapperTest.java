@@ -16,6 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DtoMapperTest {
     private DtoMapper subject = new DtoMapper();
 
+    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
+    private static final String PATIENT_ID_1 = "Patient/patient-1";
+    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
+    private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+
     @Test
     public void mapCarePlanDto_success() {
         // Arrange
@@ -25,7 +32,7 @@ public class DtoMapperTest {
         CarePlanModel result = subject.mapCarePlanDto(carePlanDto);
 
         // Assert
-        assertEquals(carePlanDto.getId(), result.getId());
+        assertEquals(carePlanDto.getId(), result.getId().toString());
     }
 
     @Test
@@ -37,7 +44,7 @@ public class DtoMapperTest {
         CarePlanDto result = subject.mapCarePlanModel(carePlanModel);
 
         // Assert
-        assertEquals(carePlanModel.getId(), result.getId());
+        assertEquals(carePlanModel.getId().toString(), result.getId());
     }
 
     @Test
@@ -86,7 +93,7 @@ public class DtoMapperTest {
         QuestionnaireResponseDto result = subject.mapQuestionnaireResponseModel(questionnaireResponseModel);
 
         // Assert
-        assertEquals(questionnaireResponseModel.getId(), result.getId());
+        assertEquals(questionnaireResponseModel.getId().toString(), result.getId());
     }
 
     private AnswerModel buildAnswerModel() {
@@ -101,7 +108,7 @@ public class DtoMapperTest {
     private CarePlanDto buildCarePlanDto() {
         CarePlanDto carePlanDto = new CarePlanDto();
 
-        carePlanDto.setId("careplan-1");
+        carePlanDto.setId(CAREPLAN_ID_1);
         carePlanDto.setPatientDto(buildPatientDto());
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
         carePlanDto.setPlanDefinitions(List.of(buildPlanDefinitionDto()));
@@ -112,7 +119,7 @@ public class DtoMapperTest {
     private CarePlanModel buildCarePlanModel() {
         CarePlanModel carePlanModel = new CarePlanModel();
 
-        carePlanModel.setId("careplan-1");
+        carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
         carePlanModel.setPatient(buildPatientModel());
         carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
         carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
@@ -199,6 +206,7 @@ public class DtoMapperTest {
     private PlanDefinitionDto buildPlanDefinitionDto() {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
 
+        planDefinitionDto.setId(PLANDEFINITION_ID_1);
         planDefinitionDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
 
         return planDefinitionDto;
@@ -207,6 +215,7 @@ public class DtoMapperTest {
     private PlanDefinitionModel buildPlanDefinitionModel() {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
+        planDefinitionModel.setId(new QualifiedId(PLANDEFINITION_ID_1));
         planDefinitionModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
 
         return planDefinitionModel;
@@ -246,7 +255,7 @@ public class DtoMapperTest {
     private QuestionnaireModel buildQuestionnaireModel() {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        questionnaireModel.setId("questionnaire-1");
+        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
         questionnaireModel.setQuestions(List.of(buildQuestionModel()));
 
         return questionnaireModel;
@@ -255,7 +264,8 @@ public class DtoMapperTest {
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
-        questionnaireResponseModel.setId("questionnaireresponse-1");
+        questionnaireResponseModel.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
+        questionnaireResponseModel.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
         questionnaireResponseModel.setQuestionAnswerPairs(List.of(buildQuestionAnswerPairModel()));
         questionnaireResponseModel.setPatient(buildPatientModel());
 

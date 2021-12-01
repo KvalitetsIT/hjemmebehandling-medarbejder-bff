@@ -44,11 +44,11 @@ public class CarePlanServiceTest {
 
     private static final String CPR_1 = "0101010101";
 
-    private static final String CAREPLAN_ID_1 = "careplan-1";
-    private static final String PATIENT_ID_1 = "patient-1";
-    private static final String PLANDEFINITION__ID_1 = "plandefinition-1";
-    private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
-    private static final String QUESTIONNAIRE_ID_2 = "questionnaire-2";
+    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String PATIENT_ID_1 = "Patient/patient-1";
+    private static final String PLANDEFINITION__ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
+    private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
@@ -284,7 +284,7 @@ public class CarePlanServiceTest {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
-        questionnaireModel.setId(QUESTIONNAIRE_ID_1);
+        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
         carePlanModel.setQuestionnaires(List.of(new QuestionnaireWrapperModel(questionnaireModel, new FrequencyModel(), POINT_IN_TIME, List.of())));
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
@@ -544,7 +544,7 @@ public class CarePlanServiceTest {
         var model = new QuestionnaireWrapperModel();
 
         model.setQuestionnaire(new QuestionnaireModel());
-        model.getQuestionnaire().setId(questionnaireId);
+        model.getQuestionnaire().setId(new QualifiedId(questionnaireId));
 
         FrequencyModel frequencyModel = new FrequencyModel();
         frequencyModel.setWeekdays(List.of(Weekday.TUE));
@@ -558,7 +558,7 @@ public class CarePlanServiceTest {
     private PlanDefinitionModel buildPlanDefinitionModel(String planDefinitionId) {
         var model = new PlanDefinitionModel();
 
-        model.setId(planDefinitionId);
+        model.setId(new QualifiedId(planDefinitionId));
 
         return model;
     }
@@ -567,7 +567,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlanById(carePlan.getId())).thenReturn(FhirLookupResult.fromResource(carePlan));
 
         CarePlanModel carePlanModel = new CarePlanModel();
-        carePlanModel.setId(carePlan.getId());
+        carePlanModel.setId(new QualifiedId(carePlan.getId()));
         Mockito.when(fhirMapper.mapCarePlan(Mockito.any(CarePlan.class), Mockito.any(FhirLookupResult.class))).thenReturn(carePlanModel);
 
         return carePlanModel;

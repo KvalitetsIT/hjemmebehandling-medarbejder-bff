@@ -6,8 +6,7 @@ import java.time.Instant;
 import java.time.Period;
 import java.util.List;
 
-public class CarePlanDto {
-    private String id;
+public class CarePlanDto extends BaseDto {
     private String title;
     private String status;
     private Instant created;
@@ -17,15 +16,6 @@ public class CarePlanDto {
     private List<QuestionnaireWrapperDto> questionnaires;
     private List<PlanDefinitionDto> planDefinitions;
     private List<String> questionnairesWithUnsatisfiedSchedule;
-
-    @Schema(required = true, description = "Id of the CarePlan", example = "10")
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return title;

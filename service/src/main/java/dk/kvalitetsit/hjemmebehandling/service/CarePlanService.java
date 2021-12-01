@@ -185,7 +185,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Update the carePlan
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult));
-        Set<String> existingQuestionnaireIds = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toSet());
+        Set<String> existingQuestionnaireIds = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toSet());
         for(var questionnaireId : questionnaireIds) {
             if(existingQuestionnaireIds.contains(questionnaireId)) {
                 continue;
@@ -213,7 +213,7 @@ public class CarePlanService extends AccessValidatingService {
             carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanModel.getQuestionnaires()
                     .stream()
                     .filter(qw -> qw.getSatisfiedUntil().isBefore(dateProvider.now()))
-                    .map(qw -> qw.getQuestionnaire().getId())
+                    .map(qw -> qw.getQuestionnaire().getId().toString())
                     .collect(Collectors.toList()));
         }
 
@@ -243,13 +243,13 @@ public class CarePlanService extends AccessValidatingService {
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
         // Validate questionnaires
         if(carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toList()));
             validateAccess(lookupResult.getQuestionnaires());
         }
 
         // Validate planDefinitions
         if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList()));
             validateAccess(lookupResult.getPlanDefinitions());
         }
     }

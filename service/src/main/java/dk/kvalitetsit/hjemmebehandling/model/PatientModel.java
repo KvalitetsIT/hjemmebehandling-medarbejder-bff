@@ -5,7 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.api.ContactDetailsDto;
 import java.util.List;
 
 public class PatientModel {
-    private String id;
+    private QualifiedId id;
     private String givenName;
     private String familyName;
     private String cpr;
@@ -13,11 +13,11 @@ public class PatientModel {
     private ContactDetailsModel primaryRelativeContactDetails;
     private List<ContactDetailsModel> additionalRelativeContactDetails;
 
-    public String getId() {
+    public QualifiedId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(QualifiedId id) {
         this.id = id;
     }
 

@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class QuestionnaireResponseModel extends BaseModel {
-    private String questionnaireId;
+    private QualifiedId questionnaireId;
     private String questionnaireName;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
@@ -15,11 +15,11 @@ public class QuestionnaireResponseModel extends BaseModel {
     private TriagingCategory triagingCategory;
     private PatientModel patient;
 
-    public String getQuestionnaireId() {
+    public QualifiedId getQuestionnaireId() {
         return questionnaireId;
     }
 
-    public void setQuestionnaireId(String questionnaireId) {
+    public void setQuestionnaireId(QualifiedId questionnaireId) {
         this.questionnaireId = questionnaireId;
     }
 

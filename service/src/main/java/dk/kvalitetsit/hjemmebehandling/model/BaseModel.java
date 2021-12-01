@@ -1,14 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 public abstract class BaseModel {
-    private String id;
+    private QualifiedId id;
     private String organizationId;
 
-    public String getId() {
+    public QualifiedId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(QualifiedId id) {
         this.id = id;
     }
 

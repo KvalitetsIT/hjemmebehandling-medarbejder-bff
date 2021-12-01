@@ -34,12 +34,12 @@ public class FhirMapperTest {
 
     private static final String CPR_1 = "0101010101";
 
-    private static final String CAREPLAN_ID_1 = "careplan-1";
-    private static final String ORGANIZATION_ID_1 = "organization-1";
-    private static final String PATIENT_ID_1 = "patient-1";
-    private static final String PLANDEFINITION_ID_1 = "plandefinition-1";
-    private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
-    private static final String QUESTIONNAIRERESPONSE_ID_1 = "questionnaireresponse-1";
+    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
+    private static final String PATIENT_ID_1 = "Patient/patient-1";
+    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
+    private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
@@ -52,7 +52,7 @@ public class FhirMapperTest {
         CarePlan result = subject.mapCarePlanModel(carePlanModel);
 
         // Assert
-        assertEquals(result.getSubject().getReference(), carePlanModel.getPatient().getId());
+        assertEquals(result.getSubject().getReference(), carePlanModel.getPatient().getId().toString());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class FhirMapperTest {
         // Assert
         assertEquals(1, result.getQuestionnaires().size());
 
-        assertEquals(FhirUtils.qualifyId(QUESTIONNAIRE_ID_1, ResourceType.Questionnaire), result.getQuestionnaires().get(0).getQuestionnaire().getId());
+        assertEquals(FhirUtils.qualifyId(QUESTIONNAIRE_ID_1, ResourceType.Questionnaire), result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
     }
 
     @Test
@@ -147,11 +147,12 @@ public class FhirMapperTest {
         // Arrange
         Patient patient = new Patient();
 
+        patient.setId(PATIENT_ID_1);
+
         Identifier identifier = new Identifier();
         identifier.setSystem(Systems.CPR);
         identifier.setValue("0101010101");
         patient.getIdentifier().add(identifier);
-
 
         // Act
         PatientModel result = subject.mapPatient(patient);
@@ -246,7 +247,7 @@ public class FhirMapperTest {
     private CarePlanModel buildCarePlanModel() {
         CarePlanModel carePlanModel = new CarePlanModel();
 
-        carePlanModel.setId("careplan-1");
+        carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
         carePlanModel.setPatient(buildPatientModel());
         carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
         carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
@@ -288,6 +289,7 @@ public class FhirMapperTest {
     private PatientModel buildPatientModel() {
         PatientModel patientModel = new PatientModel();
 
+        patientModel.setId(new QualifiedId(PATIENT_ID_1));
         patientModel.setCpr("0101010101");
         patientModel.setPatientContactDetails(buildContactDetailsModel());
         patientModel.setPrimaryRelativeContactDetails(buildContactDetailsModel());
@@ -299,7 +301,7 @@ public class FhirMapperTest {
     private PlanDefinitionModel buildPlanDefinitionModel() {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
-        planDefinitionModel.setId("plandefinition-1");
+        planDefinitionModel.setId(new QualifiedId(PLANDEFINITION_ID_1));
         planDefinitionModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
 
         return planDefinitionModel;
@@ -317,6 +319,9 @@ public class FhirMapperTest {
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
 
+        model.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
+        model.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
+
         model.setAnswered(Instant.parse("2021-11-03T00:00:00Z"));
 
         model.setQuestionAnswerPairs(new ArrayList<>());
@@ -331,7 +336,7 @@ public class FhirMapperTest {
         model.setTriagingCategory(TriagingCategory.GREEN);
 
         PatientModel patientModel = new PatientModel();
-        patientModel.setId("patient-1");
+        patientModel.setId(new QualifiedId(PATIENT_ID_1));
         model.setPatient(patientModel);
 
         return model;
@@ -363,7 +368,7 @@ public class FhirMapperTest {
     private QuestionnaireModel buildQuestionnaireModel() {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        questionnaireModel.setId("questionnaire-1");
+        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
         questionnaireModel.setQuestions(List.of(buildQuestionModel()));
 
         return questionnaireModel;
