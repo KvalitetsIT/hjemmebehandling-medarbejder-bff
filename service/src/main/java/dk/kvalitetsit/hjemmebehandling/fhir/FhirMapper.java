@@ -23,16 +23,14 @@ public class FhirMapper {
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
         CarePlan carePlan = new CarePlan();
 
-        carePlan.setId(carePlanModel.getId());
+        mapBaseAttributesToFhir(carePlan, carePlanModel);
+
         carePlan.setTitle(carePlanModel.getTitle());
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         carePlan.setCreated(dateProvider.today());
         carePlan.setPeriod(new Period());
         carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
-        if(carePlanModel.getOrganizationId() != null) {
-            carePlan.addExtension(ExtensionMapper.mapOrganizationId(carePlanModel.getOrganizationId()));
-        }
 
         // Set the subject
         if(carePlanModel.getPatient() != null) {
@@ -61,7 +59,8 @@ public class FhirMapper {
     public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
-        carePlanModel.setId(carePlan.getIdElement().toUnqualifiedVersionless().getValue());
+        mapBaseAttributesToModel(carePlanModel, carePlan);
+
         carePlanModel.setTitle(carePlan.getTitle());
         //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
         carePlanModel.setCreated(carePlan.getCreated().toInstant());
@@ -103,8 +102,6 @@ public class FhirMapper {
         }
 
         carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
-
-        carePlanModel.setOrganizationId(ExtensionMapper.extractOrganizationId(carePlan.getExtension()));
 
         return carePlanModel;
     }
@@ -192,7 +189,8 @@ public class FhirMapper {
     public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
 
-        questionnaireResponse.setId(questionnaireResponseModel.getId());
+        mapBaseAttributesToFhir(questionnaireResponse, questionnaireResponseModel);
+
         questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId());
         for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
             questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
@@ -201,7 +199,6 @@ public class FhirMapper {
         questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
         questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
-        questionnaireResponse.getExtension().add(ExtensionMapper.mapOrganizationId(questionnaireResponseModel.getOrganizationId()));
 
         return questionnaireResponse;
     }
@@ -209,7 +206,7 @@ public class FhirMapper {
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
-        questionnaireResponseModel.setId(questionnaireResponse.getIdElement().toUnqualifiedVersionless().toString());
+        mapBaseAttributesToModel(questionnaireResponseModel, questionnaireResponse);
 
         String questionnaireId = questionnaireResponse.getQuestionnaire();
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId)
@@ -235,7 +232,6 @@ public class FhirMapper {
         Patient patient = lookupResult.getPatient(patientId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
         questionnaireResponseModel.setPatient(mapPatient(patient));
-        questionnaireResponseModel.setOrganizationId(ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension()));
 
         return questionnaireResponseModel;
     }
@@ -250,6 +246,18 @@ public class FhirMapper {
         }
 
         return frequencyModel;
+    }
+
+    private void mapBaseAttributesToModel(BaseModel target, DomainResource source) {
+        target.setId(source.getIdElement().toUnqualifiedVersionless().getValue());
+        target.setOrganizationId(ExtensionMapper.extractOrganizationId(source.getExtension()));
+    }
+
+    private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
+        target.setId(source.getId());
+        if(source.getOrganizationId() != null) {
+            target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
+        }
     }
 
     private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {

@@ -6,8 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
 import java.time.Instant;
 import java.util.List;
 
-public class QuestionnaireResponseModel {
-    private String id;
+public class QuestionnaireResponseModel extends BaseModel {
     private String questionnaireId;
     private String questionnaireName;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
@@ -15,15 +14,6 @@ public class QuestionnaireResponseModel {
     private ExaminationStatus examinationStatus;
     private TriagingCategory triagingCategory;
     private PatientModel patient;
-    private String organizationId;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getQuestionnaireId() {
         return questionnaireId;
@@ -79,13 +69,5 @@ public class QuestionnaireResponseModel {
 
     public void setPatient(PatientModel patient) {
         this.patient = patient;
-    }
-
-    public String getOrganizationId() {
-        return organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
     }
 }
