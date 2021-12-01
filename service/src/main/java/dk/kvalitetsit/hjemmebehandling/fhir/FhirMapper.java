@@ -148,16 +148,6 @@ public class FhirMapper {
         return patientModel;
     }
 
-    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
-
-        planDefinitionModel.setId(planDefinition.getIdElement().toUnqualifiedVersionless().getValue());
-        planDefinitionModel.setName(planDefinition.getName());
-        planDefinitionModel.setTitle(planDefinition.getTitle());
-
-        return planDefinitionModel;
-    }
-
     public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
@@ -211,6 +201,7 @@ public class FhirMapper {
         questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
         questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId()));
+        questionnaireResponse.getExtension().add(ExtensionMapper.mapOrganizationId(questionnaireResponseModel.getOrganizationId()));
 
         return questionnaireResponse;
     }
@@ -244,6 +235,7 @@ public class FhirMapper {
         Patient patient = lookupResult.getPatient(patientId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
         questionnaireResponseModel.setPatient(mapPatient(patient));
+        questionnaireResponseModel.setOrganizationId(ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension()));
 
         return questionnaireResponseModel;
     }

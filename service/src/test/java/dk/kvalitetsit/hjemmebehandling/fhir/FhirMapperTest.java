@@ -10,21 +10,17 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,6 +39,7 @@ public class FhirMapperTest {
     private static final String PATIENT_ID_1 = "patient-1";
     private static final String PLANDEFINITION_ID_1 = "plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
+    private static final String QUESTIONNAIRERESPONSE_ID_1 = "questionnaireresponse-1";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
@@ -185,28 +182,17 @@ public class FhirMapperTest {
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(model);
 
         // Assert
-        assertEquals(2, result.getExtension().size());
-        assertEquals(Systems.EXAMINATION_STATUS, result.getExtension().get(0).getUrl());
-        assertEquals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString(), result.getExtension().get(0).getValue().toString());
+        assertTrue(result.getExtension().stream().anyMatch(e ->
+                e.getUrl().equals(Systems.EXAMINATION_STATUS) &&
+                        e.getValue().toString().equals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString())));
     }
 
     @Test
     public void mapQuestionnaireResponse_canMapAnswers() {
         // Arrange
-        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-
-        questionnaireResponse.getItem().add(buildStringItem("hej", "1"));
-        questionnaireResponse.getItem().add(buildIntegerItem(2, "2"));
-        questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
-        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
-        questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
-
-        Questionnaire questionnaire = new Questionnaire();
-        questionnaire.getItem().add(buildQuestionItem("1"));
-        questionnaire.getItem().add(buildQuestionItem("2"));
-
-        Patient patient = new Patient();
-        patient.getIdentifier().add(new Identifier());
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
 
         // Act
         QuestionnaireResponseModel result = subject.mapQuestionnaireResponse(questionnaireResponse, FhirLookupResult.fromResources(questionnaireResponse, questionnaire, patient));
@@ -215,6 +201,40 @@ public class FhirMapperTest {
         assertEquals(2, result.getQuestionAnswerPairs().size());
         assertEquals(AnswerType.STRING, result.getQuestionAnswerPairs().get(0).getAnswer().getAnswerType());
         assertEquals(AnswerType.INTEGER, result.getQuestionAnswerPairs().get(1).getAnswer().getAnswerType());
+    }
+
+    @Test
+    public void mapQuestionnaireResponse_roundtrip_preservesExtensions() {
+        // Arrange
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+
+        // Act
+        QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
+
+        // Assert
+        assertEquals(questionnaireResponse.getExtension().size(), result.getExtension().size());
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION)));
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.EXAMINATION_STATUS)));
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.TRIAGING_CATEGORY)));
+    }
+
+    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patiientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        questionnaireResponse.setId(questionnaireResponseId);
+        questionnaireResponse.setQuestionnaire(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
+        questionnaireResponse.setSubject(new Reference(patiientId));
+        questionnaireResponse.getItem().addAll(answerItems);
+        questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
+        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
+        questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
+        questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+
+        return questionnaireResponse;
     }
 
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId) {
@@ -341,10 +361,15 @@ public class FhirMapperTest {
     }
 
     private Questionnaire buildQuestionnaire(String questionnaireId) {
+        return buildQuestionnaire(questionnaireId, List.of());
+    }
+
+    private Questionnaire buildQuestionnaire(String questionnaireId, List<Questionnaire.QuestionnaireItemComponent> questionItems) {
         Questionnaire questionnaire = new Questionnaire();
 
         questionnaire.setId(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
         questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
+        questionnaire.getItem().addAll(questionItems);
 
         return questionnaire;
     }

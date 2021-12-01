@@ -15,6 +15,7 @@ public class QuestionnaireResponseModel {
     private ExaminationStatus examinationStatus;
     private TriagingCategory triagingCategory;
     private PatientModel patient;
+    private String organizationId;
 
     public String getId() {
         return id;
@@ -78,5 +79,13 @@ public class QuestionnaireResponseModel {
 
     public void setPatient(PatientModel patient) {
         this.patient = patient;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
     }
 }
