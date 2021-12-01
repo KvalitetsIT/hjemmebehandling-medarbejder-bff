@@ -5,6 +5,8 @@ import org.hl7.fhir.r4.model.ResourceType;
 import java.util.regex.Pattern;
 
 public class FhirUtils {
+    private static Pattern plainIdPattern = Pattern.compile("^[a-z0-9\\-]+$");
+
     public static String unqualifyId(String id) {
         if(isPlainId(id)) {
             return id;
@@ -21,7 +23,7 @@ public class FhirUtils {
     }
 
     public static String qualifyId(String id, ResourceType qualifier) {
-        if(idQualifiedByQualifier(id, qualifier)) {
+        if(isQualifiedId(id, qualifier)) {
             return id;
         }
         if(!isPlainId(id)) {
@@ -30,12 +32,11 @@ public class FhirUtils {
         return qualifier + "/" + id;
     }
 
-    private static boolean isPlainId(String id) {
-        Pattern p = Pattern.compile("^[a-z0-9\\-]+$");
-        return p.matcher(id).matches();
+    public static boolean isPlainId(String id) {
+        return plainIdPattern.matcher(id).matches();
     }
 
-    private static boolean idQualifiedByQualifier(String id, ResourceType qualifier) {
+    public static boolean isQualifiedId(String id, ResourceType qualifier) {
         String prefix = qualifier.toString() + "/";
         return id.startsWith(prefix) && isPlainId(id.substring(prefix.length()));
     }
