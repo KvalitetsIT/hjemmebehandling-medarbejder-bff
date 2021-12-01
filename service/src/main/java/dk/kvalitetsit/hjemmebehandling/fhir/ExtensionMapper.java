@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
-import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
@@ -15,24 +14,27 @@ import org.hl7.fhir.r4.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ExtensionMapper {
     public static Extension mapActivitySatisfiedUntil(Instant pointInTime) {
-        return buildExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime.toString());
+        return buildStringExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime.toString());
     }
 
     public static Extension mapCarePlanSatisfiedUntil(Instant pointInTime) {
-        return buildExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime.toString());
+        return buildStringExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime.toString());
     }
 
     public static Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
-        return buildExtension(Systems.EXAMINATION_STATUS, examinationStatus.toString());
+        return buildStringExtension(Systems.EXAMINATION_STATUS, examinationStatus.toString());
+    }
+
+    public static Extension mapOrganizationId(String organizationId) {
+        return buildReferenceExtension(Systems.ORGANIZATION, organizationId);
     }
 
     public static Extension mapTriagingCategory(TriagingCategory triagingCategory) {
-        return buildExtension(Systems.TRIAGING_CATEGORY, triagingCategory.toString());
+        return buildStringExtension(Systems.TRIAGING_CATEGORY, triagingCategory.toString());
     }
 
     public static Instant extractActivitySatisfiedUntil(List<Extension> extensions) {
@@ -47,11 +49,19 @@ public class ExtensionMapper {
         return extractEnumFromExtensions(extensions, Systems.EXAMINATION_STATUS, ExaminationStatus.class);
     }
 
+    public static String extractOrganizationId(List<Extension> extensions) {
+        return extractReferenceFromExtensions(extensions, Systems.ORGANIZATION);
+    }
+
     public static TriagingCategory extractTriagingCategoory(List<Extension> extensions) {
         return extractEnumFromExtensions(extensions, Systems.TRIAGING_CATEGORY, TriagingCategory.class);
     }
 
-    private static Extension buildExtension(String url, String value) {
+    private static Extension buildReferenceExtension(String url, String value) {
+        return new Extension(url, new Reference(value));
+    }
+
+    private static Extension buildStringExtension(String url, String value) {
         return new Extension(url, new StringType(value));
     }
 
@@ -61,6 +71,10 @@ public class ExtensionMapper {
 
     private static Instant extractInstantFromExtensions(List<Extension> extensions, String url) {
         return extractFromExtensions(extensions, url, v -> Instant.parse(v.primitiveValue()));
+    }
+
+    private static String extractReferenceFromExtensions(List<Extension> extensions, String url) {
+        return extractFromExtensions(extensions, url, v -> ((Reference) v).getReference());
     }
 
     private static <T> T extractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {

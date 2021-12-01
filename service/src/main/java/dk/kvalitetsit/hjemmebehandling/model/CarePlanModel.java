@@ -15,6 +15,7 @@ public class CarePlanModel {
     private List<PlanDefinitionModel> planDefinitions;
     private List<String> questionnairesWithUnsatisfiedSchedule;
     private Instant satisfiedUntil;
+    private String organizationId;
 
     public String getId() {
         return id;
@@ -102,5 +103,13 @@ public class CarePlanModel {
 
     public void setSatisfiedUntil(Instant satisfiedUntil) {
         this.satisfiedUntil = satisfiedUntil;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
     }
 }

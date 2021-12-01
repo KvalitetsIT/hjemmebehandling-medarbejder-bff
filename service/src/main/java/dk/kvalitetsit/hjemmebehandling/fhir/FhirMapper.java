@@ -30,6 +30,9 @@ public class FhirMapper {
         carePlan.setPeriod(new Period());
         carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
+        if(carePlanModel.getOrganizationId() != null) {
+            carePlan.addExtension(ExtensionMapper.mapOrganizationId(carePlanModel.getOrganizationId()));
+        }
 
         // Set the subject
         if(carePlanModel.getPatient() != null) {
@@ -100,6 +103,8 @@ public class FhirMapper {
         }
 
         carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
+
+        carePlanModel.setOrganizationId(ExtensionMapper.extractOrganizationId(carePlan.getExtension()));
 
         return carePlanModel;
     }

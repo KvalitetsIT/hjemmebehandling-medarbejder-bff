@@ -18,11 +18,13 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,6 +39,7 @@ public class FhirMapperTest {
     private static final String CPR_1 = "0101010101";
 
     private static final String CAREPLAN_ID_1 = "careplan-1";
+    private static final String ORGANIZATION_ID_1 = "organization-1";
     private static final String PATIENT_ID_1 = "patient-1";
     private static final String PLANDEFINITION_ID_1 = "plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
@@ -73,6 +76,44 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapCarePlan_roundtrip_preservesExtensions() {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+
+        // Act
+        CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
+
+        // Assert
+        assertEquals(carePlan.getExtension().size(), result.getExtension().size());
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION)));
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.CAREPLAN_SATISFIED_UNTIL)));
+    }
+
+    @Test
+    public void mapCarePlan_roundtrip_preservesActivities() {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+
+        // Act
+        CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
+
+        // Assert
+        assertEquals(carePlan.getActivity().size(), result.getActivity().size());
+        assertEquals(carePlan.getActivity().get(0).getDetail().getInstantiatesCanonical().get(0).getValue(), result.getActivity().get(0).getDetail().getInstantiatesCanonical().get(0).getValue());
+        assertEquals(carePlan.getActivity().get(0).getDetail().getScheduledTiming().getRepeat().getDayOfWeek().get(0).getValue(), result.getActivity().get(0).getDetail().getScheduledTiming().getRepeat().getDayOfWeek().get(0).getValue());
+
+        assertTrue(result.getActivity().get(0).getDetail().getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ACTIVITY_SATISFIED_UNTIL)));
+    }
+
+    @Test
     public void mapCarePlan_includesQuestionnaires() {
         // Arrange
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
@@ -86,7 +127,8 @@ public class FhirMapperTest {
 
         // Assert
         assertEquals(1, result.getQuestionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId());
+
+        assertEquals(FhirUtils.qualifyId(QUESTIONNAIRE_ID_1, ResourceType.Questionnaire), result.getQuestionnaires().get(0).getQuestionnaire().getId());
     }
 
     @Test
@@ -185,9 +227,10 @@ public class FhirMapperTest {
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setEnd(Date.from(Instant.parse("2021-10-29T00:00:00Z")));
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
+        carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 
         var detail = new CarePlan.CarePlanActivityDetailComponent();
-        detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
+        detail.setInstantiatesCanonical(List.of(new CanonicalType(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire))));
         detail.setScheduled(buildTiming());
         detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
         carePlan.addActivity().setDetail(detail);
@@ -300,7 +343,7 @@ public class FhirMapperTest {
     private Questionnaire buildQuestionnaire(String questionnaireId) {
         Questionnaire questionnaire = new Questionnaire();
 
-        questionnaire.setId(questionnaireId);
+        questionnaire.setId(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
         questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
 
         return questionnaire;
@@ -349,7 +392,7 @@ public class FhirMapperTest {
         Timing timing = new Timing();
 
         var repeat = new Timing.TimingRepeatComponent();
-        repeat.setDayOfWeek(List.of());
+        repeat.setDayOfWeek(List.of(new Enumeration<>(new Timing.DayOfWeekEnumFactory(), Timing.DayOfWeek.FRI)));
         repeat.setTimeOfDay(List.of(new TimeType("04:00")));
 
         timing.setRepeat(repeat);

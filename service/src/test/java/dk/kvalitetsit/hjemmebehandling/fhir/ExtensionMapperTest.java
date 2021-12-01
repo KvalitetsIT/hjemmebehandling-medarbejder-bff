@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +41,20 @@ public class ExtensionMapperTest {
     }
 
     @Test
+    public void mapOrganizationId_success() {
+        // Arrange
+        String organizationId = "Organization/organization-1";
+
+        // Act
+        Extension result = ExtensionMapper.mapOrganizationId(organizationId);
+
+        // Assert
+        assertEquals(Systems.ORGANIZATION, result.getUrl());
+        assertEquals(Reference.class, result.getValue().getClass());
+        assertEquals(organizationId, ((Reference) result.getValue()).getReference());
+    }
+
+    @Test
     public void extractActivitySatisfiedUntil_success() {
         // Arrange
         Extension extension = new Extension(Systems.ACTIVITY_SATISFIED_UNTIL, new StringType("2021-12-07T10:11:12.124Z"));
@@ -72,5 +87,17 @@ public class ExtensionMapperTest {
 
         // Assert
         assertThrows(DateTimeParseException.class, () -> ExtensionMapper.extractActivitySatisfiedUntil(List.of(extension)));
+    }
+
+    @Test
+    public void extractOrganizationId_success() {
+        // Arrange
+        Extension extension = new Extension(Systems.ORGANIZATION, new Reference("Organization/organization-1"));
+
+        // Act
+        String result = ExtensionMapper.extractOrganizationId(List.of(extension));
+
+        // Assert
+        assertEquals("Organization/organization-1", result);
     }
 }
