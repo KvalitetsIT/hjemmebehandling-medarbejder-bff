@@ -386,7 +386,7 @@ public class CarePlanServiceTest {
     @Test
     public void getCarePlanById_carePlanMissing_returnsEmpty() throws Exception {
         // Arrange
-        String carePlanId = "careplan-1";
+        String carePlanId = CAREPLAN_ID_1;
 
         Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(FhirLookupResult.fromResources());
 
@@ -411,7 +411,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_accessViolation_throwsException() throws Exception {
         // Arrange
-        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(FhirLookupResult.fromResources(carePlan));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
@@ -425,7 +425,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_carePlanSatisfiedIntoTheFuture_throwsException() throws Exception {
         // Arrange
-        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan);
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(lookupResult);
 
@@ -444,7 +444,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_recomputesSatisfiedUntil_savesCarePlan() throws Exception {
         // Arrange
-        CarePlan carePlan = buildCarePlan(FhirUtils.qualifyId(CAREPLAN_ID_1, ResourceType.CarePlan), PATIENT_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan);
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(lookupResult);
 

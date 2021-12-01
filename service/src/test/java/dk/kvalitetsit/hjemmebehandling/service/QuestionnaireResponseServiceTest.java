@@ -38,17 +38,16 @@ public class QuestionnaireResponseServiceTest {
     @Mock
     private AccessValidator accessValidator;
 
-    private static final String CAREPLAN_ID_1 = "careplan-1";
-    private static final String ORGANIZATION_ID_1 = "organization-1";
-    private static final String ORGANIZATION_ID_2 = "organization-2";
-    private static final String PATIENT_ID = "patient-1";
-    private static final String QUESTIONNAIRE_ID_1 = "questionnaire-1";
-    private static final String QUESTIONNAIRE_ID_2 = "questionnaire-2";
-    private static final String QUESTIONNAIRE_ID_3 = "questionnaire-3";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "questionnaireresponse-1";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "questionnaireresponse-2";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_3 = "questionnaireresponse-3";
-    private static final String SOR_CODE = "123456";
+    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
+    private static final String ORGANIZATION_ID_2 = "Organization/organization-2";
+    private static final String PATIENT_ID = "Patiient/patient-1";
+    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
+    private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
+    private static final String QUESTIONNAIRE_ID_3 = "Questionnaire/questionnaire-3";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_3 = "QuestionnaireResponse/questionnaireresponse-3";
 
     @Test
     public void getQuestionnaireResponses_responsesPresent_returnsResponses() throws Exception {
@@ -244,7 +243,7 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_2);
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(FhirLookupResult.fromResource(response));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(response);
@@ -261,7 +260,7 @@ public class QuestionnaireResponseServiceTest {
         String id = "questionnaireresponse-1";
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
 
-        QuestionnaireResponse response = buildQuestionnaireResponse(FhirUtils.qualifyId(QUESTIONNAIRE_RESPONSE_ID_1, ResourceType.QuestionnaireResponse), QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
+        QuestionnaireResponse response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID, ORGANIZATION_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(lookupResult);
 

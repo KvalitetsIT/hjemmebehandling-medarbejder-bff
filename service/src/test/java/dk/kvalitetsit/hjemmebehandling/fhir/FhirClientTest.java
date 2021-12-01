@@ -41,10 +41,10 @@ public class FhirClientTest {
     @Mock
     private UserContextProvider userContextProvider;
 
-    private static final String ORGANIZATION_ID_1 = "organization-1";
-    private static final String ORGANIZATION_ID_2 = "organization-2";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "questionnaireresponse-1";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "questionnaireresponse-2";
+    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
+    private static final String ORGANIZATION_ID_2 = "Organization/organization-2";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
 
@@ -378,7 +378,7 @@ public class FhirClientTest {
         String result = subject.saveCarePlan(carePlan);
 
         // Assert
-        assertTrue(isTaggedWithId(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_1, ResourceType.Organization)));
+        assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_1));
     }
 
     @Test
@@ -454,7 +454,7 @@ public class FhirClientTest {
         String result = subject.saveCarePlan(carePlan, patient);
 
         // Assert
-        assertTrue(isTaggedWithId(carePlan, FhirUtils.qualifyId(ORGANIZATION_ID_2, ResourceType.Organization)));
+        assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_2));
         assertFalse(isTagged(patient));
     }
 

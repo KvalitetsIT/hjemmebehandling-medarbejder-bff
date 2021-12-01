@@ -353,6 +353,6 @@ public class FhirClient {
                 .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getOrgId())));
 
         var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
-        return FhirUtils.qualifyId(organizationId, ResourceType.Organization);
+        return organizationId;
     }
 }

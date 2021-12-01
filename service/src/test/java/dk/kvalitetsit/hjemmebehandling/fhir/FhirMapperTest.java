@@ -125,7 +125,7 @@ public class FhirMapperTest {
         // Assert
         assertEquals(1, result.getQuestionnaires().size());
 
-        assertEquals(FhirUtils.qualifyId(QUESTIONNAIRE_ID_1, ResourceType.Questionnaire), result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
     }
 
     @Test
@@ -236,7 +236,7 @@ public class FhirMapperTest {
         carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 
         var detail = new CarePlan.CarePlanActivityDetailComponent();
-        detail.setInstantiatesCanonical(List.of(new CanonicalType(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire))));
+        detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
         detail.setScheduled(buildTiming());
         detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
         carePlan.addActivity().setDetail(detail);
@@ -357,7 +357,7 @@ public class FhirMapperTest {
     private Questionnaire buildQuestionnaire(String questionnaireId, List<Questionnaire.QuestionnaireItemComponent> questionItems) {
         Questionnaire questionnaire = new Questionnaire();
 
-        questionnaire.setId(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
+        questionnaire.setId(questionnaireId);
         questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
         questionnaire.getItem().addAll(questionItems);
         questionnaire.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
@@ -388,7 +388,7 @@ public class FhirMapperTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
 
         questionnaireResponse.setId(questionnaireResponseId);
-        questionnaireResponse.setQuestionnaire(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
+        questionnaireResponse.setQuestionnaire(questionnaireId);
         questionnaireResponse.setSubject(new Reference(patiientId));
         questionnaireResponse.getItem().addAll(answerItems);
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));

@@ -85,8 +85,9 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
+        String qualifiedId = FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
-        QuestionnaireResponse questionnaireResponse = lookupResult.getQuestionnaireResponse(FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse))
+        QuestionnaireResponse questionnaireResponse = lookupResult.getQuestionnaireResponse(qualifiedId)
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST));
 
         // Validate that the user is allowed to update the QuestionnaireResponse.

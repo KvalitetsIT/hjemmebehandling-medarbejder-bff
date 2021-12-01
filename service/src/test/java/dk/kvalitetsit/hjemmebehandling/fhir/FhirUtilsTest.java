@@ -7,6 +7,52 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class FhirUtilsTest {
     @Test
+    public void qualifyId_qualifiedId_returnsId() {
+        // Arrange
+        String id = "CarePlan/4";
+
+        // Act
+        String result = FhirUtils.qualifyId(id, ResourceType.CarePlan);
+
+        // Assert
+        assertEquals(id, result);
+    }
+
+    @Test
+    public void qualifyId_qualifierMismatch_throwsException() {
+        // Arrange
+        String id = "CarePlan/4";
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalArgumentException.class, () ->  FhirUtils.qualifyId(id, ResourceType.Questionnaire));
+    }
+
+    @Test
+    public void qualifyId_malformedId_throwsException() {
+        // Arrange
+        String id = "Patient/()";
+
+        // Act
+
+        // Assert
+        assertThrows(IllegalArgumentException.class, () -> FhirUtils.qualifyId(id, ResourceType.Patient));
+    }
+
+    @Test
+    public void qualifyId_plainId_success() {
+        // Arrange
+        String id = "2";
+
+        // Act
+        String result = FhirUtils.qualifyId(id, ResourceType.Patient);
+
+        // Assert
+        assertEquals("Patient/2", result);
+    }
+
+    @Test
     public void isPlainId_plainId_success() {
         // Arrange
         String id = "2";

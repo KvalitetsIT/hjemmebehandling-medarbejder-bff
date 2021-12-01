@@ -120,9 +120,10 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(carePlanId);
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
 
-        Optional<CarePlan> carePlan = lookupResult.getCarePlan(FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan));
+        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
         if(!carePlan.isPresent()) {
             return Optional.empty();
         }
@@ -137,8 +138,8 @@ public class CarePlanService extends AccessValidatingService {
 
     public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
         // Get the careplan
-        FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(carePlanId);
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
         if(!carePlanResult.getCarePlan(qualifiedId).isPresent()) {
             throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST);
         }
@@ -174,7 +175,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Look up the CarePlan, throw an exception in case it does not exist.
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(carePlanId);
+        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
         if(careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
         }
@@ -294,11 +295,12 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public void completeCarePlan(String carePlanId) throws ServiceException {
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(carePlanId);
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
 
-        Optional<CarePlan> carePlan = lookupResult.getCarePlan(FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan));
+        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
         if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", carePlanId), ErrorKind.BAD_REQUEST);
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
         }
 
         CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
