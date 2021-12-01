@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
@@ -7,6 +8,7 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 
+import java.sql.Date;
 import java.time.Instant;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
@@ -14,15 +16,16 @@ import org.hl7.fhir.r4.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.function.Function;
 
 public class ExtensionMapper {
     public static Extension mapActivitySatisfiedUntil(Instant pointInTime) {
-        return buildStringExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime.toString());
+        return buildDateTimeExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime);
     }
 
     public static Extension mapCarePlanSatisfiedUntil(Instant pointInTime) {
-        return buildStringExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime.toString());
+        return buildDateTimeExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime);
     }
 
     public static Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
@@ -57,6 +60,10 @@ public class ExtensionMapper {
         return extractEnumFromExtensions(extensions, Systems.TRIAGING_CATEGORY, TriagingCategory.class);
     }
 
+    private static Extension buildDateTimeExtension(String url, Instant value) {
+        return new Extension(url, new DateTimeType(Date.from(value), TemporalPrecisionEnum.MILLI, TimeZone.getTimeZone("UTC")));
+    }
+
     private static Extension buildReferenceExtension(String url, String value) {
         return new Extension(url, new Reference(value));
     }
@@ -70,7 +77,7 @@ public class ExtensionMapper {
     }
 
     private static Instant extractInstantFromExtensions(List<Extension> extensions, String url) {
-        return extractFromExtensions(extensions, url, v -> Instant.parse(v.primitiveValue()));
+        return extractFromExtensions(extensions, url, v -> ((DateTimeType) v).getValue().toInstant());
     }
 
     private static String extractReferenceFromExtensions(List<Extension> extensions, String url) {
