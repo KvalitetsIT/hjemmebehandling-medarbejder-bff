@@ -222,21 +222,6 @@ public class FhirMapperTest {
         assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.TRIAGING_CATEGORY)));
     }
 
-    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patiientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {
-        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-
-        questionnaireResponse.setId(questionnaireResponseId);
-        questionnaireResponse.setQuestionnaire(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
-        questionnaireResponse.setSubject(new Reference(patiientId));
-        questionnaireResponse.getItem().addAll(answerItems);
-        questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
-        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
-        questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
-        questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
-
-        return questionnaireResponse;
-    }
-
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId) {
         CarePlan carePlan = new CarePlan();
 
@@ -391,6 +376,21 @@ public class FhirMapperTest {
         questionnaireWrapperModel.setSatisfiedUntil(Instant.parse("2021-12-08T10:11:12.124Z"));
 
         return questionnaireWrapperModel;
+    }
+
+    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patiientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+
+        questionnaireResponse.setId(questionnaireResponseId);
+        questionnaireResponse.setQuestionnaire(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
+        questionnaireResponse.setSubject(new Reference(patiientId));
+        questionnaireResponse.getItem().addAll(answerItems);
+        questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
+        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
+        questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
+        questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+
+        return questionnaireResponse;
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent buildStringItem(String value, String linkId) {
