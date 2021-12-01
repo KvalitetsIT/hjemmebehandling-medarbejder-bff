@@ -94,7 +94,6 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @Disabled
     public void patchCarePlan_success() throws Exception {
         // Arrange
         String id = "careplan-2";
