@@ -136,7 +136,7 @@ public class FhirMapper {
     public PatientModel mapPatient(Patient patient) {
         PatientModel patientModel = new PatientModel();
 
-        patientModel.setId(patient.getIdElement().toUnqualifiedVersionless().getValue());
+        patientModel.setId(extractId(patient));
         patientModel.setCpr(extractCpr(patient));
         patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setGivenName(extractGivenNames(patient));
@@ -148,7 +148,8 @@ public class FhirMapper {
     public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
-        planDefinitionModel.setId(planDefinition.getIdElement().toUnqualifiedVersionless().getValue());
+        mapBaseAttributesToModel(planDefinitionModel, planDefinition);
+
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
 
@@ -178,7 +179,8 @@ public class FhirMapper {
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        questionnaireModel.setId(questionnaire.getIdElement().toUnqualifiedVersionless ().toString());
+        mapBaseAttributesToModel(questionnaireModel, questionnaire);
+
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
         questionnaireModel.setQuestions(questionnaire.getItem().stream().map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
@@ -212,7 +214,7 @@ public class FhirMapper {
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireId)));
         questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
-        questionnaireResponseModel.setQuestionnaireId(questionnaire.getIdElement().toUnqualifiedVersionless().toString());
+        questionnaireResponseModel.setQuestionnaireId(extractId(questionnaire));
 
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = new ArrayList<>();
@@ -249,15 +251,20 @@ public class FhirMapper {
     }
 
     private void mapBaseAttributesToModel(BaseModel target, DomainResource source) {
-        target.setId(source.getIdElement().toUnqualifiedVersionless().getValue());
+        target.setId(extractId(source));
         target.setOrganizationId(ExtensionMapper.extractOrganizationId(source.getExtension()));
     }
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         target.setId(source.getId());
+        // We may be creating the resource, and in that case, it is perfectly ok for it not to have an organization id.
         if(source.getOrganizationId() != null) {
             target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
         }
+    }
+
+    private String extractId(DomainResource resource) {
+        return resource.getIdElement().toUnqualifiedVersionless().getValue();
     }
 
     private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {

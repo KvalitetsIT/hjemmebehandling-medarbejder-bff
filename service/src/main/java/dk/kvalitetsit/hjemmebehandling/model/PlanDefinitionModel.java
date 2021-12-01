@@ -2,19 +2,10 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import java.util.List;
 
-public class PlanDefinitionModel {
-    private String id;
+public class PlanDefinitionModel extends BaseModel {
     private String name;
     private String title;
     private List<QuestionnaireWrapperModel> questionnaires;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;

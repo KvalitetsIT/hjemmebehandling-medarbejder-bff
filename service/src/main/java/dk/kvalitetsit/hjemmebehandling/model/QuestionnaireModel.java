@@ -1,22 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import org.hl7.fhir.r4.model.Base;
 
 import java.util.List;
 
-public class QuestionnaireModel {
-    private String id;
+public class QuestionnaireModel extends BaseModel {
     private String title;
     private String status;
     private List<QuestionModel> questions;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return title;

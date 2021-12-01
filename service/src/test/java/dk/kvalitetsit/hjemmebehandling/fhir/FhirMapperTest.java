@@ -355,6 +355,7 @@ public class FhirMapperTest {
         questionnaire.setId(FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire));
         questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
         questionnaire.getItem().addAll(questionItems);
+        questionnaire.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 
         return questionnaire;
     }
