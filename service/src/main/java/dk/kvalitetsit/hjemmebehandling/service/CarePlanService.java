@@ -93,12 +93,10 @@ public class CarePlanService extends AccessValidatingService {
         }
 
         // Map the resourecs
-        List<CarePlanModel> mappedCarePlans = lookupResult.getCarePlans()
+        return lookupResult.getCarePlans()
                 .stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
                 .collect(Collectors.toList());
-
-        return decorateCarePlans(mappedCarePlans);
     }
 
     public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(PageDetails pageDetails) throws ServiceException {
@@ -111,12 +109,10 @@ public class CarePlanService extends AccessValidatingService {
         }
 
         // Map the resources
-        List<CarePlanModel> mappedCarePlans = lookupResult.getCarePlans()
+        return lookupResult.getCarePlans()
                 .stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
                 .collect(Collectors.toList());
-
-        return decorateCarePlans(mappedCarePlans);
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
@@ -133,7 +129,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Map the resource
         CarePlanModel mappedCarePlan = fhirMapper.mapCarePlan(carePlan.get(), lookupResult);
-        return Optional.of(decorateCarePlan(mappedCarePlan));
+        return Optional.of(mappedCarePlan);
     }
 
     public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
@@ -198,27 +194,6 @@ public class CarePlanService extends AccessValidatingService {
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
-    }
-
-    private List<CarePlanModel> decorateCarePlans(List<CarePlanModel> carePlans) {
-        // Populate 'exceededQuestionnaires' list
-        for(var carePlanModel : carePlans) {
-            decorateCarePlan(carePlanModel);
-        }
-
-        return carePlans;
-    }
-
-    private CarePlanModel decorateCarePlan(CarePlanModel carePlanModel) {
-        if(carePlanModel.getQuestionnaires() != null) {
-            carePlanModel.setQuestionnairesWithUnsatisfiedSchedule(carePlanModel.getQuestionnaires()
-                    .stream()
-                    .filter(qw -> qw.getSatisfiedUntil().isBefore(dateProvider.now()))
-                    .map(qw -> qw.getQuestionnaire().getId().toString())
-                    .collect(Collectors.toList()));
-        }
-
-        return carePlanModel;
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId, Map<String, FrequencyModel> frequencies, FhirLookupResult lookupResult) {

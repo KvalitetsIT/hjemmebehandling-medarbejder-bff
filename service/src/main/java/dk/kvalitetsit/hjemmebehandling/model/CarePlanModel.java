@@ -12,7 +12,6 @@ public class CarePlanModel extends BaseModel {
     private PatientModel patient;
     private List<QuestionnaireWrapperModel> questionnaires;
     private List<PlanDefinitionModel> planDefinitions;
-    private List<String> questionnairesWithUnsatisfiedSchedule;
     private Instant satisfiedUntil;
 
     public String getTitle() {
@@ -77,14 +76,6 @@ public class CarePlanModel extends BaseModel {
 
     public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
         this.planDefinitions = planDefinitions;
-    }
-
-    public List<String> getQuestionnairesWithUnsatisfiedSchedule() {
-        return questionnairesWithUnsatisfiedSchedule;
-    }
-
-    public void setQuestionnairesWithUnsatisfiedSchedule(List<String> questionnairesWithUnsatisfiedSchedule) {
-        this.questionnairesWithUnsatisfiedSchedule = questionnairesWithUnsatisfiedSchedule;
     }
 
     public Instant getSatisfiedUntil() {

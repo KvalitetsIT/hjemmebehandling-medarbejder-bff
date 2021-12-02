@@ -15,7 +15,6 @@ public class CarePlanDto extends BaseDto {
     private PatientDto patientDto;
     private List<QuestionnaireWrapperDto> questionnaires;
     private List<PlanDefinitionDto> planDefinitions;
-    private List<String> questionnairesWithUnsatisfiedSchedule;
 
     public String getTitle() {
         return title;
@@ -79,13 +78,5 @@ public class CarePlanDto extends BaseDto {
 
     public void setPlanDefinitions(List<PlanDefinitionDto> planDefinitions) {
         this.planDefinitions = planDefinitions;
-    }
-
-    public List<String> getQuestionnairesWithUnsatisfiedSchedule() {
-        return questionnairesWithUnsatisfiedSchedule;
-    }
-
-    public void setQuestionnairesWithUnsatisfiedSchedule(List<String> questionnairesWithUnsatisfiedSchedule) {
-        this.questionnairesWithUnsatisfiedSchedule = questionnairesWithUnsatisfiedSchedule;
     }
 }

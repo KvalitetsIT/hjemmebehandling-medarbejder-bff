@@ -269,35 +269,6 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCarePlanByCpr_carePlansPresent_computesExceededQuestionnaires() throws Exception {
-        // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
-        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
-
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
-
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient);
-        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1)).thenReturn(lookupResult);
-
-        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME.plusSeconds(4));
-
-        CarePlanModel carePlanModel = new CarePlanModel();
-
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
-        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
-        carePlanModel.setQuestionnaires(List.of(new QuestionnaireWrapperModel(questionnaireModel, new FrequencyModel(), POINT_IN_TIME, List.of())));
-        Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
-
-        // Act
-        List<CarePlanModel> result = subject.getCarePlansByCpr(CPR_1);
-
-        // Assert
-        assertEquals(1, result.size());
-        assertEquals(1, result.get(0).getQuestionnairesWithUnsatisfiedSchedule().size());
-        assertEquals(QUESTIONNAIRE_ID_1, result.get(0).getQuestionnairesWithUnsatisfiedSchedule().get(0));
-    }
-
-    @Test
     public void getCarePlansWithUnsatisfiedSchedules_carePlansPresent_returnsCarePlans() throws Exception {
         // Arrange
         int pageNumber = 1;
