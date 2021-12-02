@@ -223,6 +223,46 @@ public class FhirMapperTest {
         assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.TRIAGING_CATEGORY)));
     }
 
+    @Test
+    public void mapQuestionnaireResponse_roundtrip_preservesReferences() {
+        // Arrange
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+
+        // Act
+        QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
+
+        // Assert
+        assertTrue(!questionnaireResponse.getBasedOn().isEmpty());
+        assertEquals(questionnaireResponse.getBasedOn().size(), result.getBasedOn().size());
+        assertEquals(questionnaireResponse.getBasedOn().get(0).getReference(), result.getBasedOn().get(0).getReference());
+
+        assertEquals(questionnaireResponse.getAuthor().getReference(), result.getAuthor().getReference());
+
+        assertEquals(questionnaireResponse.getSource().getReference(), result.getSource().getReference());
+    }
+
+    @Test
+    public void mapQuestionnaireResponse_roundtrip_preservesLinks() {
+        // Arrange
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+
+        // Act
+        QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
+
+        // Assert
+        assertEquals(questionnaireResponse.getItem().size(), result.getItem().size());
+        assertTrue(result.getItem().stream().anyMatch(item -> item.getLinkId().equals("1")));
+        assertTrue(result.getItem().stream().anyMatch(item -> item.getLinkId().equals("2")));
+    }
+
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId) {
         CarePlan carePlan = new CarePlan();
 
@@ -321,6 +361,9 @@ public class FhirMapperTest {
 
         model.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
         model.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
+        model.setCarePlanId(new QualifiedId(CAREPLAN_ID_1));
+        model.setAuthorId(new QualifiedId(PATIENT_ID_1));
+        model.setSourceId(new QualifiedId(PATIENT_ID_1));
 
         model.setAnswered(Instant.parse("2021-11-03T00:00:00Z"));
 
@@ -389,6 +432,9 @@ public class FhirMapperTest {
 
         questionnaireResponse.setId(questionnaireResponseId);
         questionnaireResponse.setQuestionnaire(questionnaireId);
+        questionnaireResponse.setBasedOn(List.of(new Reference(CAREPLAN_ID_1)));
+        questionnaireResponse.setAuthor(new Reference(PATIENT_ID_1));
+        questionnaireResponse.setSource(new Reference(PATIENT_ID_1));
         questionnaireResponse.setSubject(new Reference(patiientId));
         questionnaireResponse.getItem().addAll(answerItems);
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));

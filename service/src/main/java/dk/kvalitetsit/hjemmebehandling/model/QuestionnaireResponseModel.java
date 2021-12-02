@@ -8,6 +8,9 @@ import java.util.List;
 
 public class QuestionnaireResponseModel extends BaseModel {
     private QualifiedId questionnaireId;
+    private QualifiedId carePlanId;
+    private QualifiedId authorId;
+    private QualifiedId sourceId;
     private String questionnaireName;
     private List<QuestionAnswerPairModel> questionAnswerPairs;
     private Instant answered;
@@ -21,6 +24,30 @@ public class QuestionnaireResponseModel extends BaseModel {
 
     public void setQuestionnaireId(QualifiedId questionnaireId) {
         this.questionnaireId = questionnaireId;
+    }
+
+    public QualifiedId getCarePlanId() {
+        return carePlanId;
+    }
+
+    public void setCarePlanId(QualifiedId carePlanId) {
+        this.carePlanId = carePlanId;
+    }
+
+    public QualifiedId getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(QualifiedId authorId) {
+        this.authorId = authorId;
+    }
+
+    public QualifiedId getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(QualifiedId sourceId) {
+        this.sourceId = sourceId;
     }
 
     public String getQuestionnaireName() {

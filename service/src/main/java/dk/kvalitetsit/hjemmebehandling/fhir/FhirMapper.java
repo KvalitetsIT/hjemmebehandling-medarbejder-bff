@@ -200,6 +200,9 @@ public class FhirMapper {
         for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
             questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
         }
+        questionnaireResponse.setBasedOn(List.of(new Reference(questionnaireResponseModel.getCarePlanId().toString())));
+        questionnaireResponse.setAuthor(new Reference(questionnaireResponseModel.getAuthorId().toString()));
+        questionnaireResponse.setSource(new Reference(questionnaireResponseModel.getSourceId().toString()));
         questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
@@ -218,6 +221,21 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireId)));
         questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
         questionnaireResponseModel.setQuestionnaireId(extractId(questionnaire));
+
+        if(questionnaireResponse.getBasedOn() == null || questionnaireResponse.getBasedOn().size() != 1) {
+            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: Expected exactly one BasedOn-attribute!", questionnaireResponseModel.getId().toString()));
+        }
+        questionnaireResponseModel.setCarePlanId(new QualifiedId(questionnaireResponse.getBasedOn().get(0).getReference()));
+
+        if(questionnaireResponse.getAuthor() == null) {
+            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", questionnaireResponseModel.getId().toString()));
+        }
+        questionnaireResponseModel.setAuthorId(new QualifiedId(questionnaireResponse.getAuthor().getReference()));
+
+        if(questionnaireResponse.getSource() == null) {
+            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", questionnaireResponseModel.getId().toString()));
+        }
+        questionnaireResponseModel.setSourceId(new QualifiedId(questionnaireResponse.getSource().getReference()));
 
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = new ArrayList<>();
@@ -353,6 +371,7 @@ public class FhirMapper {
     private QuestionModel mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
         QuestionModel question = new QuestionModel();
 
+        question.setLinkId(item.getLinkId());
         question.setText(item.getText());
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
@@ -391,6 +410,7 @@ public class FhirMapper {
         AnswerModel answer = new AnswerModel();
 
         var answerItem = extractAnswerItem(item);
+        answer.setLinkId(item.getLinkId());
         answer.setValue(answerItem.getValue().primitiveValue());
         answer.setAnswerType(getAnswerType(answerItem));
 
@@ -446,6 +466,7 @@ public class FhirMapper {
     private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
         var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
 
+        item.setLinkId(answer.getLinkId());
         item.getAnswer().add(getAnswerItem(answer));
 
         return item;
@@ -455,7 +476,6 @@ public class FhirMapper {
         var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
 
         answerItem.setValue(getValue(answer));
-        // TODO - handle linkId (possibly by extending AnswerModel with such a field.)
 
         return answerItem;
     }
