@@ -297,7 +297,7 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void searchCarePlans_carePlansMissing_204() throws Exception {
+    public void searchCarePlans_carePlansMissing_200() throws Exception {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
@@ -310,7 +310,8 @@ public class CarePlanControllerTest {
         ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
 
         // Assert
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertTrue(result.getBody().isEmpty());
     }
 
     @Test

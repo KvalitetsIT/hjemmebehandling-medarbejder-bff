@@ -30,9 +30,7 @@ public class PlanDefinitionController {
     public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions() {
         try {
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions();
-            if(planDefinitions.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
+
             return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {

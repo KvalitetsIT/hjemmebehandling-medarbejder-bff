@@ -52,7 +52,7 @@ public class PlanDefinitionControllerTest {
     }
 
     @Test
-    public void getPlanDefinitions_planDefinitionsMissing_204() throws Exception {
+    public void getPlanDefinitions_planDefinitionsMissing_200() throws Exception {
         // Arrange
         Mockito.when(planDefinitionService.getPlanDefinitions()).thenReturn(List.of());
 
@@ -60,7 +60,8 @@ public class PlanDefinitionControllerTest {
         ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions();
 
         // Assert
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertTrue(result.getBody().isEmpty());
     }
 
     @Test

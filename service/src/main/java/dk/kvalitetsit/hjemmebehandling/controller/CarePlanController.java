@@ -65,9 +65,6 @@ public class CarePlanController {
                 carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(new PageDetails(pageNumber.get(), pageSize.get()));
             }
 
-            if(carePlans.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {

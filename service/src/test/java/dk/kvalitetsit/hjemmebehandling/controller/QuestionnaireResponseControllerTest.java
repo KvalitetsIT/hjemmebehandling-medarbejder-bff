@@ -85,7 +85,7 @@ public class QuestionnaireResponseControllerTest {
     }
 
     @Test
-    public void getQuestionnaireResponsesByCpr_responsesMissing_204() throws Exception {
+    public void getQuestionnaireResponsesByCpr_responsesMissing_200() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
@@ -96,7 +96,8 @@ public class QuestionnaireResponseControllerTest {
         ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertTrue(result.getBody().isEmpty());
     }
 
     @Test
@@ -168,7 +169,7 @@ public class QuestionnaireResponseControllerTest {
     }
 
     @Test
-    public void getQuestionnaireResponsesByStatus_responsesMissing_204() throws Exception {
+    public void getQuestionnaireResponsesByStatus_responsesMissing_200() throws Exception {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION);
         PageDetails pageDetails = new PageDetails(1, 10);
@@ -179,7 +180,8 @@ public class QuestionnaireResponseControllerTest {
         ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize());
 
         // Assert
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertTrue(result.getBody().isEmpty());
     }
 
     @Test

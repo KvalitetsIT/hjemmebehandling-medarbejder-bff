@@ -45,9 +45,7 @@ public class QuestionnaireResponseController {
 
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
-            if(questionnaireResponses.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
+
             return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
         }
         catch(AccessValidationException e) {
@@ -67,9 +65,7 @@ public class QuestionnaireResponseController {
 
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, new PageDetails(pageNumber, pageSize));
-            if(questionnaireResponses.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
+
             return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
