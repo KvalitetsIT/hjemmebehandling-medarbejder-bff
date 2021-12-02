@@ -248,8 +248,8 @@ public class CarePlanControllerTest {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
-        Optional<Integer> pageNumber = Optional.of(1);
-        Optional<Integer> pageSize = Optional.of(10);
+        Optional<Integer> pageNumber = Optional.empty();
+        Optional<Integer> pageSize = Optional.empty();
 
         CarePlanModel carePlanModel1 = new CarePlanModel();
         CarePlanModel carePlanModel2 = new CarePlanModel();
@@ -275,6 +275,8 @@ public class CarePlanControllerTest {
         // Arrange
         Optional<String> cpr = Optional.empty();
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.of(true);
+        Optional<Integer> pageNumber = Optional.of(1);
+        Optional<Integer> pageSize = Optional.of(10);
         PageDetails pageDetails = new PageDetails(1, 10);
 
         CarePlanModel carePlanModel1 = new CarePlanModel();
@@ -287,7 +289,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, Optional.of(pageDetails.getPageNumber()), Optional.of(pageDetails.getPageSize()));
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -301,8 +303,8 @@ public class CarePlanControllerTest {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
-        Optional<Integer> pageNumber = Optional.of(1);
-        Optional<Integer> pageSize = Optional.of(10);
+        Optional<Integer> pageNumber = Optional.empty();
+        Optional<Integer> pageSize = Optional.empty();
 
         Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenReturn(List.of());
 
@@ -319,8 +321,8 @@ public class CarePlanControllerTest {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
-        Optional<Integer> pageNumber = Optional.of(1);
-        Optional<Integer> pageSize = Optional.of(10);
+        Optional<Integer> pageNumber = Optional.empty();
+        Optional<Integer> pageSize = Optional.empty();
 
         Mockito.when(carePlanService.getCarePlansByCpr("0101010101")).thenThrow(ServiceException.class);
 

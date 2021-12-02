@@ -69,11 +69,9 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void getCarePlansByCpr_success() throws Exception {
         // Arrange
         String cpr = "0101010101";
-        int pageNumber = 1;
-        int pageSize = 10;
 
         // Act
-        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, pageNumber, pageSize);
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, null, null);
 
         // Assert
         assertEquals(200, response.getStatusCode());

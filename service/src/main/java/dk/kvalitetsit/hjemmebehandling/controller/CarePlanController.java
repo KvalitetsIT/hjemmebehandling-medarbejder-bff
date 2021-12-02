@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.checkerframework.checker.nullness.Opt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -50,7 +51,7 @@ public class CarePlanController {
 
     @GetMapping(value = "/v1/careplan")
     public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
-        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules);
+        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             return ResponseEntity.badRequest().build();
@@ -194,18 +195,19 @@ public class CarePlanController {
         return frequencies;
     }
 
-    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules) {
+    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
         boolean sameParameterPresence = cpr.isPresent() == onlyUnsatisfiedSchedules.isPresent();
-        boolean requestAllCarePlans = onlyUnsatisfiedSchedules.isPresent() && !onlyUnsatisfiedSchedules.get();
-
-        if(sameParameterPresence || requestAllCarePlans) {
+        if(sameParameterPresence) {
             return Optional.empty();
         }
-        else if(cpr.isPresent()) {
+
+        boolean pagingParametersPresent = pageNumber.isPresent() && pageSize.isPresent();
+        if(cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && !pagingParametersPresent) {
             return Optional.of(SearchType.CPR);
         }
-        else {
+        if(!cpr.isPresent() && onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
             return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
         }
+        return Optional.empty();
     }
 }
