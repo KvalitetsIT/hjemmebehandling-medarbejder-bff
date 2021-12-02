@@ -286,6 +286,10 @@ public class FhirMapper {
         }
     }
 
+    private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
+        return ExtensionMapper.extractThresholds(detail.getExtensionsByUrl(Systems.THRESHOLD));
+    }
+
     private QualifiedId extractId(DomainResource resource) {
         String unqualifiedVersionless = resource.getIdElement().toUnqualifiedVersionless().getValue();
         if(FhirUtils.isPlainId(unqualifiedVersionless)) {
@@ -299,14 +303,6 @@ public class FhirMapper {
         }
     }
 
-    private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
-        return ExtensionMapper.extractThresholds(detail.getExtensionsByUrl(Systems.THRESHOLD));
-    }
-
-    private String extractCpr(Patient patient) {
-        return patient.getIdentifier().get(0).getValue();
-    }
-
     private Identifier makeCprIdentifier(String cpr) {
         Identifier identifier = new Identifier();
 
@@ -314,6 +310,10 @@ public class FhirMapper {
         identifier.setValue(cpr);
 
         return identifier;
+    }
+
+    private String extractCpr(Patient patient) {
+        return patient.getIdentifier().get(0).getValue();
     }
 
     private String extractFamilyName(Patient patient) {
