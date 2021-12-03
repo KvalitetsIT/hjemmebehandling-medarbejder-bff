@@ -9,9 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalTime;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -277,6 +275,7 @@ public class DtoMapper {
     private QuestionModel mapQuestionDto(QuestionDto questionDto) {
         QuestionModel questionModel = new QuestionModel();
 
+        questionModel.setLinkId(questionDto.getLinkId());
         questionModel.setText(questionDto.getText());
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
@@ -288,6 +287,7 @@ public class DtoMapper {
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
 
+        questionDto.setLinkId(questionModel.getLinkId());
         questionDto.setText(questionModel.getText());
         questionDto.setRequired(questionModel.isRequired());
         questionDto.setOptions(questionModel.getOptions());

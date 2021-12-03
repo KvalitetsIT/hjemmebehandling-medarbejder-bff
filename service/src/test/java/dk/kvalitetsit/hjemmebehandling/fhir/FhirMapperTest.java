@@ -201,7 +201,7 @@ public class FhirMapperTest {
         // Assert
         assertEquals(2, result.getQuestionAnswerPairs().size());
         assertEquals(AnswerType.STRING, result.getQuestionAnswerPairs().get(0).getAnswer().getAnswerType());
-        assertEquals(AnswerType.INTEGER, result.getQuestionAnswerPairs().get(1).getAnswer().getAnswerType());
+        assertEquals(AnswerType.QUANTITY, result.getQuestionAnswerPairs().get(1).getAnswer().getAnswerType());
     }
 
     @Test
@@ -450,7 +450,8 @@ public class FhirMapperTest {
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent buildIntegerItem(int value, String linkId) {
-        return buildItem(new IntegerType(value), linkId);
+        //return buildItem(new IntegerType(value), linkId);
+        return buildItem(new Quantity(value), linkId);
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent buildItem(Type value, String linkId) {
