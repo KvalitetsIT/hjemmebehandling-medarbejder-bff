@@ -95,6 +95,24 @@ public class CarePlanControllerTest {
     }
 
     @Test
+    public void createCarePlan_badRequest_400() throws Exception {
+        // Arrange
+        CreateCarePlanRequest request = new CreateCarePlanRequest();
+        request.setCarePlan(new CarePlanDto());
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
+
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.BAD_REQUEST));
+
+        // Act
+        ResponseEntity<Void> result = subject.createCarePlan(request);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    }
+
+    @Test
     public void createCarePlan_failure_500() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
@@ -103,7 +121,7 @@ public class CarePlanControllerTest {
         CarePlanModel carePlanModel = new CarePlanModel();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
 
-        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(ServiceException.class);
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR));
 
         // Act
         ResponseEntity<Void> result = subject.createCarePlan(request);

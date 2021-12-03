@@ -59,7 +59,13 @@ public class DtoMapper {
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
+        if(frequencyDto.getWeekdays() == null) {
+            throw new IllegalArgumentException("Weekdays must be non-null!");
+        }
         frequencyModel.setWeekdays(frequencyDto.getWeekdays());
+        if(frequencyDto.getTimeOfDay() == null) {
+            throw new IllegalArgumentException("TimeOfDay must be non-null!");
+        }
         frequencyModel.setTimeOfDay(LocalTime.parse(frequencyDto.getTimeOfDay()));
 
         return frequencyModel;

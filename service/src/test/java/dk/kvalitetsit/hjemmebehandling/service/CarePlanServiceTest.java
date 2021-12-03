@@ -113,7 +113,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(carePlanModel));
+        assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test

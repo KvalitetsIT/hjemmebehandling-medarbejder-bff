@@ -50,7 +50,7 @@ public class CarePlanService extends AccessValidatingService {
             for(CarePlan cp : carePlanResult.getCarePlans()) {
                 var carePlanModel = fhirMapper.mapCarePlan(cp, carePlanResult);
                 if(isActive(carePlanModel)) {
-                    throw new IllegalStateException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr));
+                    throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST);
                 }
             }
 

@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -119,7 +120,14 @@ public class CarePlanController {
         }
         catch(ServiceException e) {
             logger.error("Error creating CarePlan", e);
-            return ResponseEntity.internalServerError().build();
+            switch(e.getErrorKind()) {
+                case BAD_REQUEST:
+                    return ResponseEntity.badRequest().build();
+                case INTERNAL_SERVER_ERROR:
+                    return ResponseEntity.internalServerError().build();
+                default:
+                    return ResponseEntity.internalServerError().build();
+            }
         }
 
         URI location = locationHeaderBuilder.buildLocationHeader(carePlanId);
