@@ -207,7 +207,7 @@ public class FhirMapper {
         questionnaireResponse.setAuthor(new Reference(questionnaireResponseModel.getAuthorId().toString()));
         questionnaireResponse.setSource(new Reference(questionnaireResponseModel.getSourceId().toString()));
         questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
-        questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(ExaminationStatus.NOT_EXAMINED));
+        questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(questionnaireResponseModel.getExaminationStatus()));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
         questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId().toString()));
 

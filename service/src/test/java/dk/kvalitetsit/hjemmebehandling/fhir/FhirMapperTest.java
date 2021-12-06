@@ -376,6 +376,7 @@ public class FhirMapperTest {
 
         model.getQuestionAnswerPairs().add(new QuestionAnswerPairModel(question, answer));
 
+        model.setExaminationStatus(ExaminationStatus.NOT_EXAMINED);
         model.setTriagingCategory(TriagingCategory.GREEN);
 
         PatientModel patientModel = new PatientModel();
