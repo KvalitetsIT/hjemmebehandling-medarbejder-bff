@@ -9,6 +9,7 @@ public class UserContext {
 	private String userId;
 	private String email;
 	private String[] entitlements;
+	private String orgName;
 
     public UserContext() {}
 
@@ -78,5 +79,13 @@ public class UserContext {
 
 	public void setEntitlements(String[] entitlements) {
 		this.entitlements = entitlements;
+	}
+
+	public void setOrgName(String orgName) {
+		this.orgName =orgName;
+	}
+	
+	public String getOrgName() {
+		return orgName;
 	}
 }

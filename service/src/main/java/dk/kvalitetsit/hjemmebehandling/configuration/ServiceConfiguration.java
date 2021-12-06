@@ -59,7 +59,7 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public WebMvcConfigurer getWebMvcConfigurer(@Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider) {
+    public WebMvcConfigurer getWebMvcConfigurer(@Autowired FhirClient client, @Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
@@ -68,7 +68,7 @@ public class ServiceConfiguration {
 
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
-                registry.addInterceptor(new UserContextInterceptor(userContextProvider,userContextHandler));
+                registry.addInterceptor(new UserContextInterceptor(client,userContextProvider,userContextHandler));
             }
         };
     }

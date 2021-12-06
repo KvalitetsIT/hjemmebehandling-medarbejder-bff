@@ -9,25 +9,32 @@ import org.springframework.web.servlet.ModelAndView;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+
 public class UserContextInterceptor implements HandlerInterceptor {
 	
 	private static final String DIAS_CONTEXT = "DIAS";
 	private static final String BEARER = "Bearer";
-
-	private UserContextProvider userContextProvider;
-
+	
+	private IUserContextHandler contextHandler;
 	private String contextHandlerName = null;
+	private UserContextProvider userContextProvider;
+	private FhirClient client;
 
-    public UserContextInterceptor(UserContextProvider userContextProvider, String contextHandlerName) {
-        this.userContextProvider = userContextProvider;
+    public UserContextInterceptor(FhirClient client, UserContextProvider userContextProvider, String contextHandlerName) {
+    	this.client = client;
+		this.userContextProvider = userContextProvider;
 		this.contextHandlerName = contextHandlerName;
+		if(DIAS_CONTEXT.equals(contextHandlerName)) {
+			contextHandler = new DIASUserContextHandler();	
+		} else {
+    		contextHandler = new MockContextHandler();	
+    	}
     }
     
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-    	IUserContextHandler contextHandler;
     	DecodedJWT jwt = null;
-    	
     	if(DIAS_CONTEXT.equals(contextHandlerName)) {
     		// get authorizationheader.Jwt token could/should be cached.
     		String autHeader = request.getHeader("authorization");
@@ -39,13 +46,9 @@ public class UserContextInterceptor implements HandlerInterceptor {
     				//We should verify bearer token
     			}
     		}
-
-    		contextHandler = new DIASUserContextHandler();	
-    	} else {
-    		contextHandler = new MockContextHandler();	
     	}
 
-        userContextProvider.setUserContext(contextHandler.mapTokenToUser(jwt));
+        userContextProvider.setUserContext(request.getSession(), contextHandler.mapTokenToUser(client,jwt));
 
         return true;
     }

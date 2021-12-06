@@ -412,7 +412,16 @@ public class FhirMapper {
 
         var answerItem = extractAnswerItem(item);
         answer.setLinkId(item.getLinkId());
-        answer.setValue(answerItem.getValue().primitiveValue());
+
+        if (answerItem.hasPrimitiveValue()) {
+            answer.setValue(answerItem.getValue().primitiveValue());
+        }
+        else if (answerItem.hasValueQuantity()) {
+            answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
+        }
+        else if (answerItem.hasValueBooleanType()) {
+            answer.setValue(answerItem.getValueBooleanType().primitiveValue());
+        }
         answer.setAnswerType(getAnswerType(answerItem));
 
         return answer;
@@ -426,14 +435,21 @@ public class FhirMapper {
     }
 
     private AnswerType getAnswerType(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
-        String type = answerItem.getValue().getClass().getSimpleName();
-        switch(type) {
-            case "IntegerType":
-                return AnswerType.INTEGER;
-            case "StringType":
-                return AnswerType.STRING;
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", type));
+        Type answerType = answerItem.getValue();
+        if (answerType instanceof StringType) {
+            return AnswerType.STRING;
+        }
+        if (answerType instanceof BooleanType) {
+            return AnswerType.BOOLEAN;
+        }
+        else if (answerType instanceof Quantity) {
+            return AnswerType.QUANTITY;
+        }
+        else if (answerType instanceof IntegerType) {
+            return AnswerType.INTEGER;
+        }
+        else {
+            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
         }
     }
 
@@ -489,6 +505,9 @@ public class FhirMapper {
                 break;
             case STRING:
                 value = new StringType(answer.getValue());
+                break;
+            case QUANTITY:
+                value = new Quantity(Double.parseDouble(answer.getValue()));
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));

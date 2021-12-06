@@ -5,10 +5,19 @@ import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import java.util.List;
 
 public class QuestionDto {
+    private String linkId;
     private String text;
     private boolean required;
     private QuestionType questionType;
     private List<String> options;
+
+    public String getLinkId() {
+        return linkId;
+    }
+
+    public void setLinkId(String id) {
+        this.linkId = id;
+    }
 
     public String getText() {
         return text;
