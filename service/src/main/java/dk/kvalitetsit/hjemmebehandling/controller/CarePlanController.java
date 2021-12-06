@@ -52,7 +52,7 @@ public class CarePlanController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
         var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
@@ -61,11 +61,12 @@ public class CarePlanController {
 
         try {
             List<CarePlanModel> carePlans = null;
+
             if(cpr.isPresent()) {
-                carePlans = carePlanService.getCarePlansByCpr(cpr.get());
+                carePlans = carePlanService.getCarePlansByCpr(cpr.get(), onlyActiveCarePlans.orElse(false));
             }
             else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
-                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(new PageDetails(pageNumber.get(), pageSize.get()));
+                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
             }
 
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));

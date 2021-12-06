@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.text.html.Option;
 import java.sql.Date;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -42,21 +43,35 @@ public class FhirClient {
         this.userContextProvider = userContextProvider;
     }
 
-    public FhirLookupResult lookupCarePlansByPatientId(String patientId) {
+    public FhirLookupResult lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(patientCriterion, organizationCriterion));
+        if(onlyActiveCarePlans) {
+            var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+            criteria.add(statusCriterion);
+        }
 
-        return lookupCarePlansByCriteria(List.of(patientCriterion, organizationCriterion));
+        return lookupCarePlansByCriteria(criteria);
     }
 
-    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime, int offset, int count) {
+    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime, boolean onlyActiveCarePlans, int offset, int count) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(pointInTime));
         var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(satisfiedUntilCriterion, organizationCriterion));
+        if(onlyActiveCarePlans) {
+            var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+            criteria.add(statusCriterion);
+        }
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
 
-        return lookupCarePlansByCriteria(List.of(satisfiedUntilCriterion, organizationCriterion), Optional.of(sortSpec), Optional.of(offset), Optional.of(count));
+        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec), Optional.of(offset), Optional.of(count));
     }
 
     public FhirLookupResult lookupCarePlanById(String carePlanId) {
