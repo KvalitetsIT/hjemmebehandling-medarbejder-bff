@@ -69,9 +69,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void getCarePlansByCpr_success() throws Exception {
         // Arrange
         String cpr = "0101010101";
+        boolean onlyActiveCarePlans = false;
 
         // Act
-        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, null, null);
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, onlyActiveCarePlans, null, null);
 
         // Assert
         assertEquals(200, response.getStatusCode());
@@ -81,11 +82,12 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void getCarePlansWithUnsatisfiedSchedules_success() throws Exception {
         // Arrange
         boolean onlyUnsatisfiedSchedules = true;
+        boolean onlyActiveCarePlans = true;
         int pageNumber = 1;
         int pageSize = 10;
 
         // Act
-        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(null, onlyUnsatisfiedSchedules, pageNumber, pageSize);
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(null, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize);
 
         // Assert
         assertEquals(200, response.getStatusCode());
@@ -120,7 +122,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void resolveAlarm_success() throws Exception {
         // Arrange
         String id = "careplan-2";
-        
+
         // Act
         ApiResponse<Void> response = subject.resolveAlarmWithHttpInfo(id);
 

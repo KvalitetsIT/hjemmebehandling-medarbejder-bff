@@ -47,12 +47,11 @@ public class CarePlanService extends AccessValidatingService {
         // If the patient did exist, check that no existing careplan exists for the patient
         if(patient.isPresent()) {
             String patientId = patient.get().getIdElement().toUnqualifiedVersionless().getValue();
-            var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId);
-            for(CarePlan cp : carePlanResult.getCarePlans()) {
-                var carePlanModel = fhirMapper.mapCarePlan(cp, carePlanResult);
-                if(isActive(carePlanModel)) {
-                    throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST);
-                }
+            boolean onlyActiveCarePlans = true;
+            var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+
+            if(!carePlanResult.getCarePlans().isEmpty()) {
+                throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST);
             }
 
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
@@ -79,7 +78,7 @@ public class CarePlanService extends AccessValidatingService {
         }
     }
 
-    public List<CarePlanModel> getCarePlansByCpr(String cpr) throws ServiceException {
+    public List<CarePlanModel> getCarePlansByCpr(String cpr, boolean onlyActiveCarePlans) throws ServiceException {
         // Look up the patient so that we may look up careplans by patientId.
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
         if(!patient.isPresent()) {
@@ -88,7 +87,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Look up the careplans along with related resources needed for mapping.
         String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansByPatientId(patientId);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
@@ -100,11 +99,11 @@ public class CarePlanService extends AccessValidatingService {
                 .collect(Collectors.toList());
     }
 
-    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(PageDetails pageDetails) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
         Instant pointInTime = dateProvider.now();
         int offset = (pageDetails.getPageNumber() - 1) * pageDetails.getPageSize();
         int count = pageDetails.getPageSize();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
@@ -211,10 +210,6 @@ public class CarePlanService extends AccessValidatingService {
         initializeFrequencyTimestamp(wrapper);
 
         return wrapper;
-    }
-
-    private boolean isActive(CarePlanModel carePlan) {
-        return carePlan.getStatus() == CarePlanStatus.ACTIVE;
     }
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {

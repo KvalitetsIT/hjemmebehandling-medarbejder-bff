@@ -94,14 +94,15 @@ public class FhirClientTest {
     public void lookupCarePlanByPatientId_carePlanPresent_success() {
         // Arrange
         String patientId = "patient-1";
+        boolean onlyActiveCarePlans = true;
         CarePlan carePlan = new CarePlan();
-        setupSearchCarePlanClient(carePlan);
+        setupSearchCarePlanClient(onlyActiveCarePlans, carePlan);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId);
+        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -112,13 +113,14 @@ public class FhirClientTest {
     public void lookupCarePlanByPatientId_carePlanMissing_empty() {
         // Arrange
         String patientId = "patient-1";
+        boolean onlyActiveCarePlans = false;
         setupSearchCarePlanClient();
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId);
+        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
@@ -128,17 +130,18 @@ public class FhirClientTest {
     public void lookupCarePlansUnsatisfiedAt_success() {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+        boolean onlyActiveCarePlans = true;
         int offset = 2;
         int count = 4;
 
         CarePlan carePlan = new CarePlan();
-        setupSearchCarePlanClient(true, true, true, carePlan);
+        setupSearchCarePlanClient(true, true, true, onlyActiveCarePlans, carePlan);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -149,16 +152,17 @@ public class FhirClientTest {
     public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+        boolean onlyActiveCarePlans = true;
         int offset = 2;
         int count = 4;
 
-        setupSearchCarePlanClient(true, true, true);
+        setupSearchCarePlanClient(true, true, true, onlyActiveCarePlans);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, offset, count);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
@@ -527,18 +531,25 @@ public class FhirClientTest {
     }
 
     private void setupSearchCarePlanByIdClient(CarePlan carePlan) {
-        setupSearchCarePlanClient(1, false, false, false, carePlan);
+        setupSearchCarePlanClient(1, false, false, false, false, carePlan);
     }
 
     private void setupSearchCarePlanClient(CarePlan... carePlans) {
-        setupSearchCarePlanClient(2, false, false, false, carePlans);
+        setupSearchCarePlanClient(2, false, false, false, false, carePlans);
     }
 
-    private void setupSearchCarePlanClient(boolean withSort, boolean withOffset, boolean withCount, CarePlan... carePlans) {
-        setupSearchCarePlanClient(2, withSort, withOffset, withCount, carePlans);
+    private void setupSearchCarePlanClient(boolean onlyActiveCarePlans, CarePlan... carePlans) {
+        setupSearchCarePlanClient(2, false, false, false, onlyActiveCarePlans, carePlans);
     }
 
-    private void setupSearchCarePlanClient(int criteriaCount, boolean withSort, boolean withOffset, boolean withCount, CarePlan... carePlans) {
+    private void setupSearchCarePlanClient(boolean withSort, boolean withOffset, boolean withCount, boolean onlyActiveCarePlans, CarePlan... carePlans) {
+        setupSearchCarePlanClient(2, withSort, withOffset, withCount, onlyActiveCarePlans, carePlans);
+    }
+
+    private void setupSearchCarePlanClient(int criteriaCount, boolean withSort, boolean withOffset, boolean withCount, boolean onlyActiveCarePlans, CarePlan... carePlans) {
+        if(onlyActiveCarePlans) {
+            criteriaCount++;
+        }
         setupSearchClient(criteriaCount, 2, withSort, withOffset, withCount, CarePlan.class, carePlans);
 
         if(carePlans.length > 0) {
