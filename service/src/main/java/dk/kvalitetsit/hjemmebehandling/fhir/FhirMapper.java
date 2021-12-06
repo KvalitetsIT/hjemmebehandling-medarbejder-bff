@@ -445,6 +445,9 @@ public class FhirMapper {
         else if (answerType instanceof Quantity) {
             return AnswerType.QUANTITY;
         }
+        else if (answerType instanceof IntegerType) {
+            return AnswerType.INTEGER;
+        }
         else {
             throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
         }
