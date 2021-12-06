@@ -27,10 +27,12 @@ public class FhirMapper {
         mapBaseAttributesToFhir(carePlan, carePlanModel);
 
         carePlan.setTitle(carePlanModel.getTitle());
-        carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-        carePlan.setCreated(dateProvider.today());
-        carePlan.setPeriod(new Period());
-        carePlan.getPeriod().setStart(carePlanModel.getStartDate() != null ? Date.from(carePlanModel.getStartDate()) : dateProvider.today());
+        carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.getStatus().toString()));
+        carePlan.setCreated(Date.from(carePlanModel.getCreated()));
+        if(carePlanModel.getStartDate() != null) {
+            carePlan.setPeriod(new Period());
+            carePlan.getPeriod().setStart(Date.from(carePlanModel.getStartDate()));
+        }
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
 
         // Set the subject

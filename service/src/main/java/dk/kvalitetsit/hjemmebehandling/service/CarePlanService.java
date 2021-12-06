@@ -61,8 +61,8 @@ public class CarePlanService extends AccessValidatingService {
         // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
         validateReferences(carePlan);
 
-        // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
-        initializeFrequencyTimestamps(carePlan);
+        // Initialize basic attributes for a new CarePlan: Id, status and so on.
+        initializeAttributesForNewCarePlan(carePlan);
 
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
@@ -224,6 +224,20 @@ public class CarePlanService extends AccessValidatingService {
             FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList()));
             validateAccess(lookupResult.getPlanDefinitions());
         }
+    }
+
+    private void initializeAttributesForNewCarePlan(CarePlanModel carePlanModel) {
+        // Ensure that no id is present on the careplan - the FHIR server will generate that for us.
+        carePlanModel.setId(null);
+
+        carePlanModel.setStatus(CarePlanStatus.ACTIVE);
+
+        var today = dateProvider.today().toInstant();
+        carePlanModel.setCreated(today);
+        carePlanModel.setStartDate(today);
+        carePlanModel.setEndDate(null);
+
+        initializeFrequencyTimestamps(carePlanModel);
     }
 
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {

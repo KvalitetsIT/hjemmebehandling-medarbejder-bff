@@ -68,6 +68,8 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
 
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
         // Act
         String result = subject.createCarePlan(carePlanModel);
 
@@ -87,6 +89,8 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapPatientModel(carePlanModel.getPatient())).thenReturn(patient);
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         // Act
         String result = subject.createCarePlan(carePlanModel);
@@ -169,6 +173,8 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
 
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
         Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
 
         // Act
@@ -193,12 +199,42 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
 
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
         Mockito.when(fhirClient.saveCarePlan(carePlan)).thenThrow(IllegalStateException.class);
 
         // Act
 
         // Assert
         assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
+    }
+
+    @Test
+    public void createCarePlan_populatesId() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
+        carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Patient patient = new Patient();
+        patient.setId(PATIENT_ID_1);
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources();
+        boolean onlyActiveCarePlans = true;
+        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
+
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
+        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+
+        // Act
+        String result = subject.createCarePlan(carePlanModel);
+
+        // Assert
+        assertNull(carePlanModel.getId());
     }
 
     @Test
@@ -215,6 +251,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION__ID_1))).thenReturn(FhirLookupResult.fromResource(buildPlanDefinition(PLANDEFINITION__ID_1)));
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         // Act
         String result = subject.createCarePlan(carePlanModel);

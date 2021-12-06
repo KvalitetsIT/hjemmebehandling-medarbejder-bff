@@ -22,7 +22,9 @@ public class DtoMapper {
         mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
 
         carePlanModel.setTitle(carePlanDto.getTitle());
-        carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlanDto.getStatus()));
+        if(carePlanDto.getStatus() != null) {
+            carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlanDto.getStatus()));
+        }
         carePlanModel.setCreated(carePlanDto.getCreated());
         carePlanModel.setStartDate(carePlanDto.getStartDate());
         carePlanModel.setEndDate(carePlanDto.getEndDate());

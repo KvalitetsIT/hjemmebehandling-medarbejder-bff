@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
@@ -289,6 +286,8 @@ public class FhirMapperTest {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
+        carePlanModel.setStatus(CarePlanStatus.ACTIVE);
+        carePlanModel.setCreated(Instant.parse("2021-12-07T10:11:12.124Z"));
         carePlanModel.setPatient(buildPatientModel());
         carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
         carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
