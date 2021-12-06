@@ -267,6 +267,7 @@ public class FhirMapperTest {
         CarePlan carePlan = new CarePlan();
 
         carePlan.setId(careplanId);
+        carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         carePlan.setSubject(new Reference(patientId));
         carePlan.setPeriod(new Period());
         carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));

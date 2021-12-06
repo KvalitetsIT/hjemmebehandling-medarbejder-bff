@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -213,7 +214,7 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     private boolean isActive(CarePlanModel carePlan) {
-        return carePlan.getEndDate() == null;
+        return carePlan.getStatus() == CarePlanStatus.ACTIVE;
     }
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {

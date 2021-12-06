@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
@@ -62,7 +63,7 @@ public class FhirMapper {
         mapBaseAttributesToModel(carePlanModel, carePlan);
 
         carePlanModel.setTitle(carePlan.getTitle());
-        //carePlanModel.setStatus(carePlan.getStatus().getDisplay());
+        carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlan.getStatus().toString()));
         carePlanModel.setCreated(carePlan.getCreated().toInstant());
         carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
         if(carePlan.getPeriod().getEnd() != null) {

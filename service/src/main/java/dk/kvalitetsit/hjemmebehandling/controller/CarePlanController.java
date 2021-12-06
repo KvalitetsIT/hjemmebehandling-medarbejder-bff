@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
@@ -112,6 +113,9 @@ public class CarePlanController {
     public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
+            CarePlanDto carePlanDto = request.getCarePlan();
+            carePlanDto.setId(null);
+            carePlanDto.setStatus(CarePlanStatus.ACTIVE.toString());
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
         }
         catch(AccessValidationException e) {

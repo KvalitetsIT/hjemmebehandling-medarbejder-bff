@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+
 import java.time.Instant;
 import java.util.List;
 
 public class CarePlanModel extends BaseModel {
     private String title;
-    private String status;
+    private CarePlanStatus status;
     private Instant created;
     private Instant startDate;
     private Instant endDate;
@@ -22,11 +24,11 @@ public class CarePlanModel extends BaseModel {
         this.title = title;
     }
 
-    public String getStatus() {
+    public CarePlanStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(CarePlanStatus status) {
         this.status = status;
     }
 

@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -107,7 +108,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1)).thenReturn(lookupResult);
 
         CarePlanModel existingCareplanModel = new CarePlanModel();
-        existingCareplanModel.setStartDate(Instant.parse("2021-11-09T00:00:00.000Z"));
+        existingCareplanModel.setStatus(CarePlanStatus.ACTIVE);
         Mockito.when(fhirMapper.mapCarePlan(existingCareplan, lookupResult)).thenReturn(existingCareplanModel);
 
         // Act

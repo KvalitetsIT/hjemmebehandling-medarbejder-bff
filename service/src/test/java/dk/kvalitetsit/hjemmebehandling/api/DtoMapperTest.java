@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
 
@@ -109,6 +110,7 @@ public class DtoMapperTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setId(CAREPLAN_ID_1);
+        carePlanDto.setStatus("ACTIVE");
         carePlanDto.setPatientDto(buildPatientDto());
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
         carePlanDto.setPlanDefinitions(List.of(buildPlanDefinitionDto()));
@@ -120,6 +122,7 @@ public class DtoMapperTest {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
+        carePlanModel.setStatus(CarePlanStatus.ACTIVE);
         carePlanModel.setPatient(buildPatientModel());
         carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
         carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));

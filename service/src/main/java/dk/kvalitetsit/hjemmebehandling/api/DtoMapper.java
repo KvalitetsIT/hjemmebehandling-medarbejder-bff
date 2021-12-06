@@ -6,12 +6,11 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalTime;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +22,7 @@ public class DtoMapper {
         mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
 
         carePlanModel.setTitle(carePlanDto.getTitle());
-        carePlanModel.setStatus(carePlanDto.getStatus());
+        carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlanDto.getStatus()));
         carePlanModel.setCreated(carePlanDto.getCreated());
         carePlanModel.setStartDate(carePlanDto.getStartDate());
         carePlanModel.setEndDate(carePlanDto.getEndDate());
@@ -45,7 +44,7 @@ public class DtoMapper {
 
         carePlanDto.setId(carePlan.getId().toString());
         carePlanDto.setTitle(carePlan.getTitle());
-        carePlanDto.setStatus(carePlan.getStatus());
+        carePlanDto.setStatus(carePlan.getStatus().toString());
         carePlanDto.setCreated(carePlan.getCreated());
         carePlanDto.setStartDate(carePlan.getStartDate());
         carePlanDto.setEndDate(carePlan.getEndDate());
