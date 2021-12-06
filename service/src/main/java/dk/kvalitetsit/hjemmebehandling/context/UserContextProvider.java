@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
+import javax.servlet.http.HttpSession;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
@@ -12,7 +14,8 @@ public class UserContextProvider {
         return context;
     }
 
-    public void setUserContext(UserContext context) {
+    public void setUserContext(HttpSession httpSession, UserContext context) {
         this.context = context;
+        
     }
 }
