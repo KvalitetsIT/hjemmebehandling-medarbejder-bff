@@ -19,6 +19,9 @@ Health URL that can be used for readiness probe: `http://localhost:8081/actuator
 
 | Environment variable | Description | Required |
 |----------------------|-------------|---------- |
+| cpr.url | URL - cprservice | Yes |
+| fhir.server.url | URL - fhir server | Yes|
+| user.context.handler | Handler for user context. Values MOCK or DIAS | Yes |
 | LOG_LEVEL | Log Level for applikation  log. Defaults to INFO. | No |
 | LOG_LEVEL_FRAMEWORK | Log level for framework. Defaults to INFO. | No |
-| CORRELATION_ID | HTTP header to take correlation id from. Used to correlate log messages. Defaults to "x-request-id". | No
+| CORRELATION_ID | HTTP header to take correlation id from. Used to correlate log messages. Defaults to "x-request-id". | No|
