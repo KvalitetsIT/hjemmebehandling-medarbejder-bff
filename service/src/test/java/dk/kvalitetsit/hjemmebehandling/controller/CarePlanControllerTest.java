@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
 import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -41,9 +42,6 @@ public class CarePlanControllerTest {
     @Mock
     private LocationHeaderBuilder locationHeaderBuilder;
 
-    @Mock
-    private ServletContext servletContext;
-
     private static final String REQUEST_URI = "http://localhost:8080";
 
     @Test
@@ -53,7 +51,7 @@ public class CarePlanControllerTest {
         request.setCarePlan(new CarePlanDto());
 
         // Act
-        ResponseEntity<?> result = subject.createCarePlan(request);
+        ResponseEntity<Void> result = subject.createCarePlan(request);
 
         // Assert
         assertEquals(HttpStatus.CREATED, result.getStatusCode());
@@ -73,7 +71,7 @@ public class CarePlanControllerTest {
         Mockito.when(locationHeaderBuilder.buildLocationHeader("careplan-1")).thenReturn(URI.create(location));
 
         // Act
-        ResponseEntity<?> result = subject.createCarePlan(request);
+        ResponseEntity<Void> result = subject.createCarePlan(request);
 
         // Assert
         assertNotNull(result.getHeaders().get("Location"));
@@ -92,7 +90,7 @@ public class CarePlanControllerTest {
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(AccessValidationException.class);
 
         // Act
-        ResponseEntity<?> result = subject.createCarePlan(request);
+        ResponseEntity<Void> result = subject.createCarePlan(request);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
@@ -110,10 +108,9 @@ public class CarePlanControllerTest {
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.BAD_REQUEST));
 
         // Act
-        ResponseEntity<?> result = subject.createCarePlan(request);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.createCarePlan(request));
     }
 
     @Test
@@ -128,7 +125,7 @@ public class CarePlanControllerTest {
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR));
 
         // Act
-        ResponseEntity<?> result = subject.createCarePlan(request);
+        ResponseEntity<Void> result = subject.createCarePlan(request);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
@@ -145,7 +142,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlanDto);
 
         // Act
-        ResponseEntity<?> result = subject.getCarePlanById(carePlanId);
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -160,7 +157,7 @@ public class CarePlanControllerTest {
         Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.empty());
 
         // Act
-        ResponseEntity<?> result = subject.getCarePlanById(carePlanId);
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
@@ -174,7 +171,7 @@ public class CarePlanControllerTest {
         Mockito.doThrow(AccessValidationException.class).when(carePlanService).getCarePlanById(carePlanId);
 
         // Act
-        ResponseEntity<?> result = subject.getCarePlanById(carePlanId);
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
@@ -188,7 +185,7 @@ public class CarePlanControllerTest {
         Mockito.doThrow(ServiceException.class).when(carePlanService).getCarePlanById(carePlanId);
 
         // Act
-        ResponseEntity<?> result = subject.getCarePlanById(carePlanId);
+        ResponseEntity<CarePlanDto> result = subject.getCarePlanById(carePlanId);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
@@ -260,10 +257,9 @@ public class CarePlanControllerTest {
         Optional<Integer> pageSize = Optional.of(10);
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
     }
 
     @Test

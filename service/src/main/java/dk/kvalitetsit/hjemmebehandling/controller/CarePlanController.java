@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
-public class CarePlanController extends BaseController {
+public class CarePlanController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private CarePlanService carePlanService;
@@ -48,8 +48,7 @@ public class CarePlanController extends BaseController {
         CPR, UNSATISFIED_CAREPLANS
     }
 
-    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder, ServletContext servletContext) {
-        super(servletContext);
+    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -60,7 +59,7 @@ public class CarePlanController extends BaseController {
         var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException(ErrorDetails.UNSUPPORTED_SEARCH_PARAMETER_COMBINATION);
         }
 
         try {
@@ -87,7 +86,7 @@ public class CarePlanController extends BaseController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public ResponseEntity<?> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public ResponseEntity<CarePlanDto> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
         Optional<CarePlanModel> carePlan = Optional.empty();
 
@@ -112,10 +111,10 @@ public class CarePlanController extends BaseController {
     @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successful operation.", headers = { @Header(name = "Location", description = "URL pointing to the created CarePlan.")}, content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content)
+            @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content(schema = @Schema(implementation = ErrorDto.class)))
     })
     @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
-    public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
+    public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
@@ -128,7 +127,7 @@ public class CarePlanController extends BaseController {
             logger.error("Error creating CarePlan", e);
             switch(e.getErrorKind()) {
                 case BAD_REQUEST:
-                    return badRequest(ErrorDetails.CAREPLAN_EXISTS);
+                    throw new BadRequestException(ErrorDetails.CAREPLAN_EXISTS);
                 case INTERNAL_SERVER_ERROR:
                     return ResponseEntity.internalServerError().build();
                 default:
