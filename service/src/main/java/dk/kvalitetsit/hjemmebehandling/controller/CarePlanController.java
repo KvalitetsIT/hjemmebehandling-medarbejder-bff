@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
@@ -24,7 +25,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.RequestContext;
 
+import javax.servlet.ServletContext;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +37,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
-public class CarePlanController {
+public class CarePlanController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private CarePlanService carePlanService;
@@ -45,7 +48,8 @@ public class CarePlanController {
         CPR, UNSATISFIED_CAREPLANS
     }
 
-    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder, ServletContext servletContext) {
+        super(servletContext);
         this.carePlanService = carePlanService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -83,7 +87,7 @@ public class CarePlanController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public ResponseEntity<CarePlanDto> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public ResponseEntity<?> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
         // Look up the CarePlan
         Optional<CarePlanModel> carePlan = Optional.empty();
 
@@ -111,7 +115,7 @@ public class CarePlanController {
             @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content)
     })
     @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
-    public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
+    public ResponseEntity<?> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
@@ -124,7 +128,7 @@ public class CarePlanController {
             logger.error("Error creating CarePlan", e);
             switch(e.getErrorKind()) {
                 case BAD_REQUEST:
-                    return ResponseEntity.badRequest().build();
+                    return badRequest(ErrorDetails.CAREPLAN_EXISTS);
                 case INTERNAL_SERVER_ERROR:
                     return ResponseEntity.internalServerError().build();
                 default:
