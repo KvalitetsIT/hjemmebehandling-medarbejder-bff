@@ -27,7 +27,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setPatientDto(new PatientDto());
-        carePlanDto.getPatientDto().setCpr("0606060606");
+        carePlanDto.getPatientDto().setCpr("0708060607");
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
@@ -51,6 +51,49 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         // Assert
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
+    }
+
+    @Test
+    public void createAndGetCarePlan_success() throws Exception {
+        // Arrange
+        String cpr = "4444444444";
+
+        CarePlanDto carePlanDto = new CarePlanDto();
+
+        carePlanDto.setPatientDto(new PatientDto());
+        carePlanDto.getPatientDto().setCpr(cpr);
+
+        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
+        questionnaireDto.setId("Questionnaire/questionnaire-1");
+
+        FrequencyDto frequencyDto = new FrequencyDto();
+        frequencyDto.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE, FrequencyDto.WeekdaysEnum.FRI));
+        frequencyDto.setTimeOfDay("04:00");
+
+        QuestionnaireWrapperDto wrapper = new QuestionnaireWrapperDto();
+        wrapper.setQuestionnaire(questionnaireDto);
+        wrapper.setFrequency(frequencyDto);
+
+        carePlanDto.setQuestionnaires(List.of(wrapper));
+
+        CreateCarePlanRequest request = new CreateCarePlanRequest()
+                .carePlan(carePlanDto);
+
+        // Act
+        ApiResponse<Void> createResponse = subject.createCarePlanWithHttpInfo(request);
+
+        //Thread.sleep(200);
+
+        String id = createResponse.getHeaders().get("Location").get(0);
+        id = id.substring(id.lastIndexOf('/') + 1);
+        ApiResponse<CarePlanDto> getResponse = subject.getCarePlanByIdWithHttpInfo(id);
+
+        // Assert
+        assertEquals(201, createResponse.getStatusCode());
+        assertTrue(createResponse.getHeaders().containsKey("location"));
+
+        assertEquals(200, getResponse.getStatusCode());
+        assertEquals(id, getResponse.getData().getId());
     }
 
     @Test
@@ -140,5 +183,18 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         // Assert
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void completeCarePlan_twice_success() throws Exception {
+        // Arrange
+        String id = "careplan-2";
+
+        // Act / Assert
+        ApiResponse<Void> firstResponse = subject.completeCarePlanWithHttpInfo(id);
+        assertEquals(200, firstResponse.getStatusCode());
+
+        ApiResponse<Void> secondResponse = subject.completeCarePlanWithHttpInfo(id);
+        assertEquals(200, secondResponse.getStatusCode());
     }
 }

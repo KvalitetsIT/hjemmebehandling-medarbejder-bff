@@ -51,7 +51,6 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
     @Test
     public void patchQuestionnaireResponse_success() throws Exception {
         // Arrange
-        //String id = "QuestionnaireResponse/questionnaireresponse-2";
         String id = "questionnaireresponse-2";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.UNDER_EXAMINATION);
@@ -61,5 +60,23 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
 
         // Assert
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaireResponse_twice_success() throws Exception {
+        // Arrange
+        String id = "questionnaireresponse-3";
+        PartialUpdateQuestionnaireResponseRequest firstRequest = new PartialUpdateQuestionnaireResponseRequest();
+        firstRequest.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.UNDER_EXAMINATION);
+
+        PartialUpdateQuestionnaireResponseRequest secondRequest = new PartialUpdateQuestionnaireResponseRequest();
+        secondRequest.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.EXAMINED);
+
+        // Act / Assert
+        ApiResponse<Void> firstResponse = subject.patchQuestionnaireResponseWithHttpInfo(id, firstRequest);
+        assertEquals(200, firstResponse.getStatusCode());
+
+        ApiResponse<Void> secondResponse = subject.patchQuestionnaireResponseWithHttpInfo(id, secondRequest);
+        assertEquals(200, secondResponse.getStatusCode());
     }
 }

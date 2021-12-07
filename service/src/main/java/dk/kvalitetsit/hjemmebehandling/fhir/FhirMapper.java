@@ -415,13 +415,16 @@ public class FhirMapper {
         var answerItem = extractAnswerItem(item);
         answer.setLinkId(item.getLinkId());
 
-        if (answerItem.hasPrimitiveValue()) {
+        if(answerItem.hasValueStringType()) {
             answer.setValue(answerItem.getValue().primitiveValue());
         }
-        else if (answerItem.hasValueQuantity()) {
+        else if(answerItem.hasValueIntegerType()) {
+            answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+        }
+        else if(answerItem.hasValueQuantity()) {
             answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
         }
-        else if (answerItem.hasValueBooleanType()) {
+        else if(answerItem.hasValueBooleanType()) {
             answer.setValue(answerItem.getValueBooleanType().primitiveValue());
         }
         answer.setAnswerType(getAnswerType(answerItem));

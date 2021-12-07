@@ -188,8 +188,8 @@ public class FhirMapperTest {
     @Test
     public void mapQuestionnaireResponse_canMapAnswers() {
         // Arrange
-        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildQuantityItem(2, "2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.QUANTITY)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
 
         // Act
@@ -205,7 +205,7 @@ public class FhirMapperTest {
     public void mapQuestionnaireResponse_roundtrip_preservesExtensions() {
         // Arrange
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
@@ -224,7 +224,7 @@ public class FhirMapperTest {
     public void mapQuestionnaireResponse_roundtrip_preservesReferences() {
         // Arrange
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
@@ -245,8 +245,12 @@ public class FhirMapperTest {
     @Test
     public void mapQuestionnaireResponse_roundtrip_preservesLinks() {
         // Arrange
-        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1"), buildQuestionItem("2")));
+        var stringItem = buildStringItem("hej", "1");
+        var integerItem = buildIntegerItem(2, "2");
+        var quantityItem = buildQuantityItem(3.1, "2");
+
+        QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(stringItem, integerItem, quantityItem));
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER), buildQuestionItem("3", Questionnaire.QuestionnaireItemType.QUANTITY)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
@@ -256,8 +260,15 @@ public class FhirMapperTest {
 
         // Assert
         assertEquals(questionnaireResponse.getItem().size(), result.getItem().size());
-        assertTrue(result.getItem().stream().anyMatch(item -> item.getLinkId().equals("1")));
-        assertTrue(result.getItem().stream().anyMatch(item -> item.getLinkId().equals("2")));
+
+        assertEquals(stringItem.getLinkId(), result.getItem().get(0).getLinkId());
+        assertEquals(stringItem.getAnswerFirstRep().getValueStringType().getValue(), result.getItem().get(0).getAnswerFirstRep().getValueStringType().getValue());
+
+        assertEquals(integerItem.getLinkId(), result.getItem().get(1).getLinkId());
+        assertEquals(integerItem.getAnswerFirstRep().getValueIntegerType().getValue(), result.getItem().get(1).getAnswerFirstRep().getValueIntegerType().getValue());
+
+        assertEquals(quantityItem.getLinkId(), result.getItem().get(2).getLinkId());
+        assertEquals(quantityItem.getAnswerFirstRep().getValueQuantity().getValue(), result.getItem().get(2).getAnswerFirstRep().getValueQuantity().getValue());
     }
 
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId) {
@@ -347,10 +358,10 @@ public class FhirMapperTest {
         return planDefinitionModel;
     }
 
-    private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId) {
+    private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType) {
         var item = new Questionnaire.QuestionnaireItemComponent();
 
-        item.setType(Questionnaire.QuestionnaireItemType.INTEGER);
+        item.setType(itemType);
         item.setLinkId(linkId);
 
         return item;
@@ -451,7 +462,10 @@ public class FhirMapperTest {
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent buildIntegerItem(int value, String linkId) {
-        //return buildItem(new IntegerType(value), linkId);
+        return buildItem(new IntegerType(value), linkId);
+    }
+
+    private QuestionnaireResponse.QuestionnaireResponseItemComponent buildQuantityItem(double value, String linkId) {
         return buildItem(new Quantity(value), linkId);
     }
 
