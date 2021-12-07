@@ -2,7 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.constants;
 
 public enum ErrorDetails {
     CAREPLAN_EXISTS("Aktiv behandlingsplan eksisterer allerede for det angivne cpr-nummer", 10),
-    UNSUPPORTED_SEARCH_PARAMETER_COMBINATION("Den angivne kombination af parametre understøttes ikke.", 11);
+    UNSUPPORTED_SEARCH_PARAMETER_COMBINATION("Den angivne kombination af parametre understøttes ikke.", 11),
+    INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
     private String errorMessage;
     private int errorCode;

@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -76,7 +77,7 @@ public class CarePlanController {
         }
         catch(ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
-            return ResponseEntity.internalServerError().build();
+            throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.constants.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
@@ -46,7 +47,7 @@ public class PatientController {
         }
         catch(ServiceException e) {
             logger.error("Error creating patient", e);
-            throw new InternalServerErrorException();
+            throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
 
