@@ -93,7 +93,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         assertTrue(createResponse.getHeaders().containsKey("location"));
 
         assertEquals(200, getResponse.getStatusCode());
-        assertEquals(id, getResponse.getData().getId());
+        assertEquals("CarePlan/" + id, getResponse.getData().getId());
     }
 
     @Test
