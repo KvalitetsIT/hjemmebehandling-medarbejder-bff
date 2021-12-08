@@ -514,6 +514,9 @@ public class FhirMapper {
             case QUANTITY:
                 value = new Quantity(Double.parseDouble(answer.getValue()));
                 break;
+            case BOOLEAN:
+                value = new BooleanType(answer.getValue());
+                break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
         }
