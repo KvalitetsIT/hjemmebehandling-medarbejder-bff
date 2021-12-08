@@ -1,17 +1,39 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.*;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
+import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
+import dk.kvalitetsit.hjemmebehandling.api.FrequencyDto;
+import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,19 +43,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.webjars.NotFoundException;
-
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
@@ -56,7 +65,7 @@ public class CarePlanController extends BaseController {
 
     @GetMapping(value = "/v1/careplan")
     public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
-        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules,onlyActiveCarePlans, pageNumber, pageSize);
+    	Optional<SearchType> searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules,onlyActiveCarePlans, pageNumber, pageSize);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             throw new BadRequestException(ErrorDetails.UNSUPPORTED_SEARCH_PARAMETER_COMBINATION);
@@ -67,11 +76,10 @@ public class CarePlanController extends BaseController {
 
             if(cpr.isPresent()) {
                 carePlans = carePlanService.getCarePlansByCpr(cpr.get(), onlyActiveCarePlans.orElse(false));
-            }
-            else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
+            } else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
                 carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
-            } else if (SearchType.ACTIVE.equals(searchType)) {
-            	//carePlans = carePlanService
+            } else if (SearchType.ACTIVE.equals(searchType.get())) {
+            	carePlans = carePlanService.getCarePlans(onlyActiveCarePlans.get(), new PageDetails(pageNumber.get(), pageSize.get()));
             }
 
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
@@ -182,10 +190,6 @@ public class CarePlanController extends BaseController {
     }
 
     private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
-        boolean sameParameterPresence = cpr.isPresent() == onlyUnsatisfiedSchedules.isPresent();
-        if(sameParameterPresence) {
-            return Optional.empty();
-        }
 
         boolean pagingParametersPresent = pageNumber.isPresent() && pageSize.isPresent();
         if(cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && !pagingParametersPresent) {
@@ -194,7 +198,7 @@ public class CarePlanController extends BaseController {
         if(!cpr.isPresent() && onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
             return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
         }
-        if(!cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && onlyActiveCarePlans.isPresent() && onlyActiveCarePlans.get() && pagingParametersPresent) {
+        if(!cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && onlyActiveCarePlans.isPresent() && pagingParametersPresent) {
             return Optional.of(SearchType.ACTIVE);
         }
         return Optional.empty();
