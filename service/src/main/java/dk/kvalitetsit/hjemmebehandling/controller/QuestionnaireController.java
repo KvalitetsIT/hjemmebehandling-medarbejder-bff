@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Questionnaire", description = "API for manipulating and retrieving Questionnaires.")
-public class QuestionnaireController {
+public class QuestionnaireController extends BaseController {
     @GetMapping(value = "/v1/questionnaire")    
     public List<QuestionnaireDto> getQuestionnaires(String planDefinitionId) {
         throw new UnsupportedOperationException();

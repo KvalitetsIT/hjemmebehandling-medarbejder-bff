@@ -2,8 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,12 +70,11 @@ public class PlanDefinitionControllerTest {
     @Test
     public void getPlanDefinitions_failureToFetch_500() throws Exception {
         // Arrange
-        Mockito.when(planDefinitionService.getPlanDefinitions()).thenThrow(ServiceException.class);
+        Mockito.when(planDefinitionService.getPlanDefinitions()).thenThrow(new ServiceException("Error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions();
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions());
     }
 }

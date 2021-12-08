@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Tag(name = "Person", description = "API for manipulating and retrieving information about persons.")
-public class PersonController {
+public class PersonController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(PersonController.class);
 
     private PersonService personService;
