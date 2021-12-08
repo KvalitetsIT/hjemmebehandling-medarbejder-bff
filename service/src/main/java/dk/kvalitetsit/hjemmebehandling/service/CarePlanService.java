@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -51,7 +52,7 @@ public class CarePlanService extends AccessValidatingService {
             var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
 
             if(!carePlanResult.getCarePlans().isEmpty()) {
-                throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST);
+                throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS);
             }
 
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
@@ -74,7 +75,7 @@ public class CarePlanService extends AccessValidatingService {
             }
         }
         catch(Exception e) {
-            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR);
+            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -137,7 +138,7 @@ public class CarePlanService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
         if(!carePlanResult.getCarePlan(qualifiedId).isPresent()) {
-            throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST);
+            throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         CarePlan carePlan = carePlanResult.getCarePlan(qualifiedId).get();
 
@@ -148,7 +149,7 @@ public class CarePlanService extends AccessValidatingService {
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
         var currentPointInTime = dateProvider.now();
         if(currentPointInTime.isBefore(carePlanModel.getSatisfiedUntil())) {
-            throw new ServiceException(String.format("Could not resolve alarm for careplan %s! The satisfiedUntil-timestamp was in the future.", carePlanId), ErrorKind.BAD_REQUEST);
+            throw new ServiceException(String.format("Could not resolve alarm for careplan %s! The satisfiedUntil-timestamp was in the future.", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_ALREADY_FULFILLED);
         }
 
         // Recompute the 'satisfiedUntil'-timestamps
@@ -163,7 +164,7 @@ public class CarePlanService extends AccessValidatingService {
         //List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
         FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
-            throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST);
+            throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN);
         }
 
         // Validate that the client is allowed to reference the questionnaires.
@@ -173,7 +174,7 @@ public class CarePlanService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
         if(careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
 
@@ -285,7 +286,7 @@ public class CarePlanService extends AccessValidatingService {
 
         Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
         if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST);
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
 
         CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);

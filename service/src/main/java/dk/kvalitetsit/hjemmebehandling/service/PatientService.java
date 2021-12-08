@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -36,7 +37,7 @@ public class PatientService extends AccessValidatingService {
             fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
         }
         catch(Exception e) {
-            throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR);
+            throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
 

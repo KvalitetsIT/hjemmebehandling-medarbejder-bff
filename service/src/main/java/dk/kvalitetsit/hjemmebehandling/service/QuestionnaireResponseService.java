@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -88,7 +89,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
         QuestionnaireResponse questionnaireResponse = lookupResult.getQuestionnaireResponse(qualifiedId)
-                .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST));
+                .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST));
 
         // Validate that the user is allowed to update the QuestionnaireResponse.
         validateAccess(questionnaireResponse);
