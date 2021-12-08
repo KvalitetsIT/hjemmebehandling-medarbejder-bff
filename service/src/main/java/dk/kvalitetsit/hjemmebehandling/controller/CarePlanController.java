@@ -1,10 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -20,15 +21,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.checkerframework.checker.nullness.Opt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.RequestContext;
+import org.webjars.NotFoundException;
 
-import javax.servlet.ServletContext;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
-public class CarePlanController {
+public class CarePlanController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private CarePlanService carePlanService;
@@ -79,7 +78,7 @@ public class CarePlanController {
         }
         catch(ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
-            throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
+            throw toStatusCodeException(e);
         }
     }
 
@@ -96,17 +95,13 @@ public class CarePlanController {
         try {
             carePlan = carePlanService.getCarePlanById(id);
         }
-        catch (AccessValidationException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        catch(ServiceException e) {
-            // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
+        catch(AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
-            return ResponseEntity.internalServerError().build();
+            throw toStatusCodeException(e);
         }
 
         if(!carePlan.isPresent()) {
-            return ResponseEntity.notFound().header("Reason", String.format("CarePlan with id %s not found.", id)).build();
+            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
     }
@@ -122,20 +117,9 @@ public class CarePlanController {
         try {
             carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
         }
-        catch(AccessValidationException e) {
-            logger.info("Detected access violation.", e);
-            return ResponseEntity.badRequest().build();
-        }
-        catch(ServiceException e) {
+        catch(AccessValidationException | ServiceException e) {
             logger.error("Error creating CarePlan", e);
-            switch(e.getErrorKind()) {
-                case BAD_REQUEST:
-                    throw new BadRequestException(ErrorDetails.CAREPLAN_EXISTS);
-                case INTERNAL_SERVER_ERROR:
-                    return ResponseEntity.internalServerError().build();
-                default:
-                    return ResponseEntity.internalServerError().build();
-            }
+            throw toStatusCodeException(e);
         }
 
         URI location = locationHeaderBuilder.buildLocationHeader(carePlanId);
@@ -156,12 +140,8 @@ public class CarePlanController {
         try {
             carePlanService.updateQuestionnaires(id, request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
         }
-        catch(AccessValidationException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        catch(ServiceException e) {
-            // TODO: Distinguish when 'id' did not exist (bad request), and anything else (internal server error).
-            return ResponseEntity.internalServerError().build();
+        catch(AccessValidationException | ServiceException e) {
+            throw toStatusCodeException(e);
         }
 
         return ResponseEntity.ok().build();
@@ -172,18 +152,8 @@ public class CarePlanController {
         try {
             carePlanService.resolveAlarm(id);
         }
-        catch(AccessValidationException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        catch(ServiceException e) {
-            switch(e.getErrorKind()) {
-                case BAD_REQUEST:
-                    return ResponseEntity.badRequest().build();
-                case INTERNAL_SERVER_ERROR:
-                    return ResponseEntity.internalServerError().build();
-                default:
-                    return ResponseEntity.internalServerError().build();
-            }
+        catch(AccessValidationException | ServiceException e) {
+            throw toStatusCodeException(e);
         }
 
         return ResponseEntity.ok().build();
@@ -195,7 +165,7 @@ public class CarePlanController {
             carePlanService.completeCarePlan(id);
         }
         catch(ServiceException e) {
-          return ResponseEntity.internalServerError().build();
+            throw toStatusCodeException(e);
         }
 
         return ResponseEntity.ok().build();

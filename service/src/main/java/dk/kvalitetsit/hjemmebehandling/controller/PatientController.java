@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.constants.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
@@ -60,7 +60,7 @@ public class PatientController {
         PatientModel patient = patientService.getPatient(cpr);
 
         if(patient == null) {
-            throw new ResourceNotFoundException("Patient did not exist!");
+            throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
         }
         return dtoMapper.mapPatientModel(patient);
     }
