@@ -71,6 +71,8 @@ public class CarePlanController {
             }
             else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
                 carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
+            } else if (SearchType.ACTIVE.equals(searchType)) {
+            	//carePlans = carePlanService
             }
 
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
