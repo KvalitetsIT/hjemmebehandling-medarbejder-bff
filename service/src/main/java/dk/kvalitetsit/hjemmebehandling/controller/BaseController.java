@@ -19,11 +19,11 @@ public abstract class BaseController {
         throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
     }
 
-    protected RuntimeException toStatusCodeException(AccessValidationException e) {
+    private RuntimeException toStatusCodeException(AccessValidationException e) {
         return new ForbiddenException(ErrorDetails.ACCESS_VIOLATION);
     }
 
-    protected RuntimeException toStatusCodeException(ServiceException e) {
+    private RuntimeException toStatusCodeException(ServiceException e) {
         switch(e.getErrorKind()) {
             case BAD_REQUEST:
                 return fromErrorDetails(e.getErrorDetails());
@@ -39,6 +39,7 @@ public abstract class BaseController {
             case CAREPLAN_ALREADY_FULFILLED:
             case QUESTIONNAIRES_MISSING_FOR_CAREPLAN:
             case UNSUPPORTED_SEARCH_PARAMETER_COMBINATION:
+            case PARAMETERS_INCOMPLETE:
                 throw new BadRequestException(e);
             case CAREPLAN_DOES_NOT_EXIST:
             case PATIENT_DOES_NOT_EXIST:

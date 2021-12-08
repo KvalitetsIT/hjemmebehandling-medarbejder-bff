@@ -4,9 +4,14 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.junit.jupiter.api.Test;
@@ -40,10 +45,9 @@ public class QuestionnaireResponseControllerTest {
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds));
     }
 
     @Test
@@ -53,10 +57,9 @@ public class QuestionnaireResponseControllerTest {
         List<String> questionnaireIds = null;
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds));
     }
 
     @Test
@@ -109,10 +112,9 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(AccessValidationException.class);
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
-        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+        assertThrows(ForbiddenException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds));
     }
 
     @Test
@@ -121,13 +123,12 @@ public class QuestionnaireResponseControllerTest {
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(ServiceException.class);
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds);
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds));
     }
 
     @Test
@@ -137,10 +138,9 @@ public class QuestionnaireResponseControllerTest {
         PageDetails pageDetails = null;
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, 1, 10);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByStatus(statuses, 1, 10));
     }
 
     @Test
@@ -190,13 +190,12 @@ public class QuestionnaireResponseControllerTest {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED);
         PageDetails pageDetails = new PageDetails(1, 10);
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenThrow(ServiceException.class);
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pageDetails)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize());
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByStatus(statuses, pageDetails.getPageNumber(), pageDetails.getPageSize()));
     }
 
     @Test
@@ -206,10 +205,9 @@ public class QuestionnaireResponseControllerTest {
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
 
         // Act
-        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test
@@ -222,10 +220,9 @@ public class QuestionnaireResponseControllerTest {
         Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
 
         // Act
-        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
 
         // Assert
-        assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test
@@ -235,13 +232,12 @@ public class QuestionnaireResponseControllerTest {
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(ExaminationStatus.UNDER_EXAMINATION);
 
-        Mockito.doThrow(ServiceException.class).when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
 
         // Act
-        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertThrows(InternalServerErrorException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test

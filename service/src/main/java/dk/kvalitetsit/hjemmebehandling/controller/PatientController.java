@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "Patient", description = "API for manipulating and retrieving patients.")
-public class PatientController {
+public class PatientController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
     private PatientService patientService;

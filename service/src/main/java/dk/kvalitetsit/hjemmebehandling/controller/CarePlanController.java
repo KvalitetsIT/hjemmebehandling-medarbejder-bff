@@ -132,7 +132,7 @@ public class CarePlanController extends BaseController {
     @PatchMapping(value = "/v1/careplan/{id}")
     public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
         if(request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {

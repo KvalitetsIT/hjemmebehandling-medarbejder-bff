@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hl7.fhir.r4.model.Base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "PlanDefinition", description = "API for manipulating and retrieving PlanDefinitions.")
-public class PlanDefinitionController {
+public class PlanDefinitionController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionController.class);
 
     private PlanDefinitionService planDefinitionService;
@@ -35,7 +36,7 @@ public class PlanDefinitionController {
         }
         catch(ServiceException e) {
             logger.error("Could not look up plandefinitions", e);
-            return ResponseEntity.internalServerError().build();
+            throw toStatusCodeException(e);
         }
     }
 }
