@@ -57,6 +57,26 @@ public class FhirClient {
         return lookupCarePlansByCriteria(criteria);
     }
 
+    public FhirLookupResult lookupCarePlans(boolean onlyActiveCarePlans, int offset, int count) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(organizationCriterion));
+        if(onlyActiveCarePlans) {
+            var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+            criteria.add(statusCriterion);
+        } else {
+        	var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.COMPLETED.toCode());
+        	criteria.add(statusCriterion);
+        }
+
+        var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
+
+        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec), Optional.of(offset), Optional.of(count));
+    }
+    
+    
     public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime, boolean onlyActiveCarePlans, int offset, int count) {
         var criteria = new ArrayList<ICriterion<?>>();
 

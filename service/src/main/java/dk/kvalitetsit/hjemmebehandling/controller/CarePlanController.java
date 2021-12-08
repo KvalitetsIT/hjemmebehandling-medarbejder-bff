@@ -46,7 +46,7 @@ public class CarePlanController {
     private LocationHeaderBuilder locationHeaderBuilder;
 
     private enum SearchType {
-        CPR, UNSATISFIED_CAREPLANS
+        CPR, UNSATISFIED_CAREPLANS,ACTIVE
     }
 
     public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
@@ -57,7 +57,7 @@ public class CarePlanController {
 
     @GetMapping(value = "/v1/careplan")
     public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
-        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules, pageNumber, pageSize);
+        var searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules,onlyActiveCarePlans, pageNumber, pageSize);
         if(!searchType.isPresent()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             throw new BadRequestException(ErrorDetails.UNSUPPORTED_SEARCH_PARAMETER_COMBINATION);
@@ -209,7 +209,7 @@ public class CarePlanController {
         return frequencies;
     }
 
-    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
+    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
         boolean sameParameterPresence = cpr.isPresent() == onlyUnsatisfiedSchedules.isPresent();
         if(sameParameterPresence) {
             return Optional.empty();
@@ -221,6 +221,9 @@ public class CarePlanController {
         }
         if(!cpr.isPresent() && onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
             return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
+        }
+        if(!cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && onlyActiveCarePlans.isPresent() && onlyActiveCarePlans.get() && pagingParametersPresent) {
+            return Optional.of(SearchType.ACTIVE);
         }
         return Optional.empty();
     }

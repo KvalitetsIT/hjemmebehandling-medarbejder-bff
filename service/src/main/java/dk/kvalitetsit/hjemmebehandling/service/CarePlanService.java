@@ -78,6 +78,24 @@ public class CarePlanService extends AccessValidatingService {
         }
     }
 
+    
+    public List<CarePlanModel> getCarePlans(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
+        int offset = (pageDetails.getPageNumber() - 1) * pageDetails.getPageSize();
+        int count = pageDetails.getPageSize();
+        
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlans(onlyActiveCarePlans, offset,count);
+        if(lookupResult.getCarePlans().isEmpty()) {
+            return List.of();
+        }
+
+        // Map the resourecs
+        return lookupResult.getCarePlans()
+                .stream()
+                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
+                .collect(Collectors.toList());
+    }
+
+    
     public List<CarePlanModel> getCarePlansByCpr(String cpr, boolean onlyActiveCarePlans) throws ServiceException {
         // Look up the patient so that we may look up careplans by patientId.
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
