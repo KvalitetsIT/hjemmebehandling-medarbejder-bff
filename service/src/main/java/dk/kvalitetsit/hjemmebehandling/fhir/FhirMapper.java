@@ -130,11 +130,53 @@ public class FhirMapper {
             patient.setId(patientModel.getId().toString());
         }
 
-        var name = new HumanName();
-        name.addGiven(patientModel.getGivenName());
-        name.setFamily(patientModel.getFamilyName());
+        var name = buildName(patientModel.getGivenName(), patientModel.getFamilyName());
         patient.addName(name);
+
         patient.getIdentifier().add(makeCprIdentifier(patientModel.getCpr()));
+
+        if(patientModel.getPatientContactDetails() != null) {
+            var contactDetails = patientModel.getPatientContactDetails();
+
+            var address = buildAddress(contactDetails);
+            patient.addAddress(address);
+
+            if(contactDetails.getPrimaryPhone() != null) {
+                var primaryContactPoint = buildContactPoint(contactDetails.getPrimaryPhone(), 1);
+                patient.addTelecom(primaryContactPoint);
+            }
+
+            if(contactDetails.getSecondaryPhone() != null) {
+                var secondaryContactPoint = buildContactPoint(contactDetails.getSecondaryPhone(), 2);
+                patient.addTelecom(secondaryContactPoint);
+            }
+        }
+
+        if(patientModel.getPrimaryRelativeName() != null) {
+            var contact = new Patient.ContactComponent();
+
+            var contactName = buildName(patientModel.getPrimaryRelativeName());
+            contact.setName(contactName);
+
+            if(patientModel.getPrimaryRelativeAffiliation() != null) {
+                contact.setRelationship(List.of(new CodeableConcept(new Coding(Systems.CONTACT_RELATIONSHIP, patientModel.getPrimaryRelativeAffiliation(), patientModel.getPrimaryRelativeAffiliation()))));
+            }
+
+            if(patientModel.getPrimaryRelativeContactDetails() != null) {
+                var primaryRelativeContactDetails = patientModel.getPrimaryRelativeContactDetails();
+                if(primaryRelativeContactDetails.getPrimaryPhone() != null) {
+                    var relativePrimaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getPrimaryPhone(), 1);
+                    contact.addTelecom(relativePrimaryContactPoint);
+                }
+
+                if(primaryRelativeContactDetails.getSecondaryPhone() != null) {
+                    var relativeSecondaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getSecondaryPhone(), 2);
+                    contact.addTelecom(relativeSecondaryContactPoint);
+                }
+            }
+
+            patient.addContact(contact);
+        }
 
         return patient;
     }
@@ -143,10 +185,33 @@ public class FhirMapper {
         PatientModel patientModel = new PatientModel();
 
         patientModel.setId(extractId(patient));
-        patientModel.setCpr(extractCpr(patient));
-        patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setGivenName(extractGivenNames(patient));
+        patientModel.setFamilyName(extractFamilyName(patient));
+        patientModel.setCpr(extractCpr(patient));
         patientModel.setPatientContactDetails(extractPatientContactDetails(patient));
+
+        if(patient.getContact() != null && !patient.getContact().isEmpty()) {
+            var contact = patient.getContactFirstRep();
+
+            patientModel.setPrimaryRelativeName(contact.getName().getText());
+            patientModel.setPrimaryRelativeAffiliation(contact.getRelationshipFirstRep().getText());
+
+            // Extract phone numbers
+            if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
+                var primaryRelativeContactDetails = new ContactDetailsModel();
+
+                for(var telecom : contact.getTelecom()) {
+                    if(telecom.getRank() == 1) {
+                        primaryRelativeContactDetails.setPrimaryPhone(telecom.getValue());
+                    }
+                    if(telecom.getRank() == 2) {
+                        primaryRelativeContactDetails.setSecondaryPhone(telecom.getValue());
+                    }
+                }
+
+                patientModel.setPrimaryRelativeContactDetails(new ContactDetailsModel());
+            }
+        }
 
         return patientModel;
     }
@@ -163,23 +228,6 @@ public class FhirMapper {
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
 
         return planDefinitionModel;
-    }
-
-    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
-        var wrapper = new QuestionnaireWrapperModel();
-
-        wrapper.setFrequency(mapTiming(action.getTimingTiming()));
-
-        String questionnaireId = action.getDefinitionCanonicalType().getValue();
-        Questionnaire questionnaire = lookupResult
-                .getQuestionnaire(questionnaireId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
-        wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
-
-        List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
-        wrapper.setThresholds(thresholds);
-
-        return wrapper;
     }
 
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
@@ -319,6 +367,44 @@ public class FhirMapper {
         return patient.getIdentifier().get(0).getValue();
     }
 
+    private HumanName buildName(String givenName, String familyName) {
+        return buildName(givenName, familyName, null);
+    }
+
+    private HumanName buildName(String text) {
+        return buildName(null, null, text);
+    }
+
+    private HumanName buildName(String givenName, String familyName, String text) {
+        var name = new HumanName();
+
+        name.addGiven(givenName);
+        name.setFamily(familyName);
+        name.setText(text);
+
+        return name;
+    }
+
+    private Address buildAddress(ContactDetailsModel contactDetailsModel) {
+        var address = new Address();
+
+        address.addLine(contactDetailsModel.getStreet());
+        address.setPostalCode(contactDetailsModel.getPostalCode());
+        address.setCity(contactDetailsModel.getCity());
+
+        return address;
+    }
+
+    private ContactPoint buildContactPoint(String phone, int rank) {
+        var contactPoint = new ContactPoint();
+
+        contactPoint.setSystem(ContactPoint.ContactPointSystem.PHONE);
+        contactPoint.setValue(phone);
+        contactPoint.setRank(rank);
+
+        return contactPoint;
+    }
+
     private String extractFamilyName(Patient patient) {
         if(patient.getName() == null || patient.getName().isEmpty()) {
             return null;
@@ -336,17 +422,32 @@ public class FhirMapper {
     private ContactDetailsModel extractPatientContactDetails(Patient patient) {
         ContactDetailsModel contactDetails = new ContactDetailsModel();
 
-        contactDetails.setPrimaryPhone(extractPrimaryPhone(patient));
+        var lines = patient.getAddressFirstRep().getLine();
+        if(lines != null && !lines.isEmpty()) {
+            contactDetails.setStreet(String.join(", ", lines.stream().map(l -> l.getValue()).collect(Collectors.toList())));
+        }
+        contactDetails.setCity(patient.getAddressFirstRep().getCity());
+        contactDetails.setPostalCode(patient.getAddressFirstRep().getPostalCode());
+        contactDetails.setPrimaryPhone(extractPrimaryPhone(patient.getTelecom()));
+        contactDetails.setSecondaryPhone(extractSecondaryPhone(patient.getTelecom()));
 
         return contactDetails;
     }
 
-    private String extractPrimaryPhone(Patient patient) {
-        if(patient.getTelecom() == null || patient.getTelecom().isEmpty()) {
+    private String extractPrimaryPhone(List<ContactPoint> contactPoints) {
+        return extractPhone(contactPoints, 1);
+    }
+
+    private String extractSecondaryPhone(List<ContactPoint> contactPoints) {
+        return extractPhone(contactPoints, 2);
+    }
+
+    private String extractPhone(List<ContactPoint> contactPoints, int rank) {
+        if(contactPoints == null || contactPoints.isEmpty()) {
             return null;
         }
-        for(ContactPoint cp : patient.getTelecom()) {
-            if(!cp.getValue().contains("@")) {
+        for(ContactPoint cp : contactPoints) {
+            if(cp.getSystem().equals(ContactPoint.ContactPointSystem.PHONE) && cp.getRank() == rank) {
                 return cp.getValue();
             }
         }
@@ -521,5 +622,22 @@ public class FhirMapper {
                 throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
         }
         return value;
+    }
+
+    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
+        var wrapper = new QuestionnaireWrapperModel();
+
+        wrapper.setFrequency(mapTiming(action.getTimingTiming()));
+
+        String questionnaireId = action.getDefinitionCanonicalType().getValue();
+        Questionnaire questionnaire = lookupResult
+                .getQuestionnaire(questionnaireId)
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
+        wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
+
+        List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
+        wrapper.setThresholds(thresholds);
+
+        return wrapper;
     }
 }

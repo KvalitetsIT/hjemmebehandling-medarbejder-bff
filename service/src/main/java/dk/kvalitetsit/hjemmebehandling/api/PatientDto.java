@@ -7,6 +7,8 @@ public class PatientDto {
     private String familyName;
     private String cpr;
     private ContactDetailsDto patientContactDetails;
+    private String primaryRelativeName;
+    private String primaryRelativeAffiliation;
     private ContactDetailsDto primaryRelativeContactDetails;
     private List<ContactDetailsDto> additionalRelativeContactDetails;
 
@@ -40,6 +42,22 @@ public class PatientDto {
 
     public void setPatientContactDetails(ContactDetailsDto patientContactDetails) {
         this.patientContactDetails = patientContactDetails;
+    }
+
+    public String getPrimaryRelativeName() {
+        return primaryRelativeName;
+    }
+
+    public void setPrimaryRelativeName(String primaryRelativeName) {
+        this.primaryRelativeName = primaryRelativeName;
+    }
+
+    public String getPrimaryRelativeAffiliation() {
+        return primaryRelativeAffiliation;
+    }
+
+    public void setPrimaryRelativeAffiliation(String primaryRelativeAffiliation) {
+        this.primaryRelativeAffiliation = primaryRelativeAffiliation;
     }
 
     public ContactDetailsDto getPrimaryRelativeContactDetails() {

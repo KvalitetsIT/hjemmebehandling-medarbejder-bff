@@ -90,6 +90,8 @@ public class DtoMapper {
         if(patient.getPatientContactDetails() != null) {
             patientModel.setPatientContactDetails(mapContactDetailsDto(patient.getPatientContactDetails()));
         }
+        patientModel.setPrimaryRelativeName(patient.getPrimaryRelativeName());
+        patientModel.setPrimaryRelativeAffiliation(patient.getPrimaryRelativeAffiliation());
         if(patient.getPrimaryRelativeContactDetails() != null) {
             patientModel.setPrimaryRelativeContactDetails(mapContactDetailsDto(patient.getPrimaryRelativeContactDetails()));
         }
@@ -106,7 +108,17 @@ public class DtoMapper {
         patientDto.setCpr(patient.getCpr());
         patientDto.setFamilyName(patient.getFamilyName());
         patientDto.setGivenName(patient.getGivenName());
-        patientDto.setPatientContactDetails(mapContactDetailsModel(patient.getPatientContactDetails()));
+        if(patient.getPatientContactDetails() != null) {
+            patientDto.setPatientContactDetails(mapContactDetailsModel(patient.getPatientContactDetails()));
+        }
+        patientDto.setPrimaryRelativeName(patient.getPrimaryRelativeName());
+        patientDto.setPrimaryRelativeAffiliation(patient.getPrimaryRelativeAffiliation());
+        if(patient.getPrimaryRelativeContactDetails() != null) {
+            patientDto.setPrimaryRelativeContactDetails(mapContactDetailsModel(patient.getPrimaryRelativeContactDetails()));
+        }
+        if(patient.getAdditionalRelativeContactDetails() != null) {
+            patientDto.setAdditionalRelativeContactDetails(patient.getAdditionalRelativeContactDetails().stream().map(cd -> mapContactDetailsModel(cd)).collect(Collectors.toList()));
+        }
 
         return patientDto;
     }
@@ -246,6 +258,7 @@ public class DtoMapper {
         ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
 
         contactDetailsModel.setCountry(contactDetails.getCountry());
+        contactDetailsModel.setCity(contactDetails.getCity());
         contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
         contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
         contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
@@ -258,6 +271,7 @@ public class DtoMapper {
         ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
 
         contactDetailsDto.setCountry(contactDetails.getCountry());
+        contactDetailsDto.setCity(contactDetails.getCity());
         contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
         contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
         contactDetailsDto.setPostalCode(contactDetails.getPostalCode());

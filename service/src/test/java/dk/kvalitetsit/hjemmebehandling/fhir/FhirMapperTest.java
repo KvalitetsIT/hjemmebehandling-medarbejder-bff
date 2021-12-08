@@ -159,6 +159,25 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapPatient_roundtrip_preservesInformation() {
+        // Arrange
+        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+
+        // Act
+        Patient result = subject.mapPatientModel(subject.mapPatient(patient));
+
+        // Assert
+        assertEquals(PATIENT_ID_1, result.getId());
+
+        assertEquals(patient.getName().get(0).getFamily(), result.getName().get(0).getFamily());
+
+        assertEquals(patient.getContact().get(0).getName().getText(), result.getContact().get(0).getName().getText());
+        assertEquals(patient.getContact().get(0).getRelationshipFirstRep().getText(), result.getContact().get(0).getRelationshipFirstRep().getText());
+
+        assertEquals(patient.getAddressFirstRep().getCity(), result.getAddressFirstRep().getCity());
+    }
+
+    @Test
     public void mapQuestionnaireResponseModel_mapsAnswers() {
         // Arrange
         QuestionnaireResponseModel model = buildQuestionnaireResponseModel();
@@ -247,7 +266,7 @@ public class FhirMapperTest {
         // Arrange
         var stringItem = buildStringItem("hej", "1");
         var integerItem = buildIntegerItem(2, "2");
-        var quantityItem = buildQuantityItem(3.1, "2");
+        var quantityItem = buildQuantityItem(3.1, "3");
 
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(stringItem, integerItem, quantityItem));
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER), buildQuestionItem("3", Questionnaire.QuestionnaireItemType.QUANTITY)));
@@ -333,6 +352,27 @@ public class FhirMapperTest {
         identifier.setSystem(Systems.CPR);
         identifier.setValue(cpr);
         patient.setIdentifier(List.of(identifier));
+
+        var name = new HumanName();
+        name.setFamily("Dent");
+        name.addGiven("Arthur");
+        patient.addName(name);
+
+        var address = new Address();
+        address.setCity("Aarhus");
+        patient.addAddress(address);
+
+        var telecom = new ContactPoint();
+        telecom.setSystem(ContactPoint.ContactPointSystem.PHONE);
+        telecom.setValue("12345678");
+        telecom.setRank(1);
+        patient.addTelecom(telecom);
+
+        var contactComponent = new Patient.ContactComponent();
+        var contactName = new HumanName();
+        contactName.setText("Slartibartfast");
+        contactComponent.setName(contactName);
+        patient.addContact(contactComponent);
 
         return patient;
     }

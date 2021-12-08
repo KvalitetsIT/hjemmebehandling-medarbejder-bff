@@ -4,8 +4,10 @@ public class ContactDetailsModel {
     private String street;
     private String postalCode;
     private String country;
+    private String city;
     private String primaryPhone;
     private String secondaryPhone;
+
     public String getStreet() {
         return street;
     }
@@ -28,6 +30,14 @@ public class ContactDetailsModel {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 
     public String getPrimaryPhone() {
