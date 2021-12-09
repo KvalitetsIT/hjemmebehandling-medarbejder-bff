@@ -26,8 +26,8 @@ public class QuestionnaireResponsePriorityComparatorTest {
     @Test
     public void compare_considersTriagingCategory() {
         // Arrange
-        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, AUTHORED);
-        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, AUTHORED);
 
         // Act
         int result = subject.compare(first, second);
