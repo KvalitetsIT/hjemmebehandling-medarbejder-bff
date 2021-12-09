@@ -58,8 +58,9 @@ public class FhirMapperTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
 
         // Act
         CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
@@ -75,8 +76,9 @@ public class FhirMapperTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
 
         // Act
         CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
@@ -93,8 +95,9 @@ public class FhirMapperTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
 
         // Act
         CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
@@ -113,8 +116,9 @@ public class FhirMapperTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
 
         // Act
         CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
@@ -342,6 +346,15 @@ public class FhirMapperTest {
         frequencyModel.setTimeOfDay(LocalTime.parse("05:00"));
 
         return frequencyModel;
+    }
+
+    private Organization buildOrganization(String organizationId) {
+        Organization organization = new Organization();
+
+        organization.setId(organizationId);
+        organization.setName("Infektionsmedicinsk Afdeling");
+
+        return organization;
     }
 
     private Patient buildPatient(String patientId, String cpr) {

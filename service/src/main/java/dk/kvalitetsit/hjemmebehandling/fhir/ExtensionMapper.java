@@ -4,6 +4,7 @@ import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
@@ -16,6 +17,7 @@ import org.hl7.fhir.r4.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.function.Function;
 
@@ -56,6 +58,10 @@ public class ExtensionMapper {
         return extractReferenceFromExtensions(extensions, Systems.ORGANIZATION);
     }
 
+    public static Optional<String> tryExtractOrganizationId(List<Extension> extensions) {
+        return tryExtractReferenceFromExtensions(extensions, Systems.ORGANIZATION);
+    }
+
     public static TriagingCategory extractTriagingCategoory(List<Extension> extensions) {
         return extractEnumFromExtensions(extensions, Systems.TRIAGING_CATEGORY, TriagingCategory.class);
     }
@@ -84,13 +90,22 @@ public class ExtensionMapper {
         return extractFromExtensions(extensions, url, v -> ((Reference) v).getReference());
     }
 
+    private static Optional<String> tryExtractReferenceFromExtensions(List<Extension> extensions, String url) {
+        return tryExtractFromExtensions(extensions, url, v -> ((Reference) v).getReference());
+    }
+
     private static <T> T extractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
+        return tryExtractFromExtensions(extensions, url, extractor)
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url)));
+    }
+
+    private static <T> Optional<T> tryExtractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
         for(Extension extension : extensions) {
             if(extension.getUrl().equals(url)) {
-                return extractor.apply(extension.getValue());
+                return Optional.of(extractor.apply(extension.getValue()));
             }
         }
-        throw new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url));
+        return Optional.empty();
     }
 
     public static List<ThresholdModel> extractThresholds(List<Extension> extensions) {

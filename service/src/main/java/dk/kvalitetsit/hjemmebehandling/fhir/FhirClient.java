@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
@@ -103,7 +104,7 @@ public class FhirClient {
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) {
         var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode);
 
-        var lookupResult = lookupByCriteria(Organization.class, List.of(sorCodeCriterion));
+        var lookupResult = lookupOrganizationsByCriteria(List.of(sorCodeCriterion));
         if(lookupResult.getOrganizations().isEmpty()) {
             return Optional.empty();
         }
@@ -206,7 +207,8 @@ public class FhirClient {
     }
 
     private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
-        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL), sortSpec, offset, count);
+        boolean withOrganizations = true;
+        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL), withOrganizations, sortSpec, offset, count);
 
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
@@ -220,6 +222,12 @@ public class FhirClient {
 
         // Merge the results
         return carePlanResult.merge(questionnaireResult);
+    }
+
+    private FhirLookupResult lookupOrganizationsByCriteria(List<ICriterion<?>> criteria) {
+        // Don't try to include Organization-resources when we are looking up organizations ...
+        boolean withOrganizations = false;
+        return lookupByCriteria(Organization.class, criteria, List.of(), withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private Optional<Patient> lookupPatient(ICriterion<?> criterion) {
@@ -262,10 +270,11 @@ public class FhirClient {
     }
 
     private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
-        return lookupByCriteria(resourceClass, criteria, includes, Optional.empty(), Optional.empty(), Optional.empty());
+        boolean withOrganizations = true;
+        return lookupByCriteria(resourceClass, criteria, includes, withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
@@ -293,7 +302,25 @@ public class FhirClient {
         }
 
         Bundle bundle = (Bundle) query.execute();
-        return FhirLookupResult.fromBundle(bundle);
+        FhirLookupResult lookupResult = FhirLookupResult.fromBundle(bundle);
+        if(withOrganizations) {
+            List<String> organizationIds = lookupResult.values()
+                    .stream()
+                    .map(r -> ExtensionMapper.tryExtractOrganizationId(r.getExtension()))
+                    .filter(id -> id.isPresent())
+                    .map(id -> id.get())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            lookupResult = lookupResult.merge(lookupOrganizations(organizationIds));
+        }
+        return lookupResult;
+    }
+
+    private FhirLookupResult lookupOrganizations(List<String> organizationIds) {
+        var idCriterion = Organization.RES_ID.exactly().codes(organizationIds);
+
+        return lookupOrganizationsByCriteria(List.of(idCriterion));
     }
 
     private <T extends Resource> String save(Resource resource) {

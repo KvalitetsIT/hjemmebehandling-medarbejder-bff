@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,5 +91,29 @@ public class ExtensionMapperTest {
 
         // Assert
         assertEquals("Organization/organization-1", result);
+    }
+
+    @Test
+    public void tryExtractOrganizationId_idPresent_success() {
+        // Arrange
+        Extension extension = new Extension(Systems.ORGANIZATION, new Reference("Organization/organization-1"));
+
+        // Act
+        Optional<String> result = ExtensionMapper.tryExtractOrganizationId(List.of(extension));
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Organization/organization-1", result.get());
+    }
+
+    @Test
+    public void tryExtractOrganizationId_idMissing_success() {
+        // Arrange
+
+        // Act
+        Optional<String> result = ExtensionMapper.tryExtractOrganizationId(List.of());
+
+        // Assert
+        assertFalse(result.isPresent());
     }
 }

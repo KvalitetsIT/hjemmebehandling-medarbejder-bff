@@ -37,6 +37,7 @@ public class DtoMapper {
         if(carePlanDto.getPlanDefinitions() != null) {
             carePlanModel.setPlanDefinitions(carePlanDto.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionDto(pd)).collect(Collectors.toList()));
         }
+        carePlanModel.setDepartmentName(carePlanDto.getDepartmentName());
 
         return carePlanModel;
     }
@@ -53,6 +54,7 @@ public class DtoMapper {
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));
         carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(pd -> mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
+        carePlanDto.setDepartmentName(carePlan.getDepartmentName());
 
         return carePlanDto;
     }

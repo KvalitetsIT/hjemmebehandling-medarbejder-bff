@@ -14,6 +14,7 @@ public class CarePlanModel extends BaseModel {
     private PatientModel patient;
     private List<QuestionnaireWrapperModel> questionnaires;
     private List<PlanDefinitionModel> planDefinitions;
+    private String departmentName;
     private Instant satisfiedUntil;
 
     public String getTitle() {
@@ -78,6 +79,14 @@ public class CarePlanModel extends BaseModel {
 
     public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
         this.planDefinitions = planDefinitions;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 
     public Instant getSatisfiedUntil() {

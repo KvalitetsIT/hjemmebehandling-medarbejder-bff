@@ -4,6 +4,7 @@ import org.hl7.fhir.r4.model.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FhirLookupResult {
     private Map<String, CarePlan> carePlansById;
@@ -114,6 +115,19 @@ public class FhirLookupResult {
         }
 
         return this;
+    }
+
+    public List<DomainResource> values() {
+        return Stream.of(
+                        carePlansById.values().stream(),
+                        organizationsById.values().stream(),
+                        patientsById.values().stream(),
+                        planDefinitionsById.values().stream(),
+                        questionnairesById.values().stream(),
+                        questionnaireResponsesById.values().stream()
+                )
+                .flatMap(s -> s)
+                .collect(Collectors.toList());
     }
 
     private <T extends Resource> Optional<T> getResource(String resourceId, Map<String, T> resourcesById) {

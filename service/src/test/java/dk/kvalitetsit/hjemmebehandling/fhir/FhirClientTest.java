@@ -91,6 +91,25 @@ public class FhirClientTest {
     }
 
     @Test
+    public void lookupCarePlanById_resultIncludesOrganization() {
+        // Arrange
+        String carePlanId = "careplan-1";
+        CarePlan carePlan = new CarePlan();
+        carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        carePlan.setId(carePlanId);
+
+        setupSearchCarePlanByIdClient(carePlan);
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
+        // Act
+        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
+
+        // Assert
+        assertTrue(result.getOrganization(ORGANIZATION_ID_1).isPresent());
+    }
+
+    @Test
     public void lookupCarePlanByPatientId_carePlanPresent_success() {
         // Arrange
         String patientId = "patient-1";
@@ -175,6 +194,8 @@ public class FhirClientTest {
         Patient patient = new Patient();
         setupSearchPatientClient(patient);
 
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         // Act
         Optional<Patient> result = subject.lookupPatientByCpr(cpr);
 
@@ -188,6 +209,8 @@ public class FhirClientTest {
         // Arrange
         String cpr = "0101010101";
         setupSearchPatientClient();
+
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
         Optional<Patient> result = subject.lookupPatientByCpr(cpr);
@@ -204,6 +227,8 @@ public class FhirClientTest {
         patient.setId(id);
         setupSearchPatientClient(patient);
 
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         // Act
         Optional<Patient> result = subject.lookupPatientById(id);
 
@@ -217,6 +242,8 @@ public class FhirClientTest {
         // Arrange
         String id = "patient-1";
         setupSearchPatientClient();
+
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
         Optional<Patient> result = subject.lookupPatientById(id);
@@ -234,6 +261,8 @@ public class FhirClientTest {
 
         setupSearchPlanDefinitionClient(planDefinition);
 
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         // Act
         FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
 
@@ -249,11 +278,32 @@ public class FhirClientTest {
 
         setupSearchPlanDefinitionClient();
 
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         // Act
         FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
 
         // Assert
         assertFalse(result.getPlanDefinition(plandefinitionId).isPresent());
+    }
+
+    @Test
+    public void lookupPlanDefinitionById_resultIncludesOrganization() {
+        // Arrange
+        String plandefinitionId = "plandefinition-1";
+        PlanDefinition planDefinition = new PlanDefinition();
+        planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        planDefinition.setId(plandefinitionId);
+
+        setupSearchPlanDefinitionClient(planDefinition);
+
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
+        // Act
+        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
+
+        // Assert
+        assertTrue(result.getOrganization(ORGANIZATION_ID_1).isPresent());
     }
 
     @Test
@@ -285,6 +335,8 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse2 = new QuestionnaireResponse();
         questionnaireResponse2.setId(QUESTIONNAIRE_RESPONSE_ID_2);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse1, questionnaireResponse2);
+
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
         FhirLookupResult result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));

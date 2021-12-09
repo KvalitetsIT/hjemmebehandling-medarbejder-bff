@@ -106,6 +106,11 @@ public class FhirMapper {
 
         carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
 
+        String organizationId = ExtensionMapper.extractOrganizationId(carePlan.getExtension());
+        Organization organization = lookupResult.getOrganization(organizationId)
+                .orElseThrow(() -> new IllegalStateException(String.format("Organization with id %s was not present when trying to map careplan %s!", organizationId, carePlan.getId())));
+        carePlanModel.setDepartmentName(organization.getName());
+
         return carePlanModel;
     }
 
