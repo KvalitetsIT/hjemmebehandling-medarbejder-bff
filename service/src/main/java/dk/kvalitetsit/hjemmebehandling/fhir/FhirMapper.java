@@ -194,7 +194,11 @@ public class FhirMapper {
             var contact = patient.getContactFirstRep();
 
             patientModel.setPrimaryRelativeName(contact.getName().getText());
-            patientModel.setPrimaryRelativeAffiliation(contact.getRelationshipFirstRep().getText());
+            for(var coding : contact.getRelationshipFirstRep().getCoding()) {
+                if(coding.getSystem().equals(Systems.CONTACT_RELATIONSHIP)) {
+                    patientModel.setPrimaryRelativeAffiliation(coding.getCode());
+                }
+            }
 
             // Extract phone numbers
             if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
@@ -209,7 +213,7 @@ public class FhirMapper {
                     }
                 }
 
-                patientModel.setPrimaryRelativeContactDetails(new ContactDetailsModel());
+                patientModel.setPrimaryRelativeContactDetails(primaryRelativeContactDetails);
             }
         }
 

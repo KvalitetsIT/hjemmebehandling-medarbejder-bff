@@ -172,7 +172,8 @@ public class FhirMapperTest {
         assertEquals(patient.getName().get(0).getFamily(), result.getName().get(0).getFamily());
 
         assertEquals(patient.getContact().get(0).getName().getText(), result.getContact().get(0).getName().getText());
-        assertEquals(patient.getContact().get(0).getRelationshipFirstRep().getText(), result.getContact().get(0).getRelationshipFirstRep().getText());
+        assertEquals(patient.getContact().get(0).getRelationshipFirstRep().getCodingFirstRep().getCode(), result.getContact().get(0).getRelationshipFirstRep().getCodingFirstRep().getCode());
+        assertEquals(patient.getContact().get(0).getTelecomFirstRep().getValue(), result.getContact().get(0).getTelecomFirstRep().getValue());
 
         assertEquals(patient.getAddressFirstRep().getCity(), result.getAddressFirstRep().getCity());
     }
@@ -362,16 +363,25 @@ public class FhirMapperTest {
         address.setCity("Aarhus");
         patient.addAddress(address);
 
-        var telecom = new ContactPoint();
-        telecom.setSystem(ContactPoint.ContactPointSystem.PHONE);
-        telecom.setValue("12345678");
-        telecom.setRank(1);
-        patient.addTelecom(telecom);
+        var primaryTelecom = new ContactPoint();
+        primaryTelecom.setSystem(ContactPoint.ContactPointSystem.PHONE);
+        primaryTelecom.setValue("12345678");
+        primaryTelecom.setRank(1);
+        patient.addTelecom(primaryTelecom);
+
+        var secondaryTelecom = new ContactPoint();
+        secondaryTelecom.setSystem(ContactPoint.ContactPointSystem.PHONE);
+        secondaryTelecom.setValue("12345678");
+        secondaryTelecom.setRank(2);
+        patient.addTelecom(secondaryTelecom);
 
         var contactComponent = new Patient.ContactComponent();
         var contactName = new HumanName();
         contactName.setText("Slartibartfast");
         contactComponent.setName(contactName);
+        contactComponent.setRelationship(List.of(new CodeableConcept(new Coding(Systems.CONTACT_RELATIONSHIP, "Ven", "Ven"))));
+        contactComponent.addTelecom(primaryTelecom);
+        contactComponent.addTelecom(secondaryTelecom);
         patient.addContact(contactComponent);
 
         return patient;
