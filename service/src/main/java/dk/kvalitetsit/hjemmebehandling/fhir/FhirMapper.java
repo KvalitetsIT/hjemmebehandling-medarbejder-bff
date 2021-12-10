@@ -316,6 +316,14 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
         questionnaireResponseModel.setPatient(mapPatient(patient));
 
+        String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
+        CarePlan carePlan = lookupResult.getCarePlan(carePlanId)
+                .orElseThrow(() -> new IllegalStateException(String.format("No CarePlan found with id %s!", carePlanId)));
+        String planDefinitionId = carePlan.getInstantiatesCanonical().get(0).getValue();
+        PlanDefinition planDefinition = lookupResult.getPlanDefinition(planDefinitionId)
+                .orElseThrow(() -> new IllegalStateException(String.format("No PlanDefinition found with id %s!", planDefinitionId)));
+        questionnaireResponseModel.setPlanDefinitionTitle(planDefinition.getTitle());
+
         return questionnaireResponseModel;
     }
 

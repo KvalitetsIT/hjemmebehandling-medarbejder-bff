@@ -14,6 +14,7 @@ public class QuestionnaireResponseDto extends BaseDto {
     private ExaminationStatus examinationStatus;
     private TriagingCategory triagingCategory;
     private PatientDto patient;
+    private String planDefinitionTitle;
 
     public String getQuestionnaireId() {
         return questionnaireId;
@@ -69,5 +70,13 @@ public class QuestionnaireResponseDto extends BaseDto {
 
     public void setPatient(PatientDto patient) {
         this.patient = patient;
+    }
+
+    public String getPlanDefinitionTitle() {
+        return planDefinitionTitle;
+    }
+
+    public void setPlanDefinitionTitle(String planDefinitionTitle) {
+        this.planDefinitionTitle = planDefinitionTitle;
     }
 }

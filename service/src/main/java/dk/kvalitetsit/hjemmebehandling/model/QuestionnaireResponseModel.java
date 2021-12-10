@@ -17,6 +17,7 @@ public class QuestionnaireResponseModel extends BaseModel {
     private ExaminationStatus examinationStatus;
     private TriagingCategory triagingCategory;
     private PatientModel patient;
+    private String planDefinitionTitle;
 
     public QualifiedId getQuestionnaireId() {
         return questionnaireId;
@@ -96,5 +97,13 @@ public class QuestionnaireResponseModel extends BaseModel {
 
     public void setPatient(PatientModel patient) {
         this.patient = patient;
+    }
+
+    public String getPlanDefinitionTitle() {
+        return planDefinitionTitle;
+    }
+
+    public void setPlanDefinitionTitle(String planDefinitionTitle) {
+        this.planDefinitionTitle = planDefinitionTitle;
     }
 }

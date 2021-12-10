@@ -235,6 +235,7 @@ public class DtoMapper {
         questionnaireResponseDto.setExaminationStatus(questionnaireResponseModel.getExaminationStatus());
         questionnaireResponseDto.setTriagingCategory(questionnaireResponseModel.getTriagingCategory());
         questionnaireResponseDto.setPatient(mapPatientModel(questionnaireResponseModel.getPatient()));
+        questionnaireResponseDto.setPlanDefinitionTitle(questionnaireResponseModel.getPlanDefinitionTitle());
 
         return questionnaireResponseDto;
     }

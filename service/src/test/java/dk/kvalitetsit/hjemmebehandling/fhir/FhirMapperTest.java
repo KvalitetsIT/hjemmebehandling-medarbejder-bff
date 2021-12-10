@@ -55,12 +55,13 @@ public class FhirMapperTest {
     @Test
     public void mapCarePlan_mapsPeriod() {
         // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
 
         // Act
         CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
@@ -73,12 +74,13 @@ public class FhirMapperTest {
     @Test
     public void mapCarePlan_roundtrip_preservesExtensions() {
         // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
 
         // Act
         CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
@@ -92,12 +94,13 @@ public class FhirMapperTest {
     @Test
     public void mapCarePlan_roundtrip_preservesActivities() {
         // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
 
         // Act
         CarePlan result = subject.mapCarePlanModel(subject.mapCarePlan(carePlan, lookupResult));
@@ -113,12 +116,13 @@ public class FhirMapperTest {
     @Test
     public void mapCarePlan_includesQuestionnaires() {
         // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
 
         // Act
         CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
@@ -215,9 +219,11 @@ public class FhirMapperTest {
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildQuantityItem(2, "2")));
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.QUANTITY)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
         // Act
-        QuestionnaireResponseModel result = subject.mapQuestionnaireResponse(questionnaireResponse, FhirLookupResult.fromResources(questionnaireResponse, questionnaire, patient));
+        QuestionnaireResponseModel result = subject.mapQuestionnaireResponse(questionnaireResponse, FhirLookupResult.fromResources(questionnaireResponse, questionnaire, patient, carePlan, planDefinition));
 
         // Assert
         assertEquals(2, result.getQuestionAnswerPairs().size());
@@ -231,8 +237,10 @@ public class FhirMapperTest {
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -250,8 +258,10 @@ public class FhirMapperTest {
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(buildStringItem("hej", "1"), buildIntegerItem(2, "2")));
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -276,8 +286,10 @@ public class FhirMapperTest {
         QuestionnaireResponse questionnaireResponse = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(stringItem, integerItem, quantityItem));
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER), buildQuestionItem("3", Questionnaire.QuestionnaireItemType.QUANTITY)));
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -295,12 +307,13 @@ public class FhirMapperTest {
         assertEquals(quantityItem.getAnswerFirstRep().getValueQuantity().getValue(), result.getItem().get(2).getAnswerFirstRep().getValueQuantity().getValue());
     }
 
-    private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId) {
+    private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId, String planDefinitionId) {
         CarePlan carePlan = new CarePlan();
 
         carePlan.setId(careplanId);
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         carePlan.setSubject(new Reference(patientId));
+        carePlan.addInstantiatesCanonical(planDefinitionId);
         carePlan.setPeriod(new Period());
         carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
@@ -410,6 +423,15 @@ public class FhirMapperTest {
         patientModel.setAdditionalRelativeContactDetails(List.of(buildContactDetailsModel()));
 
         return patientModel;
+    }
+
+    private PlanDefinition buildPlanDefinition(String planDefinitionId) {
+        PlanDefinition planDefinition = new PlanDefinition();
+
+        planDefinition.setId(planDefinitionId);
+        planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+
+        return planDefinition;
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
