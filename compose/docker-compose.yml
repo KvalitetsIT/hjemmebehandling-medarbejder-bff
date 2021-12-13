@@ -10,6 +10,10 @@ services:
 
       - allowed_origins=http://localhost:3000
 
+      - user.context.handler=MOCK
+      - user.mock.context.organization.id=123456
+      #- user.mock.context.organization.id=453071000016001
+
       - usercontext_header_name=X-Test-Auth
 
       - userattributes_role_key=UserRoles
@@ -41,6 +45,7 @@ services:
       - ./hapi-server-initializer:/hapi-server-initializer
      environment:
        - data_dir=/hapi-server-initializer
+     #command: "/hapi-server-initializer/init-infektionsmedicinsk.sh"
      command: "/hapi-server-initializer/init.sh"
 
    person-service:

@@ -21,15 +21,10 @@ public class UserContextInterceptor implements HandlerInterceptor {
 	private UserContextProvider userContextProvider;
 	private FhirClient client;
 
-    public UserContextInterceptor(FhirClient client, UserContextProvider userContextProvider, String contextHandlerName) {
+    public UserContextInterceptor(FhirClient client, UserContextProvider userContextProvider, IUserContextHandler userContextHandler) {
     	this.client = client;
 		this.userContextProvider = userContextProvider;
-		this.contextHandlerName = contextHandlerName;
-		if(DIAS_CONTEXT.equals(contextHandlerName)) {
-			contextHandler = new DIASUserContextHandler();	
-		} else {
-    		contextHandler = new MockContextHandler();	
-    	}
+        this.contextHandler = userContextHandler;
     }
     
     @Override

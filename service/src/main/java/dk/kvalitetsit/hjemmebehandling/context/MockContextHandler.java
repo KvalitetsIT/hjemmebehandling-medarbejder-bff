@@ -5,15 +5,20 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 
 public class MockContextHandler implements IUserContextHandler {
+    private String orgId;
 
-	@Override
+    public MockContextHandler(String orgId) {
+        this.orgId = orgId;
+    }
+
+    @Override
 	public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) {
 		var context = new UserContext();
 		
         context.setFullName("Test Testsen");
         context.setFirstName("Test");
         context.setLastName("Testsen");
-        context.setOrgId("123456");
+        context.setOrgId(orgId);
         context.setUserId("TesTes");
         context.setEmail("test@rm.dk");
         context.setEntitlements(new String[]{"DIAS_HJEMMEBEHANDLING_Sygeplejerske"} );
