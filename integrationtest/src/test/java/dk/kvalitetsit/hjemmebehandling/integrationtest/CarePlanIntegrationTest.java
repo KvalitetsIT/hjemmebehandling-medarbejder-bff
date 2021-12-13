@@ -27,7 +27,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setPatientDto(new PatientDto());
-        carePlanDto.getPatientDto().setCpr("0708060607");
+        carePlanDto.getPatientDto().setCpr("0908060609");
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
@@ -41,6 +41,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         wrapper.setFrequency(frequencyDto);
 
         carePlanDto.setQuestionnaires(List.of(wrapper));
+
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+        planDefinitionDto.setId("PlanDefinition/plandefinition-1");
+        carePlanDto.setPlanDefinitions(List.of(planDefinitionDto));
 
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .carePlan(carePlanDto);

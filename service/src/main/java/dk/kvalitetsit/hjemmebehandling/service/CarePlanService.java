@@ -79,6 +79,18 @@ public class CarePlanService extends AccessValidatingService {
         }
     }
 
+    public void completeCarePlan(String carePlanId) throws ServiceException {
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
+
+        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
+        if(!carePlan.isPresent()) {
+            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+        }
+
+        CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
+        fhirClient.updateCarePlan(completedCarePlan);
+    }
     
     public List<CarePlanModel> getCarePlans(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
         int offset = (pageDetails.getPageNumber() - 1) * pageDetails.getPageSize();
@@ -251,12 +263,18 @@ public class CarePlanService extends AccessValidatingService {
 
         carePlanModel.setStatus(CarePlanStatus.ACTIVE);
 
+        initializeTimestamps(carePlanModel);
+
+        initializeFrequencyTimestamps(carePlanModel);
+
+        initializeThresholds(carePlanModel);
+    }
+
+    private void initializeTimestamps(CarePlanModel carePlanModel) {
         var today = dateProvider.today().toInstant();
         carePlanModel.setCreated(today);
         carePlanModel.setStartDate(today);
         carePlanModel.setEndDate(null);
-
-        initializeFrequencyTimestamps(carePlanModel);
     }
 
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
@@ -298,16 +316,36 @@ public class CarePlanService extends AccessValidatingService {
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
 
-    public void completeCarePlan(String carePlanId) throws ServiceException {
-        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
+    private void initializeThresholds(CarePlanModel carePlanModel) {
+        // Transfer questionnaire thresholds from the careplan(s) that this careplan instantiates.
 
-        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
-        if(!carePlan.isPresent()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+        // Get the planDefinitions
+        List<String> planDefinitionIds = carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList());
+        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
+        if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
+            throw new IllegalStateException("Could not look up every provided PlanDefinition!");
         }
 
-        CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
-        fhirClient.updateCarePlan(completedCarePlan);
+        // Map the planDefinitions
+        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, planDefinitionResult)).collect(Collectors.toList());
+
+        // Transfer thresholds
+        var allQuestionnaireWrappers = planDefinitions.stream().flatMap(pd -> pd.getQuestionnaires().stream()).collect(Collectors.toList());
+        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+            if(questionnaireWrapper.getThresholds() != null && !questionnaireWrapper.getThresholds().isEmpty()) {
+                throw new IllegalStateException(String.format("Error creating CarePlan: Thresholds already populated for questionnaire %s", questionnaireWrapper.getQuestionnaire().getId()));
+            }
+
+            // Look for a matching questionnaire
+            for(var wrapperFromPlanDefinition: allQuestionnaireWrappers) {
+                if(questionnaireWrapper.getQuestionnaire().getId().equals(wrapperFromPlanDefinition.getQuestionnaire().getId())) {
+                    questionnaireWrapper.setThresholds(wrapperFromPlanDefinition.getThresholds());
+                    break;
+                }
+            }
+            if(questionnaireWrapper.getThresholds() == null) {
+                throw new IllegalStateException(String.format("Could not locate thresholds for questionnaire %s! PlanDefinitions were: [%s]", questionnaireWrapper.getQuestionnaire().getId(), String.join(", ", planDefinitionIds)));
+            }
+        }
     }
 }

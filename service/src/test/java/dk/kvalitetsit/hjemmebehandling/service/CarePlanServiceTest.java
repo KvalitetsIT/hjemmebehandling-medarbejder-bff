@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -47,7 +46,7 @@ public class CarePlanServiceTest {
 
     private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
-    private static final String PLANDEFINITION__ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
 
@@ -67,6 +66,8 @@ public class CarePlanServiceTest {
 
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
+
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -89,6 +90,8 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapPatientModel(carePlanModel.getPatient())).thenReturn(patient);
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -141,13 +144,13 @@ public class CarePlanServiceTest {
     @Test
     public void createCarePlan_planDefinitionAccessViolation_throwsException() throws Exception {
         // Arrange
-        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(), List.of(PLANDEFINITION__ID_1));
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(), List.of(PLANDEFINITION_ID_1));
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION__ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(planDefinition));
 
@@ -172,6 +175,8 @@ public class CarePlanServiceTest {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
+
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -198,6 +203,8 @@ public class CarePlanServiceTest {
 
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
+
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -226,6 +233,8 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
 
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
+
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
@@ -240,7 +249,7 @@ public class CarePlanServiceTest {
     @Test
     public void createCarePlan_populatesSatisfiedUntil() throws Exception {
         // Arrange
-        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION__ID_1));
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION_ID_1));
 
         CarePlan carePlan = new CarePlan();
         Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
@@ -248,7 +257,14 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
 
         Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION__ID_1))).thenReturn(FhirLookupResult.fromResource(buildPlanDefinition(PLANDEFINITION__ID_1)));
+
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
+
+        var questionnaireThreshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
@@ -261,6 +277,68 @@ public class CarePlanServiceTest {
         var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().next().getPointInTime();
         assertEquals(expectedPointInTime, wrapper.getSatisfiedUntil());
         assertEquals(expectedPointInTime, carePlanModel.getSatisfiedUntil());
+    }
+
+    @Test
+    public void createCarePlan_transfersThresholdsFromPlanDefinition() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION_ID_1));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
+
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
+
+        var questionnaireThreshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
+        // Act
+        String result = subject.createCarePlan(carePlanModel);
+
+        // Assert
+        var wrapper = carePlanModel.getQuestionnaires().get(0);
+        assertEquals(1, wrapper.getThresholds().size());
+        assertEquals(questionnaireThreshold, wrapper.getThresholds().get(0));
+    }
+
+    @Test
+    public void createCarePlan_missingThresholds_throwsException() throws Exception {
+        // Arrange
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION_ID_1));
+
+        CarePlan carePlan = new CarePlan();
+        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
+
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
+
+        var questionnaireThreshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, questionnaireThreshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
+        // Act
+        String result = subject.createCarePlan(carePlanModel);
+
+        // Assert
+        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test
@@ -622,6 +700,19 @@ public class CarePlanServiceTest {
         planDefinition.setId(planDefinitionId);
 
         return planDefinition;
+    }
+
+    private PlanDefinitionModel buildPlanDefinitionModel(String questionnaireId, ThresholdModel questionnaireThreshold) {
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+
+        QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
+        questionnaireWrapperModel.setQuestionnaire(new QuestionnaireModel());
+        questionnaireWrapperModel.getQuestionnaire().setId(new QualifiedId(QUESTIONNAIRE_ID_1));
+        questionnaireWrapperModel.setThresholds(List.of(questionnaireThreshold));
+
+        planDefinitionModel.setQuestionnaires(List.of(questionnaireWrapperModel));
+
+        return planDefinitionModel;
     }
 
     private Questionnaire buildQuestionnaire(String questionnaireId) {
