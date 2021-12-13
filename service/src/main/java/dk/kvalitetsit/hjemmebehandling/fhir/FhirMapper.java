@@ -580,24 +580,29 @@ public class FhirMapper {
         CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
         Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
+        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.getThresholds());
 
-        return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil);
+        return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil, thresholds);
     }
 
-    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
+    private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil, List<Extension> thresholds) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
 
-        activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil));
+        activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil, thresholds));
 
         return activity;
     }
 
-    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
+    private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil, List<Extension> thresholds) {
         CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
 
         detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
         detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
         detail.addExtension(activitySatisfiedUntil);
+        for(Extension threshold : thresholds) {
+            detail.addExtension(threshold);
+        }
+
         detail.setScheduled(timing);
 
         return detail;

@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
@@ -111,6 +112,8 @@ public class FhirMapperTest {
         assertEquals(carePlan.getActivity().get(0).getDetail().getScheduledTiming().getRepeat().getDayOfWeek().get(0).getValue(), result.getActivity().get(0).getDetail().getScheduledTiming().getRepeat().getDayOfWeek().get(0).getValue());
 
         assertTrue(result.getActivity().get(0).getDetail().getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ACTIVITY_SATISFIED_UNTIL)));
+
+        assertTrue(result.getActivity().get(0).getDetail().getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.THRESHOLD)));
     }
 
     @Test
@@ -325,6 +328,13 @@ public class FhirMapperTest {
         detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
         detail.setScheduled(buildTiming());
         detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
+
+        ThresholdModel threshold = new ThresholdModel();
+        threshold.setQuestionnaireItemLinkId("1");
+        threshold.setType(ThresholdType.NORMAL);
+        threshold.setValueBoolean(true);
+        detail.addExtension(ExtensionMapper.mapThreshold(threshold));
+
         carePlan.addActivity().setDetail(detail);
 
         return carePlan;

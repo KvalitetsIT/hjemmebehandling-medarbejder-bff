@@ -2,10 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.StringType;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -115,5 +114,79 @@ public class ExtensionMapperTest {
 
         // Assert
         assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void mapThreshold_boolean() {
+        // Arrange
+        ThresholdModel threshold = new ThresholdModel();
+        threshold.setQuestionnaireItemLinkId("foo");
+        threshold.setType(ThresholdType.NORMAL);
+        threshold.setValueBoolean(true);
+
+        // Act
+        Extension result = ExtensionMapper.mapThreshold(threshold);
+
+        // Assert
+        assertEquals("foo", result.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID));
+        assertEquals(ThresholdType.NORMAL.toString(), result.getExtensionString(Systems.THRESHOLD_TYPE));
+        assertTrue(((BooleanType) result.getExtensionByUrl(Systems.THRESHOLD_VALUE_BOOLEAN).getValue()).booleanValue());
+    }
+
+    @Test
+    public void mapThreshold_range() {
+        // Arrange
+        ThresholdModel threshold = new ThresholdModel();
+        threshold.setQuestionnaireItemLinkId("bar");
+        threshold.setType(ThresholdType.ABNORMAL);
+        threshold.setValueQuantityLow(2.0);
+        threshold.setValueQuantityHigh(4.0);
+
+        // Act
+        Extension result = ExtensionMapper.mapThreshold(threshold);
+
+        // Assert
+        assertEquals("bar", result.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID));
+        assertEquals(ThresholdType.ABNORMAL.toString(), result.getExtensionString(Systems.THRESHOLD_TYPE));
+        assertEquals(2.0, ((Range) result.getExtensionByUrl(Systems.THRESHOLD_VALUE_RANGE).getValue()).getLow().getValue().doubleValue());
+        assertEquals(4.0, ((Range) result.getExtensionByUrl(Systems.THRESHOLD_VALUE_RANGE).getValue()).getHigh().getValue().doubleValue());
+    }
+
+    @Test
+    public void extractThreshold_boolean() {
+        // Arrange
+        Extension extension = new Extension();
+        extension.addExtension(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID, new StringType("foo"));
+        extension.addExtension(Systems.THRESHOLD_TYPE, new StringType(ThresholdType.NORMAL.toString()));
+        extension.addExtension(Systems.THRESHOLD_VALUE_BOOLEAN, new BooleanType(true));
+
+        // Act
+        ThresholdModel result = ExtensionMapper.extractThreshold(extension);
+
+        // Assert
+        assertEquals("foo", result.getQuestionnaireItemLinkId());
+        assertEquals(ThresholdType.NORMAL, result.getType());
+        assertTrue(result.getValueBoolean());
+    }
+
+    @Test
+    public void extractThreshold_range() {
+        // Arrange
+        Extension extension = new Extension();
+        extension.addExtension(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID, new StringType("bar"));
+        extension.addExtension(Systems.THRESHOLD_TYPE, new StringType(ThresholdType.ABNORMAL.toString()));
+        Range r = new Range();
+        r.setLow(new Quantity(2.0));
+        r.setHigh(new Quantity(4.0));
+        extension.addExtension(Systems.THRESHOLD_VALUE_RANGE, r);
+
+        // Act
+        ThresholdModel result = ExtensionMapper.extractThreshold(extension);
+
+        // Assert
+        assertEquals("bar", result.getQuestionnaireItemLinkId());
+        assertEquals(ThresholdType.ABNORMAL, result.getType());
+        assertEquals(2.0, result.getValueQuantityLow());
+        assertEquals(4.0, result.getValueQuantityHigh());
     }
 }
