@@ -80,6 +80,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         carePlanDto.setQuestionnaires(List.of(wrapper));
 
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+        planDefinitionDto.setId("PlanDefinition/plandefinition-1");
+        carePlanDto.setPlanDefinitions(List.of(planDefinitionDto));
+
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .carePlan(carePlanDto);
 
