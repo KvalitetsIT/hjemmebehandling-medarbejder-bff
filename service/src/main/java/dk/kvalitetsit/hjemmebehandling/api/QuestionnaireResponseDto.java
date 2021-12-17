@@ -8,6 +8,7 @@ import java.util.List;
 
 public class QuestionnaireResponseDto extends BaseDto {
     private String questionnaireId;
+    private String carePlanId;
     private String questionnaireName;
     private List<QuestionAnswerPairDto> questionAnswerPairs;
     private Instant answered;
@@ -22,6 +23,14 @@ public class QuestionnaireResponseDto extends BaseDto {
 
     public void setQuestionnaireId(String questionnaireId) {
         this.questionnaireId = questionnaireId;
+    }
+
+    public String getCarePlanId() {
+        return carePlanId;
+    }
+
+    public void setCarePlanId(String carePlanId) {
+        this.carePlanId = carePlanId;
     }
 
     public String getQuestionnaireName() {
