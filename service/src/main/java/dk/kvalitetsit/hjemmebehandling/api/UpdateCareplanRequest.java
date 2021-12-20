@@ -3,9 +3,18 @@ package dk.kvalitetsit.hjemmebehandling.api;
 import java.util.List;
 import java.util.Map;
 
-public class PartialUpdateCareplanRequest {
+public class UpdateCareplanRequest {
+    private List<String> planDefinitionIds;
     private List<String> questionnaireIds;
     private Map<String, FrequencyDto> questionnaireFrequencies;
+
+    public List<String> getPlanDefinitionIds() {
+        return planDefinitionIds;
+    }
+
+    public void setPlanDefinitionIds(List<String> planDefinitionIds) {
+        this.planDefinitionIds = planDefinitionIds;
+    }
 
     public List<String> getQuestionnaireIds() {
         return questionnaireIds;

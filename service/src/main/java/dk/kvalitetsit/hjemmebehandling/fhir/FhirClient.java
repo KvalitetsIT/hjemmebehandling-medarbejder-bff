@@ -14,12 +14,10 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.text.html.Option;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,7 +25,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
@@ -217,7 +214,9 @@ public class FhirClient {
         }
 
         // Get the related questionnaire-resources
-        List<String> questionnaireIds = getQuestionnaireIds(carePlanResult.getCarePlans());
+        List<String> questionnaireIds = new ArrayList<>();
+        questionnaireIds.addAll(getQuestionnaireIdsFromCarePlan(carePlanResult.getCarePlans()));
+        questionnaireIds.addAll(getQuestionnaireIdsFromPlanDefinition(carePlanResult.getPlanDefinitions()));
         FhirLookupResult questionnaireResult = lookupQuestionnaires(questionnaireIds);
 
         // Merge the results
@@ -264,10 +263,17 @@ public class FhirClient {
         return questionnaireResponseResult.merge(planDefinitionResult);
     }
 
-    private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
+    private List<String> getQuestionnaireIdsFromCarePlan(List<CarePlan> carePlans) {
         return carePlans
                 .stream()
                 .flatMap(cp -> cp.getActivity().stream().map(a -> getQuestionnaireId(a.getDetail())))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getQuestionnaireIdsFromPlanDefinition(List<PlanDefinition> planDefinitions) {
+        return planDefinitions
+                .stream()
+                .flatMap(pd -> pd.getAction().stream().map(a -> a.getDefinitionCanonicalType().getValue()))
                 .collect(Collectors.toList());
     }
 

@@ -148,7 +148,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     public void patchCarePlan_success() throws Exception {
         // Arrange
         String id = "careplan-2";
-        PartialUpdateCareplanRequest request = new PartialUpdateCareplanRequest();
+        UpdateCareplanRequest request = new UpdateCareplanRequest();
+
+        request.addPlanDefinitionIdsItem("PlanDefinition/plandefinition-1");
+
         request.addQuestionnaireIdsItem("Questionnaire/questionnaire-1");
         request.addQuestionnaireIdsItem("Questionnaire/questionnaire-2");
 

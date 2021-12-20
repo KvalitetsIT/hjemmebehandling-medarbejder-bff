@@ -24,7 +24,7 @@ import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.FrequencyDto;
-import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateCareplanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
@@ -140,13 +140,13 @@ public class CarePlanController extends BaseController {
     }
 
     @PatchMapping(value = "/v1/careplan/{id}")
-    public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody PartialUpdateCareplanRequest request) {
-        if(request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
+    public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody UpdateCareplanRequest request) {
+        if(request.getPlanDefinitionIds() == null || request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {
-            carePlanService.updateQuestionnaires(id, request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
+            carePlanService.updateQuestionnaires(id, request.getPlanDefinitionIds(), request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);

@@ -189,9 +189,17 @@ public class CarePlanService extends AccessValidatingService {
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
     }
 
-    public void updateQuestionnaires(String carePlanId, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
+    public void updateQuestionnaires(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
+        // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
+        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
+        if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
+            throw new ServiceException("Could not look up plan definitions to update!", ErrorKind.BAD_REQUEST, ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN);
+        }
+
+        // Validate that the client is allowed to reference the plan definitions.
+        validateAccess(planDefinitionResult.getPlanDefinitions());
+
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-        //List<Questionnaire> questionnaires = fhirClient.lookupQuestionnaires(questionnaireIds);
         FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
             throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN);
@@ -211,36 +219,68 @@ public class CarePlanService extends AccessValidatingService {
         // Validate that the client is allowed to update the carePlan.
         validateAccess(carePlan);
 
+        // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
+        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, planDefinitionResult)).collect(Collectors.toList());
+        if(!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) {
+            throw new ServiceException("Not every questionnaireId could be found in the provided plan definitions.", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN);
+        }
+
         // Update the carePlan
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult));
-        Set<String> existingQuestionnaireIds = carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toSet());
-        for(var questionnaireId : questionnaireIds) {
-            if(existingQuestionnaireIds.contains(questionnaireId)) {
-                continue;
-            }
-
-            var wrapper = buildQuestionnaireWrapperModel(questionnaireId, frequencies, questionnaireResult);
-            carePlanModel.getQuestionnaires().add(wrapper);
-        }
+        carePlanModel.setPlanDefinitions(planDefinitions);
+        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
     }
 
-    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId, Map<String, FrequencyModel> frequencies, FhirLookupResult lookupResult) {
-        var wrapper = new QuestionnaireWrapperModel();
+    private boolean questionnairesAllowedByPlanDefinitions(List<PlanDefinitionModel> planDefinitions, List<String> questionnaireIds) {
+        var allowedQuestionnaires = planDefinitions.stream().flatMap(pd -> pd.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId())).collect(Collectors.toSet());
+        var actualQuestionnaires = questionnaireIds.stream().map(id -> new QualifiedId(FhirUtils.qualifyId(id, ResourceType.Questionnaire))).collect(Collectors.toSet());
 
-        // Set the questionnaire
-        var questionnaire = lookupResult.getQuestionnaire(questionnaireId).orElseThrow();
-        wrapper.setQuestionnaire(fhirMapper.mapQuestionnaire(questionnaire));
+        return allowedQuestionnaires.containsAll(actualQuestionnaires);
+    }
 
-        // Set the frequency
-        wrapper.setFrequency(frequencies.get(questionnaireId));
+    private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<String> questionnaireIds, Map<String, FrequencyModel> frequenciesById, List<PlanDefinitionModel> planDefinitions) {
+        List<QuestionnaireWrapperModel> result = new ArrayList<>();
 
-        // Initialize the 'satisfied-until' timestamp-
-        initializeFrequencyTimestamp(wrapper);
+        Map<String, QuestionnaireModel> questionnairesById = new HashMap<>();
+        for(var questionnaire : planDefinitions.stream().flatMap(pd -> pd.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire())).collect(Collectors.toSet())) {
+            questionnairesById.put(questionnaire.getId().toString(), questionnaire);
+        }
 
-        return wrapper;
+        Map<String, List<ThresholdModel>> thresholdsById = new HashMap<>();
+        for(var planDefinition : planDefinitions) {
+            for(var qw : planDefinition.getQuestionnaires()) {
+                String questionnaireId = qw.getQuestionnaire().getId().toString();
+                if(thresholdsById.containsKey(questionnaireId)) {
+                    throw new IllegalStateException(String.format("Questionnaire %s specified by multiple referenced plan definitions!", questionnaireId));
+                }
+                thresholdsById.put(questionnaireId, qw.getThresholds());
+            }
+        }
+
+        for(var questionnaireId : questionnaireIds) {
+            QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
+
+            // Set the questionnaire
+            var questionnaire = questionnairesById.get(questionnaireId);
+            wrapper.setQuestionnaire(questionnaire);
+
+            // Set the frequency
+            wrapper.setFrequency(frequenciesById.get(questionnaireId));
+
+            // Initialize the 'satisfied-until' timestamp-
+            initializeFrequencyTimestamp(wrapper);
+
+            // Transfer thresholds
+            var thresholds = thresholdsById.get(questionnaireId);
+            wrapper.setThresholds(thresholds);
+
+            result.add(wrapper);
+        }
+
+        return result;
     }
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
@@ -348,4 +388,6 @@ public class CarePlanService extends AccessValidatingService {
             }
         }
     }
+
+
 }
