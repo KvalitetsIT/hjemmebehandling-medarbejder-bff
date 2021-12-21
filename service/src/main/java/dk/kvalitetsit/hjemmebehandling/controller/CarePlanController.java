@@ -146,7 +146,7 @@ public class CarePlanController extends BaseController {
         }
 
         try {
-            carePlanService.updateQuestionnaires(id, request.getPlanDefinitionIds(), request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()));
+            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()), request.getPatientPrimaryPhone(), request.getPatientSecondaryPhone(), dtoMapper.mapContactDetailsDto(request.getPatientPrimaryRelativeContactDetails()));
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);

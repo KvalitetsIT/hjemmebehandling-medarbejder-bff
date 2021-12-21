@@ -165,6 +165,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         frequencyDto2.setTimeOfDay("05:00");
         request.putQuestionnaireFrequenciesItem("Questionnaire/questionnaire-2", frequencyDto2);
 
+        request.setPatientPrimaryPhone("11223344");
+        request.setPatientSecondaryPhone("55667788");
+        request.setPatientPrimaryRelativeContactDetails(new ContactDetailsDto());
+
         // Act
         ApiResponse<Void> response = subject.patchCarePlanWithHttpInfo(id, request);
 

@@ -562,12 +562,15 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void updateQuestionnaires_questionnaireAccessViolation_throwsException() throws Exception {
+    public void updateCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
         Map<String, FrequencyModel> frequencies = Map.of();
+        String patientPrimaryPhone = "12345678";
+        String patientSecondaryPhone = "87654321";
+        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
 
         PlanDefinition planDefinition = new PlanDefinition();
         Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(FhirLookupResult.fromResource(planDefinition));
@@ -580,16 +583,19 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaires(carePlanId, planDefinitionIds, questionnaireIds, frequencies));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails));
     }
 
     @Test
-    public void updateQuestionnaires_carePlanAccessViolation_throwsException() throws Exception {
+    public void updateCarePlan_carePlanAccessViolation_throwsException() throws Exception {
         // Arrange
         String carePlanId = "CarePlan/careplan-1";
         List<String> planDefinitionIds = List.of();
         List<String> questionnaireIds = List.of();
         Map<String, FrequencyModel> frequencies = Map.of();
+        String patientPrimaryPhone = "12345678";
+        String patientSecondaryPhone = "87654321";
+        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
 
         Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
@@ -605,16 +611,19 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaires(carePlanId, planDefinitionIds, questionnaireIds, frequencies));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails));
     }
 
     @Test
-    public void updateQuestionnaires_transfersThresholdsFromPlanDefinition() throws Exception {
+    public void updateCarePlan_transfersThresholdsFromPlanDefinition() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
         Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_1, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
+        String patientPrimaryPhone = "12345678";
+        String patientSecondaryPhone = "87654321";
+        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
@@ -628,20 +637,70 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
-        FhirLookupResult carePlanResult = FhirLookupResult.fromResources(carePlan, planDefinition);
+        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+        FhirLookupResult carePlanResult = FhirLookupResult.fromResources(carePlan, patient, planDefinition);
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(carePlanResult);
 
+        PatientModel patientModel = buildPatientModel(PATIENT_ID_1);
+        Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientModel);
+
         CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, planDefinitionIds, questionnaireIds);
+        carePlanModel.setPatient(patientModel);
         Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult)).thenReturn(carePlanModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         // Act
-        subject.updateQuestionnaires(carePlanId, planDefinitionIds, questionnaireIds, frequencies);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails);
 
         // Assert
         assertEquals(1, carePlanModel.getQuestionnaires().size());
         assertEquals(threshold, carePlanModel.getQuestionnaires().get(0).getThresholds().get(0));
+    }
+
+    @Test
+    public void updateCarePlan_updatesPatientDetails() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+        Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_1, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
+        String patientPrimaryPhone = "12345678";
+        String patientSecondaryPhone = "87654321";
+        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(planDefinitionResult);
+
+        var threshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
+
+        Questionnaire questionnaire = new Questionnaire();
+        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+        FhirLookupResult carePlanResult = FhirLookupResult.fromResources(carePlan, patient, planDefinition);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(carePlanResult);
+
+        PatientModel patientModel = buildPatientModel(PATIENT_ID_1);
+        Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientModel);
+
+        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, planDefinitionIds, questionnaireIds);
+        carePlanModel.setPatient(patientModel);
+        Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult)).thenReturn(carePlanModel);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
+        // Act
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails);
+
+        // Assert
+        assertEquals(patientPrimaryPhone, patientModel.getPatientContactDetails().getPrimaryPhone());
+        assertEquals(patientSecondaryPhone, patientModel.getPatientContactDetails().getSecondaryPhone());
+        assertEquals(patientPrimaryContactDetails, patientModel.getPrimaryRelativeContactDetails());
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {
@@ -663,6 +722,15 @@ public class CarePlanServiceTest {
         }
 
         return carePlanModel;
+    }
+
+    private PatientModel buildPatientModel(String patientId) {
+        PatientModel patientModel = new PatientModel();
+
+        patientModel.setId(new QualifiedId(patientId));
+        patientModel.setPatientContactDetails(new ContactDetailsModel());
+
+        return patientModel;
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId) {

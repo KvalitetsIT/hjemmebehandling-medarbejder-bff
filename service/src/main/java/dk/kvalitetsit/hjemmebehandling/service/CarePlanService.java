@@ -189,7 +189,7 @@ public class CarePlanService extends AccessValidatingService {
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
     }
 
-    public void updateQuestionnaires(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies) throws ServiceException, AccessValidationException {
+    public void updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, String patientPrimaryPhone, String patientSecondaryPhone, ContactDetailsModel patientPrimaryContactDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
         if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
@@ -230,8 +230,16 @@ public class CarePlanService extends AccessValidatingService {
         carePlanModel.setPlanDefinitions(planDefinitions);
         carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
 
+        // Update the patient
+        String patientId = carePlanModel.getPatient().getId().toString();
+        PatientModel patientModel = fhirMapper.mapPatient(careplanResult.getPatient(carePlanModel.getPatient().getId().toString())
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))));
+        patientModel.getPatientContactDetails().setPrimaryPhone(patientPrimaryPhone);
+        patientModel.getPatientContactDetails().setSecondaryPhone(patientSecondaryPhone);
+        patientModel.setPrimaryRelativeContactDetails(patientPrimaryContactDetails);
+
         // Save the updated CarePlan
-        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), fhirMapper.mapPatientModel(patientModel));
     }
 
     private boolean questionnairesAllowedByPlanDefinitions(List<PlanDefinitionModel> planDefinitions, List<String> questionnaireIds) {

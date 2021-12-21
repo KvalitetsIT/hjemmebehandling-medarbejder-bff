@@ -14,6 +14,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,9 +154,14 @@ public class FhirClient {
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
         // Build a transaction bundle.
-        var bundle = new BundleBuilder().buildCarePlanBundle(carePlan, patient);
+        var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
+        addOrganizationTag(bundle);
 
-        return saveInTransaction(bundle, ResourceType.CarePlan);
+        var id = saveInTransaction(bundle, ResourceType.CarePlan);
+        if(id.isEmpty()) {
+            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+        }
+        return id.get();
     }
 
     public String savePatient(Patient patient) {
@@ -193,6 +199,12 @@ public class FhirClient {
 
     public void updateCarePlan(CarePlan carePlan) {
         update(carePlan);
+    }
+
+    public void updateCarePlan(CarePlan carePlan, Patient patient) {
+        var bundle = new BundleBuilder().buildUpdateCarePlanBundle(carePlan, patient);
+
+        saveInTransaction(bundle, ResourceType.CarePlan);
     }
 
     public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
@@ -361,31 +373,26 @@ public class FhirClient {
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
-    private String saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
-        addOrganizationTag(transactionBundle);
-
+    private Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         // Execute the transaction
         var responseBundle = client.transaction().withBundle(transactionBundle).execute();
 
-        // Locate the 'primary' entry in the response
+        // Look for an entry with status 201 to retrieve the location-header.
         var id = "";
         for(var responseEntry : responseBundle.getEntry()) {
             var status = responseEntry.getResponse().getStatus();
             var location = responseEntry.getResponse().getLocation();
-            if(!status.startsWith("201")) {
-                throw new IllegalStateException(String.format("Creating %s failed. Received unwanted http statuscode: %s", resourceType, status));
-            }
-            if(location.startsWith(resourceType.toString())) {
+            if(status.startsWith("201") && location.startsWith(resourceType.toString())) {
                 id = location.replaceFirst("/_history.*$", "");
             }
         }
 
         if(id.isEmpty()) {
-            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+            return Optional.empty();
         }
-        return id;
+        return Optional.of(id);
     }
 
     private <T extends Resource> void update(Resource resource) {
