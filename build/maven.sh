@@ -17,7 +17,7 @@ if [ -d $SRC_FOLDER ]; then
   docker run -d --volumes-from maven-builder -e hapi.fhir.allow_external_references=true -e hapi.fhir.expunge_enabled=true -e hapi.fhir.reuse_cached_search_results_millis=1000 --network rim --name hapi-server hapiproject/hapi:latest
 
   # Initialize the server with data
-  docker run --volumes-from maven-builder --network rim -e data_dir='/src/compose/hapi-server-initializer' alpine:3.11.5 /src/compose/hapi-server-initializer/init.sh
+  docker run --network rim -e init_test_data=true kvalitetsit/hjemmebehandling-data-initializer:latest
 
   # Start the bff service
 

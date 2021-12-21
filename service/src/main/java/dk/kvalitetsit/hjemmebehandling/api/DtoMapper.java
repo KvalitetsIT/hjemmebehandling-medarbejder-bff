@@ -59,6 +59,32 @@ public class DtoMapper {
         return carePlanDto;
     }
 
+    public ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
+        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
+
+        contactDetailsModel.setCountry(contactDetails.getCountry());
+        contactDetailsModel.setCity(contactDetails.getCity());
+        contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
+        contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
+        contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
+        contactDetailsModel.setStreet(contactDetails.getStreet());
+
+        return contactDetailsModel;
+    }
+
+    public ContactDetailsDto mapContactDetailsModel(ContactDetailsModel contactDetails) {
+        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
+
+        contactDetailsDto.setCountry(contactDetails.getCountry());
+        contactDetailsDto.setCity(contactDetails.getCity());
+        contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
+        contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
+        contactDetailsDto.setPostalCode(contactDetails.getPostalCode());
+        contactDetailsDto.setStreet(contactDetails.getStreet());
+
+        return contactDetailsDto;
+    }
+
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
@@ -258,6 +284,7 @@ public class DtoMapper {
 
         questionnaireResponseDto.setId(questionnaireResponseModel.getId().toString());
         questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId().toString());
+        questionnaireResponseDto.setCarePlanId(questionnaireResponseModel.getCarePlanId().toString());
         questionnaireResponseDto.setQuestionnaireName(questionnaireResponseModel.getQuestionnaireName());
         questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
         questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
@@ -284,32 +311,6 @@ public class DtoMapper {
         else {
             throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType.toString(), source.getId()));
         }
-    }
-
-    private ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
-        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
-
-        contactDetailsModel.setCountry(contactDetails.getCountry());
-        contactDetailsModel.setCity(contactDetails.getCity());
-        contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
-        contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
-        contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
-        contactDetailsModel.setStreet(contactDetails.getStreet());
-
-        return contactDetailsModel;
-    }
-
-    private ContactDetailsDto mapContactDetailsModel(ContactDetailsModel contactDetails) {
-        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
-
-        contactDetailsDto.setCountry(contactDetails.getCountry());
-        contactDetailsDto.setCity(contactDetails.getCity());
-        contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
-        contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
-        contactDetailsDto.setPostalCode(contactDetails.getPostalCode());
-        contactDetailsDto.setStreet(contactDetails.getStreet());
-
-        return contactDetailsDto;
     }
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {

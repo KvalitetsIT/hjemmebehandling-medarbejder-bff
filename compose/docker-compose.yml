@@ -38,15 +38,11 @@ services:
        - 5006:5006
 
    hapi-server-initializer:
-     image: alpine:3.11.5
+     image: kvalitetsit/hjemmebehandling-data-initializer:latest
      depends_on:
        - hapi-server
-     volumes:
-      - ./hapi-server-initializer:/hapi-server-initializer
      environment:
-       - data_dir=/hapi-server-initializer
-     #command: "/hapi-server-initializer/init-infektionsmedicinsk.sh"
-     command: "/hapi-server-initializer/init.sh"
+       - init_test_data=true
 
    person-service:
      image: mockserver/mockserver

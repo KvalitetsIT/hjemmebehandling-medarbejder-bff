@@ -19,7 +19,6 @@ import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.text.html.Option;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
@@ -156,9 +154,14 @@ public class FhirClient {
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
         // Build a transaction bundle.
-        var bundle = new BundleBuilder().buildCarePlanBundle(carePlan, patient);
+        var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
+        addOrganizationTag(bundle);
 
-        return saveInTransaction(bundle, ResourceType.CarePlan);
+        var id = saveInTransaction(bundle, ResourceType.CarePlan);
+        if(id.isEmpty()) {
+            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+        }
+        return id.get();
     }
 
     public String savePatient(Patient patient) {
@@ -198,6 +201,12 @@ public class FhirClient {
         update(carePlan);
     }
 
+    public void updateCarePlan(CarePlan carePlan, Patient patient) {
+        var bundle = new BundleBuilder().buildUpdateCarePlanBundle(carePlan, patient);
+
+        saveInTransaction(bundle, ResourceType.CarePlan);
+    }
+
     public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
         update(questionnaireResponse);
     }
@@ -217,7 +226,9 @@ public class FhirClient {
         }
 
         // Get the related questionnaire-resources
-        List<String> questionnaireIds = getQuestionnaireIds(carePlanResult.getCarePlans());
+        List<String> questionnaireIds = new ArrayList<>();
+        questionnaireIds.addAll(getQuestionnaireIdsFromCarePlan(carePlanResult.getCarePlans()));
+        questionnaireIds.addAll(getQuestionnaireIdsFromPlanDefinition(carePlanResult.getPlanDefinitions()));
         FhirLookupResult questionnaireResult = lookupQuestionnaires(questionnaireIds);
 
         // Merge the results
@@ -264,10 +275,17 @@ public class FhirClient {
         return questionnaireResponseResult.merge(planDefinitionResult);
     }
 
-    private List<String> getQuestionnaireIds(List<CarePlan> carePlans) {
+    private List<String> getQuestionnaireIdsFromCarePlan(List<CarePlan> carePlans) {
         return carePlans
                 .stream()
                 .flatMap(cp -> cp.getActivity().stream().map(a -> getQuestionnaireId(a.getDetail())))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getQuestionnaireIdsFromPlanDefinition(List<PlanDefinition> planDefinitions) {
+        return planDefinitions
+                .stream()
+                .flatMap(pd -> pd.getAction().stream().map(a -> a.getDefinitionCanonicalType().getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -355,31 +373,26 @@ public class FhirClient {
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
     }
 
-    private String saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
-        addOrganizationTag(transactionBundle);
-
+    private Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         // Execute the transaction
         var responseBundle = client.transaction().withBundle(transactionBundle).execute();
 
-        // Locate the 'primary' entry in the response
+        // Look for an entry with status 201 to retrieve the location-header.
         var id = "";
         for(var responseEntry : responseBundle.getEntry()) {
             var status = responseEntry.getResponse().getStatus();
             var location = responseEntry.getResponse().getLocation();
-            if(!status.startsWith("201")) {
-                throw new IllegalStateException(String.format("Creating %s failed. Received unwanted http statuscode: %s", resourceType, status));
-            }
-            if(location.startsWith(resourceType.toString())) {
+            if(status.startsWith("201") && location.startsWith(resourceType.toString())) {
                 id = location.replaceFirst("/_history.*$", "");
             }
         }
 
         if(id.isEmpty()) {
-            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+            return Optional.empty();
         }
-        return id;
+        return Optional.of(id);
     }
 
     private <T extends Resource> void update(Resource resource) {

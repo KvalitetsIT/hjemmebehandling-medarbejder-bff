@@ -15,26 +15,26 @@ public class BundleBuilderTest {
     private static final String PATIENT_ID = "patient-1";
 
     @Test
-    public void buildCarePlanBundle_mapsArgumentsToEntries() {
+    public void buildCreateCarePlanBundle_mapsArgumentsToEntries() {
         // Arrange
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
 
         // Act
-        Bundle result = subject.buildCarePlanBundle(carePlan, patient);
+        Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
 
         // Assert
         assertEquals(2, result.getEntry().size());
     }
 
     @Test
-    public void buildCarePlanBundle_updatesSubjectReference() {
+    public void buildCreateCarePlanBundle_updatesSubjectReference() {
         // Arrange
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
 
         // Act
-        Bundle result = subject.buildCarePlanBundle(carePlan, patient);
+        Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
 
         // Assert
         assertEquals(patient, result.getEntry().get(1).getResource());

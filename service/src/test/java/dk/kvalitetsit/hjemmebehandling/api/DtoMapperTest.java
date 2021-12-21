@@ -269,6 +269,7 @@ public class DtoMapperTest {
 
         questionnaireResponseModel.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
         questionnaireResponseModel.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
+        questionnaireResponseModel.setCarePlanId(new QualifiedId(CAREPLAN_ID_1));
         questionnaireResponseModel.setQuestionAnswerPairs(List.of(buildQuestionAnswerPairModel()));
         questionnaireResponseModel.setPatient(buildPatientModel());
 

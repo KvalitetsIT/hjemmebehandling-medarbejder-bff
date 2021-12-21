@@ -6,40 +6,57 @@ import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Resource;
 
 public class BundleBuilder {
-    public Bundle buildCarePlanBundle(CarePlan carePlan, Patient patient) {
+    public Bundle buildCreateCarePlanBundle(CarePlan carePlan, Patient patient) {
         // Build the CarePlan entry.
-        var carePlanEntry = buildCarePlanEntry(carePlan);
+        var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.POST);
 
         // Build the Patient entry.
-        var patientEntry = buildPatientEntry(patient);
+        var patientEntry = buildPatientEntry(patient, Bundle.HTTPVerb.POST);
 
         // Alter the subject reference to refer to the Patient entry in the bundle (the Patient does not exist yet).
         carePlan.getSubject().setReference(patientEntry.getFullUrl());
 
         // Build a transaction bundle.
+        return buildBundle(carePlanEntry, patientEntry);
+    }
+
+    public Bundle buildUpdateCarePlanBundle(CarePlan carePlan, Patient patient) {
+        // Build the CarePlan entry.
+        var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.PUT);
+
+        // Build the Patient entry.
+        var patientEntry = buildPatientEntry(patient, Bundle.HTTPVerb.PUT);
+
+        // Build a transaction bundle.
+        return buildBundle(carePlanEntry, patientEntry);
+    }
+
+    private Bundle buildBundle(Bundle.BundleEntryComponent... entries) {
         var bundle = new Bundle();
 
         bundle.setType(Bundle.BundleType.TRANSACTION);
-        bundle.addEntry(carePlanEntry);
-        bundle.addEntry(patientEntry);
+        for(var entry : entries) {
+            bundle.addEntry(entry);
+        }
 
         return bundle;
     }
 
-    private Bundle.BundleEntryComponent buildCarePlanEntry(CarePlan carePlan) {
-        return buildEntry(carePlan, "CarePlan/careplan-entry");
+    private Bundle.BundleEntryComponent buildCarePlanEntry(CarePlan carePlan, Bundle.HTTPVerb method) {
+        return buildEntry(carePlan, "CarePlan/careplan-entry", method);
     }
 
-    private Bundle.BundleEntryComponent buildPatientEntry(Patient patient) {
-        return buildEntry(patient, "Patient/patient-entry");
+    private Bundle.BundleEntryComponent buildPatientEntry(Patient patient, Bundle.HTTPVerb method) {
+        return buildEntry(patient, "Patient/patient-entry", method);
     }
 
-    private Bundle.BundleEntryComponent buildEntry(Resource resource, String fullUrl) {
+    private Bundle.BundleEntryComponent buildEntry(Resource resource, String fullUrl, Bundle.HTTPVerb method) {
         var entry = new Bundle.BundleEntryComponent();
 
         entry.setFullUrl(fullUrl);
         entry.setRequest(new Bundle.BundleEntryRequestComponent());
-        entry.getRequest().setMethod(Bundle.HTTPVerb.POST);
+        entry.getRequest().setMethod(method);
+        entry.getRequest().setUrl(resource.getId());
         entry.setResource(resource);
 
         return entry;
