@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
-import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
-import dk.kvalitetsit.hjemmebehandling.api.FrequencyDto;
-import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
@@ -141,12 +138,15 @@ public class CarePlanController extends BaseController {
 
     @PatchMapping(value = "/v1/careplan/{id}")
     public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody UpdateCareplanRequest request) {
-        if(request.getPlanDefinitionIds() == null || request.getQuestionnaireIds() == null || request.getQuestionnaireFrequencies() == null) {
+        if(request.getPlanDefinitionIds() == null || request.getQuestionnaires() == null ) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {
-            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), request.getQuestionnaireIds(), mapFrequencies(request.getQuestionnaireFrequencies()), request.getPatientPrimaryPhone(), request.getPatientSecondaryPhone(), dtoMapper.mapContactDetailsDto(request.getPatientPrimaryRelativeContactDetails()));
+            List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaires());
+            Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
+
+            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, request.getPatientPrimaryPhone(), request.getPatientSecondaryPhone(), dtoMapper.mapContactDetailsDto(request.getPatientPrimaryRelativeContactDetails()));
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
@@ -179,14 +179,20 @@ public class CarePlanController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    private Map<String, FrequencyModel> mapFrequencies(Map<String, FrequencyDto> frequencyDtos) {
-        Map<String, FrequencyModel> frequencies = new HashMap<>();
+    private List<String> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
+        return questionnaireFrequencyPairs
+                .stream()
+                .map(pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire))
+                .collect(Collectors.toList());
+    }
 
-        for(String questionnaireId : frequencyDtos.keySet()) {
-            frequencies.put(questionnaireId, dtoMapper.mapFrequencyDto(frequencyDtos.get(questionnaireId)));
-        }
-
-        return frequencies;
+    private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
+        return questionnaireFrequencyPairs
+                .stream()
+                .collect(Collectors.toMap(
+                        pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire),
+                        pair -> dtoMapper.mapFrequencyDto(pair.getFrequency()))
+                );
     }
 
     private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {

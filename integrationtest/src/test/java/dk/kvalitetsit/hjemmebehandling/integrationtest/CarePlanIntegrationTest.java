@@ -152,18 +152,19 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         request.addPlanDefinitionIdsItem("PlanDefinition/plandefinition-1");
 
-        request.addQuestionnaireIdsItem("Questionnaire/questionnaire-1");
-        request.addQuestionnaireIdsItem("Questionnaire/questionnaire-2");
-
         FrequencyDto frequencyDto1 = new FrequencyDto();
         frequencyDto1.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
         frequencyDto1.setTimeOfDay("04:00");
-        request.putQuestionnaireFrequenciesItem("Questionnaire/questionnaire-1", frequencyDto1);
+        request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
+                .id("Questionnaire/questionnaire-1")
+                .frequency(frequencyDto1));
 
         FrequencyDto frequencyDto2 = new FrequencyDto();
         frequencyDto2.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.WED));
         frequencyDto2.setTimeOfDay("05:00");
-        request.putQuestionnaireFrequenciesItem("Questionnaire/questionnaire-2", frequencyDto2);
+        request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
+                .id("Questionnaire/questionnaire-2")
+                .frequency(frequencyDto2));
 
         request.setPatientPrimaryPhone("11223344");
         request.setPatientSecondaryPhone("55667788");
