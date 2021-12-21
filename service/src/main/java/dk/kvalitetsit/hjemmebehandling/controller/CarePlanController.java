@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,8 +146,9 @@ public class CarePlanController extends BaseController {
         try {
             List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaires());
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
+            PatientDetails patientDetails = getPatientDetails(request);
 
-            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, request.getPatientPrimaryPhone(), request.getPatientSecondaryPhone(), dtoMapper.mapContactDetailsDto(request.getPatientPrimaryRelativeContactDetails()));
+            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
@@ -193,6 +195,19 @@ public class CarePlanController extends BaseController {
                         pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire),
                         pair -> dtoMapper.mapFrequencyDto(pair.getFrequency()))
                 );
+    }
+
+    private PatientDetails getPatientDetails(UpdateCareplanRequest request) {
+        PatientDetails patientDetails = new PatientDetails();
+
+        patientDetails.setPatientPrimaryPhone(request.getPatientPrimaryPhone());
+        patientDetails.setPatientSecondaryPhone(request.getPatientSecondaryPhone());
+        patientDetails.setPrimaryRelativeName(request.getPrimaryRelativeName());
+        patientDetails.setPrimaryRelativeAffiliation(request.getPrimaryRelativeAffiliation());
+        patientDetails.setPrimaryRelativePrimaryPhone(request.getPrimaryRelativePrimaryPhone());
+        patientDetails.setPrimaryRelativeSecondaryPhone(request.getPrimaryRelativeSecondaryPhone());
+
+        return patientDetails;
     }
 
     private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {

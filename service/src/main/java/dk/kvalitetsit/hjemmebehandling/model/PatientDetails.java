@@ -1,32 +1,12 @@
-package dk.kvalitetsit.hjemmebehandling.api;
+package dk.kvalitetsit.hjemmebehandling.model;
 
-import java.util.List;
-
-public class UpdateCareplanRequest {
-    private List<String> planDefinitionIds;
-    private List<QuestionnaireFrequencyPairDto> questionnaires;
+public class PatientDetails {
     private String patientPrimaryPhone;
     private String patientSecondaryPhone;
     private String primaryRelativeName;
     private String primaryRelativeAffiliation;
     private String primaryRelativePrimaryPhone;
     private String primaryRelativeSecondaryPhone;
-
-    public List<String> getPlanDefinitionIds() {
-        return planDefinitionIds;
-    }
-
-    public void setPlanDefinitionIds(List<String> planDefinitionIds) {
-        this.planDefinitionIds = planDefinitionIds;
-    }
-
-    public List<QuestionnaireFrequencyPairDto> getQuestionnaires() {
-        return questionnaires;
-    }
-
-    public void setQuestionnaires(List<QuestionnaireFrequencyPairDto> questionnaires) {
-        this.questionnaires = questionnaires;
-    }
 
     public String getPatientPrimaryPhone() {
         return patientPrimaryPhone;

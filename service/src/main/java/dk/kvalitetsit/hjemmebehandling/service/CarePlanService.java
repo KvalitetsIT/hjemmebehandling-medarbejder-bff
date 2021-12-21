@@ -189,7 +189,7 @@ public class CarePlanService extends AccessValidatingService {
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
     }
 
-    public void updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, String patientPrimaryPhone, String patientSecondaryPhone, ContactDetailsModel patientPrimaryContactDetails) throws ServiceException, AccessValidationException {
+    public void updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
         if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
@@ -225,18 +225,15 @@ public class CarePlanService extends AccessValidatingService {
             throw new ServiceException("Not every questionnaireId could be found in the provided plan definitions.", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN);
         }
 
-        // Update the carePlan
+        // Update carePlan
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult));
-        carePlanModel.setPlanDefinitions(planDefinitions);
-        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
+        updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);
 
-        // Update the patient
+        // Update patient
         String patientId = carePlanModel.getPatient().getId().toString();
         PatientModel patientModel = fhirMapper.mapPatient(careplanResult.getPatient(carePlanModel.getPatient().getId().toString())
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))));
-        patientModel.getPatientContactDetails().setPrimaryPhone(patientPrimaryPhone);
-        patientModel.getPatientContactDetails().setSecondaryPhone(patientSecondaryPhone);
-        patientModel.setPrimaryRelativeContactDetails(patientPrimaryContactDetails);
+        updatePatientModel(patientModel, patientDetails);
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), fhirMapper.mapPatientModel(patientModel));
@@ -247,6 +244,11 @@ public class CarePlanService extends AccessValidatingService {
         var actualQuestionnaires = questionnaireIds.stream().map(id -> new QualifiedId(FhirUtils.qualifyId(id, ResourceType.Questionnaire))).collect(Collectors.toSet());
 
         return allowedQuestionnaires.containsAll(actualQuestionnaires);
+    }
+
+    private void updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
+        carePlanModel.setPlanDefinitions(planDefinitions);
+        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
     }
 
     private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<String> questionnaireIds, Map<String, FrequencyModel> frequenciesById, List<PlanDefinitionModel> planDefinitions) {
@@ -289,6 +291,21 @@ public class CarePlanService extends AccessValidatingService {
         }
 
         return result;
+    }
+
+    private void updatePatientModel(PatientModel patientModel, PatientDetails patientDetails) {
+        patientModel.getPatientContactDetails().setPrimaryPhone(patientDetails.getPatientPrimaryPhone());
+        patientModel.getPatientContactDetails().setSecondaryPhone(patientDetails.getPatientSecondaryPhone());
+
+        patientModel.setPrimaryRelativeName(patientDetails.getPrimaryRelativeName());
+        patientModel.setPrimaryRelativeAffiliation(patientDetails.getPrimaryRelativeAffiliation());
+        if(patientDetails.getPrimaryRelativePrimaryPhone() != null || patientDetails.getPrimaryRelativeSecondaryPhone() != null) {
+            if(patientModel.getPrimaryRelativeContactDetails() == null) {
+                patientModel.setPrimaryRelativeContactDetails(new ContactDetailsModel());
+            }
+            patientModel.getPrimaryRelativeContactDetails().setPrimaryPhone(patientDetails.getPrimaryRelativePrimaryPhone());
+            patientModel.getPrimaryRelativeContactDetails().setSecondaryPhone(patientDetails.getPrimaryRelativeSecondaryPhone());
+        }
     }
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {

@@ -568,6 +568,8 @@ public class CarePlanServiceTest {
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
         Map<String, FrequencyModel> frequencies = Map.of();
+        PatientDetails patientDetails = buildPatientDetails();
+
         String patientPrimaryPhone = "12345678";
         String patientSecondaryPhone = "87654321";
         ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
@@ -583,7 +585,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
     }
 
     @Test
@@ -593,9 +595,7 @@ public class CarePlanServiceTest {
         List<String> planDefinitionIds = List.of();
         List<String> questionnaireIds = List.of();
         Map<String, FrequencyModel> frequencies = Map.of();
-        String patientPrimaryPhone = "12345678";
-        String patientSecondaryPhone = "87654321";
-        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
+        PatientDetails patientDetails = buildPatientDetails();
 
         Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
@@ -611,7 +611,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
     }
 
     @Test
@@ -621,9 +621,7 @@ public class CarePlanServiceTest {
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
         Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_1, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
-        String patientPrimaryPhone = "12345678";
-        String patientSecondaryPhone = "87654321";
-        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
+        PatientDetails patientDetails = buildPatientDetails();
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
@@ -651,7 +649,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         // Act
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
         // Assert
         assertEquals(1, carePlanModel.getQuestionnaires().size());
@@ -665,9 +663,7 @@ public class CarePlanServiceTest {
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
         Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_1, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
-        String patientPrimaryPhone = "12345678";
-        String patientSecondaryPhone = "87654321";
-        ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
+        PatientDetails patientDetails = buildPatientDetails();
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
@@ -695,12 +691,12 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         // Act
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientPrimaryPhone, patientSecondaryPhone, patientPrimaryContactDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
         // Assert
-        assertEquals(patientPrimaryPhone, patientModel.getPatientContactDetails().getPrimaryPhone());
-        assertEquals(patientSecondaryPhone, patientModel.getPatientContactDetails().getSecondaryPhone());
-        assertEquals(patientPrimaryContactDetails, patientModel.getPrimaryRelativeContactDetails());
+        assertEquals(patientDetails.getPatientPrimaryPhone(), patientModel.getPatientContactDetails().getPrimaryPhone());
+        assertEquals(patientDetails.getPatientSecondaryPhone(), patientModel.getPatientContactDetails().getSecondaryPhone());
+        assertEquals(patientDetails.getPrimaryRelativeName(), patientModel.getPrimaryRelativeName());
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {
@@ -811,6 +807,19 @@ public class CarePlanServiceTest {
         patient.setIdentifier(List.of(identifier));
 
         return patient;
+    }
+
+    private PatientDetails buildPatientDetails() {
+        PatientDetails patientDetails = new PatientDetails();
+
+        patientDetails.setPatientPrimaryPhone("11223344");
+        patientDetails.setPatientSecondaryPhone("44332211");
+        patientDetails.setPrimaryRelativeName("Dronning Margrethe");
+        patientDetails.setPrimaryRelativeAffiliation("Ven");
+        patientDetails.setPrimaryRelativePrimaryPhone("98798798");
+        patientDetails.setPrimaryRelativeSecondaryPhone("78978978");
+
+        return patientDetails;
     }
 
     private PlanDefinition buildPlanDefinition(String planDefinitionId) {
