@@ -1,26 +1,28 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
-import org.checkerframework.checker.nullness.Opt;
-import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.StringType;
-import org.hl7.fhir.r4.model.Type;
-
 import java.sql.Date;
 import java.time.Instant;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
-import org.hl7.fhir.r4.model.*;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.hl7.fhir.r4.model.BooleanType;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Range;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Type;
+
+import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
 public class ExtensionMapper {
     public static Extension mapActivitySatisfiedUntil(Instant pointInTime) {
@@ -31,6 +33,14 @@ public class ExtensionMapper {
         return buildDateTimeExtension(Systems.CAREPLAN_SATISFIED_UNTIL, pointInTime);
     }
 
+    public static Extension mapCustomUserId(String customUserId) {
+        return buildStringExtension(Systems.CUSTOM_USER_ID, customUserId);
+    }
+    
+	public static Extension mapCustomUserName(String customUserName) {
+        return buildStringExtension(Systems.CUSTOM_USER_NAME, customUserName);
+	}
+    
     public static Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
         return buildStringExtension(Systems.EXAMINATION_STATUS, examinationStatus.toString());
     }
@@ -75,6 +85,14 @@ public class ExtensionMapper {
 
     public static String extractOrganizationId(List<Extension> extensions) {
         return extractReferenceFromExtensions(extensions, Systems.ORGANIZATION);
+    }
+    
+    public static String extractCustomUserId(List<Extension> extensions) {
+        return extractStringFromExtensions(extensions, Systems.CUSTOM_USER_ID);
+    }
+    
+    public static String extractCustomUserName(List<Extension> extensions) {
+        return extractStringFromExtensions(extensions, Systems.CUSTOM_USER_NAME);
     }
 
     public static Optional<String> tryExtractOrganizationId(List<Extension> extensions) {
@@ -157,6 +175,10 @@ public class ExtensionMapper {
     private static Instant extractInstantFromExtensions(List<Extension> extensions, String url) {
         return extractFromExtensions(extensions, url, v -> ((DateTimeType) v).getValue().toInstant());
     }
+    
+    private static String extractStringFromExtensions(List<Extension> extensions, String url) {
+        return extractFromOptionalExtensions(extensions, url, v -> ((StringType) v).getValue());
+    }
 
     private static String extractReferenceFromExtensions(List<Extension> extensions, String url) {
         return extractFromExtensions(extensions, url, v -> ((Reference) v).getReference());
@@ -170,6 +192,10 @@ public class ExtensionMapper {
         return tryExtractFromExtensions(extensions, url, extractor)
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url)));
     }
+    
+    private static <T> T extractFromOptionalExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
+        return tryExtractFromExtensions(extensions, url, extractor).orElse(null);
+    }
 
     private static <T> Optional<T> tryExtractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
         for(Extension extension : extensions) {
@@ -179,4 +205,5 @@ public class ExtensionMapper {
         }
         return Optional.empty();
     }
+
 }

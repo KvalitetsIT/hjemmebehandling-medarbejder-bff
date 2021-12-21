@@ -6,6 +6,7 @@ public class PatientDto {
     private String givenName;
     private String familyName;
     private String cpr;
+    private String customUserName;
     private ContactDetailsDto patientContactDetails;
     private String primaryRelativeName;
     private String primaryRelativeAffiliation;
@@ -75,4 +76,12 @@ public class PatientDto {
     public void setAdditionalRelativeContactDetails(List<ContactDetailsDto> additionalRelativeContactDetails) {
         this.additionalRelativeContactDetails = additionalRelativeContactDetails;
     }
+
+	public String getCustomUserName() {
+		return customUserName;
+	}
+
+	public void setCustomUserName(String customUserName) {
+		this.customUserName = customUserName;
+	}
 }

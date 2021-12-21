@@ -2,7 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-
+import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
@@ -24,17 +25,27 @@ public class PatientService extends AccessValidatingService {
     private FhirClient fhirClient;
 
     private FhirMapper fhirMapper;
+    
+    private DtoMapper dtoMapper;
+    
+    private CustomUserService customUserService;
 
-    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
+    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DtoMapper dtoMapper) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
+        this.dtoMapper = dtoMapper;
     }
 
     public void createPatient(PatientModel patientModel) throws ServiceException {
         try {
-            fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
+        	Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
+        	if(customUserResponseDto.isPresent()) {
+        		String customerUserLinkId = customUserResponseDto.get().getId();
+        		patientModel.setCustomUserId(customerUserLinkId);
+        	}
+        	fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
         }
         catch(Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);

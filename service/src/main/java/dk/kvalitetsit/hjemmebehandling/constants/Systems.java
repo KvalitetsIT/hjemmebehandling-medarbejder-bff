@@ -17,4 +17,7 @@ public class Systems {
     public static final String THRESHOLD_VALUE_BOOLEAN = "http://hjemmebehandling.rm.dk/threshold-value-boolean";
 
     public static final String CONTACT_RELATIONSHIP = "http://hjemmebehandling.rm.dk/contact-relationship";
+    
+    public static final String CUSTOM_USER_ID = "http://hjemmebehandling.rm.dk/custom-user-id";
+    public static final String CUSTOM_USER_NAME = "http://hjemmebehandling.rm.dk/custom-user-name";
 }

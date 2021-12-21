@@ -1,20 +1,60 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import dk.kvalitetsit.hjemmebehandling.constants.*;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.types.Weekday;
-import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.*;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.BooleanType;
+import org.hl7.fhir.r4.model.CanonicalType;
+import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.DomainResource;
+import org.hl7.fhir.r4.model.EnumFactory;
 import org.hl7.fhir.r4.model.Enumeration;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Period;
+import org.hl7.fhir.r4.model.PlanDefinition;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.QuestionnaireResponse;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.TimeType;
+import org.hl7.fhir.r4.model.Timing;
+import org.hl7.fhir.r4.model.Type;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.types.Weekday;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
 @Component
 public class FhirMapper {
@@ -139,6 +179,9 @@ public class FhirMapper {
         patient.addName(name);
 
         patient.getIdentifier().add(makeCprIdentifier(patientModel.getCpr()));
+        
+        patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.getCustomUserId()));
+        patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.getCustomUserName()));
 
         if(patientModel.getPatientContactDetails() != null) {
             var contactDetails = patientModel.getPatientContactDetails();
@@ -190,6 +233,8 @@ public class FhirMapper {
         PatientModel patientModel = new PatientModel();
 
         patientModel.setId(extractId(patient));
+        patientModel.setCustomUserId(ExtensionMapper.extractCustomUserId(patient.getExtension()));
+        patientModel.setCustomUserName(ExtensionMapper.extractCustomUserName(patient.getExtension()));
         patientModel.setGivenName(extractGivenNames(patient));
         patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setCpr(extractCpr(patient));
@@ -662,4 +707,5 @@ public class FhirMapper {
 
         return wrapper;
     }
+
 }

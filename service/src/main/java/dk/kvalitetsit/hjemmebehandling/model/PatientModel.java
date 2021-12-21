@@ -14,7 +14,10 @@ public class PatientModel {
     private String primaryRelativeAffiliation;
     private ContactDetailsModel primaryRelativeContactDetails;
     private List<ContactDetailsModel> additionalRelativeContactDetails;
-
+    private String customUserId;
+    private String customUserName;
+    
+    
     public QualifiedId getId() {
         return id;
     }
@@ -86,4 +89,20 @@ public class PatientModel {
     public void setAdditionalRelativeContactDetails(List<ContactDetailsModel> additionalRelativeContactDetails) {
         this.additionalRelativeContactDetails = additionalRelativeContactDetails;
     }
+
+	public String getCustomUserId() {
+		return customUserId;
+	}
+
+	public void setCustomUserId(String customUserId) {
+		this.customUserId = customUserId;
+	}
+
+	public String getCustomUserName() {
+		return customUserName;
+	}
+
+	public void setCustomUserName(String customUserName) {
+		this.customUserName = customUserName;
+	}
 }

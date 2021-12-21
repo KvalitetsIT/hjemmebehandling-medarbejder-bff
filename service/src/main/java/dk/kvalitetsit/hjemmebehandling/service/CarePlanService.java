@@ -1,12 +1,36 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.ResourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -14,13 +38,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class CarePlanService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
@@ -31,12 +48,18 @@ public class CarePlanService extends AccessValidatingService {
 
     private DateProvider dateProvider;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator) {
+    @Autowired
+    private CustomUserService customUserService;
+    
+    private DtoMapper dtoMapper;
+
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.dateProvider = dateProvider;
+        this.dtoMapper = dtoMapper;
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
@@ -68,7 +91,11 @@ public class CarePlanService extends AccessValidatingService {
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
             if(!patient.isPresent()) {
-                return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
+            	// If plan and patient are created make customUser (external IdP)
+            	createCustomLogin(carePlan.getPatient());
+            	// create patient and careplan
+            	String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
+                return careplanId;
             }
             else {
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
@@ -77,6 +104,15 @@ public class CarePlanService extends AccessValidatingService {
         catch(Exception e) {
             throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    private void createCustomLogin(PatientModel patientModel) throws JsonMappingException, JsonProcessingException {
+    	Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
+    	if(customUserResponseDto.isPresent()) {
+    		String customerUserLinkId = customUserResponseDto.get().getId();
+    		patientModel.setCustomUserId(customerUserLinkId);
+    		patientModel.setCustomUserName(customUserResponseDto.get().getUsername());
+    	}
     }
 
     public void completeCarePlan(String carePlanId) throws ServiceException {

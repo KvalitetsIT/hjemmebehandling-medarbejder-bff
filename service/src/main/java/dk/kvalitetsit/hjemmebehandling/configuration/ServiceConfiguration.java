@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.context.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -17,6 +18,7 @@ import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.CustomUserService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
@@ -31,18 +33,23 @@ public class ServiceConfiguration {
 	private String fhirServerUrl;
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator) {
-        return new CarePlanService(client, mapper, dateProvider, accessValidator);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper) {
+        return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper);
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
-        return new PatientService(client, mapper, accessValidator);
+    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper) {
+        return new PatientService(client, mapper, accessValidator, dtoMapper);
     }
     
     @Bean
     public PersonService getPersonService() {
     	return new PersonService(new RestTemplate());
+    }
+    
+    @Bean
+    public CustomUserService getCustomUserService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+    	return new CustomUserService(new RestTemplate(), client, mapper);
     }
 
     @Bean

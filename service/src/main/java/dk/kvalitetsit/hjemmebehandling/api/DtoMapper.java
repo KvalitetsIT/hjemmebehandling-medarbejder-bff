@@ -110,6 +110,7 @@ public class DtoMapper {
         patientDto.setCpr(patient.getCpr());
         patientDto.setFamilyName(patient.getFamilyName());
         patientDto.setGivenName(patient.getGivenName());
+        patientDto.setCustomUserName(patient.getCustomUserName());
         if(patient.getPatientContactDetails() != null) {
             patientDto.setPatientContactDetails(mapContactDetailsModel(patient.getPatientContactDetails()));
         }
@@ -223,6 +224,34 @@ public class DtoMapper {
 
         return questionnaireDto;
     }
+    
+	public CustomUserRequestDto mapPatientModelToCustomUserRequest(PatientModel patientModel) {
+        CustomUserRequestDto customUserRequestDto = new CustomUserRequestDto();
+
+        customUserRequestDto.setFirstName(patientModel.getGivenName());
+        customUserRequestDto.setFullName(patientModel.getGivenName() + " "+ patientModel.getFamilyName() );
+        customUserRequestDto.setLastName(patientModel.getFamilyName());
+        customUserRequestDto.setTempPassword(patientModel.getCpr());
+        CustomUserRequestAttributesDto userCreatedRequestModelAttributes = new CustomUserRequestAttributesDto();
+        userCreatedRequestModelAttributes.setCpr(patientModel.getCpr());
+        
+        userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.getGivenName(), patientModel.getFamilyName()));
+        customUserRequestDto.setAttributes(userCreatedRequestModelAttributes);
+        
+        return customUserRequestDto;
+		
+	}
+	
+	private String getInitials(String firstName, String lastName) {
+		String initials ="";
+		if (firstName != null && firstName.length()>0) {
+			initials = initials+firstName.substring(0,1);
+		}
+		if (lastName != null && lastName.length()>1) {
+			initials = initials+firstName.substring(0,2);
+		}
+		return initials;
+	}
 
     public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
@@ -344,4 +373,5 @@ public class DtoMapper {
 
         return questionnaireWrapperDto;
     }
+    
 }
