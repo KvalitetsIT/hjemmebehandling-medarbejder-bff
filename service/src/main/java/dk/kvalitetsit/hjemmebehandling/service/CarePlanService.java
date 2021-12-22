@@ -1,11 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.hl7.fhir.r4.model.CarePlan;
@@ -13,7 +14,7 @@ import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -27,10 +28,15 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -48,18 +54,21 @@ public class CarePlanService extends AccessValidatingService {
 
     private DateProvider dateProvider;
 
-    @Autowired
     private CustomUserService customUserService;
     
     private DtoMapper dtoMapper;
+    
+	@Value("${patientidp.api.url}")
+	private String patientidpApiUrl;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper) {
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper, CustomUserService customUserService) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
         this.dateProvider = dateProvider;
         this.dtoMapper = dtoMapper;
+        this.customUserService = customUserService;
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
@@ -92,7 +101,9 @@ public class CarePlanService extends AccessValidatingService {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
             if(!patient.isPresent()) {
             	// If plan and patient are created make customUser (external IdP)
-            	createCustomLogin(carePlan.getPatient());
+            	if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl)) {
+            		createCustomLogin(carePlan.getPatient());
+            	}
             	// create patient and careplan
             	String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
                 return careplanId;

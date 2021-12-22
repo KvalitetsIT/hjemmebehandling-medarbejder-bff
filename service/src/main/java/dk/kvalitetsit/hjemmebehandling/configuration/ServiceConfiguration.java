@@ -33,8 +33,8 @@ public class ServiceConfiguration {
 	private String fhirServerUrl;
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper) {
-        return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper);
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserService customUserService ) {
+        return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper, customUserService);
     }
 
     @Bean
