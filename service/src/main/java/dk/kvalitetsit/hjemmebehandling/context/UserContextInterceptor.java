@@ -12,12 +12,10 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 
 public class UserContextInterceptor implements HandlerInterceptor {
-	
-	private static final String DIAS_CONTEXT = "DIAS";
+
 	private static final String BEARER = "Bearer";
 	
 	private IUserContextHandler contextHandler;
-	private String contextHandlerName = null;
 	private UserContextProvider userContextProvider;
 	private FhirClient client;
 
@@ -30,20 +28,19 @@ public class UserContextInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
     	DecodedJWT jwt = null;
-    	if(DIAS_CONTEXT.equals(contextHandlerName)) {
-    		// get authorizationheader.Jwt token could/should be cached.
-    		String autHeader = request.getHeader("authorization");
-    		if(autHeader!=null) {
-    			String[] token = autHeader.split(" ");
-    			if(token != null && token[0]!=null && BEARER.equals(token[0])) {
-    				//Removes "Bearer"
-    				jwt = JWT.decode(token[1]);
-    				//We should verify bearer token
-    			}
-    		}
-    	}
 
-        userContextProvider.setUserContext(request.getSession(), contextHandler.mapTokenToUser(client,jwt));
+		// get authorizationheader.Jwt token could/should be cached.
+		String autHeader = request.getHeader("authorization");
+		if(autHeader!=null) {
+			String[] token = autHeader.split(" ");
+			if(token != null && token[0]!=null && BEARER.equals(token[0])) {
+				//Removes "Bearer"
+				jwt = JWT.decode(token[1]);
+				//We should verify bearer token
+			}
+		}
+
+        userContextProvider.setUserContext(contextHandler.mapTokenToUser(client,jwt));
 
         return true;
     }

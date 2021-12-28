@@ -14,7 +14,7 @@ public class UserContextProvider {
         return context;
     }
 
-    public void setUserContext(HttpSession httpSession, UserContext context) {
+    public void setUserContext(UserContext context) {
         this.context = context;
         
     }
