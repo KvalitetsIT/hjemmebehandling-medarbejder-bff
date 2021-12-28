@@ -63,7 +63,8 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(responseModel);
 
         // Act
-        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
+        PageDetails pageDetails = new PageDetails(1,5);
+        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds,pageDetails);
 
         // Assert
         assertEquals(1, result.size());
@@ -79,7 +80,8 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds);
+        PageDetails pageDetails = new PageDetails(1,0);
+        List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds,pageDetails);
 
         // Assert
         assertEquals(0, result.size());
@@ -100,7 +102,8 @@ public class QuestionnaireResponseServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds));
+        PageDetails pageDetails = new PageDetails(1,0);
+        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds,pageDetails));
     }
 
     @Test

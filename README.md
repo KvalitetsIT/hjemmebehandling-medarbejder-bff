@@ -1,6 +1,16 @@
 ![Build Status](https://github.com/KvalitetsIT/hjemmebehandling-medarbejder-bff/workflows/CICD/badge.svg) ![Test Coverage](.github/badges/jacoco.svg)
 # hjemmebehandling-medarbejder-bff
 
+
+## Prerequesites
+### Openapitools
+```shell
+mkdir -p ~/bin/openapitools
+curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > ~/bin/openapitools/openapi-generator-cli
+chmod u+x ~/bin/openapitools/openapi-generator-cli
+export PATH=$PATH:~/bin/openapitools/
+openapi-generator-cli version
+```
 ## Running the integration test
 1. run 'mvn clean install'
 2. cd compose, run 'docker-compose up --build', wait until the hapi-server is initialized

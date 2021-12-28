@@ -34,7 +34,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         this.priorityComparator = priorityComparator;
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds, PageDetails pageDetails) throws ServiceException, AccessValidationException {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
@@ -43,6 +43,11 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
         validateAccess(responses);
+
+        // Perform paging if required.
+        if(pageDetails != null) {
+            responses = pageResponses(responses, pageDetails);
+        }
 
         // Map and return the responses
         return responses

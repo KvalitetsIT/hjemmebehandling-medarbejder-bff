@@ -28,7 +28,7 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         List<String> questionnaireIds = List.of("Questionnaire/questionnaire-1");
 
         // Act
-        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds);
+        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1,1);
 
         // Assert
         assertEquals(200, response.getStatusCode());
