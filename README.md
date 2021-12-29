@@ -11,10 +11,17 @@ chmod u+x ~/bin/openapitools/openapi-generator-cli
 export PATH=$PATH:~/bin/openapitools/
 openapi-generator-cli version
 ```
+## Generate for frontend (bff.json)
+Start bff on port 8080. After that run the following command;
+```
+curl http://localhost:8080/api/v3/api-docs > resources/bff.json
+```
+
 ## Running the integration test
 1. run 'mvn clean install'
 2. cd compose, run 'docker-compose up --build', wait until the hapi-server is initialized
 3. run 'mvn verify -Pintegration-test'
+
 
 ## Endpoints
 
