@@ -72,6 +72,60 @@ public class QuestionnaireResponseServiceTest {
     }
 
     @Test
+    public void getQuestionnaireResponses_ReturnOneItem_WhenPagesizeIsOne() throws Exception {
+        //Arrange
+        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, fhirMapper, null, accessValidator);
+
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(lookupResult);
+
+
+
+        PageDetails pageDetails = new PageDetails(1,1);
+        List<QuestionnaireResponseModel> result = qrservice.getQuestionnaireResponses(null, null,pageDetails);
+
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getQuestionnaireResponses_ReturnZeroItem_WhenPagesizeIsZero() throws Exception {
+        //Arrange
+        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, fhirMapper, null, accessValidator);
+
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(lookupResult);
+
+
+
+        PageDetails pageDetails = new PageDetails(1,0);
+        List<QuestionnaireResponseModel> result = qrservice.getQuestionnaireResponses(null, null,pageDetails);
+
+
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    public void getQuestionnaireResponses_ReturnZeroItem_WhenOnSecondPage() throws Exception {
+        //Arrange
+        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, fhirMapper, null, accessValidator);
+
+
+        QuestionnaireResponse response = new QuestionnaireResponse();
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(response);
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(lookupResult);
+
+        PageDetails pageDetails = new PageDetails(2,1);
+        List<QuestionnaireResponseModel> result = qrservice.getQuestionnaireResponses(null, null,pageDetails);
+
+        assertEquals(0, result.size());
+    }
+
+    @Test
     public void getQuestionnaireResponses_responsesMissing_returnsEmptyList() throws Exception {
         // Arrange
         String carePlanId = CAREPLAN_ID_1;
@@ -80,7 +134,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        PageDetails pageDetails = new PageDetails(1,0);
+        PageDetails pageDetails = new PageDetails(1,1);
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds,pageDetails);
 
         // Assert
