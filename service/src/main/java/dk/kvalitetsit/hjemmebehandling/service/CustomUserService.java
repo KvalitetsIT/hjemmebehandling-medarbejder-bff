@@ -62,16 +62,16 @@ public class CustomUserService {
     
     
     // http://localhost:8080/api/v1/resetpassword
-    public void resetPassword(CustomUserRequestDto userCreateRequest) throws JsonMappingException, JsonProcessingException {
+    public Optional<PatientModel> resetPassword(CustomUserRequestDto userCreateRequest) throws JsonMappingException, JsonProcessingException {
     	if("".equals(patientidpApiUrl)) {
     		logger.info("patientidpApiUrl is null. Cannot reset password");
-    		return;
+    		return Optional.empty();
     	}
     	// Find patient
     	Optional<Patient> patient = fhirClient.lookupPatientByCpr(userCreateRequest.getAttributes().getCpr());
     	if(patient.isEmpty()) {
     		logger.info("resetPassword: Can not find patient");
-    		return;
+    		return Optional.empty();
     	}
     	// Map patient
     	PatientModel patientModel = fhirMapper.mapPatient(patient.get());
@@ -89,5 +89,6 @@ public class CustomUserService {
     		// send request
     		restTemplate.put(patientidpApiUrl+"/"+customUserLoginId+"/reset-password",request);
     	}
+			return Optional.of(patientModel);
     }
 }

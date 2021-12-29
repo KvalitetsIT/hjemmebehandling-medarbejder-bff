@@ -1,12 +1,41 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class QualifiedIdTest {
+    @Test
+    public void testme() {
+//        Class<?> caller = StackWalker
+//            .getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+//            .getCallerClass();
+//        System.out.println(caller.getCanonicalName());
+        PatientModel p = new PatientModel();
+        p.setCpr("cpr");
+        p.setGivenName("given");
+        p.setFamilyName("family");
+
+        PatientModel p2 = new PatientModel();
+        p2.setCpr("cpr");
+        p2.setGivenName("given");
+        p2.setFamilyName("family");
+
+        Map<String, String> result = List.of(p, p2).stream()
+            .collect(Collectors.toMap(PatientModel::getCpr, u -> u.getGivenName() + " " + u.getFamilyName(), (existing, replacement) -> existing));
+        for (String key : result.keySet()) {
+            System.out.println(key + ": " + result.get(key));
+        }
+
+    }
+
     @Test
     public void getId_plainId_returnsId() {
         // Arrange

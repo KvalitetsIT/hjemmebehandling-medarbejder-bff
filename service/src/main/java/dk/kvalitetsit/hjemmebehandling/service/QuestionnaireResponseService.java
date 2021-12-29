@@ -89,7 +89,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
                 .collect(Collectors.toList());
     }
 
-    public void updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
+    public QuestionnaireResponseModel updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
         String qualifiedId = FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
@@ -105,6 +105,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         // Save the updated QuestionnaireResponse
         fhirClient.updateQuestionnaireResponse(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
+        return mappedResponse;
     }
 
     private List<QuestionnaireResponse> filterResponses(List<QuestionnaireResponse> responses) {

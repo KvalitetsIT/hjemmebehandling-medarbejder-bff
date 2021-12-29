@@ -126,7 +126,7 @@ public class CarePlanService extends AccessValidatingService {
     	}
     }
 
-    public void completeCarePlan(String carePlanId) throws ServiceException {
+    public CarePlanModel completeCarePlan(String carePlanId) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
 
@@ -137,6 +137,7 @@ public class CarePlanService extends AccessValidatingService {
 
         CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
         fhirClient.updateCarePlan(completedCarePlan);
+        return fhirMapper.mapCarePlan(completedCarePlan, lookupResult); // for auditlog
     }
     
     public List<CarePlanModel> getCarePlans(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
@@ -210,7 +211,7 @@ public class CarePlanService extends AccessValidatingService {
         return Optional.of(mappedCarePlan);
     }
 
-    public void resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
+    public CarePlanModel resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
         // Get the careplan
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
@@ -234,9 +235,10 @@ public class CarePlanService extends AccessValidatingService {
 
         // Save the updated carePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
+        return carePlanModel; // for auditlog
     }
 
-    public void updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
+    public CarePlanModel updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
         if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
@@ -284,6 +286,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Save the updated CarePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), fhirMapper.mapPatientModel(patientModel));
+        return carePlanModel; // for auditlogging
     }
 
     private boolean questionnairesAllowedByPlanDefinitions(List<PlanDefinitionModel> planDefinitions, List<String> questionnaireIds) {

@@ -10,6 +10,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorE
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -41,6 +42,9 @@ public class CarePlanControllerTest {
     private CarePlanService carePlanService;
 
     @Mock
+    private AuditLoggingService auditLoggingService;
+
+    @Mock
     private DtoMapper dtoMapper;
 
     @Mock
@@ -53,6 +57,8 @@ public class CarePlanControllerTest {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
+
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(new CarePlanModel());
 
         // Act
         ResponseEntity<Void> result = subject.createCarePlan(request);
@@ -195,7 +201,8 @@ public class CarePlanControllerTest {
         // Arrange
         String carePlanId = "careplan-1";
 
-        Mockito.doNothing().when(carePlanService).resolveAlarm(carePlanId);
+        //Mockito.doNothing().when(carePlanService).resolveAlarm(carePlanId);
+        Mockito.when(carePlanService.resolveAlarm(carePlanId)).thenReturn(new CarePlanModel());
 
         // Act
         ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
