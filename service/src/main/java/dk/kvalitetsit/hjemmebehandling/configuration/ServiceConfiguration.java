@@ -7,6 +7,8 @@ import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.audit.AuditEventRepository;
+import org.springframework.boot.actuate.audit.InMemoryAuditEventRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -31,6 +33,13 @@ public class ServiceConfiguration {
 	
 	@Value("${fhir.server.url}")
 	private String fhirServerUrl;
+
+  @Bean
+  public AuditEventRepository auditEventRepository() {
+    return new InMemoryAuditEventRepository();
+  }
+
+
 
     @Bean
     public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserService customUserService ) {

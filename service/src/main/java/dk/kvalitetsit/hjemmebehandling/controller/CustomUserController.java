@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,15 +22,19 @@ import dk.kvalitetsit.hjemmebehandling.service.CustomUserService;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.Optional;
+
 @RestController
 @Tag(name = "CustomUser", description = "API for retrieving information about users.")
 public class CustomUserController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(CustomUserController.class);
 
     private CustomUserService customUserService;
+    private AuditLoggingService auditLoggingService;
     
-    public CustomUserController(CustomUserService customUserService) {
+    public CustomUserController(CustomUserService customUserService, AuditLoggingService auditLoggingService) {
         this.customUserService = customUserService;
+        this.auditLoggingService = auditLoggingService;
     }
        
     @GetMapping(value = "/v1/resetpassword")
@@ -41,7 +47,10 @@ public class CustomUserController extends BaseController {
         userCreatedRequestModelAttributes.setCpr(cpr);
         userCreatedRequestModel.setAttributes(userCreatedRequestModelAttributes);
         
-        customUserService.resetPassword(userCreatedRequestModel);
+        Optional<PatientModel> patient = customUserService.resetPassword(userCreatedRequestModel);
+        if (patient.isPresent()) {
+            auditLoggingService.log("GET /v1/resetpassword", patient.get());
+        }
     }
 
 }

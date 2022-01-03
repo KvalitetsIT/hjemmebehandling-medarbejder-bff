@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -34,6 +35,9 @@ public class QuestionnaireResponseControllerTest {
 
     @Mock
     private QuestionnaireResponseService questionnaireResponseService;
+
+    @Mock
+    private AuditLoggingService auditLoggingService;
 
     @Mock
     private DtoMapper dtoMapper;
@@ -251,7 +255,8 @@ public class QuestionnaireResponseControllerTest {
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(ExaminationStatus.UNDER_EXAMINATION);
 
-        Mockito.doNothing().when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+        //Mockito.doNothing().when(questionnaireResponseService).updateExaminationStatus(id, request.getExaminationStatus());
+        Mockito.when(questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus())).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class CarePlanController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private CarePlanService carePlanService;
+    private AuditLoggingService auditLoggingService;
     private DtoMapper dtoMapper;
     private LocationHeaderBuilder locationHeaderBuilder;
 
@@ -55,8 +57,9 @@ public class CarePlanController extends BaseController {
         CPR, UNSATISFIED_CAREPLANS,ACTIVE
     }
 
-    public CarePlanController(CarePlanService carePlanService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public CarePlanController(CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
+        this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
     }
@@ -79,7 +82,7 @@ public class CarePlanController extends BaseController {
             } else if (SearchType.ACTIVE.equals(searchType.get())) {
             	carePlans = carePlanService.getCarePlans(onlyActiveCarePlans.get(), new PageDetails(pageNumber.get(), pageSize.get()));
             }
-
+            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
@@ -109,6 +112,7 @@ public class CarePlanController extends BaseController {
         if(!carePlan.isPresent()) {
             throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
+        auditLoggingService.log("GET /v1/careplan/"+id, carePlan.get().getPatient());
         return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
     }
 
@@ -121,7 +125,9 @@ public class CarePlanController extends BaseController {
     public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
-            carePlanId = carePlanService.createCarePlan(dtoMapper.mapCarePlanDto(request.getCarePlan()));
+            CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
+            carePlanId = carePlanService.createCarePlan(carePlan);
+            auditLoggingService.log("POST /v1/careplan", carePlan.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
             logger.error("Error creating CarePlan", e);
@@ -148,7 +154,8 @@ public class CarePlanController extends BaseController {
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
             PatientDetails patientDetails = getPatientDetails(request);
 
-            carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
+            CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
+            auditLoggingService.log("PATCH /v1/careplan/"+id, carePlanModel.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
@@ -160,7 +167,8 @@ public class CarePlanController extends BaseController {
     @PutMapping(value = "/v1/careplan/{id}/resolve-alarm")
     public ResponseEntity<Void> resolveAlarm(@PathVariable String id) {
         try {
-            carePlanService.resolveAlarm(id);
+            CarePlanModel carePlan = carePlanService.resolveAlarm(id);
+            auditLoggingService.log("PUT /v1/careplan/"+id+"/resolve-alarm", carePlan.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
@@ -172,7 +180,8 @@ public class CarePlanController extends BaseController {
     @PutMapping(value = "/v1/careplan/{id}/complete")
     public ResponseEntity<Void> completeCarePlan(@PathVariable String id) {
         try {
-            carePlanService.completeCarePlan(id);
+            CarePlanModel carePlan = carePlanService.completeCarePlan(id);
+            auditLoggingService.log("PUT /v1/careplan/"+id+"/complete", carePlan.getPatient());
         }
         catch(ServiceException e) {
             throw toStatusCodeException(e);

@@ -6,7 +6,9 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -26,10 +28,12 @@ public class QuestionnaireResponseController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
     private QuestionnaireResponseService questionnaireResponseService;
+    private AuditLoggingService auditLoggingService;
     private DtoMapper dtoMapper;
 
-    public QuestionnaireResponseController(QuestionnaireResponseService questionnaireResponseService, DtoMapper dtoMapper) {
+    public QuestionnaireResponseController(QuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
         this.questionnaireResponseService = questionnaireResponseService;
+        this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
     }
 
@@ -47,7 +51,7 @@ public class QuestionnaireResponseController extends BaseController {
         try {
             PageDetails pageDetails = new PageDetails(pageNumber,pageSize);
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds,pageDetails);
-
+            auditLoggingService.log("GET /v1/questionnaireresponse/"+carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
         }
         catch(AccessValidationException | ServiceException e) {
@@ -64,7 +68,7 @@ public class QuestionnaireResponseController extends BaseController {
 
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, new PageDetails(pageNumber, pageSize));
-
+            auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(questionnaireResponses.stream().map(qr -> dtoMapper.mapQuestionnaireResponseModel(qr)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
@@ -80,7 +84,8 @@ public class QuestionnaireResponseController extends BaseController {
         }
 
         try {
-            questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus());
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus());
+            auditLoggingService.log("PATCH /v1/questionnaireresponse/"+id, questionnaireResponse.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
