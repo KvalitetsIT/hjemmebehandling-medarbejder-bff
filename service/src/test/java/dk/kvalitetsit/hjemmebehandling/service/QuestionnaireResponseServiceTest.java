@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -17,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,6 +91,57 @@ public class QuestionnaireResponseServiceTest {
 
 
         assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getQuestionnaireResponses_ReturnSortedPages_WhenTwoPages() throws Exception {
+        //Arrange
+        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, fhirMapper, null, accessValidator);
+
+        QuestionnaireResponse response1 = new QuestionnaireResponse();
+        response1.setAuthored(new Date(1,Calendar.JANUARY,1));
+        response1.setId("1");
+
+        QuestionnaireResponse response2 = new QuestionnaireResponse();
+        response2.setAuthored(new Date(2, Calendar.FEBRUARY,2));
+        response2.setId("2");
+
+        QuestionnaireResponse response3 = new QuestionnaireResponse();
+        response3.setAuthored(new Date(3,Calendar.MARCH,3));
+        response3.setId("3");
+
+        QuestionnaireResponse response4 = new QuestionnaireResponse();
+        response4.setAuthored(new Date(4,Calendar.APRIL,4));
+        response4.setId("4");
+
+        FhirLookupResult lookupResult1 = FhirLookupResult.fromResources(response1,response3, response4, response2);
+
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(lookupResult1);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response1,lookupResult1)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response1));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response2,lookupResult1)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response2));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response3,lookupResult1)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response3));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response4,lookupResult1)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response4));
+
+        //ACTION
+        PageDetails pageDetails1 = new PageDetails(1,2);
+        List<QuestionnaireResponseModel> result1 = qrservice.getQuestionnaireResponses(null, null,pageDetails1);
+
+        PageDetails pageDetails2 = new PageDetails(2,2);
+        List<QuestionnaireResponseModel> result2 = qrservice.getQuestionnaireResponses(null, null,pageDetails2);
+
+        //ASSERT
+        assertEquals(2, result1.size());
+        assertEquals(2, result2.size());
+
+        assertEquals("4",result1.get(0).getId().getId());
+        assertEquals("3",result1.get(1).getId().getId());
+        assertEquals("2",result2.get(0).getId().getId());
+        assertEquals("1",result2.get(1).getId().getId());
+    }
+    QuestionnaireResponseModel questionnaireResponseToQuestionnaireResponseModel(QuestionnaireResponse questionnaireResponse){
+        QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
+        responseModel1.setId(new QualifiedId("QuestionnaireResponse/"+questionnaireResponse.getId()));
+        return responseModel1;
     }
 
     @Test

@@ -44,6 +44,9 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
         validateAccess(responses);
 
+        // Sort the responses by priority.
+        responses = sortResponsesByDate(responses);
+
         // Perform paging if required.
         if(pageDetails != null) {
             responses = pageResponses(responses, pageDetails);
@@ -127,6 +130,12 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         return responses
                 .stream()
                 .sorted(priorityComparator)
+                .collect(Collectors.toList());
+    }
+    private List<QuestionnaireResponse> sortResponsesByDate(List<QuestionnaireResponse> responses) {
+        return responses
+                .stream()
+                .sorted( (a,b) -> b.getAuthored().compareTo(a.getAuthored()) )
                 .collect(Collectors.toList());
     }
 
