@@ -1,0 +1,20 @@
+[
+  {
+    "httpRequest": {
+	  "path": "/users.*",
+      "method": "POST"
+    },
+    "httpResponse": {
+      "body": {"id":"7e41d40b-b173-4f2a-8006-daa7cc29fe32","createdTimestamp":1639493151578,"username":"andtes","firstName":"Anders","lastName":"Test Jensen","attributes":{"cpr":["3103979995"],"initials":["ATJ"]}}
+    }
+  },
+  {
+    "httpRequest": {
+      "path": "/users/.*",
+      "method": "PUT"
+    },
+    "httpResponse": {
+      "body": {}
+    }
+  }
+]

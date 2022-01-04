@@ -53,3 +53,13 @@ services:
       - 1081:1081
      volumes:
       - ./person-service/initializerJson.json:/config/initializerJson.json
+      
+   custom-login-service:
+     image: mockserver/mockserver
+     command: -logLevel DEBUG -serverPort 1082
+     environment:
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/initializerJson.json
+     ports:
+      - 1082:1082
+     volumes:
+      - ./custom-login-service/initializerJson.json:/config/initializerJson.json
