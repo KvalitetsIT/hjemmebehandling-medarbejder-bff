@@ -1,10 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.context.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.audit.AuditEventRepository;
@@ -17,13 +12,22 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import ca.uhn.fhir.context.FhirContext;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.context.DIASUserContextHandler;
+import dk.kvalitetsit.hjemmebehandling.context.IUserContextHandler;
+import dk.kvalitetsit.hjemmebehandling.context.MockContextHandler;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextInterceptor;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.CustomUserService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
 @Configuration
 public class ServiceConfiguration {
@@ -42,7 +46,7 @@ public class ServiceConfiguration {
 
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserService customUserService ) {
+    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserClient customUserService ) {
         return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper, customUserService);
     }
 
@@ -57,8 +61,8 @@ public class ServiceConfiguration {
     }
     
     @Bean
-    public CustomUserService getCustomUserService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
-    	return new CustomUserService(new RestTemplate(), client, mapper);
+    public CustomUserClient getCustomUserService() {
+    	return new CustomUserClient(new RestTemplate());
     }
 
     @Bean

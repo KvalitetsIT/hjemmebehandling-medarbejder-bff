@@ -1,23 +1,25 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import java.util.List;
+import java.util.Optional;
+
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Optional;
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
@@ -28,7 +30,7 @@ public class PatientService extends AccessValidatingService {
     
     private DtoMapper dtoMapper;
     
-    private CustomUserService customUserService;
+    private CustomUserClient customUserService;
 
     public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DtoMapper dtoMapper) {
         super(accessValidator);

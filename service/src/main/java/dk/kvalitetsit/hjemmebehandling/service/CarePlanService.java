@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -54,14 +55,14 @@ public class CarePlanService extends AccessValidatingService {
 
     private DateProvider dateProvider;
 
-    private CustomUserService customUserService;
+    private CustomUserClient customUserService;
     
     private DtoMapper dtoMapper;
     
 	@Value("${patientidp.api.url}")
 	private String patientidpApiUrl;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper, CustomUserService customUserService) {
+    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper, CustomUserClient customUserService) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;

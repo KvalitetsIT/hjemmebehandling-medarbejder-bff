@@ -28,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -69,7 +70,7 @@ public class CarePlanServiceTest {
     private AccessValidator accessValidator;
     
     @Mock
-    private CustomUserService customUserService;
+    private CustomUserClient customUserService;
 
     private static final String CPR_1 = "0101010101";
 

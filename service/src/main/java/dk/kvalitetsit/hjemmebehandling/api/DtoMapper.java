@@ -1,18 +1,31 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import org.hl7.fhir.r4.model.ResourceType;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.hl7.fhir.r4.model.ResourceType;
+import org.springframework.stereotype.Component;
+
+import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 
 @Component
 public class DtoMapper {
@@ -257,7 +270,7 @@ public class DtoMapper {
         customUserRequestDto.setFirstName(patientModel.getGivenName());
         customUserRequestDto.setFullName(patientModel.getGivenName() + " "+ patientModel.getFamilyName() );
         customUserRequestDto.setLastName(patientModel.getFamilyName());
-        customUserRequestDto.setTempPassword(patientModel.getCpr());
+        customUserRequestDto.setTempPassword(patientModel.getCpr().substring(0,6));
         CustomUserRequestAttributesDto userCreatedRequestModelAttributes = new CustomUserRequestAttributesDto();
         userCreatedRequestModelAttributes.setCpr(patientModel.getCpr());
         

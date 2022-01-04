@@ -1,22 +1,35 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.*;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+import dk.kvalitetsit.hjemmebehandling.api.CreatePatientRequest;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
+import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "Patient", description = "API for manipulating and retrieving patients.")
@@ -26,11 +39,13 @@ public class PatientController extends BaseController {
     private PatientService patientService;
     private AuditLoggingService auditLoggingService;
     private DtoMapper dtoMapper;
+	private CustomUserClient customUserClient;
 
-    public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
         this.patientService = patientService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
+        this.customUserClient = customUserClient;
     }
 
     @GetMapping(value = "/test")
@@ -140,6 +155,13 @@ public class PatientController extends BaseController {
             throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
         }
         return dtoMapper.mapPatientModel(patient);
+    }
+    
+    @PutMapping(value = "/v1/resetpassword")
+    public void resetPassword(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
+        logger.info("reset password for patient");
+        PatientModel patientModel = patientService.getPatient(cpr);
+        customUserClient.resetPassword(cpr, patientModel.getCustomUserId());
     }
 
     private String getClinicalIdentifier() {
