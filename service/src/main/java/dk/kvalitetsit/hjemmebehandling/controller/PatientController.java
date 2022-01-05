@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,74 +45,6 @@ public class PatientController extends BaseController {
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
         this.customUserClient = customUserClient;
-    }
-
-    @GetMapping(value = "/test")
-    public @ResponseBody PatientListResponse test() {
-        logger.info("kommer her");
-        //Map<String, String> citizenMap = new HashMap();
-
-        PatientModel p = new PatientModel();
-        p.setCpr("0101010101");
-        p.setGivenName("Test");
-        p.setFamilyName("Testersen");
-        PatientModel p1 = new PatientModel();
-        p1.setCpr("0101010102");
-        p1.setGivenName("Test");
-        p1.setFamilyName("Testersen");
-        PatientModel p2 = new PatientModel();
-        p2.setCpr("0101010103");
-        p2.setGivenName("Test");
-        p2.setFamilyName("Testersen");
-        PatientModel p3 = new PatientModel();
-        p3.setCpr("0101010104");
-        p3.setGivenName("Test");
-        p3.setFamilyName("Testersen");
-        PatientModel p4 = new PatientModel();
-        p4.setCpr("0101010105");
-        p4.setGivenName("Test");
-        p4.setFamilyName("Testersen");
-        PatientModel p5 = new PatientModel();
-        p5.setCpr("0101010106");
-        p5.setGivenName("Test");
-        p5.setFamilyName("Testersen");
-        PatientModel p6 = new PatientModel();
-        p6.setCpr("0101010107");
-        p6.setGivenName("Test");
-        p6.setFamilyName("Testersen");
-        PatientModel p7 = new PatientModel();
-        p7.setCpr("0101010108");
-        p7.setGivenName("Test");
-        p7.setFamilyName("Testersen");
-        PatientModel p8 = new PatientModel();
-        p8.setCpr("0101010109");
-        p8.setGivenName("Test");
-        p8.setFamilyName("Testersen");
-        PatientModel p9 = new PatientModel();
-        p9.setCpr("0101010110");
-        p9.setGivenName("Test");
-        p9.setFamilyName("Testersen");
-        PatientModel p10 = new PatientModel();
-        p10.setCpr("0101010111");
-        p10.setGivenName("Test");
-        p10.setFamilyName("Testersen");
-        PatientModel p11 = new PatientModel();
-        p11.setCpr("0101010112");
-        p11.setGivenName("Test");
-        p11.setFamilyName("Testersen");
-        PatientModel p12 = new PatientModel();
-        p12.setCpr("0101010113");
-        p12.setGivenName("Test");
-        p12.setFamilyName("Testersen");
-        PatientModel p13 = new PatientModel();
-        p13.setCpr("0101010114");
-        p13.setGivenName("Test");
-        p13.setFamilyName("Testersen");
-
-        List patients = List.of(p,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13);
-
-        auditLoggingService.log(RequestMethod.GET.name() + " /test", patients);
-        return new PatientListResponse();
     }
 
     @GetMapping(value = "/v1/patientlist")
