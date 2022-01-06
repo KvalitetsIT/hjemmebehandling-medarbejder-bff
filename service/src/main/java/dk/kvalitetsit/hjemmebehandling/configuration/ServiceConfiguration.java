@@ -22,6 +22,7 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
+import dk.kvalitetsit.hjemmebehandling.security.RoleValiditionInterceptor;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
@@ -37,13 +38,14 @@ public class ServiceConfiguration {
 	
 	@Value("${fhir.server.url}")
 	private String fhirServerUrl;
+	
+	@Value("${allowed.roles}")
+	private String allowedRoles;
 
   @Bean
   public AuditEventRepository auditEventRepository() {
     return new InMemoryAuditEventRepository();
   }
-
-
 
     @Bean
     public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserClient customUserService ) {
@@ -88,6 +90,7 @@ public class ServiceConfiguration {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new UserContextInterceptor(client, userContextProvider, userContextHandler));
+                registry.addInterceptor(new RoleValiditionInterceptor(userContextProvider, allowedRoles));
             }
         };
     }

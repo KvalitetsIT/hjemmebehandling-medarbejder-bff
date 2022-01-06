@@ -21,7 +21,7 @@ public class MockContextHandler implements IUserContextHandler {
         context.setOrgId(orgId);
         context.setUserId("TesTes");
         context.setEmail("test@rm.dk");
-        context.setEntitlements(new String[]{"DIAS_HJEMMEBEHANDLING_Sygeplejerske"} );
+        context.setEntitlements(new String[]{"DIAS_HJEMMEBEHANDLING_Sygeplejerske2","DIAS_URIN_KIRUGIK_Sygeplejerske"} );
         context.setAutorisationsids(new String[]{"1234"} );
 		
         return context;
