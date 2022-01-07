@@ -13,7 +13,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.UnauthorizedException;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 
 public class RoleValiditionInterceptor implements HandlerInterceptor {
 
@@ -28,21 +27,24 @@ public class RoleValiditionInterceptor implements HandlerInterceptor {
     
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-    	
-    	String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
     	boolean hasPermission = false;
-    	
-    	for (int i = 0; i < userEntitlements.length; i++) {
-			if (allowedRoles.contains(userEntitlements[i])) {
-				hasPermission = true;
-				break;
-			}
-		}
+
+    	String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
+
+    	if(userEntitlements!=null) {
+    		for (int i = 0; i < userEntitlements.length; i++) {
+    			if (allowedRoles.contains(userEntitlements[i])) {
+    				hasPermission = true;
+    				break;
+    			}
+    		}
+    	}
+
     	if (!hasPermission) {
     		throw new UnauthorizedException("The user does not have the correct permissions");
     	}
-    	
-        return true;
+
+    	return true;
     }
 
     private List<String> parseRoles(String str) {
