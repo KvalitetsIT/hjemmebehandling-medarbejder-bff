@@ -130,7 +130,7 @@ public class PatientControllerTest {
     Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
     // Act
-    PatientListResponse result = subject.searchPatients(List.of(Mockito.anyString()));
+    PatientListResponse result = subject.searchPatients(Mockito.anyString());
 
     // Assert
     //assertEquals(HttpStatus.CREATED, result.getStatusCode());

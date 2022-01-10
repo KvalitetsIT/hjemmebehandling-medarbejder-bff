@@ -123,20 +123,12 @@ public class FhirClient {
     }
 
     public FhirLookupResult searchPatientsWithActiveCarePlan(List<String> searchStrings) {
-        var criteria = new ArrayList<ICriterion<?>>();
-
-        var cprCriterion = new StringClientParam("patient_identifier_cpr").matches().values(searchStrings);
-        var nameCriterion = Patient.NAME.matches().values(searchStrings);
-
         // FHIR has no way of expressing 'search patient with name like %search% OR cpr like %search%'
         // so we have to do that in two seperate queries
-
-
-        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var cprCriterion = CarePlan.PATIENT.hasChainedProperty(new StringClientParam("patient_identifier_cpr").matches().values(searchStrings));
+        var nameCriterion = CarePlan.PATIENT.hasChainedProperty(Patient.NAME.matches().values(searchStrings));
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.add(organizationCriterion);
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
-        criteria.add(statusCriterion);
 
         FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
         fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));

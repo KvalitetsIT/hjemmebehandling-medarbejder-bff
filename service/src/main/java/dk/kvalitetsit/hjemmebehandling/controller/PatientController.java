@@ -89,10 +89,10 @@ public class PatientController extends BaseController {
     }
 
     @GetMapping(value = "/v1/patient/search")
-    public @ResponseBody PatientListResponse searchPatients(List<String> searchStrings) {
+    public @ResponseBody PatientListResponse searchPatients(String searchString) {
         logger.info("Getting patient ...");
 
-        List<PatientModel> patients = patientService.searchPatients(searchStrings);
+        List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
         auditLoggingService.log("GET /v1/patient/search", patients);
 
         return buildResponse(patients);
