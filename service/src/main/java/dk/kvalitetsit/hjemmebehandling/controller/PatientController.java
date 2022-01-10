@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -94,6 +95,18 @@ public class PatientController extends BaseController {
 
         List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
         auditLoggingService.log("GET /v1/patient/search", patients);
+
+        return buildResponse(patients);
+    }
+
+    @GetMapping(value = "/v1/patients")
+    public @ResponseBody PatientListResponse getPatients(boolean includeActive, boolean includeCompleted) {
+        logger.info("Getting patient ...");
+        if(!includeActive && !includeCompleted)
+            return buildResponse(new ArrayList<>());
+
+        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted);
+        auditLoggingService.log("GET /v1/patients", patients);
 
         return buildResponse(patients);
     }

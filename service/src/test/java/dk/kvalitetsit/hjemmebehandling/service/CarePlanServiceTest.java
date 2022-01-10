@@ -1,10 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Date;
@@ -13,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Identifier;
@@ -52,6 +48,9 @@ import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+
 @ExtendWith(MockitoExtension.class)
 public class CarePlanServiceTest {
     @InjectMocks
@@ -75,6 +74,7 @@ public class CarePlanServiceTest {
     private static final String CPR_1 = "0101010101";
 
     private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String CAREPLAN_ID_2 = "CarePlan/careplan-2";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
@@ -210,7 +210,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+        Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
 
         // Act
         String result = subject.createCarePlan(carePlanModel);
@@ -267,7 +267,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+        Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
 
         // Act
         String result = subject.createCarePlan(carePlanModel);
@@ -791,7 +791,7 @@ public class CarePlanServiceTest {
 
         CarePlanModel carePlanModel = new CarePlanModel();
         carePlanModel.setId(new QualifiedId(carePlan.getId()));
-        Mockito.when(fhirMapper.mapCarePlan(Mockito.any(CarePlan.class), Mockito.any(FhirLookupResult.class))).thenReturn(carePlanModel);
+        Mockito.when(fhirMapper.mapCarePlan(any(CarePlan.class), any(FhirLookupResult.class))).thenReturn(carePlanModel);
 
         return carePlanModel;
     }
