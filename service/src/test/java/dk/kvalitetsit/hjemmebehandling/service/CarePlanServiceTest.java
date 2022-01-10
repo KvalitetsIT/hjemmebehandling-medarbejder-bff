@@ -1,10 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Date;
@@ -13,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Identifier;
@@ -52,6 +48,9 @@ import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+
 @ExtendWith(MockitoExtension.class)
 public class CarePlanServiceTest {
     @InjectMocks
@@ -75,6 +74,7 @@ public class CarePlanServiceTest {
     private static final String CPR_1 = "0101010101";
 
     private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
+    private static final String CAREPLAN_ID_2 = "CarePlan/careplan-2";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
@@ -153,6 +153,63 @@ public class CarePlanServiceTest {
     }
 
     @Test
+    public void getCareplans_ReturnsOneActiveCareplan_WhenActiveCareplansAreWanted_OneActiveOneCompletedRessource() throws ServiceException {
+
+        //Arrange
+        boolean onlyActive = true;
+        PageDetails pageDetails = new PageDetails(1, 10);
+
+        CarePlan activeCareplan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        activeCareplan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+
+        CarePlan inactiveCareplan = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
+        inactiveCareplan.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(activeCareplan,inactiveCareplan);
+        Mockito.when(fhirClient.lookupCarePlans(onlyActive,0,10)).thenReturn(lookupResult);
+
+        //Act
+        List<CarePlanModel> result = subject.getCarePlans(onlyActive,pageDetails);
+
+        //Aserts
+        assertEquals(1,result.size());
+        CarePlanModel firstCareplan = result.get(0);
+        assertNotEquals(null,firstCareplan);
+        assertEquals(CarePlanStatus.ACTIVE ,firstCareplan.getStatus());
+    }
+
+    @Test
+    public void getCareplans_ReturnsOneCompletedCareplan_WhenCompletedCareplansAreWanted_OneActiveOneCompletedRessource() throws ServiceException {
+
+        //Arrange
+        boolean onlyActive = false;
+        PageDetails pageDetails = new PageDetails(1, 10);
+
+
+        Patient patient1 = new Patient();
+        patient1.setId("patient1");
+
+        CarePlan activeCareplan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        activeCareplan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+
+        CarePlan inactiveCareplan1 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
+        inactiveCareplan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(activeCareplan1,inactiveCareplan1);
+        Mockito.when(fhirClient.lookupCarePlans(onlyActive,0,10)).thenReturn(lookupResult);
+
+        //Act
+        List<CarePlanModel> result = subject.getCarePlans(onlyActive,pageDetails);
+
+        //Aserts
+        assertEquals(1,result.size());
+        CarePlanModel firstCareplan = result.get(0);
+        assertNotEquals(null,firstCareplan);
+        assertEquals(CarePlanStatus.COMPLETED ,firstCareplan.getStatus());
+    }
+
+    @Test
     public void createCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
         // Arrange
         CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of());
@@ -210,7 +267,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+        Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
 
         // Act
         String result = subject.createCarePlan(carePlanModel);
@@ -267,7 +324,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-        Mockito.when(fhirClient.saveCarePlan(Mockito.any())).thenReturn("1");
+        Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
 
         // Act
         String result = subject.createCarePlan(carePlanModel);
@@ -791,7 +848,7 @@ public class CarePlanServiceTest {
 
         CarePlanModel carePlanModel = new CarePlanModel();
         carePlanModel.setId(new QualifiedId(carePlan.getId()));
-        Mockito.when(fhirMapper.mapCarePlan(Mockito.any(CarePlan.class), Mockito.any(FhirLookupResult.class))).thenReturn(carePlanModel);
+        Mockito.when(fhirMapper.mapCarePlan(any(CarePlan.class), any(FhirLookupResult.class))).thenReturn(carePlanModel);
 
         return carePlanModel;
     }
