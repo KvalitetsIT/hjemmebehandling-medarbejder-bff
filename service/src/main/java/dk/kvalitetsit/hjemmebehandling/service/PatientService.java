@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +86,24 @@ public class PatientService extends AccessValidatingService {
         return fhirMapper.mapPatient(patient.get());
     }
 
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) {
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources();
+
+        if(includeActive)
+            lookupResult.merge(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE));
+        if(includeCompleted)
+            lookupResult.merge(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED));
+
+        // Map the resources
+        return lookupResult.getPatients()
+                .stream()
+                .map(p -> fhirMapper.mapPatient(p))
+                .collect(Collectors.toList());
+    }
+
     public List<PatientModel> searchPatients(List<String> searchStrings) {
-        FhirLookupResult lookupResult = fhirClient.searchPatientsWithActiveCarePlan(searchStrings);
+        FhirLookupResult lookupResult = fhirClient.searchPatients(searchStrings, CarePlan.CarePlanStatus.ACTIVE);
         if(lookupResult.getPatients().isEmpty()) {
             return List.of();
         }

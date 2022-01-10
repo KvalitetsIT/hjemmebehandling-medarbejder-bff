@@ -11,11 +11,9 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.NumberUtils;
 
 import java.sql.Date;
 import java.time.Instant;
@@ -122,13 +120,13 @@ public class FhirClient {
         return lookupPatient(cprCriterion);
     }
 
-    public FhirLookupResult searchPatientsWithActiveCarePlan(List<String> searchStrings) {
+    public FhirLookupResult searchPatients(List<String> searchStrings, CarePlan.CarePlanStatus status) {
         // FHIR has no way of expressing 'search patient with name like %search% OR cpr like %search%'
         // so we have to do that in two seperate queries
         var cprCriterion = CarePlan.PATIENT.hasChainedProperty(new StringClientParam("patient_identifier_cpr").matches().values(searchStrings));
         var nameCriterion = CarePlan.PATIENT.hasChainedProperty(Patient.NAME.matches().values(searchStrings));
         var organizationCriterion = buildOrganizationCriterion();
-        var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+        var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
 
         FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
         fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));
