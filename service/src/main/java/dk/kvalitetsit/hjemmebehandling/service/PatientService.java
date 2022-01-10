@@ -2,7 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
@@ -80,5 +82,18 @@ public class PatientService extends AccessValidatingService {
 
         // Map to the domain model
         return fhirMapper.mapPatient(patient.get());
+    }
+
+    public List<PatientModel> searchPatients(List<String> searchStrings) {
+        FhirLookupResult lookupResult = fhirClient.searchPatientsWithActiveCarePlan(searchStrings);
+        if(lookupResult.getPatients().isEmpty()) {
+            return List.of();
+        }
+
+        // Map the resources
+        return lookupResult.getPatients()
+            .stream()
+            .map(p -> fhirMapper.mapPatient(p))
+            .collect(Collectors.toList());
     }
 }

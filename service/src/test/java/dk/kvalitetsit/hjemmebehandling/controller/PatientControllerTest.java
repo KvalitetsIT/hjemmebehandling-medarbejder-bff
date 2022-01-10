@@ -118,4 +118,23 @@ public class PatientControllerTest {
     //assertEquals(HttpStatus.CREATED, result.getStatusCode());
     assertEquals(patientDto, result);
   }
+
+  @Test
+  public void searchPatient() {
+    // Arrange
+    PatientModel patientModel = new PatientModel();
+    Mockito.when(patientService.searchPatients(Mockito.anyList())).thenReturn(List.of(patientModel));
+    //Mockito.doReturn(List.of(patientModel)).when(patientService).searchPatients(List.of(Mockito.anyString()));
+
+    PatientDto patientDto = new PatientDto();
+    Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+
+    // Act
+    PatientListResponse result = subject.searchPatients(List.of(Mockito.anyString()));
+
+    // Assert
+    //assertEquals(HttpStatus.CREATED, result.getStatusCode());
+    assertEquals(1, result.getPatients().size());
+    assertEquals(patientDto, result.getPatients().get(0));
+  }
 }

@@ -6,10 +6,7 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.api.SortOrderEnum;
 import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.rest.gclient.DateClientParam;
-import ca.uhn.fhir.rest.gclient.ICriterion;
-import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
-import ca.uhn.fhir.rest.gclient.TokenClientParam;
+import ca.uhn.fhir.rest.gclient.*;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
@@ -18,6 +15,7 @@ import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.NumberUtils;
 
 import java.sql.Date;
 import java.time.Instant;
@@ -122,6 +120,28 @@ public class FhirClient {
         var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
 
         return lookupPatient(cprCriterion);
+    }
+
+    public FhirLookupResult searchPatientsWithActiveCarePlan(List<String> searchStrings) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
+        var cprCriterion = new StringClientParam("patient_identifier_cpr").matches().values(searchStrings);
+        var nameCriterion = Patient.NAME.matches().values(searchStrings);
+
+        // FHIR has no way of expressing 'search patient with name like %search% OR cpr like %search%'
+        // so we have to do that in two seperate queries
+
+
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        var organizationCriterion = buildOrganizationCriterion();
+        criteria.add(organizationCriterion);
+        var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+        criteria.add(statusCriterion);
+
+        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
+        fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));
+
+        return fhirLookupResult;
     }
 
     public FhirLookupResult lookupQuestionnaireResponseById(String questionnaireResponseId) {
