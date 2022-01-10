@@ -153,63 +153,6 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void getCareplans_ReturnsOneActiveCareplan_WhenActiveCareplansAreWanted_OneActiveOneCompletedRessource() throws ServiceException {
-
-        //Arrange
-        boolean onlyActive = true;
-        PageDetails pageDetails = new PageDetails(1, 10);
-
-        CarePlan activeCareplan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        activeCareplan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-
-        CarePlan inactiveCareplan = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
-        inactiveCareplan.setStatus(CarePlan.CarePlanStatus.COMPLETED);
-
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(activeCareplan,inactiveCareplan);
-        Mockito.when(fhirClient.lookupCarePlans(onlyActive,0,10)).thenReturn(lookupResult);
-
-        //Act
-        List<CarePlanModel> result = subject.getCarePlans(onlyActive,pageDetails);
-
-        //Aserts
-        assertEquals(1,result.size());
-        CarePlanModel firstCareplan = result.get(0);
-        assertNotEquals(null,firstCareplan);
-        assertEquals(CarePlanStatus.ACTIVE ,firstCareplan.getStatus());
-    }
-
-    @Test
-    public void getCareplans_ReturnsOneCompletedCareplan_WhenCompletedCareplansAreWanted_OneActiveOneCompletedRessource() throws ServiceException {
-
-        //Arrange
-        boolean onlyActive = false;
-        PageDetails pageDetails = new PageDetails(1, 10);
-
-
-        Patient patient1 = new Patient();
-        patient1.setId("patient1");
-
-        CarePlan activeCareplan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        activeCareplan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-
-        CarePlan inactiveCareplan1 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
-        inactiveCareplan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
-
-
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(activeCareplan1,inactiveCareplan1);
-        Mockito.when(fhirClient.lookupCarePlans(onlyActive,0,10)).thenReturn(lookupResult);
-
-        //Act
-        List<CarePlanModel> result = subject.getCarePlans(onlyActive,pageDetails);
-
-        //Aserts
-        assertEquals(1,result.size());
-        CarePlanModel firstCareplan = result.get(0);
-        assertNotEquals(null,firstCareplan);
-        assertEquals(CarePlanStatus.COMPLETED ,firstCareplan.getStatus());
-    }
-
-    @Test
     public void createCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
         // Arrange
         CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of());
