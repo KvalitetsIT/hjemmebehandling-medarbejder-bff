@@ -282,7 +282,15 @@ public class FhirClient {
         FhirLookupResult planDefinitionResult = lookupPlanDefinitions(planDefinitionIds);
 
         // Merge the results
-        return questionnaireResponseResult.merge(planDefinitionResult);
+        questionnaireResponseResult.merge(planDefinitionResult);
+
+        // We also need to lookup the practitioner who (potentially) changed the examination status
+        List<String> practitionerIds = getPractitionerIds(questionnaireResponseResult.getQuestionnaireResponses());
+        if (!practitionerIds.isEmpty()) {
+            FhirLookupResult practitionerResult = lookupPractitioners(practitionerIds);
+            questionnaireResponseResult.merge(practitionerResult);
+        }
+        return questionnaireResponseResult;
     }
 
     private List<String> getQuestionnaireIdsFromCarePlan(List<CarePlan> carePlans) {
@@ -304,6 +312,15 @@ public class FhirClient {
                 .stream()
                 .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(ic -> ic.getValue()))
                 .collect(Collectors.toList());
+    }
+
+    private List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
+        return questionnaireResponses
+            .stream()
+            .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
+            .filter(id -> id != null)
+            .distinct()
+            .collect(Collectors.toList());
     }
 
     private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
@@ -459,5 +476,59 @@ public class FhirClient {
 
         var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
         return organizationId;
+    }
+
+    public Practitioner getOrCreateUserAsPractitioner() {
+
+        String orgId = userContextProvider.getUserContext().getOrgId();
+        String userId = userContextProvider.getUserContext().getUserId();
+
+        ICriterion<TokenClientParam> sorIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.SOR, orgId);
+        ICriterion<TokenClientParam> userIdIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.USER_ID, userId);
+        //FhirLookupResult lookupResult = lookupByCriteria(Practitioner.class, List.of(sorIdentifier, userIdIdentifier));
+        Optional<Practitioner> practitioner = lookupPractitioner(List.of(sorIdentifier, userIdIdentifier));
+
+        if (practitioner.isPresent()) {
+            return practitioner.get();
+        }
+        else {
+            Practitioner p = new Practitioner();
+            p.addIdentifier().setSystem(Systems.SOR).setValue(orgId);
+            p.addIdentifier().setSystem(Systems.USER_ID).setValue(userId);
+            p.getNameFirstRep().addGiven(userContextProvider.getUserContext().getFirstName());
+            p.getNameFirstRep().setFamily(userContextProvider.getUserContext().getLastName());
+
+            String practitionerId = save(p);
+            return lookupPractitionerById(practitionerId).get();
+        }
+    }
+
+
+    public Optional<Practitioner> lookupPractitionerById(String practitionerId) {
+        var idCriterion = Practitioner.RES_ID.exactly().code(practitionerId);
+
+        return lookupPractitioner(idCriterion);
+    }
+
+    private Optional<Practitioner> lookupPractitioner(ICriterion<?> criterion) {
+        return lookupPractitioner(List.of(criterion));
+    }
+
+    private Optional<Practitioner> lookupPractitioner(List<ICriterion<?>> criterions) {
+        var lookupResult = lookupByCriteria(Practitioner.class, criterions);
+
+        if(lookupResult.getPractitioners().isEmpty()) {
+            return Optional.empty();
+        }
+        if(lookupResult.getPractitioners().size() > 1) {
+            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Practitioner.class));
+        }
+        return Optional.of(lookupResult.getPractitioners().get(0));
+    }
+
+    public FhirLookupResult lookupPractitioners(Collection<String> practitionerIds) {
+        var idCriterion = Practitioner.RES_ID.exactly().codes(practitionerIds);
+
+        return lookupByCriteria(Practitioner.class, List.of(idCriterion));
     }
 }

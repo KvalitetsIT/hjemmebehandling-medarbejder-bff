@@ -4,8 +4,10 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CanonicalType;
@@ -32,6 +34,8 @@ import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.Timing;
 import org.hl7.fhir.r4.model.Type;
+import org.hl7.fhir.r4.model.Practitioner;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -39,18 +43,6 @@ import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
@@ -310,6 +302,9 @@ public class FhirMapper {
         questionnaireResponse.setSource(new Reference(questionnaireResponseModel.getSourceId().toString()));
         questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
         questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(questionnaireResponseModel.getExaminationStatus()));
+        if (questionnaireResponseModel.getExaminationAuthor() != null) {
+            questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationAuthor(questionnaireResponseModel.getExaminationAuthor()));
+        }
         questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
         questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId().toString()));
 
@@ -355,6 +350,12 @@ public class FhirMapper {
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
         questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));
+
+        String practitionerId = ExtensionMapper.tryExtractExaminationAuthorPractitionerId(questionnaireResponse.getExtension());
+        Optional<Practitioner> practitioner = lookupResult.getPractitioner(practitionerId);
+        if (practitioner.isPresent()) {
+            questionnaireResponseModel.setExaminationAuthor(mapPractitioner(practitioner.get()));
+        }
 
         String patientId = questionnaireResponse.getSubject().getReference();
         Patient patient = lookupResult.getPatient(patientId)
@@ -708,4 +709,13 @@ public class FhirMapper {
         return wrapper;
     }
 
+    public PractitionerModel mapPractitioner(Practitioner practitioner) {
+        PractitionerModel practitionerModel = new PractitionerModel();
+
+        practitionerModel.setId(extractId(practitioner));
+        practitionerModel.setGivenName(practitioner.getNameFirstRep().getGivenAsSingleString());
+        practitionerModel.setFamilyName(practitioner.getNameFirstRep().getFamily());
+
+        return practitionerModel;
+    }
 }

@@ -38,6 +38,7 @@ public class FhirMapperTest {
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private static final String PRACTITIONER_ID_1 = "Practitioner/practitioner-1";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
@@ -214,6 +215,7 @@ public class FhirMapperTest {
         assertTrue(result.getExtension().stream().anyMatch(e ->
                 e.getUrl().equals(Systems.EXAMINATION_STATUS) &&
                         e.getValue().toString().equals(new StringType(ExaminationStatus.NOT_EXAMINED.name()).toString())));
+        assertTrue(result.getExtension().stream().noneMatch(e -> e.getUrl().equals(Systems.EXAMINATION_AUTHOR)));
     }
 
     @Test
@@ -242,8 +244,9 @@ public class FhirMapperTest {
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        Practitioner practitioner = buildPractitioner(PRACTITIONER_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition, practitioner);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -252,6 +255,7 @@ public class FhirMapperTest {
         assertEquals(questionnaireResponse.getExtension().size(), result.getExtension().size());
         assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION)));
         assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.EXAMINATION_STATUS)));
+        assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.EXAMINATION_AUTHOR)));
         assertTrue(result.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.TRIAGING_CATEGORY)));
     }
 
@@ -263,8 +267,9 @@ public class FhirMapperTest {
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        Practitioner practitioner = buildPractitioner(PRACTITIONER_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition, practitioner);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -291,8 +296,9 @@ public class FhirMapperTest {
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        Practitioner practitioner = buildPractitioner(PRACTITIONER_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire, carePlan, planDefinition, practitioner);
 
         // Act
         QuestionnaireResponse result = subject.mapQuestionnaireResponseModel(subject.mapQuestionnaireResponse(questionnaireResponse, lookupResult));
@@ -308,6 +314,13 @@ public class FhirMapperTest {
 
         assertEquals(quantityItem.getLinkId(), result.getItem().get(2).getLinkId());
         assertEquals(quantityItem.getAnswerFirstRep().getValueQuantity().getValue(), result.getItem().get(2).getAnswerFirstRep().getValueQuantity().getValue());
+    }
+
+    private Practitioner buildPractitioner(String practitionerId) {
+        Practitioner practitioner = new Practitioner();
+        practitioner.setId(practitionerId);
+
+        return practitioner;
     }
 
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId, String planDefinitionId) {
@@ -546,6 +559,7 @@ public class FhirMapperTest {
         questionnaireResponse.getItem().addAll(answerItems);
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
+        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_AUTHOR, new StringType(PRACTITIONER_ID_1)));
         questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
         questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 

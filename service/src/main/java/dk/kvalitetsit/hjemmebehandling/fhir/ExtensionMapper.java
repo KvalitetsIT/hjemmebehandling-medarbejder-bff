@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.model.PractitionerModel;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Extension;
@@ -43,6 +44,10 @@ public class ExtensionMapper {
     
     public static Extension mapExaminationStatus(ExaminationStatus examinationStatus) {
         return buildStringExtension(Systems.EXAMINATION_STATUS, examinationStatus.toString());
+    }
+
+    public static Extension mapExaminationAuthor(PractitionerModel practitioner) {
+        return buildStringExtension(Systems.EXAMINATION_AUTHOR, practitioner.getId().toString());
     }
 
     public static Extension mapOrganizationId(String organizationId) {
@@ -81,6 +86,10 @@ public class ExtensionMapper {
 
     public static ExaminationStatus extractExaminationStatus(List<Extension> extensions) {
         return extractEnumFromExtensions(extensions, Systems.EXAMINATION_STATUS, ExaminationStatus.class);
+    }
+
+    public static String tryExtractExaminationAuthorPractitionerId(List<Extension> extensions) {
+        return extractStringFromExtensions(extensions, Systems.EXAMINATION_AUTHOR);
     }
 
     public static String extractOrganizationId(List<Extension> extensions) {

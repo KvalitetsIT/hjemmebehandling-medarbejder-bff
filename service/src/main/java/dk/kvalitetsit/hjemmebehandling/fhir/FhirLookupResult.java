@@ -13,6 +13,7 @@ public class FhirLookupResult {
     private Map<String, PlanDefinition> planDefinitionsById;
     private Map<String, Questionnaire> questionnairesById;
     private Map<String, QuestionnaireResponse> questionnaireResponsesById;
+    private Map<String, Practitioner> practitionersById;
 
     private FhirLookupResult() {
         // Using LinkedHashMap preserves the insertion order (necessary for eg. returning sorted results).
@@ -22,6 +23,7 @@ public class FhirLookupResult {
         planDefinitionsById = new LinkedHashMap<>();
         questionnairesById = new LinkedHashMap<>();
         questionnaireResponsesById = new LinkedHashMap<>();
+        practitionersById = new LinkedHashMap<>();
     }
 
     public static FhirLookupResult fromBundle(Bundle bundle) {
@@ -94,6 +96,14 @@ public class FhirLookupResult {
         return getResources(questionnaireResponsesById);
     }
 
+    public Optional<Practitioner> getPractitioner(String practitionerId) {
+        return getResource(practitionerId, practitionersById);
+    }
+
+    public List<Practitioner> getPractitioners() {
+        return getResources(practitionersById);
+    }
+
     public FhirLookupResult merge(FhirLookupResult result) {
         for(CarePlan carePlan : result.carePlansById.values()) {
             addResource(carePlan);
@@ -112,6 +122,9 @@ public class FhirLookupResult {
         }
         for(QuestionnaireResponse questionnaireResponse: result.questionnaireResponsesById.values()) {
             addResource(questionnaireResponse);
+        }
+        for(Practitioner practitioner: result.practitionersById.values()) {
+            addResource(practitioner);
         }
 
         return this;
@@ -161,6 +174,9 @@ public class FhirLookupResult {
                 break;
             case QuestionnaireResponse:
                 questionnaireResponsesById.put(resourceId, (QuestionnaireResponse) resource);
+                break;
+            case Practitioner:
+                practitionersById.put(resourceId, (Practitioner) resource);
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown resource type: %s", resource.getResourceType().toString()));
