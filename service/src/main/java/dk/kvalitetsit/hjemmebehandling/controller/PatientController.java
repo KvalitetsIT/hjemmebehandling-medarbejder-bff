@@ -2,8 +2,10 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,12 +102,13 @@ public class PatientController extends BaseController {
     }
 
     @GetMapping(value = "/v1/patients")
-    public @ResponseBody PatientListResponse getPatients(boolean includeActive, boolean includeCompleted) {
+    public @ResponseBody PatientListResponse getPatients(boolean includeActive, boolean includeCompleted, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
         logger.info("Getting patient ...");
         if(!includeActive && !includeCompleted)
             return buildResponse(new ArrayList<>());
 
-        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted);
+        var pagedetails = new PageDetails(pageNumber.get(), pageSize.get());
+        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagedetails);
         auditLoggingService.log("GET /v1/patients", patients);
 
         return buildResponse(patients);

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
@@ -86,7 +87,7 @@ public class PatientService extends AccessValidatingService {
         return fhirMapper.mapPatient(patient.get());
     }
 
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, PageDetails pageDetails) {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
 
@@ -95,9 +96,13 @@ public class PatientService extends AccessValidatingService {
         if(includeCompleted)
             lookupResult.merge(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED));
 
+        var offset = pageDetails.getOffset();
+        var count = pageDetails.getPageSize();
         // Map the resources
         return lookupResult.getPatients()
                 .stream()
+                .skip(offset)
+                .limit(count)
                 .map(p -> fhirMapper.mapPatient(p))
                 .collect(Collectors.toList());
     }

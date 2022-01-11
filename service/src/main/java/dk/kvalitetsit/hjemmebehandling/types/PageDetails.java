@@ -15,6 +15,10 @@ public class PageDetails {
         return pageNumber;
     }
 
+    public int getOffset(){
+        return (pageNumber-1)*pageSize;
+    }
+
     public void setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;
     }
