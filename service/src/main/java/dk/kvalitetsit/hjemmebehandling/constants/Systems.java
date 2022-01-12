@@ -3,8 +3,10 @@ package dk.kvalitetsit.hjemmebehandling.constants;
 public class Systems {
     public static final String SOR = "1.2.208.176.1.1";
     public static final String CPR = "1.2.208.176.1.2";
+    public static final String USER_ID = "regions-id";
 
     public static final String EXAMINATION_STATUS = "http://hjemmebehandling.rm.dk/examination-status";
+    public static final String EXAMINATION_AUTHOR = "http://hjemmebehandling.rm.dk/examination-author";
     public static final String ORGANIZATION = "http://hjemmebehandling.rm.dk/organization";
     public static final String TRIAGING_CATEGORY = "http://hjemmebehandling.rm.dk/triaging-category";
     public static final String ACTIVITY_SATISFIED_UNTIL = "http://hjemmebehandling.rm.dk/activity-satisfied-until";
@@ -17,7 +19,7 @@ public class Systems {
     public static final String THRESHOLD_VALUE_BOOLEAN = "http://hjemmebehandling.rm.dk/threshold-value-boolean";
 
     public static final String CONTACT_RELATIONSHIP = "http://hjemmebehandling.rm.dk/contact-relationship";
-    
+
     public static final String CUSTOM_USER_ID = "http://hjemmebehandling.rm.dk/custom-user-id";
     public static final String CUSTOM_USER_NAME = "http://hjemmebehandling.rm.dk/custom-user-name";
 }

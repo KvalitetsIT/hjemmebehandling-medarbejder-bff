@@ -106,6 +106,9 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         QuestionnaireResponseModel mappedResponse = fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult);
         mappedResponse.setExaminationStatus(examinationStatus);
 
+        Practitioner user = fhirClient.getOrCreateUserAsPractitioner();
+        mappedResponse.setExaminationAuthor(fhirMapper.mapPractitioner(user));
+
         // Save the updated QuestionnaireResponse
         fhirClient.updateQuestionnaireResponse(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
         return mappedResponse;
