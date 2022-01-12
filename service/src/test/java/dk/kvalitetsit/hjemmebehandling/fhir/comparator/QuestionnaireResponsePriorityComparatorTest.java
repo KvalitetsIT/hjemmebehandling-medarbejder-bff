@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,58 +27,101 @@ public class QuestionnaireResponsePriorityComparatorTest {
     @Test
     public void compare_considersTriagingCategory() {
         // Arrange
-        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
-        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse second = buildQuestionnaireResponse("2",TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+
+
 
         // Act
-        int result = subject.compare(first, second);
+        var list = new ArrayList<QuestionnaireResponse>();
+        list.add(first);
+        list.add(second);
+
+        list.sort(subject);
 
         // assert
-        assertTrue(result < 0);
+        QuestionnaireResponse firstElement = list.get(0);
+        assertEquals(second.getId(),firstElement.getId());
     }
 
     @Test
     public void compare_considersExaminationStatus() {
         // Arrange
-        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.UNDER_EXAMINATION, AUTHORED);
-        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.UNDER_EXAMINATION, AUTHORED);
+        QuestionnaireResponse second = buildQuestionnaireResponse("2",TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, AUTHORED);
 
         // Act
-        int result = subject.compare(first, second);
+        var list = new ArrayList<QuestionnaireResponse>();
+        list.add(first);
+        list.add(second);
+
+        list.sort(subject);
+        QuestionnaireResponse firstElement = list.get(0);
 
         // assert
-        assertTrue(result < 0);
+        assertEquals(first.getId(),firstElement.getId());
     }
 
     @Test
     public void compare_considersAnswerDate() {
         // Arrange
-        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
-        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED.plusSeconds(10L));
+        QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
+        QuestionnaireResponse second = buildQuestionnaireResponse("2",TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED.plusSeconds(10L));
 
         // Act
-        int result = subject.compare(first, second);
+        var list = new ArrayList<QuestionnaireResponse>();
+        list.add(first);
+        list.add(second);
+
+        list.sort(subject);
+        QuestionnaireResponse firstElement = list.get(0);
 
         // assert
-        assertTrue(result < 0);
+        assertEquals(first.getId(),firstElement.getId());
+    }
+
+    @Test
+    public void compare_considersAnswerDate_sda() {
+
+        var earlier = Instant.parse("2020-11-09T00:00:00Z");
+        var middle = Instant.parse("2021-11-09T00:00:00Z");
+        var later = Instant.parse("2022-11-09T00:00:00Z");
+        // Arrange
+        QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, earlier);
+        QuestionnaireResponse second = buildQuestionnaireResponse("2",TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, middle);
+        QuestionnaireResponse third = buildQuestionnaireResponse("3",TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, later);
+
+        var list = new ArrayList<QuestionnaireResponse>();
+        list.add(first);
+        list.add(second);
+        list.add(third);
+
+        list.sort(subject);
+
+        assertEquals(second.getAuthored(),list.get(0).getAuthored());
     }
 
     @Test
     public void compare_indistinguishable() {
         // Arrange
-        QuestionnaireResponse first = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
-        QuestionnaireResponse second = buildQuestionnaireResponse(TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
+        QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
+        QuestionnaireResponse second = buildQuestionnaireResponse("2",TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
 
         // Act
-        int result = subject.compare(first, second);
+        var list = new ArrayList<QuestionnaireResponse>();
+        list.add(first);
+        list.add(second);
+
+        list.sort(subject);
+        QuestionnaireResponse firstElement = list.get(0);
 
         // assert
-        assertEquals(0, result);
+        assertEquals(first.getId(),firstElement.getId());
     }
 
-    private QuestionnaireResponse buildQuestionnaireResponse(TriagingCategory triagingCategory, ExaminationStatus examinationStatus, Instant authored) {
+    private QuestionnaireResponse buildQuestionnaireResponse(String id, TriagingCategory triagingCategory, ExaminationStatus examinationStatus, Instant authored) {
         QuestionnaireResponse response = new QuestionnaireResponse();
-
+        response.setId(id);
         response.addExtension(ExtensionMapper.mapTriagingCategory(triagingCategory));
         response.addExtension(ExtensionMapper.mapExaminationStatus(examinationStatus));
         response.setAuthored(Date.from(authored));
