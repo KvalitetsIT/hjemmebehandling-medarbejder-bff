@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,85 @@ public class PatientServiceTest {
     assertEquals(1, result.size());
     assertEquals(patientModel, result.get(0));
   }
+
+  @Test
+  public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCareplan() {
+    // Arrange
+    CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+    CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+
+    Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+
+    FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
+    FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan2, patient);
+
+    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
+
+    // Act
+    var pagedetails = new PageDetails(1,10);
+    var includeActive = false;
+    var includeCompleted = true;
+    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
+
+    // Assert
+    assertEquals(0,result.size());
+  }
+
+  @Test
+  public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() {
+    // Arrange
+    CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+    CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+
+    Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+
+    FhirLookupResult activeLookup = FhirLookupResult.fromResources();
+    FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan1,carePlan2, patient);
+
+    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
+
+    // Act
+    var pagedetails = new PageDetails(1,10);
+    var includeActive = false;
+    var includeCompleted = true;
+    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
+
+    // Assert
+    assertEquals(1,result.size());
+  }
+
+  @Test
+  public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() {
+    // Arrange
+    CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+    CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+
+    Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+
+    FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
+    FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan2, patient);
+
+    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+
+    // Act
+    var pagedetails = new PageDetails(1,10);
+    var includeActive = true;
+    var includeCompleted = false;
+    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
+
+    // Assert
+    assertEquals(1,result.size());
+  }
+
+
 
   @Test
   public void searchPatients_emptyResult() {
