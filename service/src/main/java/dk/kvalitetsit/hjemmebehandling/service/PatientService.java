@@ -87,6 +87,11 @@ public class PatientService extends AccessValidatingService {
         return fhirMapper.mapPatient(patient.get());
     }
 
+    boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
+        var patientIsInList = listToSearchForPatient.stream().anyMatch(listP -> listP.getId() == patientToSearchFor.getId());
+        return patientIsInList;
+    }
+
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, PageDetails pageDetails) {
 
         var patients = new ArrayList<Patient>();
@@ -98,10 +103,9 @@ public class PatientService extends AccessValidatingService {
 
         if(includeCompleted){
             var patientsWithInactiveCareplan = fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED).getPatients();
-            patientsWithInactiveCareplan.removeAll(patientsWithActiveCareplan);
+            patientsWithInactiveCareplan.removeIf( potentialPatient -> patientIsInList(potentialPatient,patientsWithActiveCareplan) );
             patients.addAll(patientsWithInactiveCareplan);
         }
-
 
         var offset = pageDetails.getOffset();
         var count = pageDetails.getPageSize();
