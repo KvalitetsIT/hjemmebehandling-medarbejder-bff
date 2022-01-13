@@ -89,17 +89,24 @@ public class PatientService extends AccessValidatingService {
 
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, PageDetails pageDetails) {
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources();
+        var patients = new ArrayList<Patient>();
+
+        var patientsWithActiveCareplan = fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE).getPatients();
 
         if(includeActive)
-            lookupResult.merge(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE));
-        if(includeCompleted)
-            lookupResult.merge(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED));
+            patients.addAll(patientsWithActiveCareplan);
+
+        if(includeCompleted){
+            var patientsWithInactiveCareplan = fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED).getPatients();
+            patientsWithInactiveCareplan.removeAll(patientsWithActiveCareplan);
+            patients.addAll(patientsWithInactiveCareplan);
+        }
+
 
         var offset = pageDetails.getOffset();
         var count = pageDetails.getPageSize();
         // Map the resources
-        return lookupResult.getPatients()
+        return patients
                 .stream()
                 .skip(offset)
                 .limit(count)
