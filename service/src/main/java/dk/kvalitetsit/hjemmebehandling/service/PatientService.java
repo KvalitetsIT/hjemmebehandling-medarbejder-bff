@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -88,7 +89,12 @@ public class PatientService extends AccessValidatingService {
     }
 
     boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
-        var patientIsInList = listToSearchForPatient.stream().anyMatch(listP -> listP.getId() == patientToSearchFor.getId());
+        var patientIsInList = listToSearchForPatient
+                .stream().
+                anyMatch(listP -> Objects.equals(
+                        fhirMapper.extractCpr(listP),
+                        fhirMapper.extractCpr(patientToSearchFor)
+                ));
         return patientIsInList;
     }
 
@@ -96,13 +102,13 @@ public class PatientService extends AccessValidatingService {
 
         var patients = new ArrayList<Patient>();
 
-        var patientsWithActiveCareplan = fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE).getPatients();
+        var patientsWithActiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE).getPatients();
 
         if(includeActive)
             patients.addAll(patientsWithActiveCareplan);
 
         if(includeCompleted){
-            var patientsWithInactiveCareplan = fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED).getPatients();
+            var patientsWithInactiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED).getPatients();
             patientsWithInactiveCareplan.removeIf( potentialPatient -> patientIsInList(potentialPatient,patientsWithActiveCareplan) );
             patients.addAll(patientsWithInactiveCareplan);
         }

@@ -134,6 +134,13 @@ public class FhirClient {
         return fhirLookupResult;
     }
 
+    public FhirLookupResult getPatientsByStatus(CarePlan.CarePlanStatus status) {
+        var organizationCriterion = buildOrganizationCriterion();
+        var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
+        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion));
+        return fhirLookupResult;
+    }
+
     public FhirLookupResult lookupQuestionnaireResponseById(String questionnaireResponseId) {
         var idCriterion = QuestionnaireResponse.RES_ID.exactly().code(questionnaireResponseId);
         return lookupQuestionnaireResponseByCriteria(List.of(idCriterion));

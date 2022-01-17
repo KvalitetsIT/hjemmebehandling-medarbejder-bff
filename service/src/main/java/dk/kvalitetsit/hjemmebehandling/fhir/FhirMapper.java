@@ -426,7 +426,7 @@ public class FhirMapper {
         return identifier;
     }
 
-    private String extractCpr(Patient patient) {
+    public String extractCpr(Patient patient) {
         return patient.getIdentifier().get(0).getValue();
     }
 
