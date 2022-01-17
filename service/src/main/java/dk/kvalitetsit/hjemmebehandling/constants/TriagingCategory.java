@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.constants;
 
 public enum TriagingCategory {
-    GREEN(1), YELLOW(2), RED(3);
+    GREEN(3), YELLOW(2), RED(1);
 
     private int priority;
 
