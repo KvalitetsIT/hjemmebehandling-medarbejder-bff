@@ -70,8 +70,8 @@ public class PatientServiceTest {
     FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
     FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan2, patient);
 
-    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
-    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
 
     // Act
     var pagedetails = new PageDetails(1,10);
@@ -96,8 +96,8 @@ public class PatientServiceTest {
     FhirLookupResult activeLookup = FhirLookupResult.fromResources();
     FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan1,carePlan2, patient);
 
-    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
-    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
 
     // Act
     var pagedetails = new PageDetails(1,10);
@@ -122,7 +122,7 @@ public class PatientServiceTest {
     FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
     FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan2, patient);
 
-    Mockito.when(fhirClient.searchPatients(new ArrayList<String>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
 
     // Act
     var pagedetails = new PageDetails(1,10);
