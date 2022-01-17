@@ -21,7 +21,7 @@ public class QuestionnaireResponsePriorityComparator implements Comparator<Quest
         var secondTriagingCategory = ExtensionMapper.extractTriagingCategoory(second.getExtension());
         if(firstTriagingCategory != secondTriagingCategory) {
             // The response with the most severe category is prioritized.
-            return secondTriagingCategory.getPriority() - firstTriagingCategory.getPriority();
+            return firstTriagingCategory.getPriority() - secondTriagingCategory.getPriority();
         }
 
         // Compare by ExaminationStatus

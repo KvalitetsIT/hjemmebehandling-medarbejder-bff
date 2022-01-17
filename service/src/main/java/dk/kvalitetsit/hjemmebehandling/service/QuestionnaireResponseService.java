@@ -154,7 +154,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     private QuestionnaireResponse extractMaximalPriorityResponse(List<QuestionnaireResponse> responses) {
         var response = responses
                 .stream()
-                .max(priorityComparator);
+                .min(priorityComparator); // priorityComperator is ordering elements from high to low, so extract the first element (eg. highest priority)
         if(!response.isPresent()) {
             throw new IllegalStateException("Could not extract QuestionnaireResponse of maximal priority - the list was empty!");
         }

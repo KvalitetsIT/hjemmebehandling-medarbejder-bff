@@ -70,7 +70,7 @@ public class ServiceConfiguration {
     @Bean
     public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, priorityComparator.reversed(), accessValidator);
+        return new QuestionnaireResponseService(client, mapper, priorityComparator, accessValidator);
     }
 
     @Bean

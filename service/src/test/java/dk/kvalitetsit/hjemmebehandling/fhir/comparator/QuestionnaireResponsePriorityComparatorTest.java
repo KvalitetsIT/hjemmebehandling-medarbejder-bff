@@ -25,6 +25,106 @@ public class QuestionnaireResponsePriorityComparatorTest {
     }
 
     @Test
+    public void ensure_correct_triagingCategoryPriority_order() {
+        assertTrue((TriagingCategory.GREEN.getPriority() - TriagingCategory.GREEN.getPriority()) == 0);
+        assertTrue((TriagingCategory.YELLOW.getPriority() - TriagingCategory.YELLOW.getPriority()) == 0);
+        assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.RED.getPriority()) == 0);
+
+        assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.YELLOW.getPriority()) < 0);
+        assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.GREEN.getPriority()) < 0);
+
+        assertTrue((TriagingCategory.YELLOW.getPriority() - TriagingCategory.RED.getPriority()) > 0);
+        assertTrue((TriagingCategory.YELLOW.getPriority() - TriagingCategory.GREEN.getPriority()) < 0);
+
+        assertTrue((TriagingCategory.GREEN.getPriority() - TriagingCategory.YELLOW.getPriority()) > 0);
+        assertTrue((TriagingCategory.GREEN.getPriority() - TriagingCategory.RED.getPriority()) > 0);
+    }
+
+    @Test
+    public void ensure_correct_examinationStatusPriority_order() {
+        assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.UNDER_EXAMINATION.getPriority()) == 0);
+        assertTrue((ExaminationStatus.NOT_EXAMINED.getPriority() - ExaminationStatus.NOT_EXAMINED.getPriority()) == 0);
+        assertTrue((ExaminationStatus.EXAMINED.getPriority() - ExaminationStatus.EXAMINED.getPriority()) == 0);
+
+        assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.NOT_EXAMINED.getPriority()) < 0);
+        assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.EXAMINED.getPriority()) < 0);
+
+        assertTrue((ExaminationStatus.NOT_EXAMINED.getPriority() - ExaminationStatus.UNDER_EXAMINATION.getPriority()) > 0);
+        assertTrue((ExaminationStatus.NOT_EXAMINED.getPriority() - ExaminationStatus.EXAMINED.getPriority()) < 0);
+
+        assertTrue((ExaminationStatus.EXAMINED.getPriority() - ExaminationStatus.UNDER_EXAMINATION.getPriority()) > 0);
+        assertTrue((ExaminationStatus.EXAMINED.getPriority() - ExaminationStatus.NOT_EXAMINED.getPriority()) > 0);
+    }
+
+    @Test
+    public void ensure_correct_triagingCategory_sorting() {
+        // Arrange
+        QuestionnaireResponse green = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse yellow = buildQuestionnaireResponse("2",TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse red = buildQuestionnaireResponse("3",TriagingCategory.RED, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+
+        // Act
+
+        // Assert
+        assertTrue( subject.compare(green, green) == 0);
+        assertTrue( subject.compare(yellow, yellow) == 0);
+        assertTrue( subject.compare(red, red) == 0);
+
+        assertTrue( subject.compare(green, yellow) > 0);
+        assertTrue( subject.compare(green, red) > 0);
+
+        assertTrue( subject.compare(yellow, green) < 0);
+        assertTrue( subject.compare(yellow, red) > 0);
+
+        assertTrue( subject.compare(red, green) < 0);
+        assertTrue( subject.compare(red, yellow) < 0);
+    }
+
+    @Test
+    public void ensure_correct_examinationStatus_sorting() {
+        // Arrange
+        QuestionnaireResponse examined = buildQuestionnaireResponse("1",TriagingCategory.GREEN, ExaminationStatus.EXAMINED, AUTHORED);
+        QuestionnaireResponse notExamined = buildQuestionnaireResponse("2",TriagingCategory.GREEN, ExaminationStatus.NOT_EXAMINED, AUTHORED);
+        QuestionnaireResponse underExamination = buildQuestionnaireResponse("3",TriagingCategory.GREEN, ExaminationStatus.UNDER_EXAMINATION, AUTHORED);
+
+        // Act
+
+        // Assert
+        assertTrue( subject.compare(examined, examined) == 0);
+        assertTrue( subject.compare(notExamined, notExamined) == 0);
+        assertTrue( subject.compare(underExamination, underExamination) == 0);
+
+        assertTrue( subject.compare(examined, underExamination) > 0);
+        assertTrue( subject.compare(examined, notExamined) > 0);
+
+        assertTrue( subject.compare(notExamined, underExamination) > 0);
+        assertTrue( subject.compare(notExamined, examined) < 0);
+
+        assertTrue( subject.compare(underExamination, notExamined) < 0);
+        assertTrue( subject.compare(underExamination, examined) < 0);
+    }
+
+    @Test
+    public void ensure_correct_authored_sorting() {
+        // Arrange
+        var earlier = Instant.parse("2021-11-09T00:00:00Z");
+        var later = Instant.parse("2022-11-09T00:00:00Z");
+        QuestionnaireResponse first = buildQuestionnaireResponse("1", TriagingCategory.GREEN, ExaminationStatus.EXAMINED, earlier);
+        QuestionnaireResponse last = buildQuestionnaireResponse("2", TriagingCategory.GREEN, ExaminationStatus.EXAMINED, later);
+
+        // Act
+
+        // Assert
+        assertTrue( subject.compare(first, first) == 0);
+        assertTrue( subject.compare(last, last) == 0);
+
+        assertTrue( subject.compare(first, last) < 0);
+        assertTrue( subject.compare(last, first) > 0);
+
+    }
+
+
+    @Test
     public void compare_considersTriagingCategory() {
         // Arrange
         QuestionnaireResponse first = buildQuestionnaireResponse("1",TriagingCategory.YELLOW, ExaminationStatus.NOT_EXAMINED, AUTHORED);
