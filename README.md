@@ -46,7 +46,7 @@ The service uses Logback for logging. At runtime Logback log levels can be confi
 
 On http the service exposes a health endpoint on the path /info. This will return 200 ok if the service is basically in a healthy state, meaning that the web service is up and running.
 
-On http the service exposes Prometheus metrics on the path /metrics. 
+On http the service exposes Prometheus metrics on the path /prometheus. 
 
 ## Testing
 Automated unit- and integrationtest are used.
