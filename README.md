@@ -1,7 +1,7 @@
 ![Build Status](https://github.com/KvalitetsIT/hjemmebehandling-medarbejder-bff/workflows/CICD/badge.svg) ![Test Coverage](.github/badges/jacoco.svg)
 # hjemmebehandling-medarbejder-bff
 
-The KoMo-medarbejder-bff is a Backend For Frontend (BFF) for the employee application. In short the BFF layer consists of multiple backends developed to address the needs of respective frontend frameworks, like desktop, browser, and native-mobile apps. This service is backend for the employees and administrators using a browser.  
+The Hjemmebhandling-medarbejder-bff is a Backend For Frontend (BFF) for the employee application. In short the BFF layer consists of multiple backends developed to address the needs of respective frontend frameworks, like desktop, browser, and native-mobile apps. This service is backend for the employees and administrators using a browser.  
 
 The service is a Java Spring Boot application with the following properties
 
@@ -76,10 +76,10 @@ mvn verify -Pintegration-test
 
 The service is listening for connections on port 8080.
 
-Spring boot actuator is listening for connections on port 8081. This is used as prometheus scrape endpoint and health monitoring. 
+Spring boot actuator is listening for connections on port 9090. This is used as prometheus scrape endpoint and health monitoring. 
 
-Prometheus scrape endpoint: `http://localhost:8081/actuator/prometheus`  
-Health URL that can be used for readiness probe: `http://localhost:8081/actuator/health`
+Prometheus scrape endpoint: `http://localhost:9090/actuator/prometheus`  
+Health URL that can be used for readiness probe: `http://localhost:9090/actuator/health`
 The application API documentation(Json): `http://localhost:8080/api/v3/api-docs`
 
 ## Configuration
