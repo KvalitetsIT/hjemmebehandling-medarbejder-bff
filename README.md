@@ -94,7 +94,20 @@ The application API documentation(Json): `http://localhost:8080/api/v3/api-docs`
 | LOG_LEVEL_FRAMEWORK | Log level for framework. Defaults to INFO. | No |
 | CORRELATION_ID | HTTP header to take correlation id from. Used to correlate log messages. Defaults to "x-request-id". | No|
 
-### Openapitools
+## Generate for frontend (bff.json)
+Start bff on port 8080. After that run the following command;
+
+```
+curl http://localhost:8080/api/v3/api-docs > resources/bff.json
+```
+
+The Web application uses the OpenApi specification to generate DTOs (Data Transfer Objects) on the client side.
+
+## Openapitools
+Openapi tools can be used to generate docs
+
+Install openapitools:
+
 ```shell
 mkdir -p ~/bin/openapitools
 curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > ~/bin/openapitools/openapi-generator-cli
@@ -102,10 +115,9 @@ chmod u+x ~/bin/openapitools/openapi-generator-cli
 export PATH=$PATH:~/bin/openapitools/
 openapi-generator-cli version
 ```
-## Generate for frontend (bff.json)
-Start bff on port 8080. After that run the following command;
-```
-curl http://localhost:8080/api/v3/api-docs > resources/bff.json
-```
 
-The Web application uses the OpenApi specification to generate DTOs (Data Transfer Objects) on the client side.
+Generate html
+
+```
+openapi-generator-cli generate -i bff.json -g html
+```
