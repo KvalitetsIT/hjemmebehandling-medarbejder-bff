@@ -1,7 +1,7 @@
 ![Build Status](https://github.com/KvalitetsIT/hjemmebehandling-medarbejder-bff/workflows/CICD/badge.svg) ![Test Coverage](.github/badges/jacoco.svg)
-# hjemmebehandling-medarbejder-bff
+# Medarbejder-bff
 
-The Hjemmebhandling-medarbejder-bff is a Backend For Frontend (BFF) for the employee application. In short the BFF layer consists of multiple backends developed to address the needs of respective frontend frameworks, like desktop, browser, and native-mobile apps. This service is backend for the employees and administrators using a browser.  
+The medarbejder-bff is a Backend For Frontend (BFF) for the employee application. In short the BFF layer consists of multiple backends developed to address the needs of respective frontend frameworks, like desktop, browser, and native-mobile apps. This service is backend for the employees and administrators using a browser.  
 
 The service is a Java Spring Boot application with the following properties
 
