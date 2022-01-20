@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.constants.errors;
 public enum ErrorDetails {
     CAREPLAN_EXISTS("Aktiv behandlingsplan eksisterer allerede for det angivne cpr-nummer.", 10),
     CAREPLAN_DOES_NOT_EXIST("Den angivne behandlingsplan eksisterer ikke.", 11),
+    CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES("Behandlingsplan har ubehandlede besvarelser på et eller flere spørgeskemaer.", 11),
     CAREPLAN_ALREADY_FULFILLED("Den angivne behandlingsplan har ikke alarmer.", 12),
     PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN("De angivne patientgrupper eksisterer ikke.", 13),
     QUESTIONNAIRES_MISSING_FOR_CAREPLAN("De angivne spørgeskemaer eksisterer ikke.", 14),

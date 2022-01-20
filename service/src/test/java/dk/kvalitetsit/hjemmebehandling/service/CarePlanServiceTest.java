@@ -9,14 +9,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Timing;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -589,6 +585,40 @@ public class CarePlanServiceTest {
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getSatisfiedUntil());
 
         Mockito.verify(fhirClient).updateCarePlan(carePlan);
+    }
+
+    @Test
+    public void completeCareplan_NoQuestionnaireResponses_ShouldBeCompleted() throws ServiceException {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        FhirLookupResult careplanResult = FhirLookupResult.fromResources(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(careplanResult);
+
+        FhirLookupResult questionnaireResponsesResult = FhirLookupResult.fromResources();
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),CAREPLAN_ID_1)).thenReturn(questionnaireResponsesResult);
+
+        //Action and assert
+        assertDoesNotThrow(() -> subject.completeCarePlan(CAREPLAN_ID_1));
+    }
+
+    @Test
+    public void completeCareplan_OneQuestionnaireResponses_ShouldThrowError(){
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        FhirLookupResult careplanResult = FhirLookupResult.fromResources(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(careplanResult);
+
+        FhirLookupResult questionnaireResponsesResult = FhirLookupResult.fromResources(new QuestionnaireResponse());
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),CAREPLAN_ID_1)).thenReturn(questionnaireResponsesResult);
+
+        //Action and assert
+        try{
+            subject.completeCarePlan(CAREPLAN_ID_1);
+            fail("Careplan should be failing due to questionnaireresponses on careplan");
+        } catch (ServiceException serviceException){
+            assertEquals(ErrorKind.BAD_REQUEST,serviceException.getErrorKind());
+            assertEquals(ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES, serviceException.getErrorDetails());
+        }
     }
 
     @Test

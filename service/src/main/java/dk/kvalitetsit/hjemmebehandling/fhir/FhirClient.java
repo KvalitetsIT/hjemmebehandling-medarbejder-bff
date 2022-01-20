@@ -154,11 +154,22 @@ public class FhirClient {
     }
 
     public FhirLookupResult lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
+
         var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
+    }
+
+    public FhirLookupResult lookupQuestionnaireResponsesByStatusAndCareplanId(List<ExaminationStatus> statuses,String carePlanId) {
+
+        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
+        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+        var organizationCriterion = buildOrganizationCriterion();
+        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
+
+        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion, basedOnCriterion));
     }
 
     public FhirLookupResult lookupQuestionnaireResponsesByStatus(ExaminationStatus status) {

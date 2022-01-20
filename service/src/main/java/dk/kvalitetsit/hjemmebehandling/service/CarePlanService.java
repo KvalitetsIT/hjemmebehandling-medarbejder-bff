@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -131,9 +132,16 @@ public class CarePlanService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
 
+
         Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
+
         if(!carePlan.isPresent()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+        }
+
+        var questionnaireResponsesStillNotExamined = fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId).getQuestionnaireResponses();
+        if(questionnaireResponsesStillNotExamined.size() > 0){
+            throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
         }
 
         CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
