@@ -577,10 +577,10 @@ public class CarePlanServiceTest {
         subject.resolveAlarm(CAREPLAN_ID_1);
 
         // Assert
-        // Verify that the first questionnaire has its satisfied-timestamp pushed a week into the future,
+        // Verify that the first questionnaire has its satisfied-timestamp pushed to the next day,
         // the second questionnaire has its timestamp left untouched, and the careplan has its timestamp set to
         // the earliest timestamp (now that of the second questionnaire).
-        assertEquals(Instant.parse("2021-11-23T04:00:00.000Z"), carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+        assertEquals(Instant.parse("2021-11-23T03:00:00.000Z"), carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getQuestionnaires().get(1).getSatisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getSatisfiedUntil());
 

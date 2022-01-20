@@ -7,14 +7,57 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneRules;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FrequencyEnumeratorTest {
-    private static final Instant FRIDAY_AFTERNOON = Instant.parse("2021-11-26T14:00:00.000Z");
-    private static final Instant SATURDAY_AFTERNOON = Instant.parse("2021-11-27T14:00:00.000Z");
-    private static final Instant TUESDAY_AFTERNOON = Instant.parse("2021-11-30T14:00:00.000Z");
+    private static final Instant FRIDAY_AFTERNOON = Instant.parse("2021-11-26T13:00:00.000Z");
+    private static final Instant SATURDAY_AFTERNOON = Instant.parse("2021-11-27T13:00:00.000Z");
+    private static final Instant TUESDAY_AFTERNOON = Instant.parse("2021-11-30T13:00:00.000Z");
+
+    @Test
+    public void check_winter_and_daylight_saving_time_returns_same_next_hour() {
+        ZoneId zoneId = ZoneId.systemDefault();
+        ZoneRules zoneRules = zoneId.getRules();
+        ZoneOffsetTransition zoneOffsetTransition = zoneRules.nextTransition(Instant.now());
+
+        Instant winterTime, daylightSavingTime;
+        if (zoneRules.isDaylightSavings(Instant.now())) {
+            daylightSavingTime = Instant.now();
+            winterTime = zoneOffsetTransition.getInstant();
+        }
+        else {
+            winterTime = Instant.now();
+            daylightSavingTime = zoneOffsetTransition.getInstant();
+        }
+
+        FrequencyModel fm = buildWeeklyFrequency();
+        FrequencyEnumerator winterTimeFrequencyEnumerator = new FrequencyEnumerator(winterTime, fm);
+        FrequencyEnumerator daylightSavingTimeFrequencyEnumerator = new FrequencyEnumerator(daylightSavingTime, fm);
+
+        // Act
+        Instant winterTimePointInTime = winterTimeFrequencyEnumerator.getPointInTime();
+        Instant winterTimeNext = winterTimeFrequencyEnumerator.next().getPointInTime();
+
+        Instant daylightSavingTimePointInTime = daylightSavingTimeFrequencyEnumerator.getPointInTime();
+        Instant daylightSavingTimeNext = daylightSavingTimeFrequencyEnumerator.next().getPointInTime();
+
+
+        // Assert
+        assertTrue(zoneRules.isDaylightSavings(daylightSavingTime));
+        assertFalse(zoneRules.isDaylightSavings(winterTime));
+
+        assertNotEquals(winterTimePointInTime.atZone(ZoneOffset.UTC).getHour(), daylightSavingTimePointInTime.atZone(ZoneOffset.UTC).getHour());
+        assertNotEquals(winterTimeNext.atZone(ZoneOffset.UTC).getHour(), daylightSavingTimeNext.atZone(ZoneOffset.UTC).getHour());
+        assertEquals(winterTimeNext.atZone(zoneId).getHour(), daylightSavingTimeNext.atZone(zoneId).getHour());
+        assertEquals(fm.getTimeOfDay().getHour(), winterTimeNext.atZone(zoneId).getHour());
+
+    }
 
     @Test
     public void getPointInTime_initializedWithSeed() {
