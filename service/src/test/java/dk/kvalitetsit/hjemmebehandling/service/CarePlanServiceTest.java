@@ -749,6 +749,8 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult)).thenReturn(carePlanModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        FrequencyEnumerator fe = new FrequencyEnumerator(POINT_IN_TIME, frequencies.get(QUESTIONNAIRE_ID_1));
+        Instant nextNextSatisfiedUntilTime = fe.next().next().getPointInTime();
 
         // Act
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
@@ -757,6 +759,9 @@ public class CarePlanServiceTest {
         assertEquals(patientDetails.getPatientPrimaryPhone(), patientModel.getPatientContactDetails().getPrimaryPhone());
         assertEquals(patientDetails.getPatientSecondaryPhone(), patientModel.getPatientContactDetails().getSecondaryPhone());
         assertEquals(patientDetails.getPrimaryRelativeName(), patientModel.getPrimaryRelativeName());
+
+        assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+        assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getSatisfiedUntil());
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {
@@ -842,6 +847,7 @@ public class CarePlanServiceTest {
             detail.setScheduled(new Timing());
             detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
             carePlan.addActivity().setDetail(detail);
+            carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(POINT_IN_TIME));
         }
 
         return carePlan;

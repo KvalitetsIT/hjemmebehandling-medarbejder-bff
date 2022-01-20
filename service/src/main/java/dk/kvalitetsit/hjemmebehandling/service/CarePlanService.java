@@ -308,6 +308,7 @@ public class CarePlanService extends AccessValidatingService {
     private void updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
         carePlanModel.setPlanDefinitions(planDefinitions);
         carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
+        refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
     private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<String> questionnaireIds, Map<String, FrequencyModel> frequenciesById, List<PlanDefinitionModel> planDefinitions) {
