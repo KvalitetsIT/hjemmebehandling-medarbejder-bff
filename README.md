@@ -106,7 +106,7 @@ The Web application uses the OpenApi specification to generate DTOs (Data Transf
 ## Openapitools
 Openapi tools can be used to generate docs
 
-Install openapitools:
+Install openapitools
 
 ```shell
 mkdir -p ~/bin/openapitools
