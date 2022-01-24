@@ -68,6 +68,21 @@ public class CarePlanControllerTest {
     }
 
     @Test
+    public void ThrowErrorWhenCompleteCareplan_WhenThereAreUnhandledResponses() throws Exception {
+
+        var careplanId = "careplan-1";
+        var toThrow = new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", "careplan-1"), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
+        Mockito.when(carePlanService.completeCarePlan(careplanId)).thenThrow(toThrow);
+
+        try{
+            subject.completeCarePlan(careplanId);
+            fail();
+        } catch (BadRequestException badRequestException) {
+            assertEquals(ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES,badRequestException.getErrorDetails());
+        }
+    }
+
+    @Test
     public void createCarePlan_success_setsLocationHeader() throws Exception {
         // Arrange
         CreateCarePlanRequest request = new CreateCarePlanRequest();

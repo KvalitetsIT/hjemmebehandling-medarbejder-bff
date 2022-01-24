@@ -40,6 +40,7 @@ public abstract class BaseController {
             case QUESTIONNAIRES_MISSING_FOR_CAREPLAN:
             case UNSUPPORTED_SEARCH_PARAMETER_COMBINATION:
             case PARAMETERS_INCOMPLETE:
+            case CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES:
                 throw new BadRequestException(e);
             case CAREPLAN_DOES_NOT_EXIST:
             case PATIENT_DOES_NOT_EXIST:
