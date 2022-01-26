@@ -22,7 +22,7 @@ public class FrequencyEnumeratorTest {
 
     @Test
     public void check_winter_and_daylight_saving_time_returns_same_next_hour() {
-        ZoneId zoneId = ZoneId.systemDefault();
+        ZoneId zoneId = ZoneId.of("Europe/Copenhagen");
         ZoneRules zoneRules = zoneId.getRules();
         ZoneOffsetTransition zoneOffsetTransition = zoneRules.nextTransition(Instant.now());
 
