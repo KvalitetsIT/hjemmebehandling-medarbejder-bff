@@ -57,7 +57,7 @@ public class FrequencyEnumerator {
     }
 
     private LocalTime getCurrentTimeOfDay(Instant pointInTime) {
-        return LocalTime.ofInstant(pointInTime, ZoneId.of("UTC"));
+        return LocalTime.ofInstant(pointInTime, ZoneId.of("Europe/Copenhagen"));
     }
 
     private int getDaysToAdd(DayOfWeek currentDayOfWeek, LocalTime currentTimeOfDay, DayOfWeek successiveDayOfWeek) {
@@ -99,7 +99,7 @@ public class FrequencyEnumerator {
                 .plusDays(daysToAdd)
                 .plusHours(timeOfDay.getHour())
                 .plusMinutes(timeOfDay.getMinute())
-                .toInstant(ZoneOffset.UTC);
+                .toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(pointInTime));
     }
 
     private void initializeWeekdays(List<Weekday> weekdays) {
