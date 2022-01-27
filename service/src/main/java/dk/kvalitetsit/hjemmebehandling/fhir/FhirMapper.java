@@ -493,8 +493,17 @@ public class FhirMapper {
         contactDetails.setPostalCode(patient.getAddressFirstRep().getPostalCode());
         contactDetails.setPrimaryPhone(extractPrimaryPhone(patient.getTelecom()));
         contactDetails.setSecondaryPhone(extractSecondaryPhone(patient.getTelecom()));
+        contactDetails.setCountry(extractCountry(patient));
 
         return contactDetails;
+    }
+
+    private String extractCountry(Patient patient) {
+        var country = patient.getAddressFirstRep().getCountry();
+        if(country == null || country.isEmpty()) {
+            return null;
+        }
+        return country;
     }
 
     private String extractPrimaryPhone(List<ContactPoint> contactPoints) {
