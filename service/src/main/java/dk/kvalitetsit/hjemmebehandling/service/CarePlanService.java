@@ -341,7 +341,7 @@ public class CarePlanService extends AccessValidatingService {
             wrapper.setFrequency(frequenciesById.get(questionnaireId));
 
             // Initialize the 'satisfied-until' timestamp-
-            initializeFrequencyTimestamp(wrapper);
+            refreshFrequencyTimestamp(wrapper);
 
             // Transfer thresholds
             var thresholds = thresholdsById.get(questionnaireId);
@@ -405,15 +405,9 @@ public class CarePlanService extends AccessValidatingService {
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
         // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-            initializeFrequencyTimestamp(questionnaireWrapper);
+            refreshFrequencyTimestamp(questionnaireWrapper);
         }
         refreshFrequencyTimestampForCarePlan(carePlanModel);
-    }
-
-    private void initializeFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        // Invoke 'next' twice - we want a bit of legroom initially.
-        var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().next().getPointInTime();
-        questionnaireWrapperModel.setSatisfiedUntil(nextDeadline);
     }
 
     private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, Instant currentPointInTime) {

@@ -300,7 +300,7 @@ public class CarePlanServiceTest {
 
         // Assert
         var wrapper = carePlanModel.getQuestionnaires().get(0);
-        var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().next().getPointInTime();
+        var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().getPointInTime();
         assertEquals(expectedPointInTime, wrapper.getSatisfiedUntil());
         assertEquals(expectedPointInTime, carePlanModel.getSatisfiedUntil());
     }
@@ -750,7 +750,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         FrequencyEnumerator fe = new FrequencyEnumerator(POINT_IN_TIME, frequencies.get(QUESTIONNAIRE_ID_1));
-        Instant nextNextSatisfiedUntilTime = fe.next().next().getPointInTime();
+        Instant nextNextSatisfiedUntilTime = fe.next().getPointInTime();
 
         // Act
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
