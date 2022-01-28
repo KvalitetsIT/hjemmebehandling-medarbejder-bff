@@ -281,6 +281,21 @@ public class CarePlanControllerTest {
     }
 
     @Test
+    public void searchCarePlans_AllParamsAreUsed_200() {
+        // Arrange
+        Optional<String> cpr = Optional.of("0101011234");
+        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.of(true);
+        Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
+        Optional<Integer> pageNumber = Optional.of(1);
+        Optional<Integer> pageSize = Optional.of(10);
+
+        // Act
+
+        // Assert
+        assertDoesNotThrow(() -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
+    }
+
+    @Test
     public void searchCarePlans_carePlansPresentForCpr_200() throws Exception {
         // Arrange
         Optional<String> cpr = Optional.of("0101010101");
@@ -323,7 +338,7 @@ public class CarePlanControllerTest {
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
-        Mockito.when(carePlanService.getCarePlansWithUnsatisfiedSchedules(onlyActiveCarePlans.get(), pageDetails)).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(carePlanService.getCarePlansWithUnsatisfiedSchedules(Optional.empty(),onlyActiveCarePlans.get(), pageDetails)).thenReturn(List.of(carePlanModel1, carePlanModel2));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 

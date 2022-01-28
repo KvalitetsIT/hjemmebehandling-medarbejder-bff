@@ -72,7 +72,7 @@ public class FhirClient {
     }
     
     
-    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Instant pointInTime, boolean onlyActiveCarePlans, int offset, int count) {
+    public FhirLookupResult lookupCarePlansUnsatisfiedAt(Optional<String> cpr,Instant pointInTime, boolean onlyActiveCarePlans, int offset, int count) {
         var criteria = new ArrayList<ICriterion<?>>();
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
@@ -82,6 +82,10 @@ public class FhirClient {
         if(onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
+        }
+        if(cpr.isPresent()){
+            var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr.get());
+            criteria.add(cprCriterion);
         }
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);

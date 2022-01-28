@@ -82,7 +82,7 @@ public class CarePlanController extends BaseController {
             if(cpr.isPresent()) {
                 carePlans = carePlanService.getCarePlansByCpr(cpr.get(), onlyActiveCarePlans.orElse(false));
             } else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
-                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
+                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(cpr,onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
             } else if (SearchType.ACTIVE.equals(searchType.get())) {
             	carePlans = carePlanService.getCarePlans(onlyActiveCarePlans.get(), new PageDetails(pageNumber.get(), pageSize.get()));
             }
@@ -226,11 +226,11 @@ public class CarePlanController extends BaseController {
     private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
 
         boolean pagingParametersPresent = pageNumber.isPresent() && pageSize.isPresent();
+        if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
+            return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
+        }
         if(cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && !pagingParametersPresent) {
             return Optional.of(SearchType.CPR);
-        }
-        if(!cpr.isPresent() && onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
-            return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
         }
         if(!cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && onlyActiveCarePlans.isPresent() && pagingParametersPresent) {
             return Optional.of(SearchType.ACTIVE);

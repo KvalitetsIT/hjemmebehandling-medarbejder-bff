@@ -161,12 +161,44 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.empty(),pointInTime, onlyActiveCarePlans, offset, count);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
         assertEquals(carePlan, result.getCarePlans().get(0));
     }
+
+    @Test
+    public void lookupCarePlansUnsatisfiedAt_Verify4CriteriasSpecified_WhenCprIsProvided() {
+        // Arrange
+        var cpr = "0101011234";
+        Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
+        boolean onlyActiveCarePlans = true;
+        int offset = 2;
+        int count = 4;
+
+        CarePlan carePlan = new CarePlan();
+
+        Patient patient = new Patient();
+        Identifier identifier = new Identifier();
+        identifier.setSystem(Systems.CPR);
+        identifier.setValue(cpr);
+        patient.getIdentifier().add(identifier);
+        carePlan.setSubject(new Reference(patient));
+
+        setupSearchCarePlanClient_with3criterions(true, true, true, onlyActiveCarePlans, carePlan);
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
+        // Act
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.of(cpr),pointInTime, onlyActiveCarePlans, offset, count);
+
+        // Assert
+        assertEquals(1, result.getCarePlans().size());
+        assertEquals(carePlan, result.getCarePlans().get(0));
+    }
+
 
     @Test
     public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() {
@@ -182,11 +214,12 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.empty(),pointInTime, onlyActiveCarePlans, offset, count);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
     }
+
 
     @Test
     public void lookupPatientByCpr_patientPresent_success() {
@@ -621,8 +654,15 @@ public class FhirClientTest {
     private void setupSearchCarePlanClient(boolean withSort, boolean withOffset, boolean withCount, boolean onlyActiveCarePlans, CarePlan... carePlans) {
         setupSearchCarePlanClient(2, withSort, withOffset, withCount, onlyActiveCarePlans, carePlans);
     }
+    private void setupSearchCarePlanClient_with3criterions(boolean withSort, boolean withOffset, boolean withCount, boolean onlyActiveCarePlans, CarePlan... carePlans) {
+        setupSearchCarePlanClient(3, withSort, withOffset, withCount, onlyActiveCarePlans, carePlans);
+    }
 
     private void setupSearchCarePlanClient(int criteriaCount, boolean withSort, boolean withOffset, boolean withCount, boolean onlyActiveCarePlans, CarePlan... carePlans) {
+        //This creates a mock which will return the careplans you say, as long as the correct amount of criterias are specified.
+        //It does not matter what the criterias are, we only look at the amount of them
+        //TODO: For each test we should verify that it is in fact, the correct criterias, insted of only counting them
+
         if(onlyActiveCarePlans) {
             criteriaCount++;
         }

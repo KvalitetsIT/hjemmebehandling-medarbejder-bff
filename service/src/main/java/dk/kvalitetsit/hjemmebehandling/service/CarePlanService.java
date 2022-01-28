@@ -187,11 +187,11 @@ public class CarePlanService extends AccessValidatingService {
                 .collect(Collectors.toList());
     }
 
-    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(Optional<String> cpr, boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
         Instant pointInTime = dateProvider.now();
         int offset = pageDetails.getOffset();
         int count = pageDetails.getPageSize();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(cpr,pointInTime, onlyActiveCarePlans, offset, count);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
