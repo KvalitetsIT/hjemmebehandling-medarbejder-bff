@@ -76,6 +76,15 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         ApiResponse<Void> firstResponse = subject.patchQuestionnaireResponseWithHttpInfo(id, firstRequest);
         assertEquals(200, firstResponse.getStatusCode());
 
+        // insert dalay to prevent double creation of practitioner. This is a highly situational, and hopefully, temporary fix.
+        // If this test is run before 'patchQuestionnaireResponse_success', the quick succession of first- and secordresponse
+        // can cause the user to be created as a Practitioner two times because the time between the two requests is less than
+        // cache refresh in hapi-fhir server.
+        // There is no unique constraint in the hapi-fhir server on the Practitioners username/sor-code, but the subsequently
+        // search fails if more than one is found, which can happen if 'patchQuestionnaireResponse_success' is run after
+        // this test case.
+        Thread.sleep(1000);
+
         ApiResponse<Void> secondResponse = subject.patchQuestionnaireResponseWithHttpInfo(id, secondRequest);
         assertEquals(200, secondResponse.getStatusCode());
     }
