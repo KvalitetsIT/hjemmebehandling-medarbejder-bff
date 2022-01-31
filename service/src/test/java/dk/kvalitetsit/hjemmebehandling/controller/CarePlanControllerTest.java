@@ -18,7 +18,12 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.checkerframework.checker.nullness.Opt;
 import org.junit.jupiter.api.Test;
+
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -30,8 +35,10 @@ import javax.servlet.ServletContext;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class CarePlanControllerTest {
@@ -265,14 +272,25 @@ public class CarePlanControllerTest {
         assertThrows(InternalServerErrorException.class, () -> subject.resolveAlarm(carePlanId));
     }
 
-    @Test
-    public void searchCarePlans_badParameterCombination_400() {
+    private static Stream<Arguments> searchCarePlans_ThrowBadRequestException_DependingOnTheArgument_400() {
+        return Stream.of(
+                Arguments.of(Optional.empty(), Optional.empty(),Optional.empty(),Optional.empty(),Optional.empty()),
+                Arguments.of(Optional.of("0101788492"), Optional.empty(),Optional.empty(),Optional.empty(),Optional.empty()),
+                Arguments.of(Optional.empty(), Optional.of(true),Optional.empty(),Optional.empty(),Optional.empty()),
+                Arguments.of(Optional.empty(), Optional.empty(),Optional.of(true),Optional.empty(),Optional.empty()),
+                Arguments.of(Optional.of("0101788492"), Optional.of(true),Optional.of(true),Optional.empty(),Optional.empty())
+        );
+    }
+    @ParameterizedTest
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void searchCarePlans_ThrowBadRequestException_DependingOnTheArgument_400(
+            Optional<String> cpr,
+            Optional<Boolean> onlyUnsatisfiedSchedules,
+            Optional<Boolean> onlyActiveCarePlans,
+            Optional<Integer> pageNumber,
+            Optional<Integer> pageSize
+    ) {
         // Arrange
-        Optional<String> cpr = Optional.empty();
-        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
-        Optional<Boolean> onlyActiveCarePlans = Optional.empty();
-        Optional<Integer> pageNumber = Optional.of(1);
-        Optional<Integer> pageSize = Optional.of(10);
 
         // Act
 
@@ -280,12 +298,33 @@ public class CarePlanControllerTest {
         assertThrows(BadRequestException.class, () -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
     }
 
-    @Test
-    public void searchCarePlans_AllParamsAreUsed_200() {
+
+    private static Stream<Arguments> searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200() {
+        return Stream.of(
+                //GetCarePlansWithUnsatisfiedSchedules should be called
+                Arguments.of(Optional.of("0101011234"), Optional.of(true),Optional.of(true),true,true),
+                Arguments.of(Optional.of("0101011234"), Optional.of(true),Optional.of(false),true,false),
+                Arguments.of(Optional.empty(), Optional.of(true),Optional.of(true),true,true),
+                Arguments.of(Optional.empty(), Optional.of(true),Optional.empty(),true,false),
+
+                //GetCarePlans should be called
+                Arguments.of(Optional.empty(), Optional.empty(),Optional.of(true),false,true),
+
+                //getCarePlansByCpr should be called
+                Arguments.of(Optional.of("0101011234"), Optional.empty(),Optional.empty(),false,false),
+                Arguments.of(Optional.of("0101011234"), Optional.empty(),Optional.of(true),false,true)
+        );
+    }
+    @ParameterizedTest
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200(
+            Optional<String> cpr,
+            Optional<Boolean> onlyUnsatisfiedSchedules,
+            Optional<Boolean> onlyActiveCarePlans,
+            boolean expectedUnsatisfied,
+            boolean expectedOnlyActive
+            ) throws ServiceException {
         // Arrange
-        Optional<String> cpr = Optional.of("0101011234");
-        Optional<Boolean> onlyUnsatisfiedSchedules = Optional.of(true);
-        Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
         Optional<Integer> pageNumber = Optional.of(1);
         Optional<Integer> pageSize = Optional.of(10);
 
@@ -293,6 +332,7 @@ public class CarePlanControllerTest {
 
         // Assert
         assertDoesNotThrow(() -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
+        Mockito.verify(carePlanService,times(1)).getCarePlansWithFilters(cpr,expectedOnlyActive,expectedUnsatisfied,new PageDetails(pageNumber.get(),pageSize.get()));
     }
 
     @Test
@@ -301,15 +341,15 @@ public class CarePlanControllerTest {
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
         Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
-        Optional<Integer> pageNumber = Optional.empty();
-        Optional<Integer> pageSize = Optional.empty();
+        Optional<Integer> pageNumber = Optional.of(1);
+        Optional<Integer> pageSize = Optional.of(10);
 
         CarePlanModel carePlanModel1 = new CarePlanModel();
         CarePlanModel carePlanModel2 = new CarePlanModel();
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
-        Mockito.when(carePlanService.getCarePlansByCpr("0101010101", onlyActiveCarePlans.get())).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber.get(),pageSize.get()))).thenReturn(List.of(carePlanModel1, carePlanModel2));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
@@ -338,7 +378,7 @@ public class CarePlanControllerTest {
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
-        Mockito.when(carePlanService.getCarePlansWithUnsatisfiedSchedules(Optional.empty(),onlyActiveCarePlans.get(), pageDetails)).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans.get(),onlyUnsatisfiedSchedules.get(), pageDetails)).thenReturn(List.of(carePlanModel1, carePlanModel2));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
@@ -358,13 +398,13 @@ public class CarePlanControllerTest {
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
         Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
-        Optional<Integer> pageNumber = Optional.empty();
-        Optional<Integer> pageSize = Optional.empty();
+        int pageNumber = 1;
+        int pageSize = 10;
 
-        Mockito.when(carePlanService.getCarePlansByCpr("0101010101", onlyActiveCarePlans.get())).thenReturn(List.of());
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber,pageSize))).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize);
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, Optional.of(pageNumber), Optional.of(pageSize));
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -377,14 +417,14 @@ public class CarePlanControllerTest {
         Optional<String> cpr = Optional.of("0101010101");
         Optional<Boolean> onlyUnsatisfiedSchedules = Optional.empty();
         Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
-        Optional<Integer> pageNumber = Optional.empty();
-        Optional<Integer> pageSize = Optional.empty();
+        int pageNumber = 1;
+        int pageSize = 10;
 
-        Mockito.when(carePlanService.getCarePlansByCpr("0101010101", onlyActiveCarePlans.get())).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber,pageSize))).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
 
         // Assert
-        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
+        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, Optional.of(pageNumber) , Optional.of(pageSize)));
     }
 }

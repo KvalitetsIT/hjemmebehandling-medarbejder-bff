@@ -123,7 +123,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         boolean onlyActiveCarePlans = false;
 
         // Act
-        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, onlyActiveCarePlans, null, null);
+        ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, onlyActiveCarePlans, 1, 10);
 
         // Assert
         assertEquals(200, response.getStatusCode());

@@ -148,50 +148,12 @@ public class CarePlanService extends AccessValidatingService {
         fhirClient.updateCarePlan(completedCarePlan);
         return fhirMapper.mapCarePlan(completedCarePlan, lookupResult); // for auditlog
     }
-    
-    public List<CarePlanModel> getCarePlans(boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
-        int offset = pageDetails.getOffset();
-        int count = pageDetails.getPageSize();
-        
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlans(onlyActiveCarePlans, offset,count);
-        if(lookupResult.getCarePlans().isEmpty()) {
-            return List.of();
-        }
 
-        // Map the resourecs
-        return lookupResult.getCarePlans()
-                .stream()
-                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
-                .collect(Collectors.toList());
-    }
-
-    
-    public List<CarePlanModel> getCarePlansByCpr(String cpr, boolean onlyActiveCarePlans) throws ServiceException {
-        // Look up the patient so that we may look up careplans by patientId.
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
-            throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
-        }
-
-        // Look up the careplans along with related resources needed for mapping.
-        String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
-        if(lookupResult.getCarePlans().isEmpty()) {
-            return List.of();
-        }
-
-        // Map the resourecs
-        return lookupResult.getCarePlans()
-                .stream()
-                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
-                .collect(Collectors.toList());
-    }
-
-    public List<CarePlanModel> getCarePlansWithUnsatisfiedSchedules(Optional<String> cpr, boolean onlyActiveCarePlans, PageDetails pageDetails) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(Optional<String> cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, PageDetails pageDetails) throws ServiceException {
         Instant pointInTime = dateProvider.now();
         int offset = pageDetails.getOffset();
         int count = pageDetails.getPageSize();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlansUnsatisfiedAt(cpr,pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlans(cpr,pointInTime, onlyActiveCarePlans, onlyUnSatisfied, offset, count);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }

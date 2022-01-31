@@ -12,6 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import org.checkerframework.checker.nullness.Opt;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -374,17 +375,19 @@ public class CarePlanServiceTest {
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
         boolean onlyActiveCarePlans = true;
+        boolean onlyUnSatisfied = false;
 
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
-
+        //Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
+        var unstaisfiedAt = Instant.now();
+        Mockito.when(dateProvider.now()).thenReturn(unstaisfiedAt);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient);
-        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupCarePlans(Optional.of(CPR_1), unstaisfiedAt, onlyActiveCarePlans, onlyUnSatisfied,0,10)).thenReturn(lookupResult);
 
         CarePlanModel carePlanModel = new CarePlanModel();
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansByCpr(CPR_1, onlyActiveCarePlans);
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new PageDetails(1,10));
 
         // Assert
         assertEquals(1, result.size());
@@ -396,12 +399,14 @@ public class CarePlanServiceTest {
         // Arrange
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
         boolean onlyActiveCarePlans = true;
+        boolean onlyUnSatisfied = false;
 
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
+        var unstaisfiedAt = Instant.now();
+        Mockito.when(dateProvider.now()).thenReturn(unstaisfiedAt);
+        Mockito.when(fhirClient.lookupCarePlans(Optional.of(CPR_1), unstaisfiedAt, onlyActiveCarePlans, onlyUnSatisfied,0,10)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansByCpr(CPR_1, onlyActiveCarePlans);
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new PageDetails(1,10));
 
         // Assert
         assertEquals(0, result.size());
@@ -411,19 +416,20 @@ public class CarePlanServiceTest {
     public void getCarePlansWithUnsatisfiedSchedules_carePlansPresent_returnsCarePlans() throws Exception {
         // Arrange
         boolean onlyActiveCarePlans = true;
+        boolean unsatisfied = true;
         int pageNumber = 1;
         int pageSize = 4;
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(carePlan);
-        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(Optional.empty(), POINT_IN_TIME, onlyActiveCarePlans, 0, 4)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupCarePlans(Optional.empty(), POINT_IN_TIME, onlyActiveCarePlans, unsatisfied,0, 4)).thenReturn(lookupResult);
 
         CarePlanModel carePlanModel = new CarePlanModel();
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules(Optional.empty(),onlyActiveCarePlans, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
 
         // Assert
         assertEquals(1, result.size());
@@ -434,14 +440,15 @@ public class CarePlanServiceTest {
     public void getCarePlansWithUnsatisfiedSchedules_carePlansMissing_returnsEmptyList() throws Exception {
         // Arrange
         boolean onlyActiveCarePlans = true;
+        boolean unsatisfied = true;
         int pageNumber = 1;
         int pageSize = 4;
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
-        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, 0, 4)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupCarePlans(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, unsatisfied,0, 4)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules(Optional.empty(),onlyActiveCarePlans, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
 
         // Assert
         assertEquals(0, result.size());
@@ -451,14 +458,15 @@ public class CarePlanServiceTest {
     public void getCarePlansWithUnsatisfiedSchedules_translatesPagingParameters() throws Exception {
         // Arrange
         boolean onlyActiveCarePlans = true;
+        boolean unsatisfied = true;
         int pageNumber = 3;
         int pageSize = 4;
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
-        Mockito.when(fhirClient.lookupCarePlansUnsatisfiedAt(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, 8, 4)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupCarePlans(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, unsatisfied,8, 4)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithUnsatisfiedSchedules(Optional.empty(),onlyActiveCarePlans, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
 
         // Assert
     }
