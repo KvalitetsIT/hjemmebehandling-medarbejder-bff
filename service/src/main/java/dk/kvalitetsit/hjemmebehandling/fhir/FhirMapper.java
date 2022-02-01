@@ -284,7 +284,7 @@ public class FhirMapper {
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
         questionnaireModel.setQuestions(questionnaire.getItem().stream().map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
-
+        questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
     }
 
