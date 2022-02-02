@@ -71,8 +71,13 @@ public class FhirClient {
         }
 
         if(cpr.isPresent()){
-            var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr.get());
-            criteria.add(cprCriterion);
+            Optional<Patient> patient = lookupPatientByCpr(cpr.get());
+            if(!patient.isPresent()) {
+                throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
+            }
+            String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
+            var patientCriterion = CarePlan.PATIENT.hasId(patientId);
+            criteria.add(patientCriterion);
         }
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);

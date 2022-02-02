@@ -169,7 +169,7 @@ public class FhirClientTest {
         assertEquals(carePlan, result.getCarePlans().get(0));
     }
 
-    @Test
+   /* @Test
     public void lookupCarePlansUnsatisfiedAt_Verify4CriteriasSpecified_WhenCprIsProvided() {
         // Arrange
         var cpr = "0101011234";
@@ -189,7 +189,6 @@ public class FhirClientTest {
         carePlan.setSubject(new Reference(patient));
 
         setupSearchCarePlanClient_with3criterions(true, true, true, onlyActiveCarePlans, carePlan);
-
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
@@ -199,7 +198,7 @@ public class FhirClientTest {
         // Assert
         assertEquals(1, result.getCarePlans().size());
         assertEquals(carePlan, result.getCarePlans().get(0));
-    }
+    }*/
 
 
     @Test
