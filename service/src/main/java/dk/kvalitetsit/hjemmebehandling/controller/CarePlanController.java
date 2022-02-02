@@ -70,22 +70,15 @@ public class CarePlanController extends BaseController {
 
     @GetMapping(value = "/v1/careplan")
     public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
-    	Optional<SearchType> searchType = determineSearchType(cpr, onlyUnsatisfiedSchedules,onlyActiveCarePlans, pageNumber, pageSize);
-        if(!searchType.isPresent()) {
+
+        if(pageNumber.isEmpty() || pageSize.isEmpty()) {
             logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
             throw new BadRequestException(ErrorDetails.UNSUPPORTED_SEARCH_PARAMETER_COMBINATION);
         }
 
         try {
-            List<CarePlanModel> carePlans = null;
+            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false),new PageDetails(pageNumber.get(),pageSize.get()));
 
-            if(cpr.isPresent()) {
-                carePlans = carePlanService.getCarePlansByCpr(cpr.get(), onlyActiveCarePlans.orElse(false));
-            } else if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get()) {
-                carePlans = carePlanService.getCarePlansWithUnsatisfiedSchedules(cpr,onlyActiveCarePlans.orElse(false), new PageDetails(pageNumber.get(), pageSize.get()));
-            } else if (SearchType.ACTIVE.equals(searchType.get())) {
-            	carePlans = carePlanService.getCarePlans(onlyActiveCarePlans.get(), new PageDetails(pageNumber.get(), pageSize.get()));
-            }
             auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
         }
@@ -221,20 +214,5 @@ public class CarePlanController extends BaseController {
         patientDetails.setPrimaryRelativeSecondaryPhone(request.getPrimaryRelativeSecondaryPhone());
 
         return patientDetails;
-    }
-
-    private Optional<SearchType> determineSearchType(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCarePlans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
-
-        boolean pagingParametersPresent = pageNumber.isPresent() && pageSize.isPresent();
-        if(onlyUnsatisfiedSchedules.isPresent() && onlyUnsatisfiedSchedules.get() && pagingParametersPresent) {
-            return Optional.of(SearchType.UNSATISFIED_CAREPLANS);
-        }
-        if(cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && !pagingParametersPresent) {
-            return Optional.of(SearchType.CPR);
-        }
-        if(!cpr.isPresent() && !onlyUnsatisfiedSchedules.isPresent() && onlyActiveCarePlans.isPresent() && pagingParametersPresent) {
-            return Optional.of(SearchType.ACTIVE);
-        }
-        return Optional.empty();
     }
 }

@@ -151,6 +151,7 @@ public class FhirClientTest {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
         boolean onlyActiveCarePlans = true;
+        boolean useUnsatisfied = true;
         int offset = 2;
         int count = 4;
 
@@ -161,7 +162,7 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.empty(),pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied, offset, count);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -174,6 +175,7 @@ public class FhirClientTest {
         var cpr = "0101011234";
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
         boolean onlyActiveCarePlans = true;
+        boolean useUnsatisfied = true;
         int offset = 2;
         int count = 4;
 
@@ -192,7 +194,7 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.of(cpr),pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult result = subject.lookupCarePlans(Optional.of(cpr),pointInTime, onlyActiveCarePlans, useUnsatisfied, offset, count);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -205,6 +207,7 @@ public class FhirClientTest {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
         boolean onlyActiveCarePlans = true;
+        boolean useUnsatisfied = true;
         int offset = 2;
         int count = 4;
 
@@ -214,7 +217,7 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlansUnsatisfiedAt(Optional.empty(),pointInTime, onlyActiveCarePlans, offset, count);
+        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied, offset, count);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
