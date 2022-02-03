@@ -94,8 +94,6 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
 
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
-
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         // Act
@@ -117,8 +115,6 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapPatientModel(carePlanModel.getPatient())).thenReturn(patient);
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
-
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -203,8 +199,6 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
 
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
-
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
@@ -230,8 +224,6 @@ public class CarePlanServiceTest {
 
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(FhirLookupResult.fromResources());
-
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -259,8 +251,6 @@ public class CarePlanServiceTest {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
         boolean onlyActiveCarePlans = true;
         Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
-
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -291,7 +281,6 @@ public class CarePlanServiceTest {
 
         var questionnaireThreshold = new ThresholdModel();
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
-        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
@@ -304,68 +293,6 @@ public class CarePlanServiceTest {
         var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().getPointInTime();
         assertEquals(expectedPointInTime, wrapper.getSatisfiedUntil());
         assertEquals(expectedPointInTime, carePlanModel.getSatisfiedUntil());
-    }
-
-    @Test
-    public void createCarePlan_transfersThresholdsFromPlanDefinition() throws Exception {
-        // Arrange
-        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION_ID_1));
-
-        CarePlan carePlan = new CarePlan();
-        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
-
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
-
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
-
-        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
-
-        var questionnaireThreshold = new ThresholdModel();
-        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
-        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
-
-        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
-
-        // Act
-        String result = subject.createCarePlan(carePlanModel);
-
-        // Assert
-        var wrapper = carePlanModel.getQuestionnaires().get(0);
-        assertEquals(1, wrapper.getThresholds().size());
-        assertEquals(questionnaireThreshold, wrapper.getThresholds().get(0));
-    }
-
-    @Test
-    public void createCarePlan_missingThresholds_throwsException() throws Exception {
-        // Arrange
-        CarePlanModel carePlanModel = buildCarePlanModel(CPR_1, List.of(QUESTIONNAIRE_ID_1), List.of(PLANDEFINITION_ID_1));
-
-        CarePlan carePlan = new CarePlan();
-        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
-
-        Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
-
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
-
-        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
-
-        var questionnaireThreshold = new ThresholdModel();
-        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, questionnaireThreshold);
-        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
-
-        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
-
-        // Act
-        String result = subject.createCarePlan(carePlanModel);
-
-        // Assert
-        assertThrows(IllegalStateException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
     @Test

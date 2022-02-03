@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.Address;
@@ -108,6 +109,14 @@ public class FhirMapper {
         Patient patient = lookupResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId())));
         carePlanModel.setPatient(mapPatient(patient));
 
+        carePlanModel.setPlanDefinitions(new ArrayList<>());
+        for(var ic : carePlan.getInstantiatesCanonical()) {
+            var planDefinition = lookupResult
+                .getPlanDefinition(ic.getValue())
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
+            carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
+        }
+
         carePlanModel.setQuestionnaires(new ArrayList<>());
         for(var activity : carePlan.getActivity()) {
             String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
@@ -121,20 +130,21 @@ public class FhirMapper {
             var wrapper = new QuestionnaireWrapperModel();
             wrapper.setQuestionnaire(questionnaireModel);
             wrapper.setFrequency(frequencyModel);
-            List<ThresholdModel> thresholds = getThresholds(activity.getDetail());
-            wrapper.setThresholds(thresholds);
             wrapper.setSatisfiedUntil(ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()));
+
+            // find thresholds from plandefinition
+            Optional<List<ThresholdModel>> thresholds = carePlanModel.getPlanDefinitions().stream()
+                .flatMap(p -> p.getQuestionnaires().stream())
+                .filter(q -> q.getQuestionnaire().getId().equals(questionnaireModel.getId()))
+                .findFirst()
+                .map(qw -> qw.getThresholds());
+            if (thresholds.isPresent()) {
+                wrapper.setThresholds(thresholds.get());
+            }
 
             carePlanModel.getQuestionnaires().add(wrapper);
         }
 
-        carePlanModel.setPlanDefinitions(new ArrayList<>());
-        for(var ic : carePlan.getInstantiatesCanonical()) {
-            var planDefinition = lookupResult
-                    .getPlanDefinition(ic.getValue())
-                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
-            carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
-        }
 
         carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
 
@@ -398,10 +408,6 @@ public class FhirMapper {
         if(source.getOrganizationId() != null) {
             target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
         }
-    }
-
-    private List<ThresholdModel> getThresholds(CarePlan.CarePlanActivityDetailComponent detail) {
-        return ExtensionMapper.extractThresholds(detail.getExtensionsByUrl(Systems.THRESHOLD));
     }
 
     private QualifiedId extractId(DomainResource resource) {

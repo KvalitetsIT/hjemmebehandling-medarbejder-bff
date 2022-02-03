@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -353,8 +352,6 @@ public class CarePlanService extends AccessValidatingService {
         initializeTimestamps(carePlanModel);
 
         initializeFrequencyTimestamps(carePlanModel);
-
-        initializeThresholds(carePlanModel);
     }
 
     private void initializeTimestamps(CarePlanModel carePlanModel) {
@@ -396,39 +393,4 @@ public class CarePlanService extends AccessValidatingService {
                 .orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
-
-    private void initializeThresholds(CarePlanModel carePlanModel) {
-        // Transfer questionnaire thresholds from the careplan(s) that this careplan instantiates.
-
-        // Get the planDefinitions
-        List<String> planDefinitionIds = carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList());
-        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
-        if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
-            throw new IllegalStateException("Could not look up every provided PlanDefinition!");
-        }
-
-        // Map the planDefinitions
-        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, planDefinitionResult)).collect(Collectors.toList());
-
-        // Transfer thresholds
-        var allQuestionnaireWrappers = planDefinitions.stream().flatMap(pd -> pd.getQuestionnaires().stream()).collect(Collectors.toList());
-        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-            if(questionnaireWrapper.getThresholds() != null && !questionnaireWrapper.getThresholds().isEmpty()) {
-                throw new IllegalStateException(String.format("Error creating CarePlan: Thresholds already populated for questionnaire %s", questionnaireWrapper.getQuestionnaire().getId()));
-            }
-
-            // Look for a matching questionnaire
-            for(var wrapperFromPlanDefinition: allQuestionnaireWrappers) {
-                if(questionnaireWrapper.getQuestionnaire().getId().equals(wrapperFromPlanDefinition.getQuestionnaire().getId())) {
-                    questionnaireWrapper.setThresholds(wrapperFromPlanDefinition.getThresholds());
-                    break;
-                }
-            }
-            if(questionnaireWrapper.getThresholds() == null) {
-                throw new IllegalStateException(String.format("Could not locate thresholds for questionnaire %s! PlanDefinitions were: [%s]", questionnaireWrapper.getQuestionnaire().getId(), String.join(", ", planDefinitionIds)));
-            }
-        }
-    }
-
-
 }
