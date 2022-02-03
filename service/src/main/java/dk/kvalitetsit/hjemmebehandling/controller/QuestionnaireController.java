@@ -42,14 +42,14 @@ public class QuestionnaireController extends BaseController {
     private LocationHeaderBuilder locationHeaderBuilder;
 
 
-    @Operation(summary = "Get CarePlan by id.", description = "Retrieves a CarePlan by its id.")
+    @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = CarePlanDto.class))),
+            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = QuestionnaireDto.class))),
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/questionnaire/{id}", produces = { "application/json" })
     public ResponseEntity<QuestionnaireDto> getQuestionnaireById(@PathVariable @Parameter(description = "Id of the questionnaire to be retrieved.") String id) {
-        // Look up the CarePlan
+        // Look up the Questionnaire
         Optional<QuestionnaireModel> questionnaire = Optional.empty();
 
         try {
