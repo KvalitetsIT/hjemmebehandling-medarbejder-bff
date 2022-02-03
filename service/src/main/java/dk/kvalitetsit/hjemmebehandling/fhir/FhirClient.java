@@ -91,11 +91,6 @@ public class FhirClient {
         return lookupCarePlansByCriteria(List.of(idCriterion));
     }
 
-    public FhirLookupResult lookupQuestionnaireById(String questionnaireId) {
-        var idCriterion = Questionnaire.RES_ID.exactly().code(questionnaireId);
-        return lookupCarePlansByCriteria(List.of(idCriterion));
-    }
-
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) {
         var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode);
 

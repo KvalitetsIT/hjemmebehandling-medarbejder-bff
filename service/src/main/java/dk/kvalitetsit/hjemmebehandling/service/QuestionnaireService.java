@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 public class QuestionnaireService extends AccessValidatingService {
@@ -37,7 +38,7 @@ public class QuestionnaireService extends AccessValidatingService {
     }
     public Optional<QuestionnaireModel> getQuestionnaireById(String questionnaireId) throws ServiceException, AccessValidationException {
         String qualifiedId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireById(qualifiedId);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(List.of(qualifiedId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(qualifiedId);
         if(!questionnaire.isPresent()) {
