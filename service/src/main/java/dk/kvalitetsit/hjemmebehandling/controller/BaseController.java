@@ -45,6 +45,7 @@ public abstract class BaseController {
             case CAREPLAN_DOES_NOT_EXIST:
             case PATIENT_DOES_NOT_EXIST:
             case QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST:
+            case QUESTIONNAIRE_DOES_NOT_EXIST:
                 throw new ResourceNotFoundException(e);
             case ACCESS_VIOLATION:
                 throw new ForbiddenException(e);
