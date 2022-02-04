@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.configuration;
 
+import dk.kvalitetsit.hjemmebehandling.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.audit.AuditEventRepository;
@@ -23,10 +24,6 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValiditionInterceptor;
-import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.PersonService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
@@ -60,6 +57,11 @@ public class ServiceConfiguration {
     @Bean
     public PersonService getPersonService() {
     	return new PersonService(new RestTemplate());
+    }
+
+    @Bean
+    public QuestionnaireService getQuestionnaireService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+        return new QuestionnaireService(client,mapper,accessValidator);
     }
     
     @Bean

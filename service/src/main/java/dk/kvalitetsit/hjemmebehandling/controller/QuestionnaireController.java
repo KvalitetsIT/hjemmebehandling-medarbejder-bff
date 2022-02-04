@@ -6,12 +6,15 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,13 +37,17 @@ import java.util.Optional;
 @RestController
 @Tag(name = "Questionnaire", description = "API for manipulating and retrieving Questionnaires.")
 public class QuestionnaireController extends BaseController {
-    private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuestionnaireController.class);
 
     private QuestionnaireService questionnaireService;
     private AuditLoggingService auditLoggingService;
     private DtoMapper dtoMapper;
-    private LocationHeaderBuilder locationHeaderBuilder;
 
+    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+        this.questionnaireService = questionnaireService;
+        this.auditLoggingService = auditLoggingService;
+        this.dtoMapper = dtoMapper;
+    }
 
     @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")
     @ApiResponses(value = {
@@ -61,7 +68,7 @@ public class QuestionnaireController extends BaseController {
         }
 
         if(!questionnaire.isPresent()) {
-            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+            throw new ResourceNotFoundException(String.format("Questionnaire with id %s not found.", id), ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
         return ResponseEntity.ok(dtoMapper.mapQuestionnaireModel(questionnaire.get()));
     }

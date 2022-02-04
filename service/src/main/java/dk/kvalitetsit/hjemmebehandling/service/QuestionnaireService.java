@@ -28,13 +28,10 @@ public class QuestionnaireService extends AccessValidatingService {
 
     private FhirMapper fhirMapper;
 
-    private Comparator<QuestionnaireResponse> priorityComparator;
-
-    public QuestionnaireService(FhirClient fhirClient, FhirMapper fhirMapper, Comparator<QuestionnaireResponse> priorityComparator, AccessValidator accessValidator) {
+    public QuestionnaireService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
         super(accessValidator);
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
-        this.priorityComparator = priorityComparator;
     }
     public Optional<QuestionnaireModel> getQuestionnaireById(String questionnaireId) throws ServiceException, AccessValidationException {
         String qualifiedId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);

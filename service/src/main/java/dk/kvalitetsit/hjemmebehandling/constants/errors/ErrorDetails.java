@@ -13,7 +13,9 @@ public enum ErrorDetails {
     PATIENT_DOES_NOT_EXIST("Den angivne patient eksisterer ikke.", 18),
     ACCESS_VIOLATION("Du har ikke rettigheder til at tilgå de forespurgte data.", 19),
     PARAMETERS_INCOMPLETE("Parametre er mangelfuldt udfyldt.", 20),
+    QUESTIONNAIRE_DOES_NOT_EXIST("Det angivne spørgeskema eksisterer ikke ",21),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
+
 
     private String errorMessage;
     private int errorCode;
