@@ -101,7 +101,7 @@ public class CarePlanService extends AccessValidatingService {
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
             if(!patient.isPresent()) {
-            	// If plan and patient are created make customUser (external IdP)
+            	// create customLoginUser if the patient do not exist. Done if an apiurl is set.
             	if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl)) {
             		createCustomLogin(carePlan.getPatient());
             	}
