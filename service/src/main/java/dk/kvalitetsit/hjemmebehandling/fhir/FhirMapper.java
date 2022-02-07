@@ -6,8 +6,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -560,8 +560,71 @@ public class FhirMapper {
             question.setOptions(mapOptions(item.getAnswerOption()));
         }
         question.setQuestionType(mapQuestionType(item.getType()));
+        if (item.hasEnableWhen()) {
+            question.setEnableWhens(mapEnableWhens(item.getEnableWhen()));
+        }
 
         return question;
+    }
+
+    private List<QuestionModel.EnableWhen> mapEnableWhens(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
+        return enableWhen
+            .stream()
+            .map(ew -> mapEnableWhen(ew))
+            .collect(Collectors.toList());
+    }
+
+    private QuestionModel.EnableWhen mapEnableWhen(Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen) {
+        QuestionModel.EnableWhen newEnableWhen = new QuestionModel.EnableWhen();
+
+        newEnableWhen.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
+        newEnableWhen.setAnswer( mapAnswer(enableWhen.getQuestion(), enableWhen.getAnswer()) );
+
+        return newEnableWhen;
+    }
+
+    private AnswerModel mapAnswer(String question, Type answer) {
+        AnswerModel answerModel = new AnswerModel();
+        answerModel.setLinkId(question);
+
+        if (answer instanceof StringType) {
+            answerModel.setAnswerType(AnswerType.STRING);
+            answerModel.setValue( ((StringType)answer).asStringValue() );
+        }
+        else if (answer instanceof BooleanType) {
+            answerModel.setAnswerType(AnswerType.BOOLEAN);
+            answerModel.setValue(((BooleanType) answer).asStringValue() );
+        }
+        else if (answer instanceof Quantity) {
+            answerModel.setAnswerType(AnswerType.QUANTITY);
+            answerModel.setValue(((Quantity) answer).getValueElement().asStringValue() );
+        }
+        else if (answer instanceof IntegerType) {
+            answerModel.setAnswerType(AnswerType.INTEGER);
+            answerModel.setValue(((IntegerType) answer).asStringValue() );
+        }
+        else {
+            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
+        }
+
+        return answerModel;
+    }
+
+    private EnableWhenOperator mapEnableWhenOperator(Questionnaire.QuestionnaireItemOperator operator) {
+        switch (operator) {
+            case EQUAL:
+                return EnableWhenOperator.EQUAL;
+            case LESS_THAN:
+                return EnableWhenOperator.LESS_THAN;
+            case LESS_OR_EQUAL:
+                return EnableWhenOperator.LESS_OR_EQUAL;
+            case GREATER_THAN:
+                return EnableWhenOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL:
+                return EnableWhenOperator.GREATER_OR_EQUAL;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemOperator %s", operator.toString()));
+        }
     }
 
     private List<String> mapOptions(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
@@ -620,6 +683,10 @@ public class FhirMapper {
 
     private AnswerType getAnswerType(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
         Type answerType = answerItem.getValue();
+        return getAnswerType(answerType);
+    }
+
+    private AnswerType getAnswerType(Type answerType) {
         if (answerType instanceof StringType) {
             return AnswerType.STRING;
         }

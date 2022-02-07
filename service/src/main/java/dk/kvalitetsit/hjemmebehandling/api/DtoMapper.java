@@ -356,6 +356,7 @@ public class DtoMapper {
         questionDto.setRequired(questionModel.isRequired());
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());
+        questionDto.setEnableWhen(questionModel.getEnableWhens());
 
         return questionDto;
     }
