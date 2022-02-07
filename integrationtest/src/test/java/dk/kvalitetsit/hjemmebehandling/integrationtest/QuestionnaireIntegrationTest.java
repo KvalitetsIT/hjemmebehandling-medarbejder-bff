@@ -21,8 +21,8 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void createCarePlan_success() throws Exception {
-        var questionnaire = questionnaireApi.getQuestionnaireById("questionnaire-infektionsmedicinsk-1");
+    public void getQuestionnaire_byId_success() throws Exception {
+        var questionnaire = questionnaireApi.getQuestionnaireById("questionnaire-1");
         assertNotNull(questionnaire);
     }
 
