@@ -261,6 +261,9 @@ public class DtoMapper {
         if(questionnaireModel.getQuestions() != null) {
             questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(q -> mapQuestionModel(q)).collect(Collectors.toList()));
         }
+        if(questionnaireModel.getCallToActions() != null) {
+            questionnaireDto.setCallToActions(questionnaireModel.getCallToActions().stream().map(q -> mapQuestionModel(q)).collect(Collectors.toList()));
+        }
 
         return questionnaireDto;
     }

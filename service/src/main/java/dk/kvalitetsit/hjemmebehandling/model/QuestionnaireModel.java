@@ -9,6 +9,7 @@ public class QuestionnaireModel extends BaseModel {
     private String title;
     private String status;
     private List<QuestionModel> questions;
+    private List<QuestionModel> callToActions;
     private String version;
 
     public String getTitle() {
@@ -41,5 +42,13 @@ public class QuestionnaireModel extends BaseModel {
 
     public String getVersion() {
         return version;
+    }
+
+    public List<QuestionModel> getCallToActions() {
+        return callToActions;
+    }
+
+    public void setCallToActions(List<QuestionModel> callToActions) {
+        this.callToActions = callToActions;
     }
 }

@@ -293,7 +293,13 @@ public class FhirMapper {
 
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
-        questionnaireModel.setQuestions(questionnaire.getItem().stream().map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
+        questionnaireModel.setQuestions(questionnaire.getItem().stream()
+            .filter(type -> !type.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // filter out call-to-action's
+            .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
+        questionnaireModel.setCallToActions(questionnaire.getItem().stream()
+            .filter(q -> q.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // process call-to-action's
+            .flatMap(group -> group.getItem().stream())
+            .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
         questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
     }
@@ -646,6 +652,8 @@ public class FhirMapper {
                 return QuestionType.STRING;
             case BOOLEAN:
                 return QuestionType.BOOLEAN;
+            case DISPLAY:
+                return QuestionType.DISPLAY;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
         }

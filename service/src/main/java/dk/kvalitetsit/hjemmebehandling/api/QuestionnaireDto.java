@@ -8,6 +8,7 @@ public class QuestionnaireDto extends BaseDto {
     private String title;
     private String status;
     private List<QuestionDto> questions;
+    private List<QuestionDto> callToActions;
     private String version;
 
     public String getTitle() {
@@ -40,5 +41,13 @@ public class QuestionnaireDto extends BaseDto {
 
     public String getVersion() {
         return version;
+    }
+
+    public List<QuestionDto> getCallToActions() {
+        return callToActions;
+    }
+
+    public void setCallToActions(List<QuestionDto> callToActions) {
+        this.callToActions = callToActions;
     }
 }

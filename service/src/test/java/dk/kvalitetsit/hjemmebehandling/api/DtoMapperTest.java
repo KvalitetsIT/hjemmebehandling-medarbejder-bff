@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
@@ -96,6 +97,22 @@ public class DtoMapperTest {
         // Assert
         assertEquals(questionnaireResponseModel.getId().toString(), result.getId());
     }
+
+    @Test
+    public void mapQuestionnaireModel_callToAction() {
+        // Arrange
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        questionnaireModel.setQuestions( List.of(buildQuestionModel()) );
+        questionnaireModel.setCallToActions( List.of(buildQuestionModel()) );
+
+        // Act
+        QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(1, result.getCallToActions().size());
+    }
+
 
     private AnswerModel buildAnswerModel() {
         AnswerModel answerModel = new AnswerModel();
