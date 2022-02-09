@@ -336,6 +336,30 @@ public class FhirMapperTest {
         assertEquals(quantityItem.getAnswerFirstRep().getValueQuantity().getValue(), result.getItem().get(2).getAnswerFirstRep().getValueQuantity().getValue());
     }
 
+    @Test
+    public void mapQuestion_callToAction() {
+        Questionnaire.QuestionnaireItemComponent question1 = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?");
+
+        Questionnaire.QuestionnaireItemComponent callToActionGroup = buildQuestionItem("call_to_action", Questionnaire.QuestionnaireItemType.GROUP);
+        Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen = question1.addEnableWhen().setQuestion("1").setOperator(Questionnaire.QuestionnaireItemOperator.EQUAL).setAnswer(new BooleanType(true));
+        Questionnaire.QuestionnaireItemComponent callToAction = buildQuestionItem("call_to_action", Questionnaire.QuestionnaireItemType.DISPLAY, "Det var ikke så godt. Ring til afdelingen");
+        callToAction.addEnableWhen(enableWhen);
+        callToActionGroup.addItem(callToAction);
+
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(question1, callToActionGroup));
+
+        // Act
+        QuestionnaireModel result = subject.mapQuestionnaire(questionnaire);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertTrue(result.getQuestions().stream().anyMatch(q -> q.getQuestionType().equals(QuestionType.BOOLEAN)));
+
+        assertEquals(1, result.getCallToActions().size());
+        assertTrue(result.getCallToActions().stream().allMatch(q -> q.getQuestionType().equals(QuestionType.DISPLAY)));
+
+    }
+
     private Practitioner buildPractitioner(String practitionerId) {
         Practitioner practitioner = new Practitioner();
         practitioner.setId(practitionerId);
@@ -495,10 +519,15 @@ public class FhirMapperTest {
     }
 
     private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType) {
+        return buildQuestionItem(linkId, itemType, null);
+    }
+
+    private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType, String text) {
         var item = new Questionnaire.QuestionnaireItemComponent();
 
         item.setType(itemType);
         item.setLinkId(linkId);
+        item.setText(text);
 
         return item;
     }
