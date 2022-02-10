@@ -158,6 +158,30 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapPlandefinition() {
+        // Arrange
+        //CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+//        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(/*carePlan, patient,*/ questionnaire, organization, planDefinition);
+
+        // Act
+        PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
+
+        // Assert
+        assertEquals(1, result.getQuestionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+        assertEquals(ORGANIZATION_ID_1, result.getOrganizationId());
+        assertEquals(PlanDefinitionStatus.ACTIVE, result.getStatus());
+        assertEquals(POINT_IN_TIME, result.getCreated());
+
+
+    }
+
+    @Test
     public void mapPatientModel_mapsCpr() {
         // Arrange
         PatientModel patientModel = buildPatientModel();
@@ -492,6 +516,8 @@ public class FhirMapperTest {
         PlanDefinition planDefinition = new PlanDefinition();
 
         planDefinition.setId(planDefinitionId);
+        planDefinition.setStatus(Enumerations.PublicationStatus.ACTIVE);
+        planDefinition.setDate(Date.from(POINT_IN_TIME));
         planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 
         PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();

@@ -1,12 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import org.hl7.fhir.r4.model.Base;
-
+import java.time.Instant;
 import java.util.List;
 
 public class PlanDefinitionDto extends BaseDto {
     private String name;
     private String title;
+    private String status;
+    private Instant created;
     private List<QuestionnaireWrapperDto> questionnaires;
 
     public String getName() {
@@ -23,6 +24,22 @@ public class PlanDefinitionDto extends BaseDto {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Instant getCreated() {
+        return created;
+    }
+
+    public void setCreated(Instant created) {
+        this.created = created;
     }
 
     public List<QuestionnaireWrapperDto> getQuestionnaires() {

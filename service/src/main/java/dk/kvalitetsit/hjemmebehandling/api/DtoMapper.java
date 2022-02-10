@@ -4,6 +4,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
@@ -172,6 +173,10 @@ public class DtoMapper {
 
         planDefinitionModel.setName(planDefinitionDto.getName());
         planDefinitionModel.setTitle(planDefinitionDto.getTitle());
+        if(planDefinitionDto.getStatus() != null) {
+            planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinitionDto.getStatus()));
+        }
+        planDefinitionModel.setCreated(planDefinitionDto.getCreated());
         // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
         if(planDefinitionDto.getQuestionnaires() != null) {
             planDefinitionModel.setQuestionnaires(planDefinitionDto.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperDto(qw)).collect(Collectors.toList()));
@@ -186,6 +191,8 @@ public class DtoMapper {
         planDefinitionDto.setId(planDefinitionModel.getId().toString());
         planDefinitionDto.setName(planDefinitionModel.getName());
         planDefinitionDto.setTitle(planDefinitionModel.getTitle());
+        planDefinitionDto.setStatus(planDefinitionModel.getStatus().toString());
+        planDefinitionDto.setCreated(planDefinitionModel.getCreated());
         // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
         if(planDefinitionModel.getQuestionnaires() != null) {
             planDefinitionDto.setQuestionnaires(planDefinitionModel.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));

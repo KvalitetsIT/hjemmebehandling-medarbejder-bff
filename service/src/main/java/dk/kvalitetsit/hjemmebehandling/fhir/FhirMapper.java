@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -279,6 +280,8 @@ public class FhirMapper {
 
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
+        planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()));
+        planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
 
         // Map actions to questionnaires, along with their frequencies and thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));

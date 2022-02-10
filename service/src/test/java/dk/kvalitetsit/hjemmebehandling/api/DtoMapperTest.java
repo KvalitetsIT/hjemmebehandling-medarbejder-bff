@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
@@ -10,6 +11,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -24,6 +26,30 @@ public class DtoMapperTest {
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+
+    @Test
+    public void mapPlanDefinitionDto_success() {
+        // Arrange
+        PlanDefinitionDto planDefinitionDto = buildPlanDefinitionDto();
+
+        // Act
+        PlanDefinitionModel result = subject.mapPlanDefinitionDto(planDefinitionDto);
+
+        // Assert
+        assertEquals(planDefinitionDto.getId(), result.getId().toString());
+    }
+
+    @Test
+    public void mapPlanDefinitionModel_success() {
+        // Arrange
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
+
+        // Act
+        PlanDefinitionDto result = subject.mapPlanDefinitionModel(planDefinitionModel);
+
+        // Assert
+        assertEquals(planDefinitionModel.getId().toString(), result.getId());
+    }
 
     @Test
     public void mapCarePlanDto_success() {
@@ -227,6 +253,7 @@ public class DtoMapperTest {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
 
         planDefinitionDto.setId(PLANDEFINITION_ID_1);
+        planDefinitionDto.setStatus("ACTIVE");
         planDefinitionDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
 
         return planDefinitionDto;
@@ -236,6 +263,7 @@ public class DtoMapperTest {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
         planDefinitionModel.setId(new QualifiedId(PLANDEFINITION_ID_1));
+        planDefinitionModel.setStatus(PlanDefinitionStatus.ACTIVE);
         planDefinitionModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
 
         return planDefinitionModel;
