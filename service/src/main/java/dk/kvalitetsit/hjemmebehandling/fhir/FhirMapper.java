@@ -1010,4 +1010,8 @@ public class FhirMapper {
 
         return measurementTypeModel;
     }
+
+    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinition) {
+        return null;
+    }
 }

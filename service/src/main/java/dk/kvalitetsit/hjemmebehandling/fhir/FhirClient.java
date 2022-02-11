@@ -565,5 +565,7 @@ public class FhirClient {
     public void updateQuestionnaire(Questionnaire questionnaire) {
         update(questionnaire);
 
+    public String savePlanDefinition(PlanDefinition mapPlanDefinitionModel) {
+        return null;
     }
 }
