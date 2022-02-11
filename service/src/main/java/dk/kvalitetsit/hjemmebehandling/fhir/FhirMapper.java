@@ -689,7 +689,6 @@ public class FhirMapper {
         return item;
     }
 
-
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
         return enableWhens
             .stream()

@@ -142,6 +142,7 @@ public class DtoMapperTest {
         assertEquals(1, result.getCallToActions().size());
     }
 
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
     @Test
     public void mapQuestionnaireModel_enableWhen() {
         // Arrange

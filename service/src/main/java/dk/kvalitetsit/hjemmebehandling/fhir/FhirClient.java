@@ -568,4 +568,8 @@ public class FhirClient {
     public String savePlanDefinition(PlanDefinition planDefinition) {
         return save(planDefinition);
     }
+
+    public String saveQuestionnaire(Questionnaire questionnaire) {
+        return save(questionnaire);
+    }
 }
