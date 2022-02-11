@@ -1,7 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
+import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
@@ -19,6 +22,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,8 +33,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,11 +50,13 @@ public class QuestionnaireController extends BaseController {
     private QuestionnaireService questionnaireService;
     private AuditLoggingService auditLoggingService;
     private DtoMapper dtoMapper;
+    private LocationHeaderBuilder locationHeaderBuilder;
 
-    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.questionnaireService = questionnaireService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
+        this.locationHeaderBuilder = locationHeaderBuilder;
     }
 
     @Operation(summary = "Get all Questionnaires.", description = "Retrieves a list of Questionnaire.")
@@ -80,5 +89,26 @@ public class QuestionnaireController extends BaseController {
             throw new ResourceNotFoundException(String.format("Questionnaire with id %s not found.", id), ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
         return ResponseEntity.ok(dtoMapper.mapQuestionnaireModel(questionnaire.get()));
+    }
+
+    @Operation(summary = "Create a new Questionnaire.", description = "Create a Questionnaire.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Successful operation.", headers = { @Header(name = "Location", description = "URL pointing to the created Questionnaire.")}, content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error during creation of Questionnaire.", content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+    })
+    @PostMapping(value = "/v1/questionnaire", consumes = { "application/json" })
+    public ResponseEntity<Void> createQuestionnaire(@RequestBody CreateQuestionnaireRequest request) {
+        String questionnaireId = null;
+//        try {
+            QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
+            questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
+//        }
+//        catch(AccessValidationException | ServiceException e) {
+//            logger.error("Error creating CarePlan", e);
+//            throw toStatusCodeException(e);
+//        }
+
+        URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
+        return ResponseEntity.created(location).build();
     }
 }

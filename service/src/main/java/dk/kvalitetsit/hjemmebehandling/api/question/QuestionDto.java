@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api.question;
 
+import dk.kvalitetsit.hjemmebehandling.api.ThresholdDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 
@@ -12,6 +13,7 @@ public class QuestionDto {
     private QuestionType questionType;
     private List<String> options;
     private List<QuestionModel.EnableWhen> enableWhen;
+    private List<ThresholdDto> thresholds;
 
     public String getLinkId() {
         return linkId;
@@ -59,5 +61,13 @@ public class QuestionDto {
 
     public void setEnableWhen(List<QuestionModel.EnableWhen> enableWhen) {
         this.enableWhen = enableWhen;
+    }
+
+    public List<ThresholdDto> getThresholds() {
+        return thresholds;
+    }
+
+    public void setThresholds(List<ThresholdDto> thresholds) {
+        this.thresholds = thresholds;
     }
 }

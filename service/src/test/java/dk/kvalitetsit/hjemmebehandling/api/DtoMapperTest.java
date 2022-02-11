@@ -4,10 +4,12 @@ import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
 
@@ -139,6 +141,7 @@ public class DtoMapperTest {
         assertEquals(1, result.getCallToActions().size());
     }
 
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
     @Test
     public void mapMeasurementTypeModel_success() {
         // Arrange
@@ -146,7 +149,7 @@ public class DtoMapperTest {
         measurementTypeModel.setSystem("system");
         measurementTypeModel.setCode("code");
         measurementTypeModel.setDisplay("display");
-
+   
         // Act
         MeasurementTypeDto result = subject.mapMeasurementTypeModel(measurementTypeModel);
 
@@ -154,6 +157,32 @@ public class DtoMapperTest {
         assertEquals(measurementTypeModel.getSystem(), result.getSystem());
         assertEquals(measurementTypeModel.getCode(), result.getCode());
         assertEquals(measurementTypeModel.getDisplay(), result.getDisplay());
+    }
+
+ @Test
+    public void mapQuestionnaireModel_thresholds() {
+        // Arrange
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        QuestionModel questionModel = buildQuestionModel();
+        questionModel.setThresholds( List.of(buildThresholdModel(questionModel.getLinkId())) );
+        questionnaireModel.setQuestions( List.of(questionModel) );
+
+        // Act
+        QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(1, result.getQuestions().get(0).getThresholds().size());
+        assertEquals(questionModel.getLinkId(), result.getQuestions().get(0).getThresholds().get(0).getQuestionId());
+    }
+
+    private ThresholdModel buildThresholdModel(String questionLinkId) {
+        ThresholdModel thresholdModel = new ThresholdModel();
+        thresholdModel.setType(ThresholdType.NORMAL);
+        thresholdModel.setQuestionnaireItemLinkId(questionLinkId);
+        thresholdModel.setValueBoolean(Boolean.TRUE);
+
+        return thresholdModel;
     }
 
 
@@ -313,6 +342,7 @@ public class DtoMapperTest {
 
         questionnaireDto.setId("questionnaire-1");
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
+        questionnaireDto.setStatus("DRAFT");
 
         return questionnaireDto;
     }
@@ -322,6 +352,7 @@ public class DtoMapperTest {
 
         questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
         questionnaireModel.setQuestions(List.of(buildQuestionModel()));
+        questionnaireModel.setStatus(QuestionnaireStatus.DRAFT);
 
         return questionnaireModel;
     }

@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.hl7.fhir.r4.model.Base;
 
@@ -8,7 +9,7 @@ import java.util.List;
 
 public class QuestionnaireModel extends BaseModel {
     private String title;
-    private String status;
+    private QuestionnaireStatus status;
     private List<QuestionModel> questions;
     private List<QuestionModel> callToActions;
     private String version;
@@ -22,11 +23,11 @@ public class QuestionnaireModel extends BaseModel {
         this.title = title;
     }
 
-    public String getStatus() {
+    public QuestionnaireStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(QuestionnaireStatus status) {
         this.status = status;
     }
 

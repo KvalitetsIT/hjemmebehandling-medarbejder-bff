@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.BaseController;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -55,5 +56,19 @@ public class QuestionnaireService extends AccessValidatingService {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires();
 
         return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
+    }
+
+    public String createQuestionnaire(QuestionnaireModel questionnaire) {
+        // Initialize basic attributes for a new CarePlan: Id, status and so on.
+        initializeAttributesForNewQuestionnaire(questionnaire);
+
+        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaire(questionnaire));
+    }
+
+    private void initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
+        // Ensure that no id is present on the careplan - the FHIR server will generate that for us.
+        questionnaire.setId(null);
+
+        questionnaire.setStatus(QuestionnaireStatus.DRAFT);
     }
 }
