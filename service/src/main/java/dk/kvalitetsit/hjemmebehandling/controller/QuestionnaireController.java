@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "Questionnaire", description = "API for manipulating and retrieving Questionnaires.")
@@ -47,6 +48,17 @@ public class QuestionnaireController extends BaseController {
         this.questionnaireService = questionnaireService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
+    }
+
+    @Operation(summary = "Get all Questionnaires.", description = "Retrieves a list of Questionnaire.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = QuestionnaireDto.class)))
+    })
+    @GetMapping(value = "/v1/questionnaire", produces = { "application/json" })
+    public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires() {
+        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires();
+
+        return ResponseEntity.ok(questionnaires.stream().map(q -> dtoMapper.mapQuestionnaireModel(q)).collect(Collectors.toList()));
     }
 
     @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")

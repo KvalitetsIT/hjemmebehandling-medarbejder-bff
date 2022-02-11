@@ -214,6 +214,12 @@ public class FhirClient {
         return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
     }
 
+    public FhirLookupResult lookupQuestionnaires() {
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupByCriteria(Questionnaire.class, List.of(organizationCriterion));
+    }
+
     public FhirLookupResult lookupQuestionnaires(Collection<String> questionnaireIds) {
         var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds);
         var organizationCriterion = buildOrganizationCriterion();

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
@@ -48,5 +49,11 @@ public class QuestionnaireService extends AccessValidatingService {
         // Map the resource
         QuestionnaireModel mappedCarePlan = fhirMapper.mapQuestionnaire(questionnaire.get());
         return Optional.of(mappedCarePlan);
+    }
+
+    public List<QuestionnaireModel> getQuestionnaires() {
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires();
+
+        return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
     }
 }
