@@ -379,6 +379,8 @@ public class DtoMapper {
         if (questionModel.getThresholds() != null) {
             questionDto.setThresholds(questionModel.getThresholds().stream().map(t -> mapThresholdModel(t)).collect(Collectors.toList()));
         }
+        
+        //questionModel.
 
         return questionDto;
     }
