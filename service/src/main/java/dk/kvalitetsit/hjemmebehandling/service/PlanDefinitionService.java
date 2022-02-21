@@ -105,6 +105,8 @@ public class PlanDefinitionService extends AccessValidatingService {
         // Update carePlan
         PlanDefinitionModel planDefinitionModel = fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult);
         updatePlanDefinitionModel(planDefinitionModel, thresholds, questionnaireResult.getQuestionnaires() );
+
+        return null;
     }
 
     private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, List<ThresholdDto> thresholds, List<Questionnaire> questionnaires) {
