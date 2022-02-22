@@ -14,6 +14,7 @@ public class FhirLookupResult {
     private Map<String, Questionnaire> questionnairesById;
     private Map<String, QuestionnaireResponse> questionnaireResponsesById;
     private Map<String, Practitioner> practitionersById;
+    private Map<String, ValueSet> valueSetsById;
 
     private FhirLookupResult() {
         // Using LinkedHashMap preserves the insertion order (necessary for eg. returning sorted results).
@@ -24,6 +25,7 @@ public class FhirLookupResult {
         questionnairesById = new LinkedHashMap<>();
         questionnaireResponsesById = new LinkedHashMap<>();
         practitionersById = new LinkedHashMap<>();
+        valueSetsById = new LinkedHashMap<>();
     }
 
     public static FhirLookupResult fromBundle(Bundle bundle) {
@@ -104,6 +106,10 @@ public class FhirLookupResult {
         return getResources(practitionersById);
     }
 
+    public List<ValueSet> getValueSets() {
+        return getResources(valueSetsById);
+    }
+
     public FhirLookupResult merge(FhirLookupResult result) {
         for(CarePlan carePlan : result.carePlansById.values()) {
             addResource(carePlan);
@@ -177,6 +183,9 @@ public class FhirLookupResult {
                 break;
             case Practitioner:
                 practitionersById.put(resourceId, (Practitioner) resource);
+                break;
+            case ValueSet:
+                valueSetsById.put(resourceId, (ValueSet) resource);
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown resource type: %s", resource.getResourceType().toString()));

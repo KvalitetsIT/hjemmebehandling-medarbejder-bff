@@ -551,4 +551,10 @@ public class FhirClient {
 
         return lookupByCriteria(Practitioner.class, List.of(idCriterion));
     }
+
+    public FhirLookupResult lookupValueSet() {
+        var organizationCriterion = buildOrganizationCriterion();
+
+        return lookupByCriteria(ValueSet.class, List.of(organizationCriterion));
+    }
 }

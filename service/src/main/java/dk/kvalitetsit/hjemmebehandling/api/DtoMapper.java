@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
@@ -399,5 +400,14 @@ public class DtoMapper {
 
         return questionnaireWrapperDto;
     }
-    
+
+    public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
+        MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
+
+        measurementTypeDto.setSystem(measurementTypeModel.getSystem());
+        measurementTypeDto.setCode(measurementTypeModel.getCode());
+        measurementTypeDto.setDisplay(measurementTypeModel.getDisplay());
+
+        return measurementTypeDto;
+    }
 }

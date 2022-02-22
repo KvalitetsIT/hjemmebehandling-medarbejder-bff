@@ -38,6 +38,7 @@ import org.hl7.fhir.r4.model.Timing;
 import org.hl7.fhir.r4.model.Type;
 import org.hl7.fhir.r4.model.Practitioner;
 
+import org.hl7.fhir.r4.model.ValueSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -810,5 +811,29 @@ public class FhirMapper {
         practitionerModel.setFamilyName(practitioner.getNameFirstRep().getFamily());
 
         return practitionerModel;
+    }
+
+    public List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
+        List<MeasurementTypeModel> result = new ArrayList<>();
+
+        valueSet.getCompose().getInclude()
+            .forEach(csc -> {
+                var measurementTypes = csc.getConcept().stream()
+                    .map(crc -> mapCodingConcept(csc.getSystem(), crc))
+                    .collect(Collectors.toList());
+
+                result.addAll(measurementTypes);
+            });
+
+        return result;
+    }
+    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
+        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
+
+        measurementTypeModel.setSystem(system);
+        measurementTypeModel.setCode(concept.getCode());
+        measurementTypeModel.setDisplay(concept.getDisplay());
+
+        return measurementTypeModel;
     }
 }

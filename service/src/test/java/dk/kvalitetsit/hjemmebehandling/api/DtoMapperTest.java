@@ -139,6 +139,23 @@ public class DtoMapperTest {
         assertEquals(1, result.getCallToActions().size());
     }
 
+    @Test
+    public void mapMeasurementTypeModel_success() {
+        // Arrange
+        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
+        measurementTypeModel.setSystem("system");
+        measurementTypeModel.setCode("code");
+        measurementTypeModel.setDisplay("display");
+
+        // Act
+        MeasurementTypeDto result = subject.mapMeasurementTypeModel(measurementTypeModel);
+
+        // Assert
+        assertEquals(measurementTypeModel.getSystem(), result.getSystem());
+        assertEquals(measurementTypeModel.getCode(), result.getCode());
+        assertEquals(measurementTypeModel.getDisplay(), result.getDisplay());
+    }
+
 
     private AnswerModel buildAnswerModel() {
         AnswerModel answerModel = new AnswerModel();

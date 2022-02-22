@@ -384,6 +384,38 @@ public class FhirMapperTest {
 
     }
 
+    @Test
+    public void mapValueSet_to_MeasurementType() {
+        // Arrange
+        ValueSet valueSet = buildMeasurementTypesValueSet();
+
+
+        // Act
+        List<MeasurementTypeModel> result = subject.extractMeasurementTypes(valueSet);
+
+        // Assert
+        assertEquals(2, result.size());
+        assertTrue(result.stream().allMatch(mt -> mt.getSystem().contains(Systems.NPU)));
+        assertTrue(result.stream().anyMatch(mt -> mt.getCode().equals("NPU08676")));
+        assertTrue(result.stream().anyMatch(mt -> mt.getCode().equals("NPU19748")));
+    }
+
+    private ValueSet buildMeasurementTypesValueSet() {
+        ValueSet vs = new ValueSet();
+
+        var npu08676 = new ValueSet.ConceptReferenceComponent();
+        npu08676.setCode("NPU08676").setDisplay("Legeme temp.;Pt");
+
+        var npu19748 = new ValueSet.ConceptReferenceComponent();
+        npu19748.setCode("NPU19748").setDisplay("C-reaktivt protein [CRP];P");
+
+        vs.getCompose().getIncludeFirstRep()
+            .setSystem("urn:oid:1.2.208.176.2.1")
+            .setConcept(List.of(npu08676, npu19748));
+
+        return vs;
+    }
+
     private Practitioner buildPractitioner(String practitionerId) {
         Practitioner practitioner = new Practitioner();
         practitioner.setId(practitionerId);

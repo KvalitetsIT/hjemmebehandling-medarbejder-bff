@@ -108,4 +108,9 @@ public class ServiceConfiguration {
                 throw new IllegalArgumentException(String.format("Unknown userContextHandler value: %s", userContextHandler));
         }
     }
+
+    @Bean
+    public ValueSetService getValueSetService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+      return new ValueSetService(client, mapper);
+    }
 }
