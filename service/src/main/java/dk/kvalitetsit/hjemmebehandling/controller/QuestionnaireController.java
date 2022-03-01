@@ -98,15 +98,8 @@ public class QuestionnaireController extends BaseController {
     })
     @PostMapping(value = "/v1/questionnaire", consumes = { "application/json" })
     public ResponseEntity<Void> createQuestionnaire(@RequestBody CreateQuestionnaireRequest request) {
-        String questionnaireId = null;
-//        try {
-            QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
-            questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
-//        }
-//        catch(AccessValidationException | ServiceException e) {
-//            logger.error("Error creating CarePlan", e);
-//            throw toStatusCodeException(e);
-//        }
+        QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
+        String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
 
         URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
         return ResponseEntity.created(location).build();
