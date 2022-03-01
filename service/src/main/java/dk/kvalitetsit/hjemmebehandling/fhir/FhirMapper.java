@@ -294,7 +294,7 @@ public class FhirMapper {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         mapBaseAttributesToModel(questionnaireModel, questionnaire);
-
+        questionnaireModel.setLastUpdated(questionnaire.getMeta().getLastUpdated());
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
         questionnaireModel.setQuestions(questionnaire.getItem().stream()

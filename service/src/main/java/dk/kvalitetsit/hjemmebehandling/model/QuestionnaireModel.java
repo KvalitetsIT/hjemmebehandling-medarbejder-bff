@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import org.hl7.fhir.r4.model.Base;
 
+import java.util.Date;
 import java.util.List;
 
 public class QuestionnaireModel extends BaseModel {
@@ -11,6 +12,7 @@ public class QuestionnaireModel extends BaseModel {
     private List<QuestionModel> questions;
     private List<QuestionModel> callToActions;
     private String version;
+    private Date lastUpdated;
 
     public String getTitle() {
         return title;
@@ -50,5 +52,13 @@ public class QuestionnaireModel extends BaseModel {
 
     public void setCallToActions(List<QuestionModel> callToActions) {
         this.callToActions = callToActions;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 }

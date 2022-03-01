@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 
+import java.util.Date;
 import java.util.List;
 
 public class QuestionnaireDto extends BaseDto {
@@ -10,6 +11,7 @@ public class QuestionnaireDto extends BaseDto {
     private List<QuestionDto> questions;
     private List<QuestionDto> callToActions;
     private String version;
+    private Date lastUpdated;
 
     public String getTitle() {
         return title;
@@ -49,5 +51,13 @@ public class QuestionnaireDto extends BaseDto {
 
     public void setCallToActions(List<QuestionDto> callToActions) {
         this.callToActions = callToActions;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 }
