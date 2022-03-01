@@ -385,6 +385,29 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapQuestionnaire_question_withMeasurementType() {
+        Questionnaire.QuestionnaireItemComponent question = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.QUANTITY, "Hvad er din temperatur?");
+        Coding temperature = buildTemperatureCode();
+        question.setCode(List.of(temperature));
+
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(question));
+
+        // Act
+        QuestionnaireModel result = subject.mapQuestionnaire(questionnaire);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertTrue(result.getQuestions().get(0).getQuestionType().equals(QuestionType.QUANTITY));
+        assertNotNull(result.getQuestions().get(0).getCode());
+        assertEquals(temperature.getSystem(),  result.getQuestions().get(0).getCode().getSystem());
+        assertEquals(temperature.getCode(),  result.getQuestions().get(0).getCode().getCode());
+        assertEquals(temperature.getDisplay(),  result.getQuestions().get(0).getCode().getDisplay());
+
+        assertTrue(result.getCallToActions().stream().allMatch(q -> q.getQuestionType().equals(QuestionType.DISPLAY)));
+
+    }
+
+    @Test
     public void mapValueSet_to_MeasurementType() {
         // Arrange
         ValueSet valueSet = buildMeasurementTypesValueSet();
@@ -430,6 +453,23 @@ public class FhirMapperTest {
             .setConcept(List.of(npu08676, npu19748));
 
         return vs;
+    }
+
+    private Coding buildTemperatureCode() {
+        return buildMeasurementCode("urn:oid:1.2.208.176.2.1", "NPU08676", "Legeme temp.;Pt");
+    }
+
+    private Coding buildCrpCode() {
+        return buildMeasurementCode("urn:oid:1.2.208.176.2.1", "NPU19748", "C-reaktivt protein [CRP];P");
+    }
+
+    private Coding buildMeasurementCode(String system, String code, String display) {
+        Coding coding = new Coding();
+        coding.setSystem(system)
+            .setCode(code)
+            .setDisplay(display);
+
+        return coding;
     }
 
     private Practitioner buildPractitioner(String practitionerId) {

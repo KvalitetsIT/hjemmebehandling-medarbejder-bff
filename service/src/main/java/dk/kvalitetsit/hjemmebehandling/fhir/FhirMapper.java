@@ -573,6 +573,9 @@ public class FhirMapper {
         if (item.hasEnableWhen()) {
             question.setEnableWhens(mapEnableWhens(item.getEnableWhen()));
         }
+        if (item.hasCode()) {
+            question.setCode(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
+        }
 
         return question;
     }
@@ -822,12 +825,17 @@ public class FhirMapper {
 
         return result;
     }
+
     private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
+        return mapCodingConcept(system, concept.getCode(), concept.getDisplay());
+    }
+
+    private MeasurementTypeModel mapCodingConcept(String system, String code, String display) {
         MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
 
         measurementTypeModel.setSystem(system);
-        measurementTypeModel.setCode(concept.getCode());
-        measurementTypeModel.setDisplay(concept.getDisplay());
+        measurementTypeModel.setCode(code);
+        measurementTypeModel.setDisplay(display);
 
         return measurementTypeModel;
     }
