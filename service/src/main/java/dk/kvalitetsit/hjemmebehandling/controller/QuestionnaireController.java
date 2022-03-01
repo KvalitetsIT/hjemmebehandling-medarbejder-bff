@@ -51,9 +51,6 @@ public class QuestionnaireController extends BaseController {
     }
 
     @Operation(summary = "Get all Questionnaires.", description = "Retrieves a list of Questionnaire.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = QuestionnaireDto.class)))
-    })
     @GetMapping(value = "/v1/questionnaire", produces = { "application/json" })
     public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires() {
         List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires();
