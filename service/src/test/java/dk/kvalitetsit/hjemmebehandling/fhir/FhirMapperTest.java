@@ -400,6 +400,22 @@ public class FhirMapperTest {
         assertTrue(result.stream().anyMatch(mt -> mt.getCode().equals("NPU19748")));
     }
 
+    /**
+     * Thresholds is modelled as an extension on PlanDefinition, but was previously modelled on CarePlan.
+     * Make sure that Thresholds is defined as extension the right place
+     */
+    @Test
+    public void mapCarePlan_where_PlanDefinition_has_thresholds() {
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+
+        // Act
+
+        // Assert
+        assertTrue(planDefinition.getAction().stream().anyMatch(a -> a.hasExtension(Systems.THRESHOLD)));
+        assertTrue(carePlan.getActivity().stream().noneMatch(a -> a.getDetail().hasExtension(Systems.THRESHOLD)));
+    }
+
     private ValueSet buildMeasurementTypesValueSet() {
         ValueSet vs = new ValueSet();
 
@@ -441,8 +457,6 @@ public class FhirMapperTest {
         detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
         detail.setScheduled(buildTiming());
         detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
-
-
 
         carePlan.addActivity().setDetail(detail);
 
