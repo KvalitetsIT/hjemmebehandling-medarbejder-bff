@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.model.question;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 
 import java.util.List;
@@ -11,6 +12,7 @@ public class QuestionModel {
     private String text;
     private boolean required;
     private QuestionType questionType;
+    private MeasurementTypeModel code;
     private List<String> options;
     private List<EnableWhen> enableWhens;
 
@@ -44,6 +46,14 @@ public class QuestionModel {
 
     public void setQuestionType(QuestionType questionType) {
         this.questionType = questionType;
+    }
+
+    public MeasurementTypeModel getCode() {
+        return code;
+    }
+
+    public void setCode(MeasurementTypeModel code) {
+        this.code = code;
     }
 
     public List<String> getOptions() {
