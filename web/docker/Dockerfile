@@ -7,6 +7,7 @@ RUN groupadd --gid 11000 appuser && \
 
 WORKDIR /home/appuser
 COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
 COPY config/logback.xml logback-spring.xml
 COPY /maven/web-exec.jar web.jar
