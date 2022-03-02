@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
@@ -251,7 +252,9 @@ public class DtoMapper {
         mapBaseAttributesToModel(questionnaireModel, questionnaireDto, ResourceType.Questionnaire);
 
         questionnaireModel.setTitle(questionnaireDto.getTitle());
-        questionnaireModel.setStatus(questionnaireDto.getStatus());
+        if (questionnaireDto.getStatus() != null) {
+            questionnaireModel.setStatus(QuestionnaireStatus.valueOf(questionnaireDto.getStatus()));
+        }
         if(questionnaireDto.getQuestions() != null) {
             questionnaireModel.setQuestions(questionnaireDto.getQuestions().stream().map(q -> mapQuestionDto(q)).collect(Collectors.toList()));
         }
@@ -264,7 +267,7 @@ public class DtoMapper {
 
         questionnaireDto.setId(questionnaireModel.getId().toString());
         questionnaireDto.setTitle(questionnaireModel.getTitle());
-        questionnaireDto.setStatus(questionnaireModel.getStatus());
+        questionnaireDto.setStatus(questionnaireModel.getStatus().toString());
         questionnaireDto.setVersion(questionnaireModel.getVersion());
         questionnaireDto.setLastUpdated(questionnaireModel.getLastUpdated());
         if(questionnaireModel.getQuestions() != null) {
@@ -356,6 +359,9 @@ public class DtoMapper {
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());
+        if (questionDto.getThresholds() != null) {
+            questionModel.setThresholds(questionDto.getThresholds().stream().map(t -> mapThresholdDto(t)).collect(Collectors.toList()));
+        }
 
         return questionModel;
     }
@@ -369,6 +375,9 @@ public class DtoMapper {
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());
         questionDto.setEnableWhen(questionModel.getEnableWhens());
+        if (questionModel.getThresholds() != null) {
+            questionDto.setThresholds(questionModel.getThresholds().stream().map(t -> mapThresholdModel(t)).collect(Collectors.toList()));
+        }
 
         return questionDto;
     }

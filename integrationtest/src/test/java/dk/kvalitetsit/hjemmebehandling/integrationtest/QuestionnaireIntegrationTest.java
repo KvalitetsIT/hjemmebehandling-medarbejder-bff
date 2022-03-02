@@ -26,4 +26,43 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         assertNotNull(questionnaire);
     }
 
+    @Test
+    public void createQuestionnaire_success() throws Exception {
+        // Arrange
+        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
+
+        QuestionDto question1 = new QuestionDto();
+        question1.setLinkId("1");
+        question1.setText("Har du sovet godt? (æøå)");
+        question1.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
+
+
+
+        QuestionDto question2 = new QuestionDto();
+        question2.setLinkId("2");
+        question2.setText("Sov du heller ikke godt i går?");
+        question2.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
+
+        AnswerModel answer = new AnswerModel();
+        answer.setLinkId(question1.getLinkId());
+        answer.setAnswerType(AnswerModel.AnswerTypeEnum.BOOLEAN);
+        answer.setValue(Boolean.FALSE.toString());
+
+        EnableWhen enableWhen = new EnableWhen();
+        enableWhen.setAnswer(answer);
+        question2.addEnableWhenItem(enableWhen);
+
+        questionnaireDto.setQuestions( List.of(question1, question2) );
+
+        CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
+        request.setQuestionnaire(questionnaireDto);
+
+        // Act
+        ApiResponse<Void> response = questionnaireApi.createQuestionnaireWithHttpInfo(request);
+
+        // Assert
+        assertEquals(201, response.getStatusCode());
+        assertTrue(response.getHeaders().containsKey("location"));
+    }
+
 }

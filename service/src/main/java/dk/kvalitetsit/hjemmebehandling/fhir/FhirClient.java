@@ -557,4 +557,8 @@ public class FhirClient {
 
         return lookupByCriteria(ValueSet.class, List.of(organizationCriterion));
     }
+
+    public String saveQuestionnaire(Questionnaire questionnaire) {
+        return save(questionnaire);
+    }
 }

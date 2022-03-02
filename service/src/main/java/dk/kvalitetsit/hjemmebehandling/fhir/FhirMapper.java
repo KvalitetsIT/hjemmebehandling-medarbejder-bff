@@ -4,11 +4,13 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -20,6 +22,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.EnumFactory;
 import org.hl7.fhir.r4.model.Enumeration;
+import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
@@ -290,13 +293,37 @@ public class FhirMapper {
         return planDefinitionModel;
     }
 
+    public Questionnaire mapQuestionnaire(QuestionnaireModel questionnaireModel) {
+        Questionnaire questionnaire = new Questionnaire();
+
+        mapBaseAttributesToFhir(questionnaire, questionnaireModel);
+
+        questionnaire.setTitle(questionnaireModel.getTitle());
+        questionnaire.setStatus( mapQuestionnaireStatus(questionnaireModel.getStatus()) );
+        questionnaire.setItem(questionnaireModel.getQuestions().stream()
+            .map(questionModel -> mapQuestionnaireItem(questionModel))
+            .collect(Collectors.toList()));
+        questionnaire.setVersion(questionnaireModel.getVersion());
+
+        // Thresholds
+        questionnaire.getExtension().addAll(questionnaireModel.getQuestions().stream()
+            .filter(questionModel -> Objects.nonNull(questionModel.getThresholds()))
+            .flatMap(questionModel -> questionModel.getThresholds().stream())
+            .map(t -> ExtensionMapper.mapThreshold(t))
+            .collect(Collectors.toList()));
+
+        return questionnaire;
+    }
+
+
+
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         mapBaseAttributesToModel(questionnaireModel, questionnaire);
         questionnaireModel.setLastUpdated(questionnaire.getMeta().getLastUpdated());
         questionnaireModel.setTitle(questionnaire.getTitle());
-        questionnaireModel.setStatus(questionnaire.getStatus().getDisplay());
+        questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
         questionnaireModel.setQuestions(questionnaire.getItem().stream()
             .filter(type -> !type.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // filter out call-to-action's
             .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
@@ -306,6 +333,32 @@ public class FhirMapper {
             .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
         questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
+    }
+
+    private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
+        switch (status) {
+            case ACTIVE:
+                return Enumerations.PublicationStatus.ACTIVE;
+            case DRAFT:
+                return Enumerations.PublicationStatus.DRAFT;
+            case RETIRED:
+                return Enumerations.PublicationStatus.RETIRED;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireStatus %s", status.toString()));
+        }
+    }
+
+    private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
+        switch (status) {
+            case ACTIVE:
+                return QuestionnaireStatus.ACTIVE;
+            case DRAFT:
+                return QuestionnaireStatus.DRAFT;
+            case RETIRED:
+                return QuestionnaireStatus.RETIRED;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status.toString()));
+        }
     }
 
     public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
@@ -560,6 +613,23 @@ public class FhirMapper {
         return null;
     }
 
+    private Questionnaire.QuestionnaireItemComponent mapQuestionnaireItem(QuestionModel question) {
+        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
+
+        item.setLinkId(question.getLinkId());
+        item.setText(question.getText());
+        item.setRequired(question.isRequired());
+        if (question.getOptions() != null) {
+            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+        }
+        item.setType( mapQuestionType(question.getQuestionType()) );
+        if (question.getEnableWhens() != null) {
+            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+        }
+        return item;
+    }
+
+
     private QuestionModel mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
         QuestionModel question = new QuestionModel();
 
@@ -567,27 +637,48 @@ public class FhirMapper {
         question.setText(item.getText());
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
-            question.setOptions(mapOptions(item.getAnswerOption()));
+            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
         }
-        question.setQuestionType(mapQuestionType(item.getType()));
+        question.setQuestionType( mapQuestionType(item.getType()) );
         if (item.hasEnableWhen()) {
-            question.setEnableWhens(mapEnableWhens(item.getEnableWhen()));
+            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
         }
         if (item.hasCode()) {
             question.setCode(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
         }
 
+        question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
+
         return question;
     }
 
-    private List<QuestionModel.EnableWhen> mapEnableWhens(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
-        return enableWhen
+
+    private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
+        return enableWhens
             .stream()
             .map(ew -> mapEnableWhen(ew))
             .collect(Collectors.toList());
     }
 
-    private QuestionModel.EnableWhen mapEnableWhen(Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen) {
+    private Questionnaire.QuestionnaireItemEnableWhenComponent mapEnableWhen(QuestionModel.EnableWhen enableWhen) {
+        Questionnaire.QuestionnaireItemEnableWhenComponent enableWhenComponent = new Questionnaire.QuestionnaireItemEnableWhenComponent();
+
+        enableWhenComponent.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
+        enableWhenComponent.setQuestion(enableWhen.getAnswer().getLinkId());
+        enableWhenComponent.setAnswer(getValue(enableWhen.getAnswer()));
+        enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
+
+        return enableWhenComponent;
+    }
+
+    private List<QuestionModel.EnableWhen> mapEnableWhenComponents(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
+        return enableWhen
+            .stream()
+            .map(ew -> mapEnableWhenComponent(ew))
+            .collect(Collectors.toList());
+    }
+
+    private QuestionModel.EnableWhen mapEnableWhenComponent(Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen) {
         QuestionModel.EnableWhen newEnableWhen = new QuestionModel.EnableWhen();
 
         newEnableWhen.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
@@ -623,6 +714,23 @@ public class FhirMapper {
         return answerModel;
     }
 
+    private Questionnaire.QuestionnaireItemOperator mapEnableWhenOperator(EnableWhenOperator operator) {
+        switch (operator) {
+            case EQUAL:
+                return Questionnaire.QuestionnaireItemOperator.EQUAL;
+            case LESS_THAN:
+                return Questionnaire.QuestionnaireItemOperator.LESS_THAN;
+            case LESS_OR_EQUAL:
+                return Questionnaire.QuestionnaireItemOperator.LESS_OR_EQUAL;
+            case GREATER_THAN:
+                return Questionnaire.QuestionnaireItemOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL:
+                return Questionnaire.QuestionnaireItemOperator.GREATER_OR_EQUAL;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.QuestionnaireItemOperator %s", operator.toString()));
+        }
+    }
+
     private EnableWhenOperator mapEnableWhenOperator(Questionnaire.QuestionnaireItemOperator operator) {
         switch (operator) {
             case EQUAL:
@@ -640,7 +748,14 @@ public class FhirMapper {
         }
     }
 
-    private List<String> mapOptions(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
+    private List<Questionnaire.QuestionnaireItemAnswerOptionComponent> mapAnswerOptions(List<String> answerOptions) {
+        return answerOptions
+            .stream()
+            .map(oc -> new Questionnaire.QuestionnaireItemAnswerOptionComponent().setValue( new StringType(oc)))
+            .collect(Collectors.toList());
+    }
+
+    private List<String> mapAnswerOptionComponents(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
         return optionComponents
                 .stream()
                 .map(oc -> oc.getValue().primitiveValue())
@@ -663,6 +778,25 @@ public class FhirMapper {
                 return QuestionType.DISPLAY;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
+        }
+    }
+
+    private Questionnaire.QuestionnaireItemType mapQuestionType(QuestionType type) {
+        switch(type) {
+            case CHOICE:
+                return Questionnaire.QuestionnaireItemType.CHOICE;
+            case INTEGER:
+                return Questionnaire.QuestionnaireItemType.INTEGER;
+            case QUANTITY:
+                return Questionnaire.QuestionnaireItemType.QUANTITY;
+            case STRING:
+                return Questionnaire.QuestionnaireItemType.STRING;
+            case BOOLEAN:
+                return Questionnaire.QuestionnaireItemType.BOOLEAN;
+            case DISPLAY:
+                return Questionnaire.QuestionnaireItemType.DISPLAY;
+            default:
+                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s", type.toString()));
         }
     }
 

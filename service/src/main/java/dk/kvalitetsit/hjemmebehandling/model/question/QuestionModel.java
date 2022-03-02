@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.model.question;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 
@@ -15,6 +16,7 @@ public class QuestionModel {
     private MeasurementTypeModel code;
     private List<String> options;
     private List<EnableWhen> enableWhens;
+    private List<ThresholdModel> thresholds;
 
     public String getLinkId() {
         return linkId;
@@ -70,6 +72,14 @@ public class QuestionModel {
 
     public void setEnableWhens(List<EnableWhen> enableWhens) {
         this.enableWhens = enableWhens;
+    }
+
+    public List<ThresholdModel> getThresholds() {
+        return thresholds;
+    }
+
+    public void setThresholds(List<ThresholdModel> thresholds) {
+        this.thresholds = thresholds;
     }
 
     public static class EnableWhen {
