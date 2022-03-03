@@ -572,4 +572,9 @@ public class FhirClient {
     public String saveQuestionnaire(Questionnaire questionnaire) {
         return save(questionnaire);
     }
+
+    public void updateQuestionnaire(Questionnaire questionnaire) {
+        update(questionnaire);
+
+    }
 }

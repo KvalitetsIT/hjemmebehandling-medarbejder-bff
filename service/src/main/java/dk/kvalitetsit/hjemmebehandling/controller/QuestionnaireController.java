@@ -4,13 +4,27 @@ import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
+<<<<<<< HEAD
 import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+=======
+import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.UpdateQuestionnaireRequest;
+>>>>>>> 1751653 (RIM-542: edit questionnaire)
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
+<<<<<<< HEAD
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+=======
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
+>>>>>>> 1751653 (RIM-542: edit questionnaire)
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
@@ -40,6 +54,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

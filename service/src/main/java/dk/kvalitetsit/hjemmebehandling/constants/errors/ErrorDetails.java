@@ -16,6 +16,7 @@ public enum ErrorDetails {
     QUESTIONNAIRE_DOES_NOT_EXIST("Det angivne spørgeskema eksisterer ikke ",21),
     QUESTIONNAIRE_ILLEGAL_STATUS_CHANGE("Det angivne statusskift for spørgeskema er ikke tilladt ",22),
     PLANDEFINITION_DOES_NOT_EXIST("Den angivne patientgruppe eksisterer ikke.", 22),
+    QUESTIONNAIRE_ILLEGAL_STATUS_CHANGE("Det angivne statusskift for spørgeskema er ikke tilladt ",22),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 
