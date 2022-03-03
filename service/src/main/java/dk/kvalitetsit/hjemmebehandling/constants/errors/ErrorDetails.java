@@ -14,6 +14,7 @@ public enum ErrorDetails {
     ACCESS_VIOLATION("Du har ikke rettigheder til at tilgå de forespurgte data.", 19),
     PARAMETERS_INCOMPLETE("Parametre er mangelfuldt udfyldt.", 20),
     QUESTIONNAIRE_DOES_NOT_EXIST("Det angivne spørgeskema eksisterer ikke ",21),
+    QUESTIONNAIRE_ILLEGAL_STATUS_CHANGE("Det angivne statusskift for spørgeskema er ikke tilladt ",22),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 

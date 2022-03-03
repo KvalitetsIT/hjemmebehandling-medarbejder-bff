@@ -9,6 +9,7 @@ import java.util.List;
 
 public class QuestionnaireModel extends BaseModel {
     private String title;
+    private String description;
     private QuestionnaireStatus status;
     private List<QuestionModel> questions;
     private List<QuestionModel> callToActions;
@@ -21,6 +22,14 @@ public class QuestionnaireModel extends BaseModel {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public QuestionnaireStatus getStatus() {

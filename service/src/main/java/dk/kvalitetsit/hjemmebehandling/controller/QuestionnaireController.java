@@ -6,13 +6,20 @@ import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
+import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.UpdateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
@@ -28,17 +35,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -78,7 +89,8 @@ public class QuestionnaireController extends BaseController {
         Optional<QuestionnaireModel> questionnaire = Optional.empty();
 
         try {
-            questionnaire = questionnaireService.getQuestionnaireById(id);
+            String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+            questionnaire = questionnaireService.getQuestionnaireById(questionnaireId);
         }
         catch(AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
@@ -104,4 +116,34 @@ public class QuestionnaireController extends BaseController {
         URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
         return ResponseEntity.created(location).build();
     }
+
+    @PutMapping(value = "/v1/questionnaire")
+    public void updateQuestionnaire(QuestionnaireDto questionnaireDto) {
+        throw new UnsupportedOperationException();
+    }
+
+    @PatchMapping(value = "/v1/questionnaire/{id}")
+    public ResponseEntity<Void> patchQuestionnaire(@PathVariable String id, @RequestBody UpdateQuestionnaireRequest request) {
+        if(request.getStatus() == null || request.getStatus() == null ) {
+            throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
+        }
+
+        try {
+            String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+            List<QuestionModel> questions = request.getQuestions().stream()
+                .map(q -> dtoMapper.mapQuestionDto(q))
+                .collect(Collectors.toList());
+            List<QuestionModel> callToActions = request.getCallToActions().stream()
+                .map(c -> dtoMapper.mapQuestionDto(c))
+                .collect(Collectors.toList());
+
+            questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);
+        }
+        catch(AccessValidationException | ServiceException e) {
+            throw toStatusCodeException(e);
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
 }

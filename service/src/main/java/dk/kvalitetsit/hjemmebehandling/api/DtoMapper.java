@@ -351,7 +351,7 @@ public class DtoMapper {
         return questionAnswerPairDto;
     }
 
-    private QuestionModel mapQuestionDto(QuestionDto questionDto) {
+    public QuestionModel mapQuestionDto(QuestionDto questionDto) {
         QuestionModel questionModel = new QuestionModel();
 
         questionModel.setLinkId(questionDto.getLinkId());
