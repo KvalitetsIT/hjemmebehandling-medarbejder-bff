@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.UpdateQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
@@ -48,10 +49,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @Tag(name = "Questionnaire", description = "API for manipulating and retrieving Questionnaires.")
@@ -124,16 +127,16 @@ public class QuestionnaireController extends BaseController {
 
     @PatchMapping(value = "/v1/questionnaire/{id}")
     public ResponseEntity<Void> patchQuestionnaire(@PathVariable String id, @RequestBody UpdateQuestionnaireRequest request) {
-        if(request.getStatus() == null || request.getStatus() == null ) {
+        if(request.getQuestions() == null || request.getQuestions().isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
-            List<QuestionModel> questions = request.getQuestions().stream()
+            List<QuestionModel> questions = collectionToStream(request.getQuestions())
                 .map(q -> dtoMapper.mapQuestionDto(q))
                 .collect(Collectors.toList());
-            List<QuestionModel> callToActions = request.getCallToActions().stream()
+            List<QuestionModel> callToActions = collectionToStream(request.getCallToActions())
                 .map(c -> dtoMapper.mapQuestionDto(c))
                 .collect(Collectors.toList());
 
@@ -146,4 +149,9 @@ public class QuestionnaireController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    private Stream<QuestionDto> collectionToStream(Collection<QuestionDto> collection) {
+        return Optional.ofNullable(collection)
+            .map(Collection::stream)
+            .orElseGet(Stream::empty);
+    }
 }
