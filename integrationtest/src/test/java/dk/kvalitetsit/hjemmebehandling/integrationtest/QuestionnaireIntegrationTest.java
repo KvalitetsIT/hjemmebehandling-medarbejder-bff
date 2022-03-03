@@ -71,16 +71,18 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         // Arrange
         String id = "questionnaire-1";
         UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.status("ACTIVE");
 
-        request.setTitle("En ny og bedre titel");
-        request.setStatus("ACTIVE");
+        QuestionDto question1 = new QuestionDto();
+        question1.setLinkId("1");
+        question1.setText("Er du tørstig?");
+        question1.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
+        request.setQuestions(List.of(question1));
 
         // Act
         ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
 
         // Assert
         assertEquals(200, response.getStatusCode());
-
-
     }
 }
