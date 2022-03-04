@@ -1,31 +1,20 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
-import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
-import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
-import dk.kvalitetsit.hjemmebehandling.api.UpdateQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,7 +40,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -126,7 +114,7 @@ public class QuestionnaireController extends BaseController {
     }
 
     @PatchMapping(value = "/v1/questionnaire/{id}")
-    public ResponseEntity<Void> patchQuestionnaire(@PathVariable String id, @RequestBody UpdateQuestionnaireRequest request) {
+    public ResponseEntity<Void> patchQuestionnaire(@PathVariable String id, @RequestBody PatchQuestionnaireRequest request) {
         if(request.getQuestions() == null || request.getQuestions().isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }

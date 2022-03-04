@@ -73,7 +73,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         QuestionnaireDto questionnaire = questionnaireApi.getQuestionnaireById(id);
         questionnaire.setTitle("Ny forbedret titel");
 
-        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setTitle("Ny forbedret titel");
         request.status(questionnaire.getStatus());
         request.setDescription(request.getDescription());
