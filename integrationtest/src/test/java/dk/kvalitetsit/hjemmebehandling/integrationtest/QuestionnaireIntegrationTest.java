@@ -70,14 +70,16 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
     public void patchQuestionnaire_success() throws Exception {
         // Arrange
         String id = "questionnaire-1";
-        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
-        request.status("ACTIVE");
+        QuestionnaireDto questionnaire = questionnaireApi.getQuestionnaireById(id);
+        questionnaire.setTitle("Ny forbedret titel");
 
-        QuestionDto question1 = new QuestionDto();
-        question1.setLinkId("1");
-        question1.setText("Er du tørstig?");
-        question1.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
-        request.setQuestions(List.of(question1));
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.setTitle("Ny forbedret titel");
+        request.status(questionnaire.getStatus());
+        request.setDescription(request.getDescription());
+        request.setQuestions(questionnaire.getQuestions());
+        request.setCallToActions(questionnaire.getCallToActions());
+
 
         // Act
         ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
