@@ -6,17 +6,27 @@ import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
+import dk.kvalitetsit.hjemmebehandling.api.UpdateQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -114,5 +124,66 @@ public class QuestionnaireControllerTest {
         // Assert
         assertNotNull(result.getHeaders().get("Location"));
         assertEquals(location, result.getHeaders().get("Location").get(0));
+    }
+
+    @Test
+    public void patchQuestionnaire_success_() throws Exception {
+        // Arrange
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.setQuestions(List.of(new QuestionDto()));
+
+        // Act
+        ResponseEntity<Void> result = subject.patchQuestionnaire("questionnaire-1", request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    public void patchQuestionnaire_nullQuestions_throwsBadRequestException() throws Exception {
+        // Arrange
+        String id = "questionnaire-1";
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.setQuestions(null);
+
+        // Act
+
+        // Assert
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
+    }
+
+    @Test
+    public void patchQuestionnaire_emptyQuestions_throwsBadRequestException() throws Exception {
+        // Arrange
+        String id = "questionnaire-1";
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.setQuestions(List.of());
+
+        // Act
+
+        // Assert
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
+    }
+
+    @Test
+    public void patchQuestionnaire_accessViolation() throws Exception {
+        // Arrange
+        String id = "questionnaire-1";
+        String qualifyId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        QuestionDto questionDto = new QuestionDto();
+        request.setQuestions(List.of(questionDto));
+
+        QuestionModel questionModel =  new QuestionModel();
+        Mockito.when(dtoMapper.mapQuestionDto(questionDto)).thenReturn(questionModel);
+
+        Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(qualifyId, null, null, null, List.of(questionModel), List.of());
+
+
+        // Act
+
+        // Assert
+        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id, request));
     }
 }

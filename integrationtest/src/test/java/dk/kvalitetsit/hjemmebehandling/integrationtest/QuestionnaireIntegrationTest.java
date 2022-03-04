@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.api.QuestionnaireApi;
@@ -65,4 +66,25 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         assertTrue(response.getHeaders().containsKey("location"));
     }
 
+    @Test
+    public void patchQuestionnaire_success() throws Exception {
+        // Arrange
+        String id = "questionnaire-1";
+        QuestionnaireDto questionnaire = questionnaireApi.getQuestionnaireById(id);
+        questionnaire.setTitle("Ny forbedret titel");
+
+        UpdateQuestionnaireRequest request = new UpdateQuestionnaireRequest();
+        request.setTitle("Ny forbedret titel");
+        request.status(questionnaire.getStatus());
+        request.setDescription(request.getDescription());
+        request.setQuestions(questionnaire.getQuestions());
+        request.setCallToActions(questionnaire.getCallToActions());
+
+
+        // Act
+        ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
 }
