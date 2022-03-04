@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 
 import java.util.List;
 
-public class UpdateQuestionnaireRequest {
+public class PatchQuestionnaireRequest {
     private String title;
     private String description;
     private String status;
