@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
@@ -141,7 +142,42 @@ public class DtoMapperTest {
         assertEquals(1, result.getCallToActions().size());
     }
 
+    @Test
+    public void mapQuestionnaireModel_enableWhen() {
+        // Arrange
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+
+        QuestionModel questionModel = buildQuestionModel();
+        questionModel.setEnableWhens( List.of(buildEnableWhen()));
+        questionnaireModel.setQuestions( List.of(questionModel) );
+
+        // Act
+        QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(1, result.getQuestions().get(0).getEnableWhen().size());
+    }
+
+    @Test
+    public void mapQuestionnaireDto_enableWhen() {
+        // Arrange
+        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
+
+        QuestionDto questionDto = buildQuestionDto();
+        questionDto.setEnableWhen( List.of(buildEnableWhen()) );
+        questionnaireDto.setQuestions( List.of(questionDto) );
+
+        // Act
+        QuestionnaireModel result = subject.mapQuestionnaireDto(questionnaireDto);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(1, result.getQuestions().get(0).getEnableWhens().size());
+    }
+
+
+
     @Test
     public void mapMeasurementTypeModel_success() {
         // Arrange
@@ -329,6 +365,12 @@ public class DtoMapperTest {
         questionModel.setText("Hvordan har du det?");
 
         return questionModel;
+    }
+
+    private QuestionModel.EnableWhen buildEnableWhen() {
+        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
+
+        return enableWhen;
     }
 
     private QuestionAnswerPairModel buildQuestionAnswerPairModel() {

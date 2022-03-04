@@ -359,6 +359,7 @@ public class DtoMapper {
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());
+        questionModel.setEnableWhens(questionDto.getEnableWhen());
         if (questionDto.getThresholds() != null) {
             questionModel.setThresholds(questionDto.getThresholds().stream().map(t -> mapThresholdDto(t)).collect(Collectors.toList()));
         }
