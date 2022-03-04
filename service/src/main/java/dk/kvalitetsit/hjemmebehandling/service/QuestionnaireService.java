@@ -5,7 +5,6 @@ import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -14,7 +13,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +59,7 @@ public class QuestionnaireService extends AccessValidatingService {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         initializeAttributesForNewQuestionnaire(questionnaire);
 
-        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaire(questionnaire));
+        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaire));
     }
 
     private void initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -91,7 +89,7 @@ public class QuestionnaireService extends AccessValidatingService {
         updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToActions);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaire(questionnaireModel));
+        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaireModel));
     }
 
     private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) {

@@ -293,16 +293,17 @@ public class FhirMapper {
         return planDefinitionModel;
     }
 
-    public Questionnaire mapQuestionnaire(QuestionnaireModel questionnaireModel) {
+    public Questionnaire mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         Questionnaire questionnaire = new Questionnaire();
 
         mapBaseAttributesToFhir(questionnaire, questionnaireModel);
 
         questionnaire.setTitle(questionnaireModel.getTitle());
         questionnaire.setStatus( mapQuestionnaireStatus(questionnaireModel.getStatus()) );
-        questionnaire.setItem(questionnaireModel.getQuestions().stream()
+        questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
             .map(questionModel -> mapQuestionnaireItem(questionModel))
             .collect(Collectors.toList()));
+        questionnaire.getItem().addAll(mapQuestionnaireCallToActions(questionnaireModel.getCallToActions()));
         questionnaire.setVersion(questionnaireModel.getVersion());
 
         // Thresholds
@@ -629,7 +630,6 @@ public class FhirMapper {
         return item;
     }
 
-
     private QuestionModel mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
         QuestionModel question = new QuestionModel();
 
@@ -650,6 +650,43 @@ public class FhirMapper {
         question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
 
         return question;
+    }
+
+    private List<Questionnaire.QuestionnaireItemComponent> mapQuestionnaireCallToActions(List<QuestionModel> callToActions) {
+        List<Questionnaire.QuestionnaireItemComponent> result = new ArrayList<>();
+        if (callToActions == null || callToActions.isEmpty()) {
+            return result;
+        }
+
+        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
+        item.setType(Questionnaire.QuestionnaireItemType.GROUP);
+
+        int counter = 1;
+        for (QuestionModel callToAction : callToActions) {
+            Questionnaire.QuestionnaireItemComponent cta = mapQuestionnaireItem(callToAction);
+            cta.setLinkId(String.format("call-to-action%s", counter++));
+
+            item.addItem(cta);
+        }
+
+        result.add(item);
+        return result;
+    }
+
+    private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(QuestionModel question) {
+        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
+
+        item.setLinkId(question.getLinkId());
+        item.setText(question.getText());
+        item.setRequired(question.isRequired());
+        if (question.getOptions() != null) {
+            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+        }
+        item.setType( mapQuestionType(question.getQuestionType()) );
+        if (question.getEnableWhens() != null) {
+            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+        }
+        return item;
     }
 
 

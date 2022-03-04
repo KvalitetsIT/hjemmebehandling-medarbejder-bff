@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -439,6 +440,53 @@ public class FhirMapperTest {
         assertTrue(carePlan.getActivity().stream().noneMatch(a -> a.getDetail().hasExtension(Systems.THRESHOLD)));
     }
 
+    @Test
+    public void mapQuestionnaireModel_callToActions() {
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+
+        QuestionModel callToAction = buildCallToAction(questionnaireModel.getQuestions().get(0));
+        questionnaireModel.setCallToActions(List.of(callToAction));
+
+        // Act
+        Questionnaire result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(2, result.getItem().size());
+        assertTrue(result.getItem().stream().anyMatch(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.BOOLEAN))); // the question
+        assertTrue(result.getItem().stream().anyMatch(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.GROUP))); // the call-to-action
+
+        List<Questionnaire.QuestionnaireItemComponent> callToActionItemComponents = result.getItem().stream()
+            .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.GROUP))
+            .flatMap(i -> i.getItem().stream())
+            .collect(Collectors.toList());
+        assertEquals(1, callToActionItemComponents.size());
+        assertEquals(callToAction.getText(), callToActionItemComponents.get(0).getText());
+
+        assertEquals(1, callToActionItemComponents.get(0).getEnableWhen().size());
+    }
+
+    private QuestionModel buildCallToAction(QuestionModel questionModel) {
+        QuestionModel callToAction = buildCallToAction();
+
+        AnswerModel answer = new AnswerModel();
+        answer.setLinkId(questionModel.getLinkId());
+        answer.setAnswerType(AnswerType.BOOLEAN);
+        answer.setValue(Boolean.TRUE.toString());
+
+        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
+        enableWhen.setAnswer(answer);
+        enableWhen.setOperator(EnableWhenOperator.EQUAL);
+
+        callToAction.setEnableWhens(List.of(enableWhen));
+        return callToAction;
+    }
+
+    private QuestionModel buildCallToAction() {
+        QuestionModel callToAction = buildQuestionModel("call to action text", QuestionType.DISPLAY);
+
+        return callToAction;
+    }
+
     private ValueSet buildMeasurementTypesValueSet() {
         ValueSet vs = new ValueSet();
 
@@ -675,9 +723,15 @@ public class FhirMapperTest {
     }
 
     private QuestionModel buildQuestionModel() {
-        QuestionModel questionModel = new QuestionModel();
+        QuestionModel questionModel = buildQuestionModel("Hvordan har du det?", QuestionType.BOOLEAN);
 
-        questionModel.setText("Hvordan har du det?");
+        return questionModel;
+    }
+
+    private QuestionModel buildQuestionModel(String text, QuestionType type) {
+        QuestionModel questionModel = new QuestionModel();
+        questionModel.setText(text);
+        questionModel.setQuestionType(type);
 
         return questionModel;
     }
@@ -701,6 +755,7 @@ public class FhirMapperTest {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
+        questionnaireModel.setStatus(QuestionnaireStatus.ACTIVE);
         questionnaireModel.setQuestions(List.of(buildQuestionModel()));
 
         return questionnaireModel;
