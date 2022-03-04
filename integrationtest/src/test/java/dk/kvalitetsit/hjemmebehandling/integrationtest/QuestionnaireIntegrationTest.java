@@ -51,6 +51,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
         EnableWhen enableWhen = new EnableWhen();
         enableWhen.setAnswer(answer);
+        enableWhen.setOperator(EnableWhen.OperatorEnum.EQUAL);
         question2.addEnableWhenItem(enableWhen);
 
         questionnaireDto.setQuestions( List.of(question1, question2) );
