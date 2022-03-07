@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,7 +82,9 @@ public class QuestionnaireControllerTest {
     public void createQuestionnaire_success_201() {
         // Arrange
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
-        request.setQuestionnaire(new QuestionnaireDto());
+        var questionnaireDto = new QuestionnaireDto();
+        questionnaireDto.setQuestions(List.of(new QuestionDto()));
+        request.setQuestionnaire(questionnaireDto);
 
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(new QuestionnaireModel());
 
@@ -96,7 +99,9 @@ public class QuestionnaireControllerTest {
     public void createQuestionnaire_success_setsLocationHeader() throws Exception {
         // Arrange
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
-        request.setQuestionnaire(new QuestionnaireDto());
+        var questionnaireDto = new QuestionnaireDto();
+        questionnaireDto.setQuestions(List.of(new QuestionDto()));
+        request.setQuestionnaire(questionnaireDto);
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
