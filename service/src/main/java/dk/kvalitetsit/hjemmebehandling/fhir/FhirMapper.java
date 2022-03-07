@@ -607,7 +607,7 @@ public class FhirMapper {
 
     private Questionnaire.QuestionnaireItemComponent getQuestionnaireItem(Questionnaire questionnaire, String linkId) {
         for(var item : questionnaire.getItem()) {
-            if(item.getLinkId().equals(linkId)) {
+            if(item != null && item.getLinkId() != null && item.getLinkId().equals(linkId)) {
                 return item;
             }
         }
