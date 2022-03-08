@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import java.util.List;
 
-public class UpdatePlanDefinitionRequest {
+public class PatchPlanDefinitionRequest {
     private List<String> questionnaireIds;
     private List<ThresholdDto> thresholds;
 
