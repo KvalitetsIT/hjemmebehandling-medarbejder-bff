@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -118,6 +115,7 @@ public class PatientService extends AccessValidatingService {
         // Map the resources
         return patients
                 .stream()
+                .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
                 .skip(offset)
                 .limit(count)
                 .map(p -> fhirMapper.mapPatient(p))

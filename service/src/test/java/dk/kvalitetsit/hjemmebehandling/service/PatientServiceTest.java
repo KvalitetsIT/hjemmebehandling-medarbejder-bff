@@ -9,13 +9,19 @@ import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -109,6 +115,56 @@ public class PatientServiceTest {
     assertEquals(1,result.size());
   }
 
+  private static Stream<Arguments> getPatients_TwoResponses_ReturnAlphabetically() {
+    return Stream.of(
+            Arguments.of(List.of("A","B"),List.of("A","B"),1,2),
+            Arguments.of(List.of("B","A"),List.of("A","B"),1,2),
+            Arguments.of(List.of("C","B","A"),List.of("A","B","C"),1,3),
+            Arguments.of(List.of("B","A","C"),List.of("C"),2,2),
+            Arguments.of(List.of("C","A","B"),List.of("C"),2,2)
+    );
+  }
+  @ParameterizedTest
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  @MethodSource // arguments comes from a method that is name the same as the test
+  public void getPatients_TwoResponses_ReturnAlphabetically(
+          List<String> names,
+          List<String> namesInExpectedOrder,
+          int page,
+          int pageSize
+  ) {
+    // Arrange
+    CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+    carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+
+    FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan1);
+    for(var name : names){
+      Patient patient = buildPatient(name, name);
+      HumanName patientName = new HumanName();
+      patientName.setGiven(List.of(new StringType(name)));
+      patient.setName(List.of(patientName));
+      inactiveLookup.merge(FhirLookupResult.fromResources(patient));
+
+      PatientModel patientmodel = new PatientModel();
+      patientmodel.setGivenName(name);
+
+      Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientmodel);
+    }
+
+    Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
+
+    // Act
+    var pagedetails = new PageDetails(page,pageSize);
+    var includeActive = true;
+    var includeCompleted = false;
+    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
+
+    // Assert
+    assertEquals(namesInExpectedOrder.size(),result.size());
+    for(var i = 0; i<namesInExpectedOrder.size();i++){
+      assertEquals(namesInExpectedOrder.get(i),result.get(i).getGivenName());
+    }
+  }
   @Test
   public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() {
     // Arrange
