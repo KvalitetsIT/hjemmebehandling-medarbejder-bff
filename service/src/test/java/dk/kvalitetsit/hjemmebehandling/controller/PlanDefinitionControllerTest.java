@@ -1,11 +1,16 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import dk.kvalitetsit.hjemmebehandling.api.CreatePlanDefinitionRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.PatchPlanDefinitionRequest;
 import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
+import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.junit.jupiter.api.Test;
@@ -17,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.net.URI;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,6 +37,9 @@ public class PlanDefinitionControllerTest {
 
     @Mock
     private DtoMapper dtoMapper;
+
+    @Mock
+    private LocationHeaderBuilder locationHeaderBuilder;
 
     @Test
     public void getPlanDefinitions_planDefinitionsPresent_200() throws Exception {
@@ -76,5 +85,82 @@ public class PlanDefinitionControllerTest {
 
         // Assert
         assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions());
+    }
+
+    @Test
+    public void createPlanDefinition_success_201() {
+        // Arrange
+        CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
+        request.setPlanDefinition(new PlanDefinitionDto());
+
+        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(new PlanDefinitionModel());
+
+        // Act
+        ResponseEntity<Void> result = subject.createPlanDefinition(request);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, result.getStatusCode());
+    }
+
+    @Test
+    public void createPlanDefinition_success_setsLocationHeader() throws Exception {
+        // Arrange
+        CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
+        request.setPlanDefinition(new PlanDefinitionDto());
+
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn("plandefinition-1");
+
+        String location = "http://localhost:8080/api/v1/plandefinition/plandefinition-1";
+        Mockito.when(locationHeaderBuilder.buildLocationHeader("plandefinition-1")).thenReturn(URI.create(location));
+
+        // Act
+        ResponseEntity<Void> result = subject.createPlanDefinition(request);
+
+        // Assert
+        assertNotNull(result.getHeaders().get("Location"));
+        assertEquals(location, result.getHeaders().get("Location").get(0));
+    }
+
+    @Test
+    public void createPlanDefinition_accessViolation_403() throws Exception {
+        // Arrange
+        CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
+        request.setPlanDefinition(new PlanDefinitionDto());
+
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
+
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenThrow(AccessValidationException.class);
+
+        // Act
+
+        // Assert
+        assertThrows(ForbiddenException.class, () -> subject.createPlanDefinition(request));
+    }
+
+    @Test
+    public void updatePlanDefinition_throwsUnsupportedOperationException() {
+        // Arrange
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+
+        // Act
+
+        // Assert
+        assertThrows(UnsupportedOperationException.class, () -> subject.updatePlanDefinition(planDefinitionDto));
+    }
+
+    @Test
+    public void patchPlanDefinition_success() throws Exception {
+        // Arrange
+        PatchPlanDefinitionRequest request = new PatchPlanDefinitionRequest();
+        //Mockito.when(planDefinitionService.updatePlanDefinition("plandefinition-1", Mockito.anyString(), Mockito.anyList(), Mockito.anyList())).thenReturn(new PlanDefinitionModel());
+
+        // Act
+        ResponseEntity<Void> result = subject.patchPlanDefinition("plandefinition-1", request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }

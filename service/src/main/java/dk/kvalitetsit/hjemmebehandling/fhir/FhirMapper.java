@@ -689,7 +689,6 @@ public class FhirMapper {
         return item;
     }
 
-
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
         return enableWhens
             .stream()
@@ -1009,5 +1008,39 @@ public class FhirMapper {
         measurementTypeModel.setDisplay(display);
 
         return measurementTypeModel;
+    }
+
+    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
+        PlanDefinition planDefinition = new PlanDefinition();
+
+        mapBaseAttributesToFhir(planDefinition, planDefinitionModel);
+
+        planDefinition.setTitle(planDefinitionModel.getTitle());
+        planDefinition.setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.getStatus().toString()));
+
+        // Map questionnaires to actions
+        if(planDefinitionModel.getQuestionnaires() != null) {
+            planDefinition.setAction(planDefinitionModel.getQuestionnaires()
+                .stream()
+                .map(q -> buildPlanDefinitionAction(q))
+                .collect(Collectors.toList()));
+        }
+
+        return planDefinition;
+    }
+
+    private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(QuestionnaireWrapperModel questionnaireWrapperModel) {
+        CanonicalType definitionCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
+        //Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
+        //Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
+        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.getThresholds());
+
+        //return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil, thresholds);
+
+        PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();
+        action.setDefinition(definitionCanonical);
+        action.setExtension(thresholds);
+
+        return action;
     }
 }

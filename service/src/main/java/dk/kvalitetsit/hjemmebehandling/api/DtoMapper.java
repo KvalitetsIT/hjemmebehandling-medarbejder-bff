@@ -379,6 +379,8 @@ public class DtoMapper {
         if (questionModel.getThresholds() != null) {
             questionDto.setThresholds(questionModel.getThresholds().stream().map(t -> mapThresholdModel(t)).collect(Collectors.toList()));
         }
+        
+        //questionModel.
 
         return questionDto;
     }
@@ -396,7 +398,9 @@ public class DtoMapper {
         QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
 
         questionnaireWrapperModel.setQuestionnaire(mapQuestionnaireDto(questionnaireWrapper.getQuestionnaire()));
-        questionnaireWrapperModel.setFrequency(mapFrequencyDto(questionnaireWrapper.getFrequency()));
+        if (questionnaireWrapper.getFrequency() != null) {
+            questionnaireWrapperModel.setFrequency(mapFrequencyDto(questionnaireWrapper.getFrequency()));
+        }
         questionnaireWrapperModel.setThresholds( questionnaireWrapper.getThresholds().stream().map(t -> mapThresholdDto(t)).collect(Collectors.toList()) );
 
         return questionnaireWrapperModel;

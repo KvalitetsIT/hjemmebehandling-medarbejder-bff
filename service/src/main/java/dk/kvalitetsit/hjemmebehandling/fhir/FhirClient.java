@@ -564,6 +564,13 @@ public class FhirClient {
 
     public void updateQuestionnaire(Questionnaire questionnaire) {
         update(questionnaire);
+    }
 
+    public String savePlanDefinition(PlanDefinition planDefinition) {
+        return save(planDefinition);
+    }
+
+    public void updatePlanDefinition(PlanDefinition planDefinition) {
+        update(planDefinition);
     }
 }
