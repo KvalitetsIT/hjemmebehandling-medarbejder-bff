@@ -55,6 +55,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
         planDefinitionDto.setId("PlanDefinition/plandefinition-1");
+        planDefinitionDto.setStatus("ACTIVE");
         planDefinitionDto.setQuestionnaires(List.of(wrapper));
 
 
