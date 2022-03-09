@@ -569,4 +569,8 @@ public class FhirClient {
     public String savePlanDefinition(PlanDefinition planDefinition) {
         return save(planDefinition);
     }
+
+    public void updatePlanDefinition(PlanDefinition planDefinition) {
+        update(planDefinition);
+    }
 }

@@ -3,6 +3,17 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -13,14 +24,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.hl7.fhir.r4.model.Base;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @Tag(name = "PlanDefinition", description = "API for manipulating and retrieving PlanDefinitions.")
@@ -79,18 +96,34 @@ public class PlanDefinitionController extends BaseController {
     @PatchMapping(value = "/v1/plandefinition/{id}")
     public ResponseEntity<Void> patchPlanDefinition(@PathVariable String id, @RequestBody PatchPlanDefinitionRequest request) {
         try {
-            List<String> questionnaireIds = request.getQuestionnaireIds();
-//            Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
-//            PatientDetails patientDetails = getPatientDetails(request);
+            String name = request.getName();
+            List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
+            List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
 
-            PlanDefinitionModel planDefinitionModel = planDefinitionService.updatePlanDefinition(id, request.getQuestionnaireIds(), request.getThresholds());
-//            CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
-//            auditLoggingService.log("PATCH /v1/careplan/"+id, carePlanModel.getPatient());
+            planDefinitionService.updatePlanDefinition(id, name, questionnaireIds, thresholds);
         }
         catch(Exception e) {
             throw toStatusCodeException(e);
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    private List<String> getQuestionnaireIds(List<String> questionnaireIds) {
+        return collectionToStream(questionnaireIds)
+            .map(id -> FhirUtils.qualifyId(id, ResourceType.Questionnaire))
+            .collect(Collectors.toList());
+    }
+
+    private List<ThresholdModel> getThresholds(List<ThresholdDto> thresholdDtos) {
+        return collectionToStream(thresholdDtos)
+            .map(t -> dtoMapper.mapThresholdDto(t))
+            .collect(Collectors.toList());
+    }
+
+    private <T> Stream<T> collectionToStream(Collection<T> collection) {
+        return Optional.ofNullable(collection)
+            .map(Collection::stream)
+            .orElseGet(Stream::empty);
     }
 }

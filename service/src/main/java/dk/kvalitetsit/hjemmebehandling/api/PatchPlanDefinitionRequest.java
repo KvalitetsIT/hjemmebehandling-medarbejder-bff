@@ -3,8 +3,17 @@ package dk.kvalitetsit.hjemmebehandling.api;
 import java.util.List;
 
 public class PatchPlanDefinitionRequest {
+    private String name;
     private List<String> questionnaireIds;
     private List<ThresholdDto> thresholds;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public List<String> getQuestionnaireIds() {
         return questionnaireIds;

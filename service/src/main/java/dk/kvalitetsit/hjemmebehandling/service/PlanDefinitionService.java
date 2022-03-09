@@ -1,14 +1,16 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.api.ThresholdDto;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -16,12 +18,18 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.sql.Wrapper;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -82,7 +90,7 @@ public class PlanDefinitionService extends AccessValidatingService {
         planDefinition.setCreated(today);
     }
 
-    public PlanDefinitionModel updatePlanDefinition(String id, List<String> questionnaireIds, List<ThresholdDto> thresholds) throws ServiceException, AccessValidationException {
+    public void updatePlanDefinition(String id, String name, List<String> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
@@ -93,44 +101,71 @@ public class PlanDefinitionService extends AccessValidatingService {
         validateAccess(questionnaireResult.getQuestionnaires());
 
         // Look up the plan definition to verify that it exist, throw an exception in case it don't.
-        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinition(id);
+        String qualifiedId = FhirUtils.qualifyId(id, ResourceType.PlanDefinition);
+        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinition(qualifiedId);
         if(planDefinitionResult.getPlanDefinitions().isEmpty()) {
             throw new ServiceException("Could not look up plan definitions to update!", ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
         }
-        PlanDefinition planDefinition = planDefinitionResult.getPlanDefinition(id).get();
+        PlanDefinition planDefinition = planDefinitionResult.getPlanDefinition(qualifiedId).get();
 
         // Validate that the client is allowed to update the planDefinition.
         validateAccess(planDefinition);
 
         // Update carePlan
         PlanDefinitionModel planDefinitionModel = fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult);
-        updatePlanDefinitionModel(planDefinitionModel, thresholds, questionnaireResult.getQuestionnaires() );
+        List<QuestionnaireModel> questionnaires = questionnaireResult.getQuestionnaires().stream()
+            .map(q -> fhirMapper.mapQuestionnaire(q))
+            .collect(Collectors.toList());
+        updatePlanDefinitionModel(planDefinitionModel, name, questionnaires, thresholds);
 
-        return null;
+        // Save the updated PlanDefinition
+        fhirClient.updatePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinitionModel));
     }
 
-    private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, List<ThresholdDto> thresholds, List<Questionnaire> questionnaires) {
-        //planDefinitionModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire()).anyMatch(q -> q.getId().equals())
-        List<String> questionnaireIds = questionnaires.stream().map(q -> q.getId()).collect(Collectors.toList());
+    private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, String name, List<QuestionnaireModel> questionnaires, List<ThresholdModel> thresholds) {
+        // update name
+        if (name != null && !name.isEmpty()) {
+            planDefinitionModel.setName(name);
+        }
 
-        List<QuestionnaireWrapperModel> keepList = new ArrayList<>();
-        for (QuestionnaireWrapperModel wrapper : planDefinitionModel.getQuestionnaires()) {
+        // update questionnaires
+        if (!questionnaires.isEmpty()) {
+            List<QuestionnaireWrapperModel> questionnaireWrapperModels = new ArrayList<>();
+            for (QuestionnaireModel questionnaire : questionnaires) {
+                QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
+                wrapper.setQuestionnaire(questionnaire);
 
-            if (questionnaireIds.contains(wrapper.getQuestionnaire().getId().toString())) {
-                keepList.add(wrapper);
+                List<ThresholdModel> questionnaireThresholds = new ArrayList<>();
+                questionnaireThresholds.addAll(questionnaire.getQuestions().stream()
+                    .filter(questionModel -> Objects.nonNull(questionModel.getThresholds()))
+                    .flatMap(q -> q.getThresholds().stream())
+                    .collect(Collectors.toList()));
+
+                wrapper.setThresholds(questionnaireThresholds);
+
+                questionnaireWrapperModels.add(wrapper);
             }
+            planDefinitionModel.setQuestionnaires(questionnaireWrapperModels);
         }
 
-        List<String> createList = keepList.stream()
-            .map(qw -> qw.getQuestionnaire().getId().toString())
-            .filter(qw -> !questionnaireIds.contains(qw))
-            .collect(Collectors.toList());
+        // update thresholds
+        if (thresholds != null && !thresholds.isEmpty()) {
+            // if no questionnaires is beeing updated, the threshold may be present already
+            for (ThresholdModel thresholdModel : thresholds) {
+                // remove it if it exists
+                planDefinitionModel.getQuestionnaires().forEach(qw -> {
+                    qw.getThresholds().removeIf(t -> t.getQuestionnaireItemLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
+                });
 
-        for (String questionnaireId : createList) {
-
+                // add the new threshold to the correct quesionnaire(s) containing the question (by linkId)
+                planDefinitionModel.getQuestionnaires().stream()
+                    .filter(qw -> {
+                        return qw.getQuestionnaire().getQuestions().stream()
+                            .anyMatch(q -> q.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
+                    })
+                    .forEach(qw -> qw.getThresholds().add(thresholdModel));
+            }
 
         }
-
-
     }
 }

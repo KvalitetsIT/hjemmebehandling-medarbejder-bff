@@ -1,15 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
-import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.CreatePlanDefinitionRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.api.PatchPlanDefinitionRequest;
 import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -90,7 +88,7 @@ public class PlanDefinitionControllerTest {
     }
 
     @Test
-    public void createPlanDefinition__success_201() {
+    public void createPlanDefinition_success_201() {
         // Arrange
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
@@ -140,5 +138,29 @@ public class PlanDefinitionControllerTest {
 
         // Assert
         assertThrows(ForbiddenException.class, () -> subject.createPlanDefinition(request));
+    }
+
+    @Test
+    public void updatePlanDefinition_throwsUnsupportedOperationException() {
+        // Arrange
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+
+        // Act
+
+        // Assert
+        assertThrows(UnsupportedOperationException.class, () -> subject.updatePlanDefinition(planDefinitionDto));
+    }
+
+    @Test
+    public void patchPlanDefinition_success() throws Exception {
+        // Arrange
+        PatchPlanDefinitionRequest request = new PatchPlanDefinitionRequest();
+        //Mockito.when(planDefinitionService.updatePlanDefinition("plandefinition-1", Mockito.anyString(), Mockito.anyList(), Mockito.anyList())).thenReturn(new PlanDefinitionModel());
+
+        // Act
+        ResponseEntity<Void> result = subject.patchPlanDefinition("plandefinition-1", request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }
