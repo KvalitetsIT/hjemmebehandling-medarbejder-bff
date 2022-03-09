@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +103,8 @@ public class QuestionnaireController extends BaseController {
     })
     @PostMapping(value = "/v1/questionnaire", consumes = { "application/json" })
     public ResponseEntity<Void> createQuestionnaire(@RequestBody CreateQuestionnaireRequest request) {
+        validateQuestions(request.getQuestionnaire().getQuestions());
+
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
         String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
 
@@ -116,9 +119,8 @@ public class QuestionnaireController extends BaseController {
 
     @PatchMapping(value = "/v1/questionnaire/{id}")
     public ResponseEntity<Void> patchQuestionnaire(@PathVariable String id, @RequestBody PatchQuestionnaireRequest request) {
-        if(request.getQuestions() == null || request.getQuestions().isEmpty()) {
-            throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
-        }
+
+        validateQuestions(request.getQuestions());
 
         try {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
@@ -138,6 +140,20 @@ public class QuestionnaireController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    private void validateQuestions(List<QuestionDto> questions){
+        if(questions == null || questions.isEmpty()) {
+            throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
+        }
+
+        //All questions should have a unique ID
+        List<String> ids = new ArrayList<String>();
+        for (var question : questions){
+            var idIsInList = ids.contains(question.getLinkId());
+            if(idIsInList)
+                throw new BadRequestException(ErrorDetails.QUESTIONS_ID_IS_NOT_UNIQUE);
+            ids.add(question.getLinkId());
+        }
+    }
     private Stream<QuestionDto> collectionToStream(Collection<QuestionDto> collection) {
         return Optional.ofNullable(collection)
             .map(Collection::stream)
