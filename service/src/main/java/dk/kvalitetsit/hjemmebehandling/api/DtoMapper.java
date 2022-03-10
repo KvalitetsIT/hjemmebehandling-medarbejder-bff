@@ -357,6 +357,7 @@ public class DtoMapper {
 
         questionModel.setLinkId(questionDto.getLinkId());
         questionModel.setText(questionDto.getText());
+        questionModel.setAbbreviation(questionDto.getAbbreviation());
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());

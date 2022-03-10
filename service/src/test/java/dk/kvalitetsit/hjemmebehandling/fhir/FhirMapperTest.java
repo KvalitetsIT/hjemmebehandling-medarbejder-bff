@@ -413,6 +413,39 @@ public class FhirMapperTest {
 
         assertEquals(1, result.getCallToActions().size());
         assertTrue(result.getCallToActions().stream().allMatch(q -> q.getQuestionType().equals(QuestionType.DISPLAY)));
+    }
+
+    @Test
+    public void mapQuestion_abbreviation() {
+        String abbreviation = "dagsform";
+        Questionnaire.QuestionnaireItemComponent question1 = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?", abbreviation);
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(question1));
+
+        // Act
+        QuestionnaireModel result = subject.mapQuestionnaire(questionnaire);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(abbreviation, result.getQuestions().get(0).getAbbreviation());
+
+    }
+
+    @Test
+    public void mapQuestionModel_abbreviation() {
+        String abbreviation = "dagsform";
+        QuestionModel questionModel = buildQuestionModel(QuestionType.BOOLEAN, "har du det godt?", abbreviation);
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        questionnaireModel.setQuestions(List.of(questionModel));
+
+//        Questionnaire.QuestionnaireItemComponent question1 = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?", abbreviation);
+//        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(question1));
+
+        // Act
+        Questionnaire result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(1, result.getItem().size());
+        assertTrue(result.getItemFirstRep().hasExtension(Systems.QUESTION_ABBREVIATION));
 
     }
 
@@ -513,7 +546,7 @@ public class FhirMapperTest {
     }
 
     private QuestionModel buildCallToAction() {
-        QuestionModel callToAction = buildQuestionModel("call to action text", QuestionType.DISPLAY);
+        QuestionModel callToAction = buildQuestionModel(QuestionType.DISPLAY, "call to action text");
 
         return callToAction;
     }
@@ -710,15 +743,22 @@ public class FhirMapperTest {
     }
 
     private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType) {
-        return buildQuestionItem(linkId, itemType, null);
+        return buildQuestionItem(linkId, itemType, null, null);
     }
 
     private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType, String text) {
+        return buildQuestionItem(linkId, itemType, text, null);
+    }
+
+    private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType, String text, String abbreviation) {
         var item = new Questionnaire.QuestionnaireItemComponent();
 
         item.setType(itemType);
         item.setLinkId(linkId);
         item.setText(text);
+        if (abbreviation != null) {
+            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(abbreviation));
+        }
 
         return item;
     }
@@ -754,14 +794,17 @@ public class FhirMapperTest {
     }
 
     private QuestionModel buildQuestionModel() {
-        QuestionModel questionModel = buildQuestionModel("Hvordan har du det?", QuestionType.BOOLEAN);
-
-        return questionModel;
+        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", "dagsform");
     }
 
-    private QuestionModel buildQuestionModel(String text, QuestionType type) {
+    private QuestionModel buildQuestionModel(QuestionType type, String text) {
+        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?",null);
+    }
+
+    private QuestionModel buildQuestionModel(QuestionType type, String text, String abbreviation) {
         QuestionModel questionModel = new QuestionModel();
         questionModel.setText(text);
+        questionModel.setAbbreviation(abbreviation);
         questionModel.setQuestionType(type);
 
         return questionModel;

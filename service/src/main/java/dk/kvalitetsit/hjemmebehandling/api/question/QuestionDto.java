@@ -9,6 +9,7 @@ import java.util.List;
 public class QuestionDto {
     private String linkId;
     private String text;
+    private String abbreviation;
     private boolean required;
     private QuestionType questionType;
     private List<String> options;
@@ -29,6 +30,14 @@ public class QuestionDto {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getAbbreviation() {
+        return abbreviation;
+    }
+
+    public void setAbbreviation(String abbreviation) {
+        this.abbreviation = abbreviation;
     }
 
     public boolean getRequired() {

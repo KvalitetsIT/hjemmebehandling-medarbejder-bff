@@ -138,6 +138,14 @@ public class ExtensionMapper {
         return extractEnumFromExtensions(extensions, Systems.TRIAGING_CATEGORY, TriagingCategory.class);
     }
 
+    public static Extension mapQuestionAbbreviation(String abbreviation) {
+        return buildStringExtension(Systems.QUESTION_ABBREVIATION, abbreviation);
+    }
+
+    public static String extractQuestionAbbreviation(List<Extension> extensions) {
+        return extractStringFromExtensions(extensions, Systems.QUESTION_ABBREVIATION);
+    }
+
     private static Extension buildBooleanExtension(String url, boolean value) {
         return new Extension(url, new BooleanType(value));
     }

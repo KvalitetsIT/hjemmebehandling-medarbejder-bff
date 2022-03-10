@@ -23,4 +23,6 @@ public class Systems {
 
     public static final String CUSTOM_USER_ID = "http://hjemmebehandling.rm.dk/custom-user-id";
     public static final String CUSTOM_USER_NAME = "http://hjemmebehandling.rm.dk/custom-user-name";
+
+    public static final String QUESTION_ABBREVIATION = "http://hjemmebehandling.rm.dk/question-abbreviation";
 }

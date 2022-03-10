@@ -621,6 +621,9 @@ public class FhirMapper {
 
         item.setLinkId(question.getLinkId());
         item.setText(question.getText());
+        if (question.getAbbreviation() != null) {
+            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
+        }
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
             item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
@@ -637,6 +640,7 @@ public class FhirMapper {
 
         question.setLinkId(item.getLinkId());
         question.setText(item.getText());
+        question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
             question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );

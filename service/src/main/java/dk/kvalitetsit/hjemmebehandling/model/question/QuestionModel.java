@@ -11,6 +11,7 @@ import java.util.List;
 public class QuestionModel {
     private String linkId;
     private String text;
+    private String abbreviation;
     private boolean required;
     private QuestionType questionType;
     private MeasurementTypeModel code;
@@ -32,6 +33,14 @@ public class QuestionModel {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getAbbreviation() {
+        return abbreviation;
+    }
+
+    public void setAbbreviation(String abbreviation) {
+        this.abbreviation = abbreviation;
     }
 
     public boolean isRequired() {
