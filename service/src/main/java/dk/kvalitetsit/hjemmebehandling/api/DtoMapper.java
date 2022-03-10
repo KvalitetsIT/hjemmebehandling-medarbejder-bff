@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
@@ -108,8 +109,8 @@ public class DtoMapper {
             throw new IllegalArgumentException("Weekdays must be non-null!");
         }
         frequencyModel.setWeekdays(frequencyDto.getWeekdays());
-        if(frequencyDto.getTimeOfDay() == null) {
-            throw new IllegalArgumentException("TimeOfDay must be non-null!");
+        if(frequencyDto.getTimeOfDay() == null || Objects.equals(frequencyDto.getTimeOfDay(), "")) {
+            throw new IllegalArgumentException("TimeOfDay must not be null or empty string!");
         }
         frequencyModel.setTimeOfDay(LocalTime.parse(frequencyDto.getTimeOfDay()));
 
