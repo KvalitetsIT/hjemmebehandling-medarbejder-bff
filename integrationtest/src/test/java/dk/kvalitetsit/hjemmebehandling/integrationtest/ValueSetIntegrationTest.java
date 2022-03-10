@@ -9,6 +9,7 @@ import org.openapitools.client.model.MeasurementTypeDto;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ValueSetIntegrationTest extends AbstractIntegrationTest {
     private ValueSetApi subject;
@@ -29,5 +30,6 @@ public class ValueSetIntegrationTest extends AbstractIntegrationTest {
 
         // Assert
         assertEquals(200, response.getStatusCode());
+        assertTrue(!response.getData().isEmpty());
     }
 }
