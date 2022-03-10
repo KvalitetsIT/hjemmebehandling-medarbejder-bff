@@ -73,7 +73,7 @@ public class FhirClient {
         if(cpr.isPresent()){
             Optional<Patient> patient = lookupPatientByCpr(cpr.get());
             if(!patient.isPresent()) {
-                throw new IllegalStateException(String.format("Could not look up patient by cpr %s!", cpr));
+                return FhirLookupResult.fromResources();
             }
             String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
             var patientCriterion = CarePlan.PATIENT.hasId(patientId);
