@@ -285,7 +285,8 @@ public class FhirMapper {
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
         planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()));
-        planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
+        if(planDefinition.getDate() != null)
+            planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
 
         // Map actions to questionnaires, along with their frequencies and thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));

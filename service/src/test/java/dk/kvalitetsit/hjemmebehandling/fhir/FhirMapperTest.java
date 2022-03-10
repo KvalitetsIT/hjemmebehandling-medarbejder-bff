@@ -159,6 +159,30 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapPlandefinition_noCreatedDate_DontThrowError() {
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
+
+        // Act
+        planDefinition.setDate(null);
+        PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
+
+        // Assert
+        assertEquals(1, result.getQuestionnaires().size());
+
+        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().size());
+    }
+
+
+
+    @Test
     public void mapPlandefinition() {
         // Arrange
         //CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
