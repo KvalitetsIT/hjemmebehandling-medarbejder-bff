@@ -120,7 +120,8 @@ public class DtoMapper {
         FrequencyDto frequencyDto = new FrequencyDto();
 
         frequencyDto.setWeekdays(frequencyModel.getWeekdays());
-        frequencyDto.setTimeOfDay(frequencyModel.getTimeOfDay().toString());
+        if(frequencyModel.getTimeOfDay() != null)
+            frequencyDto.setTimeOfDay(frequencyModel.getTimeOfDay().toString());
 
         return frequencyDto;
     }

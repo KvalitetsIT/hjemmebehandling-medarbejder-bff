@@ -177,7 +177,13 @@ public class DtoMapperTest {
         assertEquals(1, result.getQuestions().get(0).getEnableWhens().size());
     }
 
+    @Test
+    public void mapFrequencyModel_allValuesAreNull_noErrors(){
+        var toMap = new FrequencyModel();
+        var result = subject.mapFrequencyModel(toMap);
+        assertNotNull(result);
 
+    }
 
     @Test
     public void mapMeasurementTypeModel_success() {
