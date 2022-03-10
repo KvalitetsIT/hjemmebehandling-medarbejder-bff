@@ -454,7 +454,8 @@ public class FhirMapper {
         if(timing.getRepeat() != null) {
             Timing.TimingRepeatComponent repeat = timing.getRepeat();
             frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).collect(Collectors.toList()));
-            frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
+            if(!repeat.getTimeOfDay().isEmpty())
+                frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
         }
 
         return frequencyModel;

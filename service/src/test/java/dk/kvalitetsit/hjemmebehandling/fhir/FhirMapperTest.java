@@ -7,11 +7,13 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.hamcrest.core.IsNull;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.internal.matchers.NotNull;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -180,7 +182,12 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().get(0).getThresholds().size());
     }
 
-
+    @Test
+    public void mapTiming_allValuesAreNull_noErrors(){
+        var timingToMap = new Timing();
+        var result = subject.mapTiming(timingToMap);
+        assertNotNull(result);
+    }
 
     @Test
     public void mapPlandefinition() {
