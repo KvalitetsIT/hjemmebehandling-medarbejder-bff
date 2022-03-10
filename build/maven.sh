@@ -17,7 +17,7 @@ if [ -d $SRC_FOLDER ]; then
   docker run -d --volumes-from maven-builder -e hapi.fhir.allow_external_references=true -e hapi.fhir.expunge_enabled=true -e hapi.fhir.reuse_cached_search_results_millis=1000 --network rim --name hapi-server hapiproject/hapi:v5.6.0
 
   # Initialize the server with data
-  docker run --network rim -e init_test_data=true kvalitetsit/hjemmebehandling-data-initializer:latest
+  docker run --network rim -e init_test_data=true kvalitetsit/hjemmebehandling-data-initializer:88d0e27
 
   # Start the bff service
 
