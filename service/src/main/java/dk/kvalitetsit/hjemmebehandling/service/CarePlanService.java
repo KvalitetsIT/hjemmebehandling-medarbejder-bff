@@ -100,18 +100,16 @@ public class CarePlanService extends AccessValidatingService {
 
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
-            if(!patient.isPresent()) {
-            	// create customLoginUser if the patient do not exist. Done if an apiurl is set.
-            	if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl)) {
-            		createCustomLogin(carePlan.getPatient());
-            	}
-            	// create patient and careplan
-            	String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
-                return careplanId;
-            }
-            else {
+            if(patient.isPresent())
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
-            }
+
+            // create customLoginUser if the patient do not exist. Done if an apiurl is set.
+            if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl))
+                createCustomLogin(carePlan.getPatient());
+
+            // create patient and careplan
+            String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
+            return careplanId;
         }
         catch(Exception e) {
             throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
