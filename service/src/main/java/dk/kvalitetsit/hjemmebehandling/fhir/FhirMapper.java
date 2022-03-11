@@ -625,7 +625,9 @@ public class FhirMapper {
         if (question.getAbbreviation() != null) {
             item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
         }
-        item.addItem( mapQuestionHelperText(question.getHelperText()) );
+        if (question.getHelperText() != null) {
+            item.addItem(mapQuestionHelperText(question.getHelperText()));
+        }
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
             item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
