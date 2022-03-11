@@ -22,7 +22,7 @@ public abstract class BaseController {
 
     private RuntimeException toStatusCodeException(ServiceException e) {
         switch(e.getErrorKind()) {
-            case GATEWAY_ERROR:
+            case BAD_GATEWAY:
             case BAD_REQUEST:
                 return fromErrorDetails(e.getErrorDetails());
             case INTERNAL_SERVER_ERROR:

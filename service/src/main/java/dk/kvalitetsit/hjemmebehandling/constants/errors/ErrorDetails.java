@@ -18,6 +18,7 @@ public enum ErrorDetails {
     PLANDEFINITION_DOES_NOT_EXIST("Den angivne patientgruppe eksisterer ikke.", 22),
     QUESTIONS_ID_IS_NOT_UNIQUE("Alle spørgsmål har ikke en unik forkortelse", 23),
     CUSTOMLOGIN_UNKNOWN_ERROR("Der opstod et ukendt problem ved oprettelse af login",24),
+    CPRSERVICE_UNKOWN_ERROR("Der opstod et ukendt problem i forsøget på at hente person udfra cpr-nummer",25),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 
