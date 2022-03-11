@@ -176,11 +176,25 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
 
-        //check that both thresholds are mapped on to the wrapper
-        assertEquals(3, result.getQuestionnaires().get(0).getThresholds().size());
-        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
-        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
+        var firstThreshold = result.getQuestionnaires().get(0).getThresholds().get(0);
+
+        assertNotNull(firstThreshold);
+        assertEquals("1",firstThreshold.getQuestionnaireItemLinkId());
+        assertEquals(null,firstThreshold.getValueQuantityHigh());
+        assertEquals(null,firstThreshold.getValueQuantityLow());
+        assertEquals(ThresholdType.NORMAL,firstThreshold.getType());
+        assertEquals(Boolean.TRUE,firstThreshold.getValueBoolean());
+
+        var secondThreshold = result.getQuestionnaires().get(0).getThresholds().get(1);
+        assertNotNull(secondThreshold);
+        assertEquals("1",secondThreshold.getQuestionnaireItemLinkId());
+        assertEquals(null,secondThreshold.getValueBoolean());
+        assertEquals(5.0,secondThreshold.getValueQuantityHigh());
+        assertEquals(2.0,secondThreshold.getValueQuantityLow());
+        assertEquals(ThresholdType.NORMAL,secondThreshold.getType());
+
     }
 
     private ThresholdModel buildThresholdModel(String linkId, ThresholdType type, Boolean valueBoolean) {
@@ -799,11 +813,18 @@ public class FhirMapperTest {
         action.setDefinition(new CanonicalType(questionnaireId));
         action.getTimingTiming().getRepeat().addDayOfWeek(Timing.DayOfWeek.MON).addTimeOfDay("11:00");
 
-        ThresholdModel threshold = new ThresholdModel();
-        threshold.setQuestionnaireItemLinkId("1");
-        threshold.setType(ThresholdType.NORMAL);
-        threshold.setValueBoolean(true);
-        action.addExtension(ExtensionMapper.mapThreshold(threshold));
+        ThresholdModel booleanThreshold = new ThresholdModel();
+        booleanThreshold.setQuestionnaireItemLinkId("1");
+        booleanThreshold.setType(ThresholdType.NORMAL);
+        booleanThreshold.setValueBoolean(true);
+        action.addExtension(ExtensionMapper.mapThreshold(booleanThreshold));
+
+        ThresholdModel numberedThreshold = new ThresholdModel();
+        numberedThreshold.setQuestionnaireItemLinkId("1");
+        numberedThreshold.setType(ThresholdType.NORMAL);
+        numberedThreshold.setValueQuantityHigh(5.0);
+        numberedThreshold.setValueQuantityLow(2.0);
+        action.addExtension(ExtensionMapper.mapThreshold(numberedThreshold));
 
         planDefinition.addAction(action);
 
