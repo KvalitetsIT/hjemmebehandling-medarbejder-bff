@@ -111,18 +111,26 @@ public class CarePlanService extends AccessValidatingService {
             String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
             return careplanId;
         }
+        catch(ServiceException e){
+            throw e;
+        }
         catch(Exception e) {
             throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
     
-    private void createCustomLogin(PatientModel patientModel) throws JsonMappingException, JsonProcessingException {
-    	Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
-    	if(customUserResponseDto.isPresent()) {
-    		String customerUserLinkId = customUserResponseDto.get().getId();
-    		patientModel.setCustomUserId(customerUserLinkId);
-    		patientModel.setCustomUserName(customUserResponseDto.get().getUsername());
-    	}
+    private void createCustomLogin(PatientModel patientModel) throws ServiceException {
+        try{
+            Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
+            if(customUserResponseDto.isPresent()) {
+                String customerUserLinkId = customUserResponseDto.get().getId();
+                patientModel.setCustomUserId(customerUserLinkId);
+                patientModel.setCustomUserName(customUserResponseDto.get().getUsername());
+            }
+        } catch(Exception e){
+            throw new ServiceException(String.format("Could not create customlogin for patient with id %s!", patientModel.getId()), ErrorKind.GATEWAY_ERROR, ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR);
+        }
+
     }
 
     public CarePlanModel completeCarePlan(String carePlanId) throws ServiceException {
