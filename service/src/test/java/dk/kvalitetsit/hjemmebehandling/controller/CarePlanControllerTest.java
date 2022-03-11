@@ -4,10 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
 import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
@@ -161,6 +158,22 @@ public class CarePlanControllerTest {
         assertThrows(InternalServerErrorException.class, () -> subject.createCarePlan(request));
     }
 
+    @Test
+    public void createCarePlan_failure_502() throws Exception {
+        // Arrange
+        CreateCarePlanRequest request = new CreateCarePlanRequest();
+        request.setCarePlan(new CarePlanDto());
+
+        CarePlanModel carePlanModel = new CarePlanModel();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
+
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.GATEWAY_ERROR, ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR));
+
+        // Act
+
+        // Assert
+        assertThrows(BadGatewayException.class, () -> subject.createCarePlan(request));
+    }
     @Test
     public void getCarePlanById_carePlanPresent_200() throws Exception {
         // Arrange

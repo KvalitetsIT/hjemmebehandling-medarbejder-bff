@@ -2,10 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -19,6 +16,12 @@ public class ExceptionHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorDto badRequestException(BadRequestException exception, HttpServletRequest request) {
         return handleException(HttpStatus.BAD_REQUEST, request, exception.getErrorDetails());
+    }
+
+    @ExceptionHandler(BadGatewayException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErrorDto badGatewayException(BadGatewayException exception, HttpServletRequest request) {
+        return handleException(HttpStatus.BAD_GATEWAY, request, exception.getErrorDetails());
     }
 
     @ExceptionHandler(ForbiddenException.class)
