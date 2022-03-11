@@ -21,6 +21,12 @@ public class ExceptionHandlingControllerAdvice {
         return handleException(HttpStatus.BAD_REQUEST, request, exception.getErrorDetails());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErrorDto badGatewayException(BadRequestException exception, HttpServletRequest request) {
+        return handleException(HttpStatus.BAD_GATEWAY, request, exception.getErrorDetails());
+    }
+
     @ExceptionHandler(ForbiddenException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorDto forbiddenException(ForbiddenException exception, HttpServletRequest request) {
