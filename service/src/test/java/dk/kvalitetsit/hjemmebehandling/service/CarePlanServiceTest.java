@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
@@ -44,12 +46,20 @@ import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class CarePlanServiceTest {
+
+
     @InjectMocks
     private CarePlanService subject;
 
@@ -101,6 +111,40 @@ public class CarePlanServiceTest {
 
         // Assert
         Mockito.verify(fhirClient).saveCarePlan(carePlan);
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws ServiceException, AccessValidationException, JsonProcessingException {
+        ReflectionTestUtils.setField(subject, "patientidpApiUrl", "http://foo");
+        Mockito.when(customUserService.createUser(any())).thenThrow(JsonProcessingException.class);
+
+        try{
+            // Arrange
+            CarePlanModel carePlanModel = buildCarePlanModel(CPR_1);
+
+            CarePlan carePlan = new CarePlan();
+            Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
+
+            Patient patient = new Patient();
+            patient.setId(PATIENT_ID_1);
+            Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
+
+            FhirLookupResult lookupResult = FhirLookupResult.fromResources();
+            boolean onlyActiveCarePlans = true;
+            Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(lookupResult);
+
+            Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
+
+            Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
+
+            // Act
+            String result = subject.createCarePlan(carePlanModel);
+            fail("No error was thrown");
+        } catch (ServiceException e){
+            assertEquals(ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR,e.getErrorDetails());
+            assertEquals(ErrorKind.GATEWAY_ERROR,e.getErrorKind());
+        }
     }
 
     @Test
