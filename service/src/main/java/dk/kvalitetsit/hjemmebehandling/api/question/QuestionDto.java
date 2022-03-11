@@ -10,6 +10,7 @@ public class QuestionDto {
     private String linkId;
     private String text;
     private String abbreviation;
+    private String helperText;
     private boolean required;
     private QuestionType questionType;
     private List<String> options;
@@ -38,6 +39,14 @@ public class QuestionDto {
 
     public void setAbbreviation(String abbreviation) {
         this.abbreviation = abbreviation;
+    }
+
+    public String getHelperText() {
+        return helperText;
+    }
+
+    public void setHelperText(String helperText) {
+        this.helperText = helperText;
     }
 
     public boolean getRequired() {

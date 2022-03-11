@@ -450,6 +450,39 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapQuestion_helperText() {
+        String helperText = "help me";
+        Questionnaire.QuestionnaireItemComponent question1 = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?");
+        question1.addItem( buildQuestionHelperTextItem(helperText) );
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(question1));
+
+        // Act
+        QuestionnaireModel result = subject.mapQuestionnaire(questionnaire);
+
+        // Assert
+        assertEquals(1, result.getQuestions().size());
+        assertEquals(helperText, result.getQuestions().get(0).getHelperText());
+    }
+
+    @Test
+    public void mapQuestionModel_helperText() {
+        String helperText = "help me";
+        QuestionModel questionModel = buildQuestionModel(QuestionType.BOOLEAN, "har du det godt?");
+        questionModel.setHelperText(helperText);
+
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        questionnaireModel.setQuestions(List.of(questionModel));
+
+        // Act
+        Questionnaire result = subject.mapQuestionnaireModel(questionnaireModel);
+
+        // Assert
+        assertEquals(1, result.getItem().size());
+        assertEquals(Questionnaire.QuestionnaireItemType.DISPLAY, result.getItemFirstRep().getItemFirstRep().getType());
+        assertEquals(helperText, result.getItemFirstRep().getItemFirstRep().getText());
+    }
+
+    @Test
     public void mapQuestionnaire_question_withMeasurementType() {
         Questionnaire.QuestionnaireItemComponent question = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.QUANTITY, "Hvad er din temperatur?");
         Coding temperature = buildTemperatureCode();
@@ -762,6 +795,17 @@ public class FhirMapperTest {
 
         return item;
     }
+
+    private Questionnaire.QuestionnaireItemComponent buildQuestionHelperTextItem(String text) {
+        var item = new Questionnaire.QuestionnaireItemComponent();
+
+        item.setType(Questionnaire.QuestionnaireItemType.DISPLAY);
+        item.setLinkId("help");
+        item.setText(text);
+
+        return item;
+    }
+
 
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();

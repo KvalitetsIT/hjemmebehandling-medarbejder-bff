@@ -359,6 +359,7 @@ public class DtoMapper {
         questionModel.setLinkId(questionDto.getLinkId());
         questionModel.setText(questionDto.getText());
         questionModel.setAbbreviation(questionDto.getAbbreviation());
+        questionModel.setHelperText(questionDto.getHelperText());
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());
@@ -376,6 +377,7 @@ public class DtoMapper {
         questionDto.setLinkId(questionModel.getLinkId());
         questionDto.setText(questionModel.getText());
         questionDto.setAbbreviation(questionModel.getAbbreviation());
+        questionDto.setHelperText(questionModel.getHelperText());
         questionDto.setRequired(questionModel.isRequired());
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());

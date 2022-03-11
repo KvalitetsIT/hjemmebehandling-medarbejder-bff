@@ -25,6 +25,7 @@ import org.hl7.fhir.r4.model.Enumeration;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Organization;
@@ -624,6 +625,7 @@ public class FhirMapper {
         if (question.getAbbreviation() != null) {
             item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
         }
+        item.addItem( mapQuestionHelperText(question.getHelperText()) );
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
             item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
@@ -641,6 +643,7 @@ public class FhirMapper {
         question.setLinkId(item.getLinkId());
         question.setText(item.getText());
         question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
+        question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
             question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
@@ -656,6 +659,25 @@ public class FhirMapper {
         question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
 
         return question;
+    }
+
+    private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {
+        return item.stream()
+            .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
+            .map(i -> i.getText())
+            .findFirst()
+            .orElse(null)
+            ;
+
+    }
+
+    private Questionnaire.QuestionnaireItemComponent mapQuestionHelperText(String text) {
+        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
+        item.setLinkId(IdType.newRandomUuid().getValueAsString())
+            .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
+            .setText(text);
+
+        return item;
     }
 
     private List<Questionnaire.QuestionnaireItemComponent> mapQuestionnaireCallToActions(List<QuestionModel> callToActions) {

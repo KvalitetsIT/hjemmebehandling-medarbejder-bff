@@ -12,6 +12,7 @@ public class QuestionModel {
     private String linkId;
     private String text;
     private String abbreviation;
+    private String helperText;
     private boolean required;
     private QuestionType questionType;
     private MeasurementTypeModel code;
@@ -41,6 +42,14 @@ public class QuestionModel {
 
     public void setAbbreviation(String abbreviation) {
         this.abbreviation = abbreviation;
+    }
+
+    public String getHelperText() {
+        return helperText;
+    }
+
+    public void setHelperText(String helperText) {
+        this.helperText = helperText;
     }
 
     public boolean isRequired() {
