@@ -1,6 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,13 +37,16 @@ public class PersonController extends BaseController {
     }
 
     @GetMapping(value = "/v1/person")
-    public @ResponseBody PersonDto getPerson(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
+    public @ResponseBody PersonDto getPerson(@RequestParam("cpr") String cpr) throws JsonProcessingException {
         logger.info("Getting person from cpr service");
-
-        PersonModel personModel = personService.getPerson(cpr);
-        auditLoggingService.log("GET /v1/person", personModel);
-
-        return dtoMapper.mapPersonModel(personModel);
+        try {
+            PersonModel personModel = personService.getPerson(cpr);
+            auditLoggingService.log("GET /v1/person", personModel);
+            return dtoMapper.mapPersonModel(personModel);
+        } catch(ServiceException e) {
+            logger.error("Error fetching person", e);
+            throw toStatusCodeException(e);
+        }
     }
 
 }

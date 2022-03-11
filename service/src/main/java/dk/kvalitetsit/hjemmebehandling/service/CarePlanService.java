@@ -16,9 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
@@ -128,7 +125,7 @@ public class CarePlanService extends AccessValidatingService {
                 patientModel.setCustomUserName(customUserResponseDto.get().getUsername());
             }
         } catch(Exception e){
-            throw new ServiceException(String.format("Could not create customlogin for patient with id %s!", patientModel.getId()), ErrorKind.GATEWAY_ERROR, ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR);
+            throw new ServiceException(String.format("Could not create customlogin for patient with id %s!", patientModel.getId()), ErrorKind.BAD_GATEWAY, ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR);
         }
 
     }

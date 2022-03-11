@@ -1,5 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +31,7 @@ public class PersonService {
     }
 
     // http://localhost:8080/api/v1/person?cpr=2512489996
-    public PersonModel getPerson(String cpr) throws JsonMappingException, JsonProcessingException {
+    public PersonModel getPerson(String cpr) throws JsonProcessingException, ServiceException {
     	PersonModel person = null;
     	try {
         	String result = restTemplate.getForObject(cprUrl+cpr, String.class);
@@ -38,6 +41,7 @@ public class PersonService {
         	if (HttpStatus.NOT_FOUND.equals(httpClientErrorException.getStatusCode())) {
         		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "entity not found");
         	}
+			throw new ServiceException(String.format("Could not fetch person from cpr-service"), ErrorKind.BAD_GATEWAY, ErrorDetails.CPRSERVICE_UNKOWN_ERROR);
         }
         return person;
     }
