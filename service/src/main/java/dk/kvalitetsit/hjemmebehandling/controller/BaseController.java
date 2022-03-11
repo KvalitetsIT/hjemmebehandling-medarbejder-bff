@@ -1,10 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
@@ -25,6 +22,7 @@ public abstract class BaseController {
 
     private RuntimeException toStatusCodeException(ServiceException e) {
         switch(e.getErrorKind()) {
+            case GATEWAY_ERROR:
             case BAD_REQUEST:
                 return fromErrorDetails(e.getErrorDetails());
             case INTERNAL_SERVER_ERROR:
@@ -42,6 +40,7 @@ public abstract class BaseController {
             case PARAMETERS_INCOMPLETE:
             case CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES:
                 throw new BadRequestException(e);
+
             case CAREPLAN_DOES_NOT_EXIST:
             case PATIENT_DOES_NOT_EXIST:
             case QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST:
@@ -49,6 +48,8 @@ public abstract class BaseController {
                 throw new ResourceNotFoundException(e);
             case ACCESS_VIOLATION:
                 throw new ForbiddenException(e);
+            case CUSTOMLOGIN_UNKNOWN_ERROR:
+                throw new BadGatewayException(e);
             case INTERNAL_SERVER_ERROR:
             default:
                 return new InternalServerErrorException(e);
