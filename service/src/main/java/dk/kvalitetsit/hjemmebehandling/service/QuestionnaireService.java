@@ -70,8 +70,12 @@ public class QuestionnaireService extends AccessValidatingService {
         questionnaire.setStatus(QuestionnaireStatus.DRAFT);
 
         // add unique id to question(s) and call-to-action.
-        questionnaire.getQuestions().forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
-        questionnaire.getCallToActions().forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        if (questionnaire.getQuestions() != null) {
+            questionnaire.getQuestions().forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        }
+        if (questionnaire.getCallToActions() != null) {
+            questionnaire.getCallToActions().forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        }
     }
 
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) throws ServiceException, AccessValidationException {
