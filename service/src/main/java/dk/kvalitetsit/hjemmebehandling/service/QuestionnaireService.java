@@ -12,6 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Enumerations;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,10 @@ public class QuestionnaireService extends AccessValidatingService {
         questionnaire.setId(null);
 
         questionnaire.setStatus(QuestionnaireStatus.DRAFT);
+
+        // add unique id to question(s) and call-to-action.
+        questionnaire.getQuestions().forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        questionnaire.getCallToActions().forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
     }
 
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) throws ServiceException, AccessValidationException {
@@ -93,6 +98,10 @@ public class QuestionnaireService extends AccessValidatingService {
     }
 
     private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) {
+        // make sure all question(s) and call-to-action has a unique id
+        updatedQuestions.stream().filter(q -> q.getLinkId()==null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        updatedCallToActions.stream().filter(cta -> cta.getLinkId()==null).forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+
         questionnaireModel.setTitle(updatedTitle);
         questionnaireModel.setDescription(updatedDescription);
         questionnaireModel.setStatus(QuestionnaireStatus.valueOf(updatedStatus));

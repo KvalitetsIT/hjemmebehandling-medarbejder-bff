@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
@@ -111,6 +112,30 @@ public class QuestionnaireServiceTest {
     }
 
     @Test
+    public void createQuestionnaire_questionLinkId_isSetToRandomUuid() throws Exception {
+        // Arrange
+        String linkId = "This should be ignored, and set by the system to a new random uuid with prefix 'urn:uuid'";
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
+        questionnaireModel.setQuestions( List.of( buildQuestionModel(linkId) ));
+        questionnaireModel.setCallToActions( List.of( buildQuestionModel(linkId) ));
+
+        Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
+
+        // Act
+        String result = subject.createQuestionnaire(questionnaireModel);
+
+        // Assert
+        assertEquals("1", result);
+        assertEquals(1, questionnaireModel.getQuestions().size());
+        assertNotEquals(linkId, questionnaireModel.getQuestions().get(0).getLinkId());
+        assertTrue(questionnaireModel.getQuestions().get(0).getLinkId().startsWith("urn:uuid"));
+
+        assertEquals(1, questionnaireModel.getCallToActions().size());
+        assertNotEquals(linkId, questionnaireModel.getCallToActions().get(0).getLinkId());
+        assertTrue(questionnaireModel.getCallToActions().get(0).getLinkId().startsWith("urn:uuid"));
+    }
+
+    @Test
     public void updateQuestionnaire_success() throws Exception {
         // Arrange
         String newTitle = "new title";
@@ -137,6 +162,34 @@ public class QuestionnaireServiceTest {
         assertEquals(newQuestions.get(0), questionnaireModel.getQuestions().get(0));
         assertEquals(newCallToActions.size(), questionnaireModel.getCallToActions().size());
         assertEquals(newCallToActions.get(0), questionnaireModel.getCallToActions().get(0));
+    }
+
+    @Test
+    public void updateQuestionnaire_questionLinkId_isSetToRandomUuid() throws Exception {
+        // Arrange
+        String linkId = null; // The system will generate a new random uuid with prefix 'urn:uuid' as linkId";
+        String newStatus = "ACTIVE";
+        List<QuestionModel> newQuestions = List.of( buildQuestionModel(linkId) );
+        List<QuestionModel> newCallToActions = List.of( buildQuestionModel(linkId) );
+
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+
+        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
+
+        // Act
+        subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToActions);
+
+        // Assert
+        assertEquals(1, questionnaireModel.getQuestions().size());
+        assertNotNull(questionnaireModel.getQuestions().get(0).getLinkId());
+        assertTrue(questionnaireModel.getQuestions().get(0).getLinkId().startsWith("urn:uuid"));
+
+        assertEquals(1, questionnaireModel.getCallToActions().size());
+        assertNotNull(questionnaireModel.getCallToActions().get(0).getLinkId());
+        assertTrue(questionnaireModel.getCallToActions().get(0).getLinkId().startsWith("urn:uuid"));
     }
 
     @Test
@@ -220,5 +273,13 @@ public class QuestionnaireServiceTest {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         return questionnaireModel;
+    }
+
+    private QuestionModel buildQuestionModel(String linkId) {
+        QuestionModel questionModel = new QuestionModel();
+
+        questionModel.setLinkId(linkId);
+
+        return questionModel;
     }
 }
