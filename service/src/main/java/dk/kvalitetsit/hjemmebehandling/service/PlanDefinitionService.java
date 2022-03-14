@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -150,20 +152,25 @@ public class PlanDefinitionService extends AccessValidatingService {
 
         // update thresholds
         if (thresholds != null && !thresholds.isEmpty()) {
-            // if no questionnaires is beeing updated, the threshold may be present already
-            for (ThresholdModel thresholdModel : thresholds) {
-                // remove it if it exists
-                planDefinitionModel.getQuestionnaires().forEach(qw -> {
-                    qw.getThresholds().removeIf(t -> t.getQuestionnaireItemLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
-                });
+            // if no questionnaires is beeing updated, the threshold may be present already, remove it if it exists
+            Set<String> linkIdUpdates = thresholds.stream().map(t -> t.getQuestionnaireItemLinkId()).collect(Collectors.toSet());
+            planDefinitionModel.getQuestionnaires().forEach(qw -> {
+                qw.getThresholds().removeIf(t -> linkIdUpdates.contains(t.getQuestionnaireItemLinkId()));
+            });
 
-                // add the new threshold to the correct quesionnaire(s) containing the question (by linkId)
-                planDefinitionModel.getQuestionnaires().stream()
+            // add updated thresholds
+            for (ThresholdModel thresholdModel : thresholds) {
+                // add the new threshold to the correct quesionnaire containing the question (by linkId)
+                Optional<QuestionnaireWrapperModel> questionnaireWrapperModel = planDefinitionModel.getQuestionnaires().stream()
                     .filter(qw -> {
                         return qw.getQuestionnaire().getQuestions().stream()
                             .anyMatch(q -> q.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
                     })
-                    .forEach(qw -> qw.getThresholds().add(thresholdModel));
+                    .findFirst();
+
+                if (questionnaireWrapperModel.isPresent()) {
+                    questionnaireWrapperModel.get().getThresholds().add(thresholdModel);
+                }
             }
 
         }

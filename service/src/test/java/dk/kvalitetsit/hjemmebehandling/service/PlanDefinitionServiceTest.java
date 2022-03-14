@@ -15,6 +15,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.junit.jupiter.api.Test;
@@ -157,9 +158,10 @@ public class PlanDefinitionServiceTest {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
         QuestionnaireModel questionnaireModel2 = buildQuestionnaireModel(QUESTIONNAIRE_ID_2);
-        QuestionModel temperatureQuestion = buildMeasurementQuestionModel();
-        questionnaireModel1.getQuestions().add(temperatureQuestion);
-        questionnaireModel2.getQuestions().add(temperatureQuestion);
+        QuestionModel temperatureQuestion1 = buildMeasurementQuestionModel();
+        QuestionModel temperatureQuestion2 = buildMeasurementQuestionModel();
+        questionnaireModel1.getQuestions().add(temperatureQuestion1);
+        questionnaireModel2.getQuestions().add(temperatureQuestion2);
 
         Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire1, questionnaire2));
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireModel1);
@@ -169,10 +171,11 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
-        ThresholdModel thresholdModel = buildThresholdModel(temperatureQuestion.getLinkId());
+        ThresholdModel thresholdModel1 = buildThresholdModel(temperatureQuestion1.getLinkId());
+        ThresholdModel thresholdModel2 = buildThresholdModel(temperatureQuestion2.getLinkId());
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(thresholdModel));
+        subject.updatePlanDefinition(id, null, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(thresholdModel1, thresholdModel2));
 
         // Assert
         assertEquals(2, planDefinitionModel.getQuestionnaires().size());
@@ -309,7 +312,7 @@ public class PlanDefinitionServiceTest {
 
     private QuestionModel buildMeasurementQuestionModel() {
         QuestionModel questionModel = new QuestionModel();
-        questionModel.setLinkId("temperature");
+        questionModel.setLinkId(IdType.newRandomUuid().getValueAsString());
         questionModel.setText("Hvad er din temperatur?");
         questionModel.setQuestionType(QuestionType.QUANTITY);
 
