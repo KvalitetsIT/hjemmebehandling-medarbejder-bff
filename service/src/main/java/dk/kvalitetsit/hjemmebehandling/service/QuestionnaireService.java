@@ -71,10 +71,10 @@ public class QuestionnaireService extends AccessValidatingService {
 
         // add unique id to question(s) and call-to-action.
         if (questionnaire.getQuestions() != null) {
-            questionnaire.getQuestions().forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
+            questionnaire.getQuestions().stream().filter(q -> q.getLinkId()==null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
         }
         if (questionnaire.getCallToActions() != null) {
-            questionnaire.getCallToActions().forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+            questionnaire.getCallToActions().stream().filter(cta -> cta.getLinkId()==null).forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
         }
     }
 

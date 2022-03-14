@@ -112,12 +112,13 @@ public class QuestionnaireServiceTest {
     }
 
     @Test
-    public void createQuestionnaire_questionLinkId_isSetToRandomUuid() throws Exception {
+    public void createQuestionnaire_questionLinkId_isSetToRandomUuid_ifNull() throws Exception {
         // Arrange
-        String linkId = "This should be ignored, and set by the system to a new random uuid with prefix 'urn:uuid'";
+        String linkId = "This should be ignored by the system as it contains a value";
+        String nullLinkId = null; // this should trigger the system to set new random uuid with prefix 'urn:uuid'";
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
-        questionnaireModel.setQuestions( List.of( buildQuestionModel(linkId) ));
-        questionnaireModel.setCallToActions( List.of( buildQuestionModel(linkId) ));
+        questionnaireModel.setQuestions( List.of( buildQuestionModel(linkId), buildQuestionModel(nullLinkId) ));
+        questionnaireModel.setCallToActions( List.of( buildQuestionModel(linkId), buildQuestionModel(nullLinkId) ));
 
         Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
 
@@ -126,13 +127,15 @@ public class QuestionnaireServiceTest {
 
         // Assert
         assertEquals("1", result);
-        assertEquals(1, questionnaireModel.getQuestions().size());
-        assertNotEquals(linkId, questionnaireModel.getQuestions().get(0).getLinkId());
-        assertTrue(questionnaireModel.getQuestions().get(0).getLinkId().startsWith("urn:uuid"));
+        assertEquals(2, questionnaireModel.getQuestions().size());
+        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().equals(linkId)));
+        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().startsWith("urn:uuid")));
+        assertTrue(questionnaireModel.getQuestions().stream().noneMatch(q -> q.getLinkId().equals(nullLinkId)));
 
-        assertEquals(1, questionnaireModel.getCallToActions().size());
-        assertNotEquals(linkId, questionnaireModel.getCallToActions().get(0).getLinkId());
-        assertTrue(questionnaireModel.getCallToActions().get(0).getLinkId().startsWith("urn:uuid"));
+        assertEquals(2, questionnaireModel.getCallToActions().size());
+        assertTrue(questionnaireModel.getCallToActions().stream().anyMatch(cta -> cta.getLinkId().equals(linkId)));
+        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().startsWith("urn:uuid")));
+        assertTrue(questionnaireModel.getCallToActions().stream().noneMatch(cta -> cta.getLinkId().equals(nullLinkId)));
     }
 
     @Test
