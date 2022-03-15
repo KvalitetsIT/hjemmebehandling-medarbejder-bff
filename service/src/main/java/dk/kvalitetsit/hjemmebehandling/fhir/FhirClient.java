@@ -204,7 +204,8 @@ public class FhirClient {
 
     public FhirLookupResult lookupPlanDefinitions(Optional<Collection<String>> statusesToInclude) {
         var organizationCriterion = buildOrganizationCriterion();
-        List<ICriterion<?>> criterias = List.of(organizationCriterion);
+        var criterias = new ArrayList();
+        criterias.add(organizationCriterion);
         if(statusesToInclude.isPresent()){
             var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToInclude.get());
             criterias.add(statusCriteron);

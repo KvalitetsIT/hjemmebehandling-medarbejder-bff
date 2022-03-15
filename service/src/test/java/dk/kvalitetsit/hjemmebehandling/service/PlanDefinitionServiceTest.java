@@ -74,43 +74,7 @@ public class PlanDefinitionServiceTest {
         assertEquals(planDefinitionModel, result.get(0));
     }
 
-    private static Stream<Arguments> getPlanDefinitions_GetByStatus() {
-        return Stream.of(
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE, PlanDefinitionStatus.ACTIVE, Optional.empty(),PlanDefinitionStatus.ACTIVE),
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE, PlanDefinitionStatus.ACTIVE, Optional.of(List.of("ACTIVE")),PlanDefinitionStatus.ACTIVE)
-        );
-    }
-    @ParameterizedTest
-    @MockitoSettings(strictness = Strictness.LENIENT)
-    @MethodSource // arguments comes from a method that is name the same as the test
-    public void getPlanDefinitions_GetByStatus(
-            Enumerations.PublicationStatus planDefinitionStatus,
-            PlanDefinitionStatus planDefinitionModelStatus,
-            Optional<Collection<String>> statusesToInclude,
-            PlanDefinitionStatus expectedStatusOfResult
-    ) throws Exception {
-        // Arrange
 
-        PlanDefinition planDefinition = new PlanDefinition();
-        planDefinition.setStatus(planDefinitionStatus);
-
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
-        planDefinitionModel.setStatus(planDefinitionModelStatus);
-
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
-
-        Mockito.when(fhirClient.lookupPlanDefinitions(statusesToInclude)).thenReturn(lookupResult);
-
-
-        // Act
-        List<PlanDefinitionModel> result = subject.getPlanDefinitions(Optional.empty());
-
-        // Assert
-        assertEquals(1, result.size());
-        assertEquals(planDefinitionModel, result.get(0));
-        assertEquals(expectedStatusOfResult, result.get(0).getStatus());
-    }
 
     @Test
     public void patchPlanDefinition_name() throws ServiceException, AccessValidationException {

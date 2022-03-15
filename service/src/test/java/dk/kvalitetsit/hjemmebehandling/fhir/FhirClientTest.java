@@ -8,21 +8,30 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -295,7 +304,7 @@ public class FhirClientTest {
         PlanDefinition planDefinition = new PlanDefinition();
         planDefinition.setId(plandefinitionId);
 
-        setupSearchPlanDefinitionClient(planDefinition);
+        setupSearchPlanDefinitionClient(1, planDefinition);
 
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
@@ -312,7 +321,7 @@ public class FhirClientTest {
         // Arrange
         String plandefinitionId = "plandefinition-1";
 
-        setupSearchPlanDefinitionClient();
+        setupSearchPlanDefinitionClient(1);
 
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
@@ -331,7 +340,7 @@ public class FhirClientTest {
         planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
         planDefinition.setId(plandefinitionId);
 
-        setupSearchPlanDefinitionClient(planDefinition);
+        setupSearchPlanDefinitionClient(1, planDefinition);
 
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
@@ -350,7 +359,7 @@ public class FhirClientTest {
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
-        setupSearchPlanDefinitionClient(planDefinition);
+        setupSearchPlanDefinitionClient(1, planDefinition);
 
         // Act
         FhirLookupResult result = subject.lookupPlanDefinitions(Optional.empty());
@@ -358,6 +367,49 @@ public class FhirClientTest {
         // Assert
         assertEquals(1, result.getPlanDefinitions().size());
         assertEquals(planDefinition, result.getPlanDefinitions().get(0));
+    }
+
+    private static Stream<Arguments> getPlanDefinitions_GetByStatus() {
+        return Stream.of(
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.empty(),List.of(Enumerations.PublicationStatus.ACTIVE)),
+                Arguments.of(Enumerations.PublicationStatus.DRAFT,  Optional.empty(),List.of(Enumerations.PublicationStatus.DRAFT)),
+
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.of(List.of("ACTIVE")),List.of(Enumerations.PublicationStatus.ACTIVE)),
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE, Optional.of(List.of("DRAFT")),List.of()),
+
+                Arguments.of(Enumerations.PublicationStatus.DRAFT,  Optional.of(List.of("DRAFT")), List.of(Enumerations.PublicationStatus.DRAFT)),
+                Arguments.of(Enumerations.PublicationStatus.DRAFT, Optional.of(List.of("ACTIVE")), List.of()),
+
+                Arguments.of(Enumerations.PublicationStatus.DRAFT, Optional.of(List.of("ACTIVE","DRAFT")), List.of(Enumerations.PublicationStatus.DRAFT)),
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.of(List.of("ACTIVE","DRAFT")), List.of(Enumerations.PublicationStatus.ACTIVE))
+        );
+    }
+    @ParameterizedTest
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void getPlanDefinitions_GetByStatus(
+            Enumerations.PublicationStatus planDefinitionStatus,
+            Optional<Collection<String>> statusesToInclude,
+            List<Enumerations.PublicationStatus> expectedStatusOfResult
+    ) throws Exception {
+        // Arrange
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        planDefinition.setStatus(planDefinitionStatus);
+
+        setupUserContext(SOR_CODE_1);
+        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+        var criteriaCount = statusesToInclude.isPresent() ? 2 : 1;
+        setupSearchPlanDefinitionClient(criteriaCount, planDefinition);
+
+        // Act
+        var result = subject.lookupPlanDefinitions(statusesToInclude);
+
+        // Assert
+        assertEquals(expectedStatusOfResult.size(), result.getPlanDefinitions().size());
+        if(expectedStatusOfResult.size() > 0){
+            assertEquals(expectedStatusOfResult.get(0), result.getPlanDefinitions().get(0).getStatus());
+        }
     }
 
     @Test
@@ -687,8 +739,8 @@ public class FhirClientTest {
         setupSearchClient(2, 0, Questionnaire.class, questionnaires);
     }
 
-    private void setupSearchPlanDefinitionClient(PlanDefinition... planDefinitions) {
-        setupSearchClient(1, 1, PlanDefinition.class, planDefinitions);
+    private void setupSearchPlanDefinitionClient(int criteriaCount,PlanDefinition... planDefinitions) {
+        setupSearchClient(criteriaCount, 1, PlanDefinition.class, planDefinitions);
     }
 
     private void setupSearchQuestionnaireResponseClient(int criteriaCount, QuestionnaireResponse... questionnaireResponses) {
@@ -697,7 +749,7 @@ public class FhirClientTest {
         if(questionnaireResponses.length > 0) {
             PlanDefinition planDefinition = new PlanDefinition();
             planDefinition.setId(PLANDEFINITION_ID_1);
-            setupSearchPlanDefinitionClient(planDefinition);
+            setupSearchPlanDefinitionClient(1,planDefinition);
         }
     }
 
