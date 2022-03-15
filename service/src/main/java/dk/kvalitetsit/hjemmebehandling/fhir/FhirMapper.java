@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
@@ -307,13 +308,6 @@ public class FhirMapper {
             .collect(Collectors.toList()));
         questionnaire.getItem().addAll(mapQuestionnaireCallToActions(questionnaireModel.getCallToActions()));
         questionnaire.setVersion(questionnaireModel.getVersion());
-
-        // Thresholds
-        questionnaire.getExtension().addAll(questionnaireModel.getQuestions().stream()
-            .filter(questionModel -> Objects.nonNull(questionModel.getThresholds()))
-            .flatMap(questionModel -> questionModel.getThresholds().stream())
-            .map(t -> ExtensionMapper.mapThreshold(t))
-            .collect(Collectors.toList()));
 
         return questionnaire;
     }
@@ -624,6 +618,9 @@ public class FhirMapper {
         item.setText(question.getText());
         if (question.getAbbreviation() != null) {
             item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
+        }
+        if (question.getThresholds() != null) {
+            item.getExtension().addAll(ExtensionMapper.mapThresholds(question.getThresholds()));
         }
         if (question.getHelperText() != null) {
             item.addItem(mapQuestionHelperText(question.getHelperText()));
@@ -995,8 +992,17 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
 
-        List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
-        wrapper.setThresholds(thresholds);
+        List<ThresholdModel> questionnaireThresholds = ExtensionMapper.extractThresholds(
+            questionnaire.getItem().stream()
+                .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
+                .collect(Collectors.toList())
+        );
+        List<ThresholdModel> planDefinitionThresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
+
+        List<ThresholdModel> combinedThresholds = Stream.of(questionnaireThresholds, planDefinitionThresholds)
+            .flatMap(t -> t.stream())
+            .collect(Collectors.toList());
+        wrapper.setThresholds(combinedThresholds);
 
         return wrapper;
     }

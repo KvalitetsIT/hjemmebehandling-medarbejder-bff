@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import jdk.jfr.Threshold;
 import org.hamcrest.core.IsNull;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
@@ -124,6 +125,11 @@ public class FhirMapperTest {
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+
+        String linkId = "question-1";
+        Questionnaire.QuestionnaireItemComponent itemComponent = buildQuestionItemWithThreshold(linkId);
+        questionnaire.addItem(itemComponent);
+
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
 
@@ -136,19 +142,32 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
-        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().size());
+        assertEquals(3, result.getQuestionnaires().get(0).getThresholds().size());
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
     }
 
     @Test
-    public void mapPlandefinition_includesQuestionnaires_andThresholds() {
+    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds() {
         // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
-        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
+        ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
+
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
+        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
+        questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
+
+
+        String linkId = "question-1";
+        Questionnaire.QuestionnaireItemComponent questionnaireItemComponent = buildQuestionItemWithThreshold(linkId);
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(questionnaireItemComponent));
+        //questionnaire.addExtension( ExtensionMapper.mapThreshold(booleanThreshold) );
+
         Organization organization = buildOrganization(ORGANIZATION_ID_1);
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+        planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
 
         // Act
         PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
@@ -157,8 +176,33 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
-        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().size());
+
+        //check that both thresholds are mapped on to the wrapper
+        assertEquals(3, result.getQuestionnaires().get(0).getThresholds().size());
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
     }
+
+    private ThresholdModel buildThresholdModel(String linkId, ThresholdType type, Boolean valueBoolean) {
+        return buildThresholdModel(linkId, type, valueBoolean, null, null);
+    }
+
+    private ThresholdModel buildThresholdModel(String linkId, ThresholdType type, Double valueLow, Double valueHigh) {
+        return buildThresholdModel(linkId, type, null, valueLow, valueHigh);
+    }
+
+    private ThresholdModel buildThresholdModel(String linkId, ThresholdType type, Boolean valueBoolean, Double valueLow, Double valueHigh) {
+        ThresholdModel thresholdModel = new ThresholdModel();
+
+        thresholdModel.setQuestionnaireItemLinkId(linkId);
+        thresholdModel.setType(type);
+        thresholdModel.setValueBoolean(valueBoolean);
+        thresholdModel.setValueQuantityLow(valueLow);
+        thresholdModel.setValueQuantityHigh(valueHigh);
+
+        return thresholdModel;
+    }
+
 
     @Test
     public void mapPlandefinition_noCreatedDate_DontThrowError() {
@@ -794,6 +838,16 @@ public class FhirMapperTest {
         }
 
         return item;
+    }
+
+    private Questionnaire.QuestionnaireItemComponent buildQuestionItemWithThreshold(String linkId) {
+        ThresholdModel normal = buildThresholdModel(linkId, ThresholdType.NORMAL, Boolean.TRUE);
+        ThresholdModel critical = buildThresholdModel(linkId, ThresholdType.CRITICAL, Boolean.FALSE);
+
+        Questionnaire.QuestionnaireItemComponent itemComponent = buildQuestionItem(linkId, Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?");
+        itemComponent.getExtension().addAll(ExtensionMapper.mapThresholds(List.of(normal, critical)));
+
+        return itemComponent;
     }
 
     private Questionnaire.QuestionnaireItemComponent buildQuestionHelperTextItem(String text) {
