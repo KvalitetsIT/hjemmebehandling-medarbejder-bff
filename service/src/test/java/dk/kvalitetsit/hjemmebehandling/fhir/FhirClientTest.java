@@ -353,7 +353,7 @@ public class FhirClientTest {
         setupSearchPlanDefinitionClient(planDefinition);
 
         // Act
-        FhirLookupResult result = subject.lookupPlanDefinitions();
+        FhirLookupResult result = subject.lookupPlanDefinitions(Optional.empty());
 
         // Assert
         assertEquals(1, result.getPlanDefinitions().size());

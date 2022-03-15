@@ -286,7 +286,7 @@ public class FhirMapper {
 
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
-        planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()));
+        planDefinitionModel.setStatus(mapPlanDefinitionStatus(planDefinition.getStatus()));
         if(planDefinition.getDate() != null)
             planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
 
@@ -295,6 +295,11 @@ public class FhirMapper {
 
         return planDefinitionModel;
     }
+
+    public PlanDefinitionStatus mapPlanDefinitionStatus(Enumerations.PublicationStatus planDefinition) {
+        return Enum.valueOf(PlanDefinitionStatus.class, planDefinition.toString());
+    }
+
 
     public Questionnaire mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         Questionnaire questionnaire = new Questionnaire();

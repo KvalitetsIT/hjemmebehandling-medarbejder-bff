@@ -202,13 +202,17 @@ public class FhirClient {
         return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
     }
 
-    public FhirLookupResult lookupPlanDefinitions() {
+    public FhirLookupResult lookupPlanDefinitions(Optional<Collection<String>> statusesToInclude) {
         var organizationCriterion = buildOrganizationCriterion();
-
-        return lookupPlanDefinitionsByCriteria(List.of(organizationCriterion));
+        List<ICriterion<?>> criterias = List.of(organizationCriterion);
+        if(statusesToInclude.isPresent()){
+            var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToInclude.get());
+            criterias.add(statusCriteron);
+        }
+        return lookupPlanDefinitionsByCriteria(criterias);
     }
 
-    public FhirLookupResult lookupPlanDefinitions(Collection<String> planDefinitionIds) {
+    public FhirLookupResult lookupPlanDefinitionsById(Collection<String> planDefinitionIds) {
         var idCriterion = PlanDefinition.RES_ID.exactly().codes(planDefinitionIds);
 
         return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
@@ -299,7 +303,7 @@ public class FhirClient {
 
         // Get the related planDefinitions
         List<String> planDefinitionIds = getPlanDefinitionIds(questionnaireResponseResult.getCarePlans());
-        FhirLookupResult planDefinitionResult = lookupPlanDefinitions(planDefinitionIds);
+        FhirLookupResult planDefinitionResult = lookupPlanDefinitionsById(planDefinitionIds);
 
         // Merge the results
         questionnaireResponseResult.merge(planDefinitionResult);

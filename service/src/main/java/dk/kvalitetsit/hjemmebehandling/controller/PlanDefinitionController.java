@@ -55,9 +55,9 @@ public class PlanDefinitionController extends BaseController {
     }
 
     @GetMapping(value = "/v1/plandefinition")
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions() {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestBody GetPlanDefinitionRequest request) {
         try {
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions();
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(request.getStatusesToInclude());
 
             return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
         }

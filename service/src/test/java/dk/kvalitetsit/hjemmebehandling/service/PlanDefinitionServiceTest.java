@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -14,21 +15,25 @@ import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,15 +63,53 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
 
-        Mockito.when(fhirClient.lookupPlanDefinitions()).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinitions(Optional.empty())).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        List<PlanDefinitionModel> result = subject.getPlanDefinitions();
+        List<PlanDefinitionModel> result = subject.getPlanDefinitions(Optional.empty());
 
         // Assert
         assertEquals(1, result.size());
         assertEquals(planDefinitionModel, result.get(0));
+    }
+
+    private static Stream<Arguments> getPlanDefinitions_GetByStatus() {
+        return Stream.of(
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE, PlanDefinitionStatus.ACTIVE, Optional.empty(),PlanDefinitionStatus.ACTIVE),
+                Arguments.of(Enumerations.PublicationStatus.ACTIVE, PlanDefinitionStatus.ACTIVE, Optional.of(List.of("ACTIVE")),PlanDefinitionStatus.ACTIVE)
+        );
+    }
+    @ParameterizedTest
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void getPlanDefinitions_GetByStatus(
+            Enumerations.PublicationStatus planDefinitionStatus,
+            PlanDefinitionStatus planDefinitionModelStatus,
+            Optional<Collection<String>> statusesToInclude,
+            PlanDefinitionStatus expectedStatusOfResult
+    ) throws Exception {
+        // Arrange
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        planDefinition.setStatus(planDefinitionStatus);
+
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        planDefinitionModel.setStatus(planDefinitionModelStatus);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        Mockito.when(fhirClient.lookupPlanDefinitions(statusesToInclude)).thenReturn(lookupResult);
+
+
+        // Act
+        List<PlanDefinitionModel> result = subject.getPlanDefinitions(Optional.empty());
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(planDefinitionModel, result.get(0));
+        assertEquals(expectedStatusOfResult, result.get(0).getStatus());
     }
 
     @Test

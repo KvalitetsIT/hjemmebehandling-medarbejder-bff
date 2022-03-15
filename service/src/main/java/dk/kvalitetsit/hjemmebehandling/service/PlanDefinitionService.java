@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -24,14 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.sql.Wrapper;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -50,8 +44,8 @@ public class PlanDefinitionService extends AccessValidatingService {
         this.dateProvider = dateProvider;
     }
 
-    public List<PlanDefinitionModel> getPlanDefinitions() throws ServiceException {
-        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions();
+    public List<PlanDefinitionModel> getPlanDefinitions(Optional<Collection<String>> statusesToInclude) throws ServiceException {
+        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(statusesToInclude);
 
         return lookupResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, lookupResult)).collect(Collectors.toList());
     }
