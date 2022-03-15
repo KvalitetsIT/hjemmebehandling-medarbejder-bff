@@ -28,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -371,45 +372,43 @@ public class FhirClientTest {
 
     private static Stream<Arguments> getPlanDefinitions_GetByStatus() {
         return Stream.of(
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.empty(),List.of(Enumerations.PublicationStatus.ACTIVE)),
-                Arguments.of(Enumerations.PublicationStatus.DRAFT,  Optional.empty(),List.of(Enumerations.PublicationStatus.DRAFT)),
-
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.of(List.of("ACTIVE")),List.of(Enumerations.PublicationStatus.ACTIVE)),
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE, Optional.of(List.of("DRAFT")),List.of()),
-
-                Arguments.of(Enumerations.PublicationStatus.DRAFT,  Optional.of(List.of("DRAFT")), List.of(Enumerations.PublicationStatus.DRAFT)),
-                Arguments.of(Enumerations.PublicationStatus.DRAFT, Optional.of(List.of("ACTIVE")), List.of()),
-
-                Arguments.of(Enumerations.PublicationStatus.DRAFT, Optional.of(List.of("ACTIVE","DRAFT")), List.of(Enumerations.PublicationStatus.DRAFT)),
-                Arguments.of(Enumerations.PublicationStatus.ACTIVE,  Optional.of(List.of("ACTIVE","DRAFT")), List.of(Enumerations.PublicationStatus.ACTIVE))
+                Arguments.of(Optional.empty(),List.of(Enumerations.PublicationStatus.ACTIVE,Enumerations.PublicationStatus.DRAFT)), //What to include is not provided -> Return all
+                Arguments.of(Optional.of(List.of()), List.of()), //Include no statuses -> Return no elements
+                Arguments.of(Optional.of(List.of("DRAFT")), List.of(Enumerations.PublicationStatus.DRAFT)), //Include only draft -> Only draft is returned
+                Arguments.of(Optional.of(List.of("ACTIVE")), List.of(Enumerations.PublicationStatus.ACTIVE)), //Include only active -> Only active is returned
+                Arguments.of(Optional.of(List.of("ACTIVE","DRAFT")), List.of(Enumerations.PublicationStatus.ACTIVE, Enumerations.PublicationStatus.DRAFT)) //Include active, and draft -> Returns active and draft
         );
     }
     @ParameterizedTest
     @MockitoSettings(strictness = Strictness.LENIENT)
     @MethodSource // arguments comes from a method that is name the same as the test
     public void getPlanDefinitions_GetByStatus(
-            Enumerations.PublicationStatus planDefinitionStatus,
             Optional<Collection<String>> statusesToInclude,
             List<Enumerations.PublicationStatus> expectedStatusOfResult
     ) throws Exception {
-        // Arrange
 
-        PlanDefinition planDefinition = new PlanDefinition();
-        planDefinition.setStatus(planDefinitionStatus);
+        // Arrange
+        PlanDefinition activePlanDefinition = new PlanDefinition();
+        activePlanDefinition.setStatus(Enumerations.PublicationStatus.ACTIVE);
+
+        PlanDefinition draftPlanDefinition = new PlanDefinition();
+        draftPlanDefinition.setStatus(Enumerations.PublicationStatus.DRAFT);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
+
         var criteriaCount = statusesToInclude.isPresent() ? 2 : 1;
-        setupSearchPlanDefinitionClient(criteriaCount, planDefinition);
+        setupSearchPlanDefinitionClient(criteriaCount, activePlanDefinition, draftPlanDefinition);
 
         // Act
         var result = subject.lookupPlanDefinitions(statusesToInclude);
 
         // Assert
         assertEquals(expectedStatusOfResult.size(), result.getPlanDefinitions().size());
-        if(expectedStatusOfResult.size() > 0){
-            assertEquals(expectedStatusOfResult.get(0), result.getPlanDefinitions().get(0).getStatus());
+        for(var i = 0; i < expectedStatusOfResult.size(); i++){
+            assertEquals(expectedStatusOfResult.get(i), result.getPlanDefinitions().get(i).getStatus());
         }
+
     }
 
     @Test
@@ -747,9 +746,11 @@ public class FhirClientTest {
         setupSearchClient(criteriaCount, 3, QuestionnaireResponse.class, questionnaireResponses);
 
         if(questionnaireResponses.length > 0) {
+
             PlanDefinition planDefinition = new PlanDefinition();
             planDefinition.setId(PLANDEFINITION_ID_1);
-            setupSearchPlanDefinitionClient(1,planDefinition);
+
+            setupSearchPlanDefinitionClient(1, planDefinition);
         }
     }
 
