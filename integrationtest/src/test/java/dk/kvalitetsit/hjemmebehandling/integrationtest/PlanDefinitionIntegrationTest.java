@@ -28,9 +28,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
         // Act
 
-        GetPlanDefinitionRequest request = new GetPlanDefinitionRequest();
-        request.setStatusesToInclude(List.of());
-        ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo(request);
+        ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo(List.of());
 
         // Assert
         assertEquals(200, response.getStatusCode());

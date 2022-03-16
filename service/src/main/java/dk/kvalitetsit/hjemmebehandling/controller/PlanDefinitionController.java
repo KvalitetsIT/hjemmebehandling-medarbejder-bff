@@ -55,16 +55,16 @@ public class PlanDefinitionController extends BaseController {
     }
 
     @GetMapping(value = "/v1/plandefinition")
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestParam Optional<GetPlanDefinitionRequest> request) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestParam("statusesToInclude") Optional<Collection<String>> statusesToInclude) {
         try {
-            if(request.isPresent() && request.get().getStatusesToInclude().isEmpty()){
+            if(statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()){
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
 
-            Collection<String> statusesToInclude = request.isPresent() ? request.get().getStatusesToInclude() : List.of();
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude);
+            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.isPresent() ? statusesToInclude.get() : List.of();
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
 
             return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
         }
