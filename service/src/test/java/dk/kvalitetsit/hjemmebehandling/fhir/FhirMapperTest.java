@@ -142,13 +142,14 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
-        assertEquals(3, result.getQuestionnaires().get(0).getThresholds().size());
-        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
-        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
+        var thresholdsOfFirstQuestionnaire =result.getQuestionnaires().get(0).getThresholds();
+        assertEquals(4, thresholdsOfFirstQuestionnaire.size());
+        assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+        assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
     }
 
     @Test
-    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds() {
+    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds_1() {
         // Arrange
         ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
         ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
@@ -176,6 +177,39 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+
+        //check that both thresholds are mapped on to the wrapper
+        assertEquals(4, result.getQuestionnaires().get(0).getThresholds().size());
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
+    }
+
+    @Test
+    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds() {
+        // Arrange
+        ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
+        ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
+
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
+        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
+        questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
+
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of());
+
+        Organization organization = buildOrganization(ORGANIZATION_ID_1);
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+        planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
+
+        // Act
+        PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
+
+        // Assert
+        assertEquals(1, result.getQuestionnaires().size());
+
+        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+
         assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
 
         var firstThreshold = result.getQuestionnaires().get(0).getThresholds().get(0);
@@ -237,7 +271,7 @@ public class FhirMapperTest {
         assertEquals(1, result.getQuestionnaires().size());
 
         assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
-        assertEquals(1, result.getQuestionnaires().get(0).getThresholds().size());
+        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
     }
 
     @Test
