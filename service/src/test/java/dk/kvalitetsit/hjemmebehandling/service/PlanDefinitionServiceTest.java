@@ -63,11 +63,11 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
 
-        Mockito.when(fhirClient.lookupPlanDefinitions(Optional.empty())).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinitions(List.of())).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        List<PlanDefinitionModel> result = subject.getPlanDefinitions(Optional.empty());
+        List<PlanDefinitionModel> result = subject.getPlanDefinitions(List.of());
 
         // Assert
         assertEquals(1, result.size());

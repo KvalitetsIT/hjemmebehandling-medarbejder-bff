@@ -44,7 +44,7 @@ public class PlanDefinitionService extends AccessValidatingService {
         this.dateProvider = dateProvider;
     }
 
-    public List<PlanDefinitionModel> getPlanDefinitions(Optional<Collection<String>> statusesToInclude) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitions(Collection<String> statusesToInclude) throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(statusesToInclude);
 
         return lookupResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, lookupResult)).collect(Collectors.toList());

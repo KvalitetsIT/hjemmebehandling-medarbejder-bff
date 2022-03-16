@@ -202,12 +202,14 @@ public class FhirClient {
         return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
     }
 
-    public FhirLookupResult lookupPlanDefinitions(Optional<Collection<String>> statusesToInclude) {
+    public FhirLookupResult lookupPlanDefinitions(Collection<String> statusesToInclude) {
         var organizationCriterion = buildOrganizationCriterion();
-        var criterias = new ArrayList();
+        var criterias = new ArrayList<ICriterion<?>>();
         criterias.add(organizationCriterion);
-        if(statusesToInclude.isPresent()){
-            var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToInclude.get());
+
+        if(!statusesToInclude.isEmpty()){
+            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
+            var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToIncludeToLowered);
             criterias.add(statusCriteron);
         }
         return lookupPlanDefinitionsByCriteria(criterias);
@@ -215,20 +217,17 @@ public class FhirClient {
 
     public FhirLookupResult lookupPlanDefinitionsById(Collection<String> planDefinitionIds) {
         var idCriterion = PlanDefinition.RES_ID.exactly().codes(planDefinitionIds);
-
         return lookupPlanDefinitionsByCriteria(List.of(idCriterion));
     }
 
     public FhirLookupResult lookupQuestionnaires() {
         var organizationCriterion = buildOrganizationCriterion();
-
         return lookupByCriteria(Questionnaire.class, List.of(organizationCriterion));
     }
 
     public FhirLookupResult lookupQuestionnaires(Collection<String> questionnaireIds) {
         var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds);
         var organizationCriterion = buildOrganizationCriterion();
-
         return lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
     }
 
@@ -238,7 +237,6 @@ public class FhirClient {
 
     public void updateCarePlan(CarePlan carePlan, Patient patient) {
         var bundle = new BundleBuilder().buildUpdateCarePlanBundle(carePlan, patient);
-
         saveInTransaction(bundle, ResourceType.CarePlan);
     }
 

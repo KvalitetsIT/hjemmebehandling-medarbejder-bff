@@ -16,6 +16,7 @@ import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -55,9 +56,16 @@ public class PlanDefinitionController extends BaseController {
     }
 
     @GetMapping(value = "/v1/plandefinition")
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestBody GetPlanDefinitionRequest request) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestBody Optional<GetPlanDefinitionRequest> request) {
         try {
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(request.getStatusesToInclude());
+            if(request.isPresent() && request.get().getStatusesToInclude().isEmpty()){
+                var details = ErrorDetails.PARAMETERS_INCOMPLETE;
+                details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
+                throw new BadRequestException(details);
+            }
+
+            Collection<String> statusesToInclude = request.isPresent() ? request.get().getStatusesToInclude() : List.of();
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude);
 
             return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
         }

@@ -24,6 +24,7 @@ public enum ErrorDetails {
 
     private String errorMessage;
     private int errorCode;
+    private String details;
 
     ErrorDetails(String errorMessage, int errorCode) {
         this.errorMessage = errorMessage;
@@ -31,10 +32,20 @@ public enum ErrorDetails {
     }
 
     public String getErrorMessage() {
+        if(details != null)
+        return errorMessage + ") " + details;
         return errorMessage;
     }
 
     public int getErrorCode() {
         return errorCode;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 }
