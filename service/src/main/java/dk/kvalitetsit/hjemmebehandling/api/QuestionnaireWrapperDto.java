@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 public class QuestionnaireWrapperDto {
     private QuestionnaireDto questionnaire;
     private FrequencyDto frequency;
+    private Instant satisfiedUntil;
     private List<ThresholdDto> thresholds;
 
     public QuestionnaireWrapperDto() {
@@ -26,6 +28,14 @@ public class QuestionnaireWrapperDto {
 
     public void setFrequency(FrequencyDto frequency) {
         this.frequency = frequency;
+    }
+
+    public Instant getSatisfiedUntil() {
+        return satisfiedUntil;
+    }
+
+    public void setSatisfiedUntil(Instant satisfiedUntil) {
+        this.satisfiedUntil = satisfiedUntil;
     }
 
     public List<ThresholdDto> getThresholds() {
