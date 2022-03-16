@@ -213,7 +213,7 @@ public class CarePlanService extends AccessValidatingService {
 
     public CarePlanModel updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
-        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitions(planDefinitionIds);
+        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitionsById(planDefinitionIds);
         if(planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) {
             throw new ServiceException("Could not look up plan definitions to update!", ErrorKind.BAD_REQUEST, ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN);
         }
@@ -341,7 +341,7 @@ public class CarePlanService extends AccessValidatingService {
 
         // Validate planDefinitions
         if(carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitions(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitionsById(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList()));
             validateAccess(lookupResult.getPlanDefinitions());
         }
     }

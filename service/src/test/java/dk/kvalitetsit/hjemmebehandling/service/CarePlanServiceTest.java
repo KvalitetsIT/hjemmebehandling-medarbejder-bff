@@ -211,7 +211,7 @@ public class CarePlanServiceTest {
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(planDefinition));
 
@@ -315,7 +315,7 @@ public class CarePlanServiceTest {
 
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
 
         var questionnaireThreshold = new ThresholdModel();
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
@@ -608,7 +608,7 @@ public class CarePlanServiceTest {
         ContactDetailsModel patientPrimaryContactDetails = new ContactDetailsModel();
 
         PlanDefinition planDefinition = new PlanDefinition();
-        Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(FhirLookupResult.fromResource(planDefinition));
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(FhirLookupResult.fromResource(planDefinition));
         Questionnaire questionnaire = new Questionnaire();
         Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
@@ -630,7 +630,7 @@ public class CarePlanServiceTest {
         Map<String, FrequencyModel> frequencies = Map.of();
         PatientDetails patientDetails = buildPatientDetails();
 
-        Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         CarePlan carePlan = new CarePlan();
@@ -658,7 +658,7 @@ public class CarePlanServiceTest {
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(planDefinitionResult);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
         var threshold = new ThresholdModel();
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
@@ -700,7 +700,7 @@ public class CarePlanServiceTest {
 
         PlanDefinition planDefinition = new PlanDefinition();
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinitions(planDefinitionIds)).thenReturn(planDefinitionResult);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
         var threshold = new ThresholdModel();
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);

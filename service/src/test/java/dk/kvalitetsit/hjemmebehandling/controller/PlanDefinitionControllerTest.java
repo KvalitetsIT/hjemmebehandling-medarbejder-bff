@@ -1,9 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CreatePlanDefinitionRequest;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PatchPlanDefinitionRequest;
-import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
+import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
@@ -24,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,12 +47,13 @@ public class PlanDefinitionControllerTest {
         PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto2 = new PlanDefinitionDto();
 
-        Mockito.when(planDefinitionService.getPlanDefinitions()).thenReturn(List.of(planDefinitionModel1, planDefinitionModel2));
+        Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenReturn(List.of(planDefinitionModel1, planDefinitionModel2));
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel1)).thenReturn(planDefinitionDto1);
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions();
+
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -66,10 +65,10 @@ public class PlanDefinitionControllerTest {
     @Test
     public void getPlanDefinitions_planDefinitionsMissing_200() throws Exception {
         // Arrange
-        Mockito.when(planDefinitionService.getPlanDefinitions()).thenReturn(List.of());
+        Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions();
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -79,12 +78,13 @@ public class PlanDefinitionControllerTest {
     @Test
     public void getPlanDefinitions_failureToFetch_500() throws Exception {
         // Arrange
-        Mockito.when(planDefinitionService.getPlanDefinitions()).thenThrow(new ServiceException("Error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
+        Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenThrow(new ServiceException("Error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
 
         // Assert
-        assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions());
+
+        assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions(Optional.empty()));
     }
 
     @Test
