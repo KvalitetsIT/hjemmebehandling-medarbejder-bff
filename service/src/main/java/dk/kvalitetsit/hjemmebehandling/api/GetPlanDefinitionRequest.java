@@ -10,7 +10,7 @@ import java.util.Optional;
 public class GetPlanDefinitionRequest {
 	private Collection<String> statusesToInclude = List.of();
 
-	@Schema(required = false, description = "The statuses to include in result")
+	@Schema(required = true, description = "The statuses to include in result")
 	public Collection<String> getStatusesToInclude() {
 		return statusesToInclude;
 	}

@@ -4,16 +4,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.PlanDefinitionApi;
-import org.openapitools.client.model.CarePlanDto;
-import org.openapitools.client.model.CreateCarePlanRequest;
-import org.openapitools.client.model.CreatePlanDefinitionRequest;
-import org.openapitools.client.model.FrequencyDto;
-import org.openapitools.client.model.PatientDto;
-import org.openapitools.client.model.PlanDefinitionDto;
-import org.openapitools.client.model.QuestionnaireDto;
-import org.openapitools.client.model.QuestionnaireWrapperDto;
+import org.openapitools.client.model.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +27,10 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
         // Arrange
 
         // Act
-        ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo();
+
+        GetPlanDefinitionRequest request = new GetPlanDefinitionRequest();
+        request.setStatusesToInclude(List.of());
+        ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo(request);
 
         // Assert
         assertEquals(200, response.getStatusCode());
