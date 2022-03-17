@@ -664,6 +664,7 @@ public class FhirMapper {
         return item.stream()
             .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
             .map(i -> i.getText())
+            .filter(Objects::nonNull)
             .findFirst()
             .orElse(null)
             ;
