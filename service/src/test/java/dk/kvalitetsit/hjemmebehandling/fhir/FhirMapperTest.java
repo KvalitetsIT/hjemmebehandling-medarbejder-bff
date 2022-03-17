@@ -588,10 +588,10 @@ public class FhirMapperTest {
         // Assert
         assertEquals(1, result.getQuestions().size());
         assertTrue(result.getQuestions().get(0).getQuestionType().equals(QuestionType.QUANTITY));
-        assertNotNull(result.getQuestions().get(0).getCode());
-        assertEquals(temperature.getSystem(),  result.getQuestions().get(0).getCode().getSystem());
-        assertEquals(temperature.getCode(),  result.getQuestions().get(0).getCode().getCode());
-        assertEquals(temperature.getDisplay(),  result.getQuestions().get(0).getCode().getDisplay());
+        assertNotNull(result.getQuestions().get(0).getMeasurementType());
+        assertEquals(temperature.getSystem(),  result.getQuestions().get(0).getMeasurementType().getSystem());
+        assertEquals(temperature.getCode(),  result.getQuestions().get(0).getMeasurementType().getCode());
+        assertEquals(temperature.getDisplay(),  result.getQuestions().get(0).getMeasurementType().getDisplay());
 
         assertTrue(result.getCallToActions().stream().allMatch(q -> q.getQuestionType().equals(QuestionType.DISPLAY)));
 

@@ -652,7 +652,7 @@ public class FhirMapper {
             question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
         }
         if (item.hasCode()) {
-            question.setCode(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
+            question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
         }
 
         question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));

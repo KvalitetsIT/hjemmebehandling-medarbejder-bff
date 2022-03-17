@@ -359,11 +359,15 @@ public class DtoMapper {
         questionModel.setLinkId(questionDto.getLinkId());
         questionModel.setText(questionDto.getText());
         questionModel.setAbbreviation(questionDto.getAbbreviation());
-        questionModel.setHelperText(questionDto.getHelperText());
         questionModel.setRequired(questionDto.getRequired());
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());
         questionModel.setEnableWhens(questionDto.getEnableWhen());
+
+        if(questionDto.getMeasurementType() != null){
+            questionModel.setMeasurementType(mapMeasurementTypeDto(questionDto.getMeasurementType()));
+        }
+
         if (questionDto.getThresholds() != null) {
             questionModel.setThresholds(questionDto.getThresholds().stream().map(t -> mapThresholdDto(t)).collect(Collectors.toList()));
         }
@@ -371,21 +375,35 @@ public class DtoMapper {
         return questionModel;
     }
 
+
+    private MeasurementTypeModel mapMeasurementTypeDto(MeasurementTypeDto measurementTypeDto) {
+        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
+
+        measurementTypeModel.setCode(measurementTypeDto.getCode());
+        measurementTypeModel.setDisplay(measurementTypeDto.getDisplay());
+        measurementTypeModel.setSystem(measurementTypeDto.getSystem());
+
+        return measurementTypeModel;
+    }
+
+
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
 
         questionDto.setLinkId(questionModel.getLinkId());
         questionDto.setText(questionModel.getText());
         questionDto.setAbbreviation(questionModel.getAbbreviation());
-        questionDto.setHelperText(questionModel.getHelperText());
         questionDto.setRequired(questionModel.isRequired());
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());
         questionDto.setEnableWhen(questionModel.getEnableWhens());
+        if (questionDto.getMeasurementType() != null){
+            questionDto.setMeasurementType(mapMeasurementTypeModel(questionModel.getMeasurementType()));
+        }
+
         if (questionModel.getThresholds() != null) {
             questionDto.setThresholds(questionModel.getThresholds().stream().map(t -> mapThresholdModel(t)).collect(Collectors.toList()));
         }
-
         return questionDto;
     }
 
@@ -431,3 +449,6 @@ public class DtoMapper {
         return measurementTypeDto;
     }
 }
+
+
+

@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api.question;
 
+import dk.kvalitetsit.hjemmebehandling.api.MeasurementTypeDto;
 import dk.kvalitetsit.hjemmebehandling.api.ThresholdDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
@@ -16,6 +17,17 @@ public class QuestionDto {
     private List<String> options;
     private List<QuestionModel.EnableWhen> enableWhen;
     private List<ThresholdDto> thresholds;
+    private MeasurementTypeDto measurementType;
+
+
+    public MeasurementTypeDto getMeasurementType() {
+        return measurementType;
+    }
+
+    public void setMeasurementType(MeasurementTypeDto measurementType) {
+        this.measurementType = measurementType;
+    }
+
 
     public String getLinkId() {
         return linkId;

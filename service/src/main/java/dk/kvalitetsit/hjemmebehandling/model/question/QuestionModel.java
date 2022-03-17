@@ -15,7 +15,7 @@ public class QuestionModel {
     private String helperText;
     private boolean required;
     private QuestionType questionType;
-    private MeasurementTypeModel code;
+    private MeasurementTypeModel measurementType;
     private List<String> options;
     private List<EnableWhen> enableWhens;
     private List<ThresholdModel> thresholds;
@@ -68,12 +68,12 @@ public class QuestionModel {
         this.questionType = questionType;
     }
 
-    public MeasurementTypeModel getCode() {
-        return code;
+    public MeasurementTypeModel getMeasurementType() {
+        return measurementType;
     }
 
-    public void setCode(MeasurementTypeModel code) {
-        this.code = code;
+    public void setMeasurementType(MeasurementTypeModel measurementType) {
+        this.measurementType = measurementType;
     }
 
     public List<String> getOptions() {
