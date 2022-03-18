@@ -634,11 +634,9 @@ public class FhirMapper {
             item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
         }
         if (question.getMeasurementType() != null ) {
-            item.getCodeFirstRep()
-                    .setCode(question.getMeasurementType().getCode())
-                    .setDisplay(question.getMeasurementType().getDisplay())
-                    .setSystem(question.getMeasurementType().getSystem());
+            item.addCode( new Coding(question.getMeasurementType().getSystem(),question.getMeasurementType().getCode(),question.getMeasurementType().getDisplay()));
         }
+
         return item;
     }
 
