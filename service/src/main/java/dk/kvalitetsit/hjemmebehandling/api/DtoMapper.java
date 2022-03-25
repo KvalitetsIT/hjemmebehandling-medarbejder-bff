@@ -397,7 +397,7 @@ public class DtoMapper {
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());
         questionDto.setEnableWhen(questionModel.getEnableWhens());
-        if (questionDto.getMeasurementType() != null){
+        if (questionModel.getMeasurementType() != null){
             questionDto.setMeasurementType(mapMeasurementTypeModel(questionModel.getMeasurementType()));
         }
 
