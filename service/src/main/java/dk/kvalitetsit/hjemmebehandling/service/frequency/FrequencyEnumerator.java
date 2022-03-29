@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 public class FrequencyEnumerator {
     private Instant currentPointInTime;
     private List<DayOfWeek> weekDays;
-    private LocalTime timeOfDay;
+    private LocalTime deadlineTime; //fx if you wanna say "Før kl 11", deadlineTime should be 11:00
 
     public FrequencyEnumerator(Instant seed, FrequencyModel frequency) {
         currentPointInTime = seed;
-        this.timeOfDay = frequency.getTimeOfDay();
+        this.deadlineTime = frequency.getTimeOfDay();
 
         initializeWeekdays(frequency.getWeekdays());
     }
@@ -28,12 +28,17 @@ public class FrequencyEnumerator {
         // Determine the current weekday
         var currentDayOfWeek = getCurrentDayOfWeek(currentPointInTime);
 
-        // Get the successive weekday from the frequency model
-        var successiveDayOfWeek = getSuccessiveDayOfWeek(currentDayOfWeek);
+
 
         // Determine number of days to add
         var currentTimeOfDay = getCurrentTimeOfDay(currentPointInTime);
-        int daysToAdd = getDaysToAdd(currentDayOfWeek, currentTimeOfDay, successiveDayOfWeek);
+        int daysToAdd = 0;
+        var includeToday = !currentTimeAfterOrOnTimeOfDay(currentTimeOfDay);
+
+        // Get the successive weekday from the frequency model
+        var successiveDayOfWeek = getSuccessiveDayOfWeek(currentDayOfWeek, includeToday);
+        daysToAdd = getDaysToAdd(currentDayOfWeek, currentTimeOfDay, successiveDayOfWeek);
+
 
         // Advance currentPointInTime
         this.currentPointInTime = advanceCurrentPointInTime(currentPointInTime, daysToAdd);
@@ -44,10 +49,14 @@ public class FrequencyEnumerator {
         return LocalDate.ofInstant(pointInTime, ZoneId.of("UTC")).getDayOfWeek();
     }
 
-    private DayOfWeek getSuccessiveDayOfWeek(DayOfWeek currentDayOfWeek) {
+    private DayOfWeek getSuccessiveDayOfWeek(DayOfWeek currentDayOfWeek, boolean includeToday) {
         for(int index = 0; index < weekDays.size(); index++) {
             var day = weekDays.get(index);
-            if(currentDayOfWeek.ordinal() >= day.ordinal()) {
+
+            if(currentDayOfWeek.ordinal() == day.ordinal() && !includeToday) {
+                continue;
+            }
+            if(currentDayOfWeek.ordinal() > day.ordinal()) {
                 continue;
             }
             return weekDays.get(index);
@@ -80,7 +89,7 @@ public class FrequencyEnumerator {
     }
 
     private boolean currentTimeAfterOrOnTimeOfDay(LocalTime currentTimeOfDay) {
-        return !currentTimeOfDay.isBefore(timeOfDay);
+        return !currentTimeOfDay.isBefore(deadlineTime);
     }
 
     private int getDaysBetween(DayOfWeek firstDay, DayOfWeek secondDay) {
@@ -97,8 +106,8 @@ public class FrequencyEnumerator {
                 .ofInstant(pointInTime, ZoneId.of("UTC"))
                 .atStartOfDay()
                 .plusDays(daysToAdd)
-                .plusHours(timeOfDay.getHour())
-                .plusMinutes(timeOfDay.getMinute())
+                .plusHours(deadlineTime.getHour())
+                .plusMinutes(deadlineTime.getMinute())
                 .toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(pointInTime));
     }
 
