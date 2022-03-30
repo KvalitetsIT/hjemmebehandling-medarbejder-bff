@@ -28,17 +28,14 @@ public class FrequencyEnumerator {
         // Determine the current weekday
         var currentDayOfWeek = getCurrentDayOfWeek(currentPointInTime);
 
-
-
         // Determine number of days to add
         var currentTimeOfDay = getCurrentTimeOfDay(currentPointInTime);
         int daysToAdd = 0;
-        var includeToday = !currentTimeAfterOrOnTimeOfDay(currentTimeOfDay);
+        var includeToday = false; //!currentTimeAfterOrOnTimeOfDay(currentTimeOfDay);
 
         // Get the successive weekday from the frequency model
         var successiveDayOfWeek = getSuccessiveDayOfWeek(currentDayOfWeek, includeToday);
         daysToAdd = getDaysToAdd(currentDayOfWeek, currentTimeOfDay, successiveDayOfWeek);
-
 
         // Advance currentPointInTime
         this.currentPointInTime = advanceCurrentPointInTime(currentPointInTime, daysToAdd);
@@ -70,22 +67,19 @@ public class FrequencyEnumerator {
     }
 
     private int getDaysToAdd(DayOfWeek currentDayOfWeek, LocalTime currentTimeOfDay, DayOfWeek successiveDayOfWeek) {
-        int daysToAdd = 0;
-        // If the two weekdays are the same, compare time of day.
-        if(currentDayOfWeek == successiveDayOfWeek) {
-            if(currentTimeAfterOrOnTimeOfDay(currentTimeOfDay)) {
-                // Advance until next week.
-                daysToAdd = 7;
-            }
-            else {
-                // Don't add any days - just advance until timeOfDay today.
-            }
-        }
-        else {
-            // Compute the number of days to add.
-            daysToAdd = getDaysBetween(currentDayOfWeek, successiveDayOfWeek);
-        }
-        return daysToAdd;
+
+        var successiveDayIsSameDayAsCurrent =currentDayOfWeek == successiveDayOfWeek;
+
+        // If the two weekdays are the same, and currentTime is after (or on) deadline, we fast forward to next week
+        if(successiveDayIsSameDayAsCurrent && currentTimeAfterOrOnTimeOfDay(currentTimeOfDay))
+            return 7; //If today is monday, and succesive day is monday, we should advance to next week
+
+        // If the two weekdays are the same, and currentTime is before deadline, we should not add any days
+        if(successiveDayIsSameDayAsCurrent)
+           return 0;
+
+        // If currentDay does not match with the successive day - We should calculate the number of days
+        return getDaysBetween(currentDayOfWeek, successiveDayOfWeek);
     }
 
     private boolean currentTimeAfterOrOnTimeOfDay(LocalTime currentTimeOfDay) {
@@ -93,6 +87,7 @@ public class FrequencyEnumerator {
     }
 
     private int getDaysBetween(DayOfWeek firstDay, DayOfWeek secondDay) {
+        
         if(firstDay.ordinal() <= secondDay.ordinal()) {
             return secondDay.ordinal() - firstDay.ordinal();
         }
