@@ -363,6 +363,7 @@ public class DtoMapper {
         questionModel.setOptions(questionDto.getOptions());
         questionModel.setQuestionType(questionDto.getQuestionType());
         questionModel.setEnableWhens(questionDto.getEnableWhen());
+        questionModel.setHelperText(questionDto.getHelperText());
 
         if(questionDto.getMeasurementType() != null){
             questionModel.setMeasurementType(mapMeasurementTypeDto(questionDto.getMeasurementType()));
@@ -397,6 +398,8 @@ public class DtoMapper {
         questionDto.setOptions(questionModel.getOptions());
         questionDto.setQuestionType(questionModel.getQuestionType());
         questionDto.setEnableWhen(questionModel.getEnableWhens());
+        questionDto.setHelperText(questionModel.getHelperText());
+
         if (questionModel.getMeasurementType() != null){
             questionDto.setMeasurementType(mapMeasurementTypeModel(questionModel.getMeasurementType()));
         }

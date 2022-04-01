@@ -633,6 +633,7 @@ public class FhirMapper {
         if (question.getEnableWhens() != null) {
             item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
         }
+
         if (question.getMeasurementType() != null ) {
             item.getCodeFirstRep()
                     .setCode(question.getMeasurementType().getCode())
