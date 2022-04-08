@@ -37,6 +37,22 @@ public class ValueSetControllerTest {
         MeasurementTypeDto measurementTypeDto1 = new MeasurementTypeDto();
         MeasurementTypeDto measurementTypeDto2 = new MeasurementTypeDto();
 
+        measurementTypeModel1.setCode("code");
+        measurementTypeModel1.setDisplay("display");
+        measurementTypeModel1.setSystem("system");
+
+        measurementTypeModel2.setCode("code");
+        measurementTypeModel2.setDisplay("display");
+        measurementTypeModel2.setSystem("system");
+
+        measurementTypeDto1.setCode("code");
+        measurementTypeDto1.setDisplay("display");
+        measurementTypeDto1.setSystem("system");
+
+        measurementTypeDto2.setCode("code");
+        measurementTypeDto2.setDisplay("display");
+        measurementTypeDto2.setSystem("system");
+
         Mockito.when(valueSetService.getMeasurementTypes()).thenReturn(List.of(measurementTypeModel1, measurementTypeModel2));
         Mockito.when(dtoMapper.mapMeasurementTypeModel(measurementTypeModel1)).thenReturn(measurementTypeDto1);
         Mockito.when(dtoMapper.mapMeasurementTypeModel(measurementTypeModel2)).thenReturn(measurementTypeDto2);

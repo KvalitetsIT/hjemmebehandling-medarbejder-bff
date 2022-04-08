@@ -272,6 +272,7 @@ public class DtoMapper {
         questionnaireDto.setStatus(questionnaireModel.getStatus().toString());
         questionnaireDto.setVersion(questionnaireModel.getVersion());
         questionnaireDto.setLastUpdated(questionnaireModel.getLastUpdated());
+
         if(questionnaireModel.getQuestions() != null) {
             questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(q -> mapQuestionModel(q)).collect(Collectors.toList()));
         }
