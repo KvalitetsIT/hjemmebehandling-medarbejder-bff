@@ -31,7 +31,7 @@ public class FrequencyEnumerator {
         // Determine number of days to add
         var currentTimeOfDay = getCurrentTimeOfDay(currentPointInTime);
         int daysToAdd = 0;
-        var includeToday = false; //!currentTimeAfterOrOnTimeOfDay(currentTimeOfDay);
+        var includeToday = !currentTimeAfterOrOnTimeOfDay(currentTimeOfDay);
 
         // Get the successive weekday from the frequency model
         var successiveDayOfWeek = getSuccessiveDayOfWeek(currentDayOfWeek, includeToday);

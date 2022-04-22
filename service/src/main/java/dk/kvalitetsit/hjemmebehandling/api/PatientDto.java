@@ -1,8 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 public class PatientDto {
+
     private String givenName;
     private String familyName;
     private String cpr;
@@ -65,7 +68,7 @@ public class PatientDto {
         return primaryRelativeContactDetails;
     }
 
-    public void setPrimaryRelativeContactDetails(ContactDetailsDto primaryRelativeContactDetails) {
+    public void setPrimaryRelativeContactDetails( ContactDetailsDto primaryRelativeContactDetails) {
         this.primaryRelativeContactDetails = primaryRelativeContactDetails;
     }
 
