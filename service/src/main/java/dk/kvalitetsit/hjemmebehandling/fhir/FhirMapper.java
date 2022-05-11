@@ -290,6 +290,9 @@ public class FhirMapper {
         if(planDefinition.getDate() != null)
             planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
 
+        if(planDefinition.getMeta().getLastUpdated() != null)
+            planDefinitionModel.setLastUpdated(planDefinition.getMeta().getLastUpdated().toInstant());
+
         // Map actions to questionnaires, along with their frequencies and thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
 

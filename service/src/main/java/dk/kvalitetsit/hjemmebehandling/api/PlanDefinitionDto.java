@@ -8,7 +8,17 @@ public class PlanDefinitionDto extends BaseDto {
     private String title;
     private String status;
     private Instant created;
+    private Instant lastUpdated;
+
     private List<QuestionnaireWrapperDto> questionnaires;
+
+    public Instant getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 
     public String getName() {
         return name;

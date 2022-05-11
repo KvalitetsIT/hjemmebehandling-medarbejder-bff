@@ -112,8 +112,8 @@ public class PlanDefinitionController extends BaseController {
         catch(Exception e) {
             throw toStatusCodeException(e);
         }
-
-        return ResponseEntity.ok().build();
+        ResponseEntity<Void> response = ResponseEntity.ok().build();
+        return response;
     }
 
     private List<String> getQuestionnaireIds(List<String> questionnaireIds) {

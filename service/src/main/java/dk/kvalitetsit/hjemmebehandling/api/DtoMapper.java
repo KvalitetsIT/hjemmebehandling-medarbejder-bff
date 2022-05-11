@@ -197,6 +197,7 @@ public class DtoMapper {
         planDefinitionDto.setTitle(planDefinitionModel.getTitle());
         planDefinitionDto.setStatus(planDefinitionModel.getStatus().toString());
         planDefinitionDto.setCreated(planDefinitionModel.getCreated());
+        planDefinitionDto.setLastUpdated(planDefinitionModel.getLastUpdated());
         // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
         if(planDefinitionModel.getQuestionnaires() != null) {
             planDefinitionDto.setQuestionnaires(planDefinitionModel.getQuestionnaires().stream().map(qw -> mapQuestionnaireWrapperModel(qw)).collect(Collectors.toList()));

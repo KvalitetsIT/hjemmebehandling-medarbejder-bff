@@ -367,6 +367,8 @@ public class CarePlanService extends AccessValidatingService {
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
         // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+
+            //Only if changes were made
             refreshFrequencyTimestamp(questionnaireWrapper);
         }
         refreshFrequencyTimestampForCarePlan(carePlanModel);
@@ -374,6 +376,8 @@ public class CarePlanService extends AccessValidatingService {
 
     private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, Instant currentPointInTime) {
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+
+
             // Only recompute the timestamp if its current value is in the past.
             if(questionnaireWrapper.getSatisfiedUntil().isBefore(currentPointInTime)) {
                 refreshFrequencyTimestamp(questionnaireWrapper);

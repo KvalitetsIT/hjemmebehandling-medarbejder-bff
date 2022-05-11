@@ -11,7 +11,19 @@ public class PlanDefinitionModel extends BaseModel {
     private String title;
     private PlanDefinitionStatus status;
     private Instant created;
+
+    private Instant lastUpdated;
+
     private List<QuestionnaireWrapperModel> questionnaires;
+
+
+    public Instant getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 
     public String getName() {
         return name;
