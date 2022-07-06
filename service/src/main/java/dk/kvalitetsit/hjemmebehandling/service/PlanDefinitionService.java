@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -84,7 +85,7 @@ public class PlanDefinitionService extends AccessValidatingService {
         planDefinition.setCreated(today);
     }
 
-    public void updatePlanDefinition(String id, String name, List<String> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
+    public void updatePlanDefinition(String id, String name, PlanDefinitionStatus status, List<String> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
@@ -110,16 +111,19 @@ public class PlanDefinitionService extends AccessValidatingService {
         List<QuestionnaireModel> questionnaires = questionnaireResult.getQuestionnaires().stream()
             .map(q -> fhirMapper.mapQuestionnaire(q))
             .collect(Collectors.toList());
-        updatePlanDefinitionModel(planDefinitionModel, name, questionnaires, thresholds);
+        updatePlanDefinitionModel(planDefinitionModel, name, status, questionnaires, thresholds);
 
         // Save the updated PlanDefinition
         fhirClient.updatePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinitionModel));
     }
 
-    private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, String name, List<QuestionnaireModel> questionnaires, List<ThresholdModel> thresholds) {
+    private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, String name, PlanDefinitionStatus status, List<QuestionnaireModel> questionnaires, List<ThresholdModel> thresholds) {
         // update name
         if (name != null && !name.isEmpty()) {
             planDefinitionModel.setName(name);
+        }
+        if (status != null) {
+            planDefinitionModel.setStatus(status);
         }
 
         // update questionnaires

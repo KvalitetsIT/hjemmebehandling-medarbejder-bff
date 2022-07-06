@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
@@ -106,8 +107,8 @@ public class PlanDefinitionController extends BaseController {
             String name = request.getName();
             List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
             List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
-
-            planDefinitionService.updatePlanDefinition(id, name, questionnaireIds, thresholds);
+            PlanDefinitionStatus status = request.getStatus();
+            planDefinitionService.updatePlanDefinition(id, name, status, questionnaireIds, thresholds);
         }
         catch(Exception e) {
             throw toStatusCodeException(e);

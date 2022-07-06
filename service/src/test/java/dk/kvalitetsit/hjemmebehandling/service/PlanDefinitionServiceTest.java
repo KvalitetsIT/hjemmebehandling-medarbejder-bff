@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -83,11 +84,40 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        subject.updatePlanDefinition(id, "a new name", List.of(), List.of());
+        subject.updatePlanDefinition(id, "a new name", null, List.of(), List.of());
 
         // Assert
         assertEquals("a new name", planDefinitionModel.getName());
     }
+
+    @Test
+    public void patchPlanDefinition_status() throws ServiceException, AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        // Act
+        subject.updatePlanDefinition(id, "", PlanDefinitionStatus.DRAFT, List.of(), List.of());
+
+        // Assert
+        assertEquals( PlanDefinitionStatus.DRAFT, planDefinitionModel.getStatus());
+
+
+        subject.updatePlanDefinition(id, "", PlanDefinitionStatus.ACTIVE, List.of(), List.of());
+
+        // Assert
+        assertEquals( PlanDefinitionStatus.ACTIVE, planDefinitionModel.getStatus());
+
+
+    }
+
 
     @Test
     public void patchPlanDefinition_name_existingIsUntouched() throws ServiceException, AccessValidationException {
@@ -105,7 +135,7 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(), List.of());
+        subject.updatePlanDefinition(id, null, null, List.of(), List.of());
 
         // Assert
         assertEquals(name, planDefinitionModel.getName());
@@ -138,7 +168,7 @@ public class PlanDefinitionServiceTest {
         ThresholdModel thresholdModel = buildThresholdModel(temperatureQuestion.getLinkId());
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(QUESTIONNAIRE_ID_1), List.of(thresholdModel));
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of(thresholdModel));
 
         // Assert
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
@@ -175,7 +205,7 @@ public class PlanDefinitionServiceTest {
         ThresholdModel thresholdModel2 = buildThresholdModel(temperatureQuestion2.getLinkId());
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(thresholdModel1, thresholdModel2));
+        subject.updatePlanDefinition(id, null,null, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(thresholdModel1, thresholdModel2));
 
         // Assert
         assertEquals(2, planDefinitionModel.getQuestionnaires().size());
@@ -210,7 +240,7 @@ public class PlanDefinitionServiceTest {
         newThresholdModel.setValueQuantityLow(thresholdModel.getValueQuantityLow()-1);
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(), List.of(newThresholdModel));
+        subject.updatePlanDefinition(id, null, null, List.of(), List.of(newThresholdModel));
 
         // Assert
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
@@ -241,7 +271,7 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
         // Assert
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
@@ -266,7 +296,7 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
         // Act
-        subject.updatePlanDefinition(id, null, List.of(), List.of());
+        subject.updatePlanDefinition(id, null,null, List.of(), List.of());
 
         // Assert
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
