@@ -67,6 +67,7 @@ public class PlanDefinitionController extends BaseController {
             Collection<String> nonOptionalStatusesToInclude = statusesToInclude.isPresent() ? statusesToInclude.get() : List.of();
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
 
+
             return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
         }
         catch(ServiceException e) {

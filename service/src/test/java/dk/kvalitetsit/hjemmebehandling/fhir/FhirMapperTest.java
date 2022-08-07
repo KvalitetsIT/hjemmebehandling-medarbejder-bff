@@ -119,117 +119,118 @@ public class FhirMapperTest {
         assertTrue(result.getActivity().get(0).getDetail().getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ACTIVITY_SATISFIED_UNTIL)));
     }
 
-    @Test
-    public void mapCarePlan_includesQuestionnaires_andThresholds() {
-        // Arrange
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
-        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        @Test
+        public void mapCarePlan_includesQuestionnaires_andThresholds() {
+            // Arrange
+            CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1, PLANDEFINITION_ID_1);
+            Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+            Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
 
-        String linkId = "question-1";
-        Questionnaire.QuestionnaireItemComponent itemComponent = buildQuestionItemWithThreshold(linkId);
-        questionnaire.addItem(itemComponent);
+            String linkId = "question-1";
+            Questionnaire.QuestionnaireItemComponent itemComponent = buildQuestionItemWithThreshold(linkId);
+            questionnaire.addItem(itemComponent);
 
-        Organization organization = buildOrganization(ORGANIZATION_ID_1);
-        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+            Organization organization = buildOrganization(ORGANIZATION_ID_1);
+            PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
+            FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient, questionnaire, organization, planDefinition);
 
-        // Act
-        CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
+            // Act
+            CarePlanModel result = subject.mapCarePlan(carePlan, lookupResult);
 
-        // Assert
-        assertEquals(1, result.getQuestionnaires().size());
+            // Assert
+            assertEquals(1, result.getQuestionnaires().size());
 
-        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
-        var thresholdsOfFirstQuestionnaire =result.getQuestionnaires().get(0).getThresholds();
-        assertEquals(4, thresholdsOfFirstQuestionnaire.size());
-        assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
-        assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
-    }
-
-    @Test
-    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds_1() {
-        // Arrange
-        ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
-        ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
-
-        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
-        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
-        questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
+            assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+            var thresholdsOfFirstQuestionnaire =result.getQuestionnaires().get(0).getThresholds();
+            assertEquals(2, thresholdsOfFirstQuestionnaire.size());
+            assertEquals(0, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+            assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
+        }
 
 
-        String linkId = "question-1";
-        Questionnaire.QuestionnaireItemComponent questionnaireItemComponent = buildQuestionItemWithThreshold(linkId);
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(questionnaireItemComponent));
-        //questionnaire.addExtension( ExtensionMapper.mapThreshold(booleanThreshold) );
+        @Test
+        public void mapPlandefinitionModel_includesOnlyQuestionnaires_andThresholds_1() {
+            // Arrange
+            ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
+            ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
 
-        Organization organization = buildOrganization(ORGANIZATION_ID_1);
-        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
-        planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
+            PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
+            QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
+            questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
 
-        // Act
-        PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
+            String linkId = "question-1";
+            Questionnaire.QuestionnaireItemComponent questionnaireItemComponent = buildQuestionItemWithThreshold(linkId);
+            Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(questionnaireItemComponent));
+            //questionnaire.addExtension( ExtensionMapper.mapThreshold(booleanThreshold) );
 
-        // Assert
-        assertEquals(1, result.getQuestionnaires().size());
+            Organization organization = buildOrganization(ORGANIZATION_ID_1);
+            PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+            planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
 
-        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+            FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
 
-        //check that both thresholds are mapped on to the wrapper
-        assertEquals(4, result.getQuestionnaires().get(0).getThresholds().size());
-        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
-        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
-    }
+            // Act
+            PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
 
-    @Test
-    public void mapPlandefinitionModel_includesQuestionnaires_andThresholds() {
-        // Arrange
-        ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
-        ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
+            // Assert
+            assertEquals(1, result.getQuestionnaires().size());
 
-        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
-        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
-        questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
+            assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
 
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of());
+            //check that both thresholds are mapped on to the wrapper
+            assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
+            assertEquals(0, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+            assertEquals(2, result.getQuestionnaires().get(0).getThresholds().stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
+        }
 
-        Organization organization = buildOrganization(ORGANIZATION_ID_1);
-        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
-        planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
+        @Test
+        public void mapPlandefinitionModel_includesQuestionnaires_andThresholds() {
+            // Arrange
+            ThresholdModel measurementThreshold = buildThresholdModel("linkId-1", ThresholdType.NORMAL, Double.valueOf("0.5"), Double.valueOf("1") );
+            ThresholdModel booleanThreshold = buildThresholdModel("linkId-2", ThresholdType.NORMAL, Boolean.TRUE);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
+            PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
+            QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel();
+            questionnaireWrapperModel.setThresholds(List.of(measurementThreshold, booleanThreshold));
 
-        // Act
-        PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
+            Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of());
 
-        // Assert
-        assertEquals(1, result.getQuestionnaires().size());
+            Organization organization = buildOrganization(ORGANIZATION_ID_1);
+            PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, QUESTIONNAIRE_ID_1);
+            planDefinition.addExtension( ExtensionMapper.mapThreshold(measurementThreshold) );
 
-        assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+            FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, organization, planDefinition);
 
-        assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
+            // Act
+            PlanDefinitionModel result = subject.mapPlanDefinition(planDefinition, lookupResult);
 
-        var firstThreshold = result.getQuestionnaires().get(0).getThresholds().get(0);
+            // Assert
+            assertEquals(1, result.getQuestionnaires().size());
 
-        assertNotNull(firstThreshold);
-        assertEquals("1",firstThreshold.getQuestionnaireItemLinkId());
-        assertEquals(null,firstThreshold.getValueQuantityHigh());
-        assertEquals(null,firstThreshold.getValueQuantityLow());
-        assertEquals(ThresholdType.NORMAL,firstThreshold.getType());
-        assertEquals(Boolean.TRUE,firstThreshold.getValueBoolean());
+            assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
 
-        var secondThreshold = result.getQuestionnaires().get(0).getThresholds().get(1);
-        assertNotNull(secondThreshold);
-        assertEquals("1",secondThreshold.getQuestionnaireItemLinkId());
-        assertEquals(null,secondThreshold.getValueBoolean());
-        assertEquals(5.0,secondThreshold.getValueQuantityHigh());
-        assertEquals(2.0,secondThreshold.getValueQuantityLow());
-        assertEquals(ThresholdType.NORMAL,secondThreshold.getType());
+            assertEquals(2, result.getQuestionnaires().get(0).getThresholds().size());
 
-    }
+            var firstThreshold = result.getQuestionnaires().get(0).getThresholds().get(0);
+
+            assertNotNull(firstThreshold);
+            assertEquals("1",firstThreshold.getQuestionnaireItemLinkId());
+            assertEquals(null,firstThreshold.getValueQuantityHigh());
+            assertEquals(null,firstThreshold.getValueQuantityLow());
+            assertEquals(ThresholdType.NORMAL,firstThreshold.getType());
+            assertEquals(Boolean.TRUE,firstThreshold.getValueBoolean());
+
+            var secondThreshold = result.getQuestionnaires().get(0).getThresholds().get(1);
+            assertNotNull(secondThreshold);
+            assertEquals("1",secondThreshold.getQuestionnaireItemLinkId());
+            assertEquals(null,secondThreshold.getValueBoolean());
+            assertEquals(5.0,secondThreshold.getValueQuantityHigh());
+            assertEquals(2.0,secondThreshold.getValueQuantityLow());
+            assertEquals(ThresholdType.NORMAL,secondThreshold.getType());
+
+        }
 
     private ThresholdModel buildThresholdModel(String linkId, ThresholdType type, Boolean valueBoolean) {
         return buildThresholdModel(linkId, type, valueBoolean, null, null);

@@ -1010,10 +1010,8 @@ public class FhirMapper {
         );
         List<ThresholdModel> planDefinitionThresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
 
-        List<ThresholdModel> combinedThresholds = Stream.of(questionnaireThresholds, planDefinitionThresholds)
-            .flatMap(t -> t.stream())
-            .collect(Collectors.toList());
-        wrapper.setThresholds(combinedThresholds);
+
+        wrapper.setThresholds(planDefinitionThresholds);
 
         return wrapper;
     }

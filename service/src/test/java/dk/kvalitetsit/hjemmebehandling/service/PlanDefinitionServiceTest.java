@@ -51,6 +51,7 @@ public class PlanDefinitionServiceTest {
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
 
+
     @Test
     public void getPlanDefinitions_sucecss() throws Exception {
         // Arrange
@@ -69,6 +70,8 @@ public class PlanDefinitionServiceTest {
         assertEquals(1, result.size());
         assertEquals(planDefinitionModel, result.get(0));
     }
+
+
 
     @Test
     public void patchPlanDefinition_name() throws ServiceException, AccessValidationException {
