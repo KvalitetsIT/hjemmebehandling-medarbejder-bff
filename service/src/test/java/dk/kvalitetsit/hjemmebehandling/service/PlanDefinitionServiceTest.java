@@ -94,7 +94,7 @@ public class PlanDefinitionServiceTest {
         subject.updatePlanDefinition(id, "a new name", null, List.of(), List.of());
 
         // Assert
-        assertEquals("a new name", planDefinitionModel.getName());
+        assertEquals("a new name", planDefinitionModel.getTitle());
     }
 
     @Test

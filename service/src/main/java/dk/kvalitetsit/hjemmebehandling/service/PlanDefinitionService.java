@@ -123,7 +123,7 @@ public class PlanDefinitionService extends AccessValidatingService {
     private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, String name, PlanDefinitionStatus status, List<QuestionnaireModel> questionnaires, List<ThresholdModel> thresholds) {
         // update name
         if (name != null && !name.isEmpty()) {
-            planDefinitionModel.setName(name);
+            planDefinitionModel.setTitle(name);
         }
         if (status != null) {
             planDefinitionModel.setStatus(status);

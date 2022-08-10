@@ -67,7 +67,7 @@ public class QuestionnaireService extends AccessValidatingService {
         // Ensure that no id is present on the careplan - the FHIR server will generate that for us.
         questionnaire.setId(null);
 
-        questionnaire.setStatus(QuestionnaireStatus.DRAFT);
+        //questionnaire.setStatus(QuestionnaireStatus.DRAFT);
 
         // add unique id to question(s) and call-to-action.
         if (questionnaire.getQuestions() != null) {
