@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotNull;
 import java.sql.Wrapper;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -49,21 +50,6 @@ public class PlanDefinitionService extends AccessValidatingService {
         return lookupResult.getPlanDefinitions().stream()
                 .map(pd -> fhirMapper.mapPlanDefinition(pd, lookupResult))
                 .collect(Collectors.toList());
-
-
-        //ValueBooleans is excluded in the wrapper as they are already present in the questionnaires.
-        /*
-        planDefinitions.stream()
-                .forEach(planDefinitionModel ->
-                     planDefinitionModel.getQuestionnaires().stream()
-                             .forEach(questionnaire -> questionnaire.setThresholds(questionnaire.getThresholds().stream()
-                                             .collect(Collectors.toList())
-                             )
-                        ));
-
-        return planDefinitions;
-
-         */
     }
 
     public String createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException, AccessValidationException {
