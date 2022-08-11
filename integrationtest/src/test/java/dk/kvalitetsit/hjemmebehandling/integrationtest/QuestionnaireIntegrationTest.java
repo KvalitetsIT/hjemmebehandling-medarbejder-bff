@@ -55,6 +55,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         question2.addEnableWhenItem(enableWhen);
 
         questionnaireDto.setQuestions( List.of(question1, question2) );
+        questionnaireDto.setStatus("DRAFT");
 
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         request.setQuestionnaire(questionnaireDto);
