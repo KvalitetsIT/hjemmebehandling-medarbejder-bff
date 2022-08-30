@@ -35,6 +35,8 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds, PageDetails pageDetails) throws ServiceException, AccessValidationException {
+
+        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
@@ -55,7 +57,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Map and return the responses
         return responses
                 .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult))
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires))
                 .collect(Collectors.toList());
     }
 
@@ -64,12 +66,18 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, PageDetails pageDetails) throws ServiceException {
+
         // Get the questionnaires by status
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
         if(responses.isEmpty()) {
             return List.of();
         }
+
+        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().toUnqualifiedVersionless().getIdBase()).collect(Collectors.toList());
+
+        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
+
 
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
         // and in case of multiple entries, we want the 'most important' one.
@@ -88,7 +96,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Map and return the responses
         return responses
                 .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult))
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires))
                 .collect(Collectors.toList());
     }
 

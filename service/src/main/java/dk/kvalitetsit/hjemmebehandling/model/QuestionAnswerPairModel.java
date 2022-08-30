@@ -7,6 +7,8 @@ public class QuestionAnswerPairModel {
     private QuestionModel question;
     private AnswerModel answer;
 
+
+
     public QuestionAnswerPairModel(QuestionModel question, AnswerModel answer) {
         this.question = question;
         this.answer = answer;
@@ -27,4 +29,6 @@ public class QuestionAnswerPairModel {
     public void setAnswer(AnswerModel answer) {
         this.answer = answer;
     }
+
+
 }

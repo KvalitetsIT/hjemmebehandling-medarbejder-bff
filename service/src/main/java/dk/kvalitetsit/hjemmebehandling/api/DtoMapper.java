@@ -348,7 +348,6 @@ public class DtoMapper {
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
         QuestionAnswerPairDto questionAnswerPairDto = new QuestionAnswerPairDto();
-
         questionAnswerPairDto.setQuestion(mapQuestionModel(questionAnswerPairModel.getQuestion()));
         questionAnswerPairDto.setAnswer(mapAnswerModel(questionAnswerPairModel.getAnswer()));
 
@@ -392,7 +391,7 @@ public class DtoMapper {
 
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
-
+        questionDto.setDeprecated(questionModel.isDeprecated());
         questionDto.setLinkId(questionModel.getLinkId());
         questionDto.setText(questionModel.getText());
         questionDto.setAbbreviation(questionModel.getAbbreviation());
@@ -414,7 +413,7 @@ public class DtoMapper {
 
     private AnswerDto mapAnswerModel(AnswerModel answerModel) {
         AnswerDto answerDto = new AnswerDto();
-
+        answerDto.setLinkId(answerModel.getLinkId());
         answerDto.setValue(answerModel.getValue());
         answerDto.setAnswerType(answerModel.getAnswerType());
 

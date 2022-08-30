@@ -384,16 +384,81 @@ public class FhirMapper {
         return questionnaireResponse;
     }
 
+
     public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
+
+        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireResponse.getQuestionnaire())
+                .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireResponse.getQuestionnaire())));
+
+        // Populate questionAnswerMap
+        List<QuestionAnswerPairModel> answers = new ArrayList<>();
+
+        for(var item : questionnaireResponse.getItem()) {
+            QuestionModel question;
+            try {
+                question = getQuestion(questionnaire, item.getLinkId());
+            }   catch (IllegalStateException e) {
+                // Corresponding question could not be found in the current/newest questionnaire
+                // ignore
+                // Or use the overloaded version which runs thought historical versions as well
+                // and returns deprecated questions
+                question = null;
+            }
+            AnswerModel answer = getAnswer(item);
+            answers.add( new QuestionAnswerPairModel(question, answer));
+        }
+
+        questionnaireResponseModel.setQuestionAnswerPairs(answers);
+
+        return questionnaireResponseModel;
+    }
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, List<Questionnaire> historicalQuestionnaires) {
+        if (historicalQuestionnaires == null) return mapQuestionnaireResponse(questionnaireResponse, lookupResult);
+
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
+
+        // Populate questionAnswerMap
+        List<QuestionAnswerPairModel> answers = new ArrayList<>();
+
+        //Look through all the given questionnaires
+        for(var item : questionnaireResponse.getItem()) {
+            QuestionModel question = null;
+            boolean deprecated = false;
+            int i = 0;
+            for (Questionnaire q : historicalQuestionnaires) {
+                if (i > 0) deprecated = true;
+                boolean hasNext = i < historicalQuestionnaires.size()-1;
+                try {
+                    question = getQuestion(q, item.getLinkId());
+                    question.setDeprecated(deprecated);
+                    break;
+                }catch (IllegalStateException e) {
+                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
+                }
+                i++;
+            }
+            AnswerModel answer = getAnswer(item);
+            answers.add(new QuestionAnswerPairModel(question, answer));
+        }
+        questionnaireResponseModel.setQuestionAnswerPairs(answers);
+        return questionnaireResponseModel;
+    }
+
+
+
+    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
         mapBaseAttributesToModel(questionnaireResponseModel, questionnaireResponse);
 
         String questionnaireId = questionnaireResponse.getQuestionnaire();
+
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireId)));
         questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
         questionnaireResponseModel.setQuestionnaireId(extractId(questionnaire));
+
 
         if(questionnaireResponse.getBasedOn() == null || questionnaireResponse.getBasedOn().size() != 1) {
             throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: Expected exactly one BasedOn-attribute!", questionnaireResponseModel.getId().toString()));
@@ -410,16 +475,6 @@ public class FhirMapper {
         }
         questionnaireResponseModel.setSourceId(new QualifiedId(questionnaireResponse.getSource().getReference()));
 
-        // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
-
-        for(var item : questionnaireResponse.getItem()) {
-            QuestionModel question = getQuestion(questionnaire, item.getLinkId());
-            AnswerModel answer = getAnswer(item);
-            answers.add(new QuestionAnswerPairModel(question, answer));
-        }
-
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
         questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));

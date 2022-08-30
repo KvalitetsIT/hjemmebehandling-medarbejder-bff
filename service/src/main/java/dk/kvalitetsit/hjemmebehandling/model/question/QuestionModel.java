@@ -20,6 +20,16 @@ public class QuestionModel {
     private List<EnableWhen> enableWhens;
     private List<ThresholdModel> thresholds;
 
+    private boolean deprecated;
+
+    public boolean isDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
     public String getLinkId() {
         return linkId;
     }

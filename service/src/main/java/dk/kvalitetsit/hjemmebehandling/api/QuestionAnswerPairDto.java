@@ -7,6 +7,7 @@ public class QuestionAnswerPairDto {
     private QuestionDto question;
     private AnswerDto answer;
 
+
     public QuestionDto getQuestion() {
         return question;
     }
@@ -22,4 +23,6 @@ public class QuestionAnswerPairDto {
     public void setAnswer(AnswerDto answer) {
         this.answer = answer;
     }
+
+
 }

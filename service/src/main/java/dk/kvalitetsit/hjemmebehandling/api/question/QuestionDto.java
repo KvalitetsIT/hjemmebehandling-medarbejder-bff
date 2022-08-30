@@ -19,6 +19,15 @@ public class QuestionDto {
     private List<ThresholdDto> thresholds;
     private MeasurementTypeDto measurementType;
 
+    private boolean deprecated;
+
+    public boolean isDeprecated() {
+        return deprecated;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
 
     public MeasurementTypeDto getMeasurementType() {
         return measurementType;

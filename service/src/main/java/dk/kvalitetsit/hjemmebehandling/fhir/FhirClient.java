@@ -17,10 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FhirClient {
@@ -147,6 +144,20 @@ public class FhirClient {
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
 
         return lookupQuestionnaireResponseByCriteria(List.of(questionnaireCriterion, basedOnCriterion));
+    }
+
+    public List<Questionnaire> lookupVersionsOfQuestionnaireById(List<String> ids){
+
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        List<Questionnaire> resources = new LinkedList<>();
+
+        ids.forEach( id -> {
+            Bundle bundle = client.history().onInstance(new IdType("Questionnaire", id)).returnBundle(Bundle.class).execute();
+            bundle.getEntry().forEach(x -> resources.add((Questionnaire) x.getResource()));
+        });
+
+        return resources;
     }
 
     public FhirLookupResult lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
