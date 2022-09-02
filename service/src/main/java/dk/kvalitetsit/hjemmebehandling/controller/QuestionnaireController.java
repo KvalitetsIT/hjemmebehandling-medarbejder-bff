@@ -106,6 +106,12 @@ public class QuestionnaireController extends BaseController {
         validateQuestions(request.getQuestionnaire().getQuestions());
 
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
+        
+        List<QuestionModel> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
+                .map(c -> dtoMapper.mapQuestionDto(c))
+                .collect(Collectors.toList());
+        questionnaire.setCallToActions(callToActions);
+        
         String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
 
         URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
