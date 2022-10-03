@@ -597,4 +597,8 @@ public class FhirClient {
     public void updatePlanDefinition(PlanDefinition planDefinition) {
         update(planDefinition);
     }
+
+    public void updatePatient(Patient patient) {
+        update(patient);
+    }
 }

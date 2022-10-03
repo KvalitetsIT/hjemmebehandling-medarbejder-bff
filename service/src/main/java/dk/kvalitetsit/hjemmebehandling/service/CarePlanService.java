@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +86,9 @@ public class CarePlanService extends AccessValidatingService {
                 throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS);
             }
 
+            var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
+            if (newPatient != null) patient.get().setContact(newPatient.getContact());
+
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
             carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
         }
@@ -97,12 +101,13 @@ public class CarePlanService extends AccessValidatingService {
 
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
-            if(patient.isPresent())
+            if(patient.isPresent()) {
+                fhirClient.updatePatient(patient.get());
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
+            }
 
             // create customLoginUser if the patient do not exist. Done if an apiurl is set.
-            if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl))
-                createCustomLogin(carePlan.getPatient());
+            if(patientidpApiUrl!=null && !"".equals(patientidpApiUrl)) createCustomLogin(carePlan.getPatient());
 
             // create patient and careplan
             String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
