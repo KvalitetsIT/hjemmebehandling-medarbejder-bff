@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -93,7 +94,7 @@ public class QuestionnaireResponseServiceTest {
 
         assertEquals(1, result.size());
     }
-/*
+
     @Test
     public void getQuestionnaireResponses_ReturnSortedPages_WhenTwoPages() throws Exception {
         //Arrange
@@ -117,8 +118,9 @@ public class QuestionnaireResponseServiceTest {
 
         FhirLookupResult lookupResult1 = FhirLookupResult.fromResources(response1,response3, response4, response2);
 
-        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, List.of())).thenReturn(lookupResult1);
-        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById( List.of())).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(lookupResult1);
+
+        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(null)).thenReturn(List.of());
 
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response1,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response1));
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response2,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response2));
@@ -146,7 +148,7 @@ public class QuestionnaireResponseServiceTest {
         responseModel1.setId(new QualifiedId("QuestionnaireResponse/"+questionnaireResponse.getId()));
         return responseModel1;
     }
-*/
+
     @Test
     public void getQuestionnaireResponses_ReturnZeroItem_WhenPagesizeIsZero() throws Exception {
         //Arrange
@@ -251,7 +253,7 @@ public class QuestionnaireResponseServiceTest {
         // Assert
         assertEquals(0, result.size());
     }
-    /*
+
 
     @Test
     public void getQuestionnaireResponsesByStatus_multipleEntriesForPatient_sameQuestionnaire() throws Exception {
@@ -262,14 +264,17 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse secondResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_1, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(firstResponse, secondResponse);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(null);
 
+
+        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().toUnqualifiedVersionless().getIdBase()).collect(Collectors.toList());
+        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(ids)).thenReturn(null);
+
+        List<Questionnaire> historicalQuestionnaires = null;
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, historicalQuestionnaires)).thenReturn(model);
 
         // Impose that the second response is greater than the first.
         Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(1);
-
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
 
@@ -277,7 +282,7 @@ public class QuestionnaireResponseServiceTest {
         assertEquals(1, result.size());
         assertEquals(model, result.get(0));
     }
-    */
+
 
     @Test
     public void getQuestionnaireResponsesByStatus_multipleEntriesForPatient_differentQuestionnaires() throws Exception {
@@ -299,7 +304,7 @@ public class QuestionnaireResponseServiceTest {
         // Assert
         assertEquals(2, result.size());
     }
-/*
+
     @Test
     public void getQuestionnaireResponsesByStatus_handlesPagingParameters_page1() throws Exception {
         // Arrange
@@ -311,9 +316,12 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse response3 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_3, QUESTIONNAIRE_ID_3, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(response1, response2, response3);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(List.of());
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), List.of())).thenReturn(new QuestionnaireResponseModel());
+
+        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdBase()).collect(Collectors.toList());
+        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(ids)).thenReturn(List.of());
+
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
@@ -333,9 +341,9 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse response3 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_3, QUESTIONNAIRE_ID_3, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(response1, response2, response3);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(null);
+        Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(List.of());
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), null)).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses, pageDetails);
@@ -343,7 +351,7 @@ public class QuestionnaireResponseServiceTest {
         // Assert
         assertEquals(1, result.size());
     }
-*/
+
     @Test
     public void updateExaminationStatus_resourceNotFound_throwsException() throws Exception {
         // Arrange

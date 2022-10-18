@@ -319,7 +319,7 @@ public class DtoMapper {
         questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId().toString());
         questionnaireResponseDto.setCarePlanId(questionnaireResponseModel.getCarePlanId().toString());
         questionnaireResponseDto.setQuestionnaireName(questionnaireResponseModel.getQuestionnaireName());
-        questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(qa -> mapQuestionAnswerPairModel(qa)).collect(Collectors.toList()));
+        questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(this::mapQuestionAnswerPairModel).collect(Collectors.toList()));
         questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
         questionnaireResponseDto.setExaminationStatus(questionnaireResponseModel.getExaminationStatus());
         questionnaireResponseDto.setTriagingCategory(questionnaireResponseModel.getTriagingCategory());

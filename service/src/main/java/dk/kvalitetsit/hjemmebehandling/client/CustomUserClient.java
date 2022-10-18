@@ -39,8 +39,8 @@ public class CustomUserClient {
     	}
     	// Init headers
     	HttpHeaders headers = new HttpHeaders();
-    	headers.setContentType(MediaType.APPLICATION_JSON);
-    	// create request
+		// create request
+		headers.setContentType(MediaType.APPLICATION_JSON);
     	String jsonArg = mapper.writeValueAsString(userCreateRequest);
     	HttpEntity<String> request = new HttpEntity<String>(jsonArg,headers);
     	// Send request
