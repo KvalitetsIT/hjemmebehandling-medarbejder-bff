@@ -143,8 +143,8 @@ public class FhirMapperTest {
 
             assertEquals(QUESTIONNAIRE_ID_1, result.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
             var thresholdsOfFirstQuestionnaire =result.getQuestionnaires().get(0).getThresholds();
-            assertEquals(2, thresholdsOfFirstQuestionnaire.size());
-            assertEquals(0, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
+            assertEquals(4, thresholdsOfFirstQuestionnaire.size());
+            assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals(linkId)).collect(Collectors.toList()).size()); // from the questionnaire
             assertEquals(2, thresholdsOfFirstQuestionnaire.stream().filter(q -> q.getQuestionnaireItemLinkId().equals("1")).collect(Collectors.toList()).size()); // from buildPlanDefinition..
         }
 

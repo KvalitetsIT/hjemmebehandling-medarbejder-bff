@@ -139,6 +139,14 @@ public class FhirMapper {
             wrapper.setFrequency(frequencyModel);
             wrapper.setSatisfiedUntil(ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()));
 
+            // get thresholds from questionnaire
+            List<ThresholdModel> questionnaireThresholds = ExtensionMapper.extractThresholds(
+                questionnaire.getItem().stream()
+                    .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
+                    .collect(Collectors.toList())
+            );
+            wrapper.getThresholds().addAll(questionnaireThresholds);
+
             // find thresholds from plandefinition
             Optional<List<ThresholdModel>> thresholds = carePlanModel.getPlanDefinitions().stream()
                 .flatMap(p -> p.getQuestionnaires().stream())
@@ -146,7 +154,7 @@ public class FhirMapper {
                 .findFirst()
                 .map(qw -> qw.getThresholds());
             if (thresholds.isPresent()) {
-                wrapper.setThresholds(thresholds.get());
+                wrapper.getThresholds().addAll(thresholds.get());
             }
 
             carePlanModel.getQuestionnaires().add(wrapper);
@@ -1058,16 +1066,7 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
 
-        List<ThresholdModel> questionnaireThresholds = ExtensionMapper.extractThresholds(
-            questionnaire.getItem().stream()
-                .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
-                .collect(Collectors.toList())
-        );
-        List<ThresholdModel> planDefinitionThresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
-
-
-        
-        wrapper.setThresholds(planDefinitionThresholds);
+        wrapper.setThresholds( ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD)) );
 
         return wrapper;
     }
