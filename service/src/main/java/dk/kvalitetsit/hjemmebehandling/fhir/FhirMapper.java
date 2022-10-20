@@ -301,7 +301,7 @@ public class FhirMapper {
         if(planDefinition.getMeta().getLastUpdated() != null)
             planDefinitionModel.setLastUpdated(planDefinition.getMeta().getLastUpdated().toInstant());
 
-        // Map actions to questionnaires, along with their frequencies and thresholds
+        // Map actions to questionnaires, along with their thresholds
         planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
 
         return planDefinitionModel;
@@ -1058,8 +1058,6 @@ public class FhirMapper {
     private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
         var wrapper = new QuestionnaireWrapperModel();
 
-        wrapper.setFrequency(mapTiming(action.getTimingTiming()));
-
         String questionnaireId = action.getDefinitionCanonicalType().getValue();
         Questionnaire questionnaire = lookupResult
                 .getQuestionnaire(questionnaireId)
@@ -1131,11 +1129,8 @@ public class FhirMapper {
 
     private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(QuestionnaireWrapperModel questionnaireWrapperModel) {
         CanonicalType definitionCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
-        //Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
-        //Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
-        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.getThresholds());
 
-        //return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil, thresholds);
+        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.getThresholds());
 
         PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();
         action.setDefinition(definitionCanonical);
