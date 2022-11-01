@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -561,7 +562,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void completeCareplan_NoQuestionnaireResponses_ShouldBeCompleted() throws ServiceException {
+    public void completeCareplan_NoQuestionnaireResponses_and_satisfiedSchedule_ShouldBeCompleted() throws ServiceException {
         // Arrange
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         FhirLookupResult careplanResult = FhirLookupResult.fromResources(carePlan);
@@ -569,6 +570,8 @@ public class CarePlanServiceTest {
 
         FhirLookupResult questionnaireResponsesResult = FhirLookupResult.fromResources();
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),CAREPLAN_ID_1)).thenReturn(questionnaireResponsesResult);
+
+        carePlan.setExtension( List.of(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now().plus(1, ChronoUnit.DAYS))) );
 
         //Action and assert
         assertDoesNotThrow(() -> subject.completeCarePlan(CAREPLAN_ID_1));
@@ -591,6 +594,28 @@ public class CarePlanServiceTest {
         } catch (ServiceException serviceException){
             assertEquals(ErrorKind.BAD_REQUEST,serviceException.getErrorKind());
             assertEquals(ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES, serviceException.getErrorDetails());
+        }
+    }
+
+    @Test
+    public void completeCareplan_unsatisfiedSchedule_ShouldThrowError(){
+        // Arrange
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+        FhirLookupResult careplanResult = FhirLookupResult.fromResources(carePlan);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(careplanResult);
+
+        FhirLookupResult questionnaireResponsesResult = FhirLookupResult.fromResources();
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),CAREPLAN_ID_1)).thenReturn(questionnaireResponsesResult);
+
+        carePlan.setExtension( List.of(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now().minus(1, ChronoUnit.DAYS))) );
+
+        //Action and assert
+        try{
+            subject.completeCarePlan(CAREPLAN_ID_1);
+            fail("Careplan should be failing due to questionnaireresponses on careplan");
+        } catch (ServiceException serviceException){
+            assertEquals(ErrorKind.BAD_REQUEST,serviceException.getErrorKind());
+            assertEquals(ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES, serviceException.getErrorDetails());
         }
     }
 

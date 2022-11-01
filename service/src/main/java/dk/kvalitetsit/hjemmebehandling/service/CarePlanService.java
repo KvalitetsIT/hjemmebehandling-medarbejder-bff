@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -145,6 +146,10 @@ public class CarePlanService extends AccessValidatingService {
         var questionnaireResponsesStillNotExamined = fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId).getQuestionnaireResponses();
         if(questionnaireResponsesStillNotExamined.size() > 0){
             throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
+        }
+
+        if (ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.get().getExtension()).isBefore(Instant.now())) {
+            throw new ServiceException(String.format("Careplan with id %s is missing scheduled responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
         }
 
         CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
