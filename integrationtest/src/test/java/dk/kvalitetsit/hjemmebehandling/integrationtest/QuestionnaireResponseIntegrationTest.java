@@ -20,12 +20,12 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
 
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
     }
-    /*
+
     @Test
     public void getQuestionnaireResponsesByCarePlanId_success() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
-        List<String> questionnaireIds = List.of("Questionnaire/questionnaire-1");
+        List<String> questionnaireIds = List.of("questionnaire-1");
 
         // Act
         ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1,1);
@@ -33,7 +33,7 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         // Assert
         assertEquals(200, response.getStatusCode());
     }
-    */
+
     @Test
     public void getQuestionnaireResponsesByStatus_success() throws Exception {
         // Arrange
