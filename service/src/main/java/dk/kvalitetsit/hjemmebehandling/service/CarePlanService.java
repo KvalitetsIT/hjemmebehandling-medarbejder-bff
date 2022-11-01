@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +31,7 @@ import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -274,51 +270,44 @@ public class CarePlanService extends AccessValidatingService {
         return allowedQuestionnaires.containsAll(actualQuestionnaires);
     }
 
-    private void updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
+    private void updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> updatedFrequencies, List<PlanDefinitionModel> planDefinitions) {
         carePlanModel.setPlanDefinitions(planDefinitions);
-        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(questionnaireIds, frequencies, planDefinitions));
+
+        List<QuestionnaireWrapperModel> updatedQuestionnaires = planDefinitions.stream()
+            .flatMap(pd -> pd.getQuestionnaires().stream())
+            .collect(Collectors.toList());
+        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(carePlanModel.getQuestionnaires(), updatedQuestionnaires, updatedFrequencies));
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
-    private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<String> questionnaireIds, Map<String, FrequencyModel> frequenciesById, List<PlanDefinitionModel> planDefinitions) {
+    List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<QuestionnaireWrapperModel> currentQuestionnaires, List<QuestionnaireWrapperModel> updatedQuestionnaires, Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
         List<QuestionnaireWrapperModel> result = new ArrayList<>();
 
-        Map<String, QuestionnaireModel> questionnairesById = new HashMap<>();
-        for(var questionnaire : planDefinitions.stream().flatMap(pd -> pd.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire())).collect(Collectors.toSet())) {
-            questionnairesById.put(questionnaire.getId().toString(), questionnaire);
-        }
-
-        Map<String, List<ThresholdModel>> thresholdsById = new HashMap<>();
-        for(var planDefinition : planDefinitions) {
-            for(var qw : planDefinition.getQuestionnaires()) {
-                String questionnaireId = qw.getQuestionnaire().getId().toString();
-                if(thresholdsById.containsKey(questionnaireId)) {
-                    throw new IllegalStateException(String.format("Questionnaire %s specified by multiple referenced plan definitions!", questionnaireId));
-                }
-                thresholdsById.put(questionnaireId, qw.getThresholds());
-            }
-        }
-
-        for(var questionnaireId : questionnaireIds) {
-            QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
-
-            // Set the questionnaire
-            var questionnaire = questionnairesById.get(questionnaireId);
-            wrapper.setQuestionnaire(questionnaire);
+        for(var wrapper : updatedQuestionnaires) {
+            Optional<QuestionnaireWrapperModel> currentQuestionnaire = currentQuestionnaires.stream()
+                .filter(q -> q.getQuestionnaire().getId().equals(wrapper.getQuestionnaire().getId()))
+                .findFirst();
+            FrequencyModel updatedFrequency = updatedQuestionnaireIdFrequencies.get(wrapper.getQuestionnaire().getId().toString());
 
             // Set the frequency
-            wrapper.setFrequency(frequenciesById.get(questionnaireId));
+            wrapper.setFrequency(updatedFrequency);
 
-            // Initialize the 'satisfied-until' timestamp-
-            refreshFrequencyTimestamp(wrapper);
-
-            // Transfer thresholds
-            var thresholds = thresholdsById.get(questionnaireId);
-            wrapper.setThresholds(thresholds);
+            if (currentQuestionnaire.isEmpty()) {
+                // Initialize the 'satisfied-until' timestamp-
+                refreshFrequencyTimestamp(wrapper);
+            }
+            else {
+                if (!updatedFrequency.equals(currentQuestionnaire.get().getFrequency())) {
+                    // re-Initialize the 'satisfied-until' timestamp-
+                    refreshFrequencyTimestamp(wrapper);
+                }
+                else {
+                    wrapper.setSatisfiedUntil( currentQuestionnaire.get().getSatisfiedUntil() );
+                }
+            }
 
             result.add(wrapper);
         }
-
         return result;
     }
 

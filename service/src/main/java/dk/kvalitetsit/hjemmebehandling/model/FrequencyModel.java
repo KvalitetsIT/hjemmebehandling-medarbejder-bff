@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 public class FrequencyModel {
     private List<Weekday> weekdays;
@@ -23,5 +24,18 @@ public class FrequencyModel {
 
     public void setTimeOfDay(LocalTime timeOfDay) {
         this.timeOfDay = timeOfDay;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FrequencyModel that = (FrequencyModel) o;
+        return weekdays.equals(that.weekdays) && timeOfDay.equals(that.timeOfDay);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(weekdays, timeOfDay);
     }
 }
