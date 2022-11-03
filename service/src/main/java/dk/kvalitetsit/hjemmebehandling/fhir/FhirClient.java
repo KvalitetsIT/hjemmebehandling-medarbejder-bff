@@ -35,6 +35,28 @@ public class FhirClient {
         this.userContextProvider = userContextProvider;
     }
 
+    public FhirLookupResult lookupActiveCarePlansWithQuestionnaire(String questionnaireId) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
+        var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+        var questionnaireCriterion = CarePlan.INSTANTIATES_CANONICAL.hasChainedProperty(PlanDefinition.DEFINITION.hasId(questionnaireId));
+        var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
+
+        return lookupCarePlansByCriteria(criteria);
+    }
+
+    public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
+        var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+        var plandefinitionCriterion = CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId);
+        var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
+
+        return lookupCarePlansByCriteria(criteria);
+    }
+
     public FhirLookupResult lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) {
         var criteria = new ArrayList<ICriterion<?>>();
 

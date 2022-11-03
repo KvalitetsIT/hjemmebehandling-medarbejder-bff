@@ -146,6 +146,18 @@ public class QuestionnaireController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping(value = "/v1/questionnaire/{id}/retire")
+    public ResponseEntity<Void> retireQuestionnaire(@PathVariable String id) {
+        try {
+            questionnaireService.retireQuestionnaire(id);
+        }
+        catch(ServiceException se) {
+            throw toStatusCodeException(se);
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
     private void validateQuestions(List<QuestionDto> questions){
         if(questions == null || questions.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);

@@ -19,7 +19,10 @@ public enum ErrorDetails {
     QUESTIONS_ID_IS_NOT_UNIQUE("Alle spørgsmål har ikke en unik forkortelse", 23),
     CUSTOMLOGIN_UNKNOWN_ERROR("Der opstod et ukendt problem ved oprettelse af login",24),
     CPRSERVICE_UNKOWN_ERROR("Der opstod et ukendt problem i forsøget på at hente person udfra cpr-nummer",25),
-    CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Monitoreringsplanen har blå alarmer på et eller flere spørgeskemaer.", 11),
+    CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Monitoreringsplanen har blå alarmer på et eller flere spørgeskemaer.", 26),
+    QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN("Spørgeskemaet bruges i patientgruppe på en eller flere aktive monitoreringsplaner.", 27),
+    PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN("Patientgruppen bruges på en eller flere aktive monitoreringsplaner.", 28),
+
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 

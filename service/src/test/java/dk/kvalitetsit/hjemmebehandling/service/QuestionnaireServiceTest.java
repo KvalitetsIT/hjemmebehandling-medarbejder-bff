@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
@@ -8,8 +8,10 @@ import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.junit.jupiter.api.Test;
@@ -256,6 +258,46 @@ public class QuestionnaireServiceTest {
             }
         }
         return argumentBuilder.build();
+    }
+
+    @Test
+    public void retireQuestionnaire_noActiveCarePlanReferences_isRetired() throws ServiceException {
+        // Arrange
+        String id = "questionnaire-1";
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, Enumerations.PublicationStatus.ACTIVE);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire);
+
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
+
+        // Act
+        subject.retireQuestionnaire(id);
+
+        // Assert
+        assertEquals(Enumerations.PublicationStatus.RETIRED, questionnaire.getStatus());
+    }
+
+    @Test
+    public void retirePlanDefinition_activeCarePlanReferences_throwsError() {
+        // Arrange
+        String id = "questionnaire-1";
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, Enumerations.PublicationStatus.ACTIVE);
+        CarePlan activeCarePlan = new CarePlan();
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, activeCarePlan);
+
+        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
+
+        // Act
+        try {
+            subject.retireQuestionnaire(id);
+            fail();
+        }
+        catch (ServiceException se) {
+            // Assert
+            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+            assertEquals(ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
+        }
     }
 
     private Questionnaire buildQuestionnaire(String questionnaireId) {

@@ -118,6 +118,18 @@ public class PlanDefinitionController extends BaseController {
         return response;
     }
 
+    @PutMapping(value = "/v1/plandefinition/{id}/retire")
+    public ResponseEntity<Void> retirePlanDefinition(@PathVariable String id) {
+        try {
+            planDefinitionService.retirePlanDefinition(id);
+        }
+        catch(ServiceException se) {
+            throw toStatusCodeException(se);
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
     private List<String> getQuestionnaireIds(List<String> questionnaireIds) {
         return collectionToStream(questionnaireIds)
             .map(id -> FhirUtils.qualifyId(id, ResourceType.Questionnaire))

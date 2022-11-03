@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
@@ -13,9 +14,12 @@ import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.Questionnaire;
@@ -309,6 +313,46 @@ public class PlanDefinitionServiceTest {
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
     }
 
+    @Test
+    public void retirePlanDefinition_noActiveCarePlanReferences_isRetired() throws ServiceException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, Enumerations.PublicationStatus.ACTIVE);
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+
+        // Act
+        subject.retirePlanDefinition(id);
+
+        // Assert
+        assertEquals(Enumerations.PublicationStatus.RETIRED, planDefinition.getStatus());
+    }
+
+    @Test
+    public void retirePlanDefinition_activeCarePlanReferences_throwsError() {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, Enumerations.PublicationStatus.ACTIVE);
+        CarePlan activeCarePlan = new CarePlan();
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition, activeCarePlan);
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+
+        // Act
+        try {
+            subject.retirePlanDefinition(id);
+            fail();
+        }
+        catch (ServiceException se) {
+            // Assert
+            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+            assertEquals(ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
+        }
+    }
+
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId) {
         QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
 
@@ -367,9 +411,14 @@ public class PlanDefinitionServiceTest {
     }
 
     private PlanDefinition buildPlanDefinition(String planDefinitionId) {
+        return buildPlanDefinition(planDefinitionId, Enumerations.PublicationStatus.ACTIVE);
+    }
+
+    private PlanDefinition buildPlanDefinition(String planDefinitionId, Enumerations.PublicationStatus status) {
         PlanDefinition planDefinition = new PlanDefinition();
 
         planDefinition.setId(planDefinitionId);
+        planDefinition.setStatus(status);
 
         return planDefinition;
     }

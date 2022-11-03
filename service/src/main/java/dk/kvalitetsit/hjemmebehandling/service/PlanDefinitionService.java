@@ -7,26 +7,27 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.validation.constraints.NotNull;
-import java.sql.Wrapper;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -174,4 +175,22 @@ public class PlanDefinitionService extends AccessValidatingService {
 
         }
     }
+
+  public void retirePlanDefinition(String id) throws ServiceException {
+      String qualifiedId = FhirUtils.qualifyId(id, ResourceType.PlanDefinition);
+      FhirLookupResult lookupResult = fhirClient.lookupPlanDefinition(qualifiedId);
+
+      Optional<PlanDefinition> planDefinition = lookupResult.getPlanDefinition(qualifiedId);
+      if (!planDefinition.isPresent()) {
+          throw new ServiceException(String.format("Could not lookup plandefinition with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
+      }
+
+      var activeCarePlansWithPlanDefinition = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
+      if (!activeCarePlansWithPlanDefinition.isEmpty()) {
+          throw new ServiceException(String.format("Plandefinition with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+      }
+
+      PlanDefinition retiredPlanDefinition = planDefinition.get().setStatus(Enumerations.PublicationStatus.RETIRED);
+      fhirClient.updatePlanDefinition(retiredPlanDefinition);
+  }
 }

@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -14,6 +15,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,5 +132,23 @@ public class QuestionnaireService extends AccessValidatingService {
         if (!validStatuses.contains(Enumerations.PublicationStatus.valueOf(updatedStatus))) {
             throw new ServiceException(String.format("Could not change status for questionnaire with id %s!", questionnaire.getId()), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
+    }
+
+    public void retireQuestionnaire(String id) throws ServiceException {
+        String qualifiedId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(List.of(qualifiedId));
+
+        Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(qualifiedId);
+        if (!questionnaire.isPresent()) {
+            throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
+        }
+
+        var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithQuestionnaire(qualifiedId).getCarePlans();
+        if (!activeCarePlansWithQuestionnaire.isEmpty()) {
+            throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+        }
+
+        Questionnaire retiredQuestionnaire = questionnaire.get().setStatus(Enumerations.PublicationStatus.RETIRED);
+        fhirClient.updateQuestionnaire(retiredQuestionnaire);
     }
 }
