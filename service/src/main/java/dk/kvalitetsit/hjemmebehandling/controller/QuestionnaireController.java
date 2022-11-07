@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
@@ -35,13 +35,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,8 +65,14 @@ public class QuestionnaireController extends BaseController {
 
     @Operation(summary = "Get all Questionnaires.", description = "Retrieves a list of Questionnaire.")
     @GetMapping(value = "/v1/questionnaire", produces = { "application/json" })
-    public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires() {
-        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires();
+    public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires(@RequestParam(value = "statusesToInclude", required = false) Optional<Collection<String>> statusesToInclude) {
+        if(statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()){
+            var details = ErrorDetails.PARAMETERS_INCOMPLETE;
+            details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
+            throw new BadRequestException(details);
+        }
+
+        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(() -> List.of()));
 
         return ResponseEntity.ok(questionnaires.stream().map(q -> dtoMapper.mapQuestionnaireModel(q)).collect(Collectors.toList()));
     }

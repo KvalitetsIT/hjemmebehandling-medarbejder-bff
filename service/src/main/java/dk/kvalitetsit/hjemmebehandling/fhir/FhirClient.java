@@ -260,13 +260,20 @@ public class FhirClient {
         return lookupPlanDefinitionsByCriteria(criterias);
     }
 
-    public FhirLookupResult lookupQuestionnaires() {
+    public FhirLookupResult lookupQuestionnairesByStatus(Collection<String> statusesToInclude) {
+        var criterias = new ArrayList<ICriterion<?>>();
         var organizationCriterion = buildOrganizationCriterion();
+        criterias.add(organizationCriterion);
 
-        return lookupByCriteria(Questionnaire.class, List.of(organizationCriterion));
+        if(!statusesToInclude.isEmpty()){
+            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
+            var statusCriteron = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
+            criterias.add(statusCriteron);
+        }
+        return lookupByCriteria(Questionnaire.class, criterias);
     }
 
-    public FhirLookupResult lookupQuestionnaires(Collection<String> questionnaireIds) {
+    public FhirLookupResult lookupQuestionnairesById(Collection<String> questionnaireIds) {
         var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds);
         var organizationCriterion = buildOrganizationCriterion();
 
@@ -305,7 +312,7 @@ public class FhirClient {
         List<String> questionnaireIds = new ArrayList<>();
         questionnaireIds.addAll(getQuestionnaireIdsFromCarePlan(carePlanResult.getCarePlans()));
         questionnaireIds.addAll(getQuestionnaireIdsFromPlanDefinition(carePlanResult.getPlanDefinitions()));
-        FhirLookupResult questionnaireResult = lookupQuestionnaires(questionnaireIds);
+        FhirLookupResult questionnaireResult = lookupQuestionnairesById(questionnaireIds);
 
         // Merge the results
         return carePlanResult.merge(questionnaireResult);

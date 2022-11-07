@@ -19,6 +19,7 @@ import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,7 +38,7 @@ public class QuestionnaireService extends AccessValidatingService {
     }
 
     public Optional<QuestionnaireModel> getQuestionnaireById(String questionnaireId) throws ServiceException, AccessValidationException {
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(List.of(questionnaireId));
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(questionnaireId);
         if(!questionnaire.isPresent()) {
@@ -52,8 +53,8 @@ public class QuestionnaireService extends AccessValidatingService {
         return Optional.of(mappedCarePlan);
     }
 
-    public List<QuestionnaireModel> getQuestionnaires() {
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires();
+    public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) {
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
 
         return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
     }
@@ -83,7 +84,7 @@ public class QuestionnaireService extends AccessValidatingService {
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(List.of(questionnaireId));
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
         if(lookupResult.getQuestionnaires().size() != 1 || !lookupResult.getQuestionnaire(questionnaireId).isPresent()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
@@ -136,7 +137,7 @@ public class QuestionnaireService extends AccessValidatingService {
 
     public void retireQuestionnaire(String id) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(List.of(qualifiedId));
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(qualifiedId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(qualifiedId);
         if (!questionnaire.isPresent()) {

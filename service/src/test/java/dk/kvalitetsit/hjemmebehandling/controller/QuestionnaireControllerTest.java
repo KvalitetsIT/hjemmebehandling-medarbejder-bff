@@ -24,8 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,12 +52,12 @@ public class QuestionnaireControllerTest {
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
 
-        Mockito.when(questionnaireService.getQuestionnaires()).thenReturn(List.of(questionnaireModel1, questionnaireModel2));
+        Mockito.when(questionnaireService.getQuestionnaires(Collections.emptyList())).thenReturn(List.of(questionnaireModel1, questionnaireModel2));
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel1)).thenReturn(questionnaireDto1);
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
 
         // Act
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires();
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -68,10 +69,10 @@ public class QuestionnaireControllerTest {
     @Test
     public void getQuestionnaire_questionnairesMissing_200() throws Exception {
         // Arrange
-        Mockito.when(questionnaireService.getQuestionnaires()).thenReturn(List.of());
+        Mockito.when(questionnaireService.getQuestionnaires(Collections.emptyList())).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires();
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());

@@ -193,7 +193,7 @@ public class CarePlanServiceTest {
 
         Questionnaire questionnaire = new Questionnaire();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
 
@@ -312,7 +312,7 @@ public class CarePlanServiceTest {
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(buildQuestionnaire(QUESTIONNAIRE_ID_1)));
 
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
@@ -635,7 +635,7 @@ public class CarePlanServiceTest {
         PlanDefinition planDefinition = new PlanDefinition();
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(FhirLookupResult.fromResource(planDefinition));
         Questionnaire questionnaire = new Questionnaire();
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
         Mockito.doNothing().when(accessValidator).validateAccess(List.of(planDefinition));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
@@ -656,12 +656,12 @@ public class CarePlanServiceTest {
         PatientDetails patientDetails = buildPatientDetails();
 
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(FhirLookupResult.fromResources());
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResources());
 
         CarePlan carePlan = new CarePlan();
         carePlan.setId(carePlanId);
         Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(FhirLookupResult.fromResource(carePlan));
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromResources());
 
         Mockito.doNothing().when(accessValidator).validateAccess(List.of());
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
@@ -690,7 +690,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
         Questionnaire questionnaire = new Questionnaire();
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
@@ -732,7 +732,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
         Questionnaire questionnaire = new Questionnaire();
-        Mockito.when(fhirClient.lookupQuestionnaires(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
 
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);

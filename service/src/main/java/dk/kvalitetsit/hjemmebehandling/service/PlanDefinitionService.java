@@ -72,7 +72,7 @@ public class PlanDefinitionService extends AccessValidatingService {
     private void validateReferences(PlanDefinitionModel planDefinition) throws AccessValidationException {
         // Validate questionnaires
         if(planDefinition.getQuestionnaires() != null && !planDefinition.getQuestionnaires().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupQuestionnaires(planDefinition.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(planDefinition.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toList()));
             validateAccess(lookupResult.getQuestionnaires());
         }
     }
@@ -91,7 +91,7 @@ public class PlanDefinitionService extends AccessValidatingService {
 
     public void updatePlanDefinition(String id, String name, PlanDefinitionStatus status, List<String> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnaires(questionnaireIds);
+        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnairesById(questionnaireIds);
         if(questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) {
             throw new ServiceException("Could not look up questionnaires to update!", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN);
         }

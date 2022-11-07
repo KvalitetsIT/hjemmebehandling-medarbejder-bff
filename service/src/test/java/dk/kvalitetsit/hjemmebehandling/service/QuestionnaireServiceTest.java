@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class QuestionnaireServiceTest {
         // Arrange
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
@@ -71,7 +72,7 @@ public class QuestionnaireServiceTest {
     public void getQuestionnairesById_notFound() throws Exception {
         // Arrange
         FhirLookupResult emptyLookupResult = FhirLookupResult.fromBundle(new Bundle());
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
 
         // Act
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
@@ -88,11 +89,11 @@ public class QuestionnaireServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
 
-        Mockito.when(fhirClient.lookupQuestionnaires()).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesByStatus(Collections.emptyList())).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         // Act
-        List<QuestionnaireModel> result = subject.getQuestionnaires();
+        List<QuestionnaireModel> result = subject.getQuestionnaires(Collections.emptyList());
 
         // Assert
         assertEquals(1, result.size());
@@ -151,7 +152,7 @@ public class QuestionnaireServiceTest {
 
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
@@ -179,7 +180,7 @@ public class QuestionnaireServiceTest {
 
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
@@ -202,7 +203,7 @@ public class QuestionnaireServiceTest {
         // Arrange
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(questionnaire);
 
@@ -216,7 +217,7 @@ public class QuestionnaireServiceTest {
     public void updateQuestionnaire_questionnaireNotFound_throwsException() throws Exception {
         // Arrange
         FhirLookupResult emptyLookupResult = FhirLookupResult.fromBundle(new Bundle());
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
 
         // Act
 
@@ -232,7 +233,7 @@ public class QuestionnaireServiceTest {
 
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, currentStatus);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
         // Act
 
@@ -267,7 +268,7 @@ public class QuestionnaireServiceTest {
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, Enumerations.PublicationStatus.ACTIVE);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
         Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
 
         // Act
@@ -285,7 +286,7 @@ public class QuestionnaireServiceTest {
         CarePlan activeCarePlan = new CarePlan();
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, activeCarePlan);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
         Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
 
         // Act

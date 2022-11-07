@@ -90,7 +90,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
@@ -110,7 +110,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
@@ -141,7 +141,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
@@ -169,7 +169,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire));
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
@@ -204,7 +204,7 @@ public class PlanDefinitionServiceTest {
         questionnaireModel1.getQuestions().add(temperatureQuestion1);
         questionnaireModel2.getQuestions().add(temperatureQuestion2);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire1, questionnaire2));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire1, questionnaire2));
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireModel1);
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire2)).thenReturn(questionnaireModel2);
 
@@ -241,7 +241,7 @@ public class PlanDefinitionServiceTest {
 
         planDefinitionModel.setQuestionnaires(List.of(questionnaireWrapperModel));
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
@@ -275,7 +275,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(questionnaire));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(questionnaire));
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel1);
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
@@ -301,7 +301,7 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnaires(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
