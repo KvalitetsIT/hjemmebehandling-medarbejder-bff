@@ -4,6 +4,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PlanDefinitionModel extends BaseModel {
@@ -15,6 +16,10 @@ public class PlanDefinitionModel extends BaseModel {
     private Instant lastUpdated;
 
     private List<QuestionnaireWrapperModel> questionnaires;
+
+    public PlanDefinitionModel() {
+        questionnaires = new ArrayList<>();
+    }
 
 
     public Instant getLastUpdated() {

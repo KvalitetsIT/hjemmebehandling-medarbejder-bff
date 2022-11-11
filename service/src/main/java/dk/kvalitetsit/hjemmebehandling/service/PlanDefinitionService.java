@@ -110,8 +110,22 @@ public class PlanDefinitionService extends AccessValidatingService {
         // Validate that the client is allowed to update the planDefinition.
         validateAccess(planDefinition);
 
-        // Update carePlan
         PlanDefinitionModel planDefinitionModel = fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult);
+
+        // if questionnaire(s) has been removed, validate that they're not in use
+        boolean aQuestionnaireWasRemoved = planDefinitionModel.getQuestionnaires().stream().
+            map(questionnaireWrapperModel -> questionnaireWrapperModel.getQuestionnaire().getId())
+            .anyMatch(questionnaireId -> !questionnaireIds.contains(questionnaireId.toString()));
+
+        if (aQuestionnaireWasRemoved) {
+            var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
+
+            if (!activeCarePlansWithQuestionnaire.isEmpty()) {
+                throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+            }
+        }
+
+        // Update carePlan
         List<QuestionnaireModel> questionnaires = questionnaireResult.getQuestionnaires().stream()
             .map(q -> fhirMapper.mapQuestionnaire(q))
             .collect(Collectors.toList());
