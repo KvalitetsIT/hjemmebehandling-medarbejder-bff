@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -12,10 +13,7 @@ import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,4 +150,18 @@ public class QuestionnaireService extends AccessValidatingService {
         Questionnaire retiredQuestionnaire = questionnaire.get().setStatus(Enumerations.PublicationStatus.RETIRED);
         fhirClient.updateQuestionnaire(retiredQuestionnaire);
     }
+
+
+    public List<PlanDefinition> getPlanDefinitionsThatIncludes(String questionnaireId) throws ServiceException {
+        String qualifiedId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);
+
+        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(qualifiedId));
+
+        if(lookupResult.getQuestionnaires().isEmpty()) {
+            throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
+        }
+
+        lookupResult.merge(fhirClient.lookupActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId));
+        return lookupResult.getPlanDefinitions();
+}
 }

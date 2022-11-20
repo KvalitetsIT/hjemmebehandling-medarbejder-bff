@@ -23,6 +23,8 @@ public enum ErrorDetails {
     QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN("Spørgeskemaet bruges i patientgruppe på en eller flere aktive monitoreringsplaner.", 27),
     PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN("Patientgruppen bruges på en eller flere aktive monitoreringsplaner.", 28),
 
+
+
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 

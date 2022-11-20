@@ -46,6 +46,20 @@ public class FhirClient {
         return lookupCarePlansByCriteria(criteria);
     }
 
+
+
+    public FhirLookupResult lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) {
+        var criteria = new ArrayList<ICriterion<?>>();
+
+        var statusCriterion = PlanDefinition.STATUS.exactly().code(Enumerations.PublicationStatus.ACTIVE.toCode());
+        var questionnaireCriterion = PlanDefinition.DEFINITION.hasId(questionnaireId);
+        var organizationCriterion = buildOrganizationCriterion();
+        criteria.addAll(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
+
+        return lookupPlanDefinitionsByCriteria(criteria);
+    }
+
+
     public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) {
         var criteria = new ArrayList<ICriterion<?>>();
 

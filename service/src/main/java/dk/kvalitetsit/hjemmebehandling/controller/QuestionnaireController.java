@@ -1,11 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
+import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
@@ -25,9 +22,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hl7.fhir.r4.model.PlanDefinition;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -136,21 +136,25 @@ public class QuestionnaireController extends BaseController {
 
         try {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+
             List<QuestionModel> questions = collectionToStream(request.getQuestions())
                 .map(q -> dtoMapper.mapQuestionDto(q))
                 .collect(Collectors.toList());
+
             List<QuestionModel> callToActions = collectionToStream(request.getCallToActions())
                 .map(c -> dtoMapper.mapQuestionDto(c))
                 .collect(Collectors.toList());
 
             questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);
+
+            return ResponseEntity.ok().build();
+
         }
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
-
-        return ResponseEntity.ok().build();
     }
+
 
     @PutMapping(value = "/v1/questionnaire/{id}/retire")
     public ResponseEntity<Void> retireQuestionnaire(@PathVariable String id) {
@@ -163,6 +167,28 @@ public class QuestionnaireController extends BaseController {
 
         return ResponseEntity.ok().build();
     }
+
+
+    @Operation(
+            summary = "Checks if the questionnaire is in use by any planDefinitions",
+            description = "Returns true if the questionnaire is in use by planDefinition and otherwise false if not"
+    )
+    @GetMapping(value = "/v1/questionnaire/{id}/used")
+    public ResponseEntity<Boolean> isQuestionnaireInUse(@PathVariable String id) {
+        System.out.printf("id: %s\n", id);
+        boolean isQuestionnaireInUse;
+        try {
+            isQuestionnaireInUse = !questionnaireService.getPlanDefinitionsThatIncludes(id).isEmpty();
+        }
+        catch(ServiceException se) {
+            throw toStatusCodeException(se);
+        }
+
+        return ResponseEntity.ok().body(isQuestionnaireInUse);
+
+    }
+
+
 
     private void validateQuestions(List<QuestionDto> questions){
         if(questions == null || questions.isEmpty()) {

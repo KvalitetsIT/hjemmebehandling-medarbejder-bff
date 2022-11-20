@@ -84,7 +84,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
 
         // Act
-        ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
+        ApiResponse response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
 
         // Assert
         assertEquals(200, response.getStatusCode());
