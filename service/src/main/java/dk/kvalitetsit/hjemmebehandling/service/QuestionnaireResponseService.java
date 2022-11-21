@@ -73,8 +73,8 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         if(responses.isEmpty()) {
             return List.of();
         }
-
-        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().toUnqualifiedVersionless().getIdBase()).collect(Collectors.toList());
+        // below is supposed to return a list of ids in the following format: "questionnaire-infektionsmedicinsk-1"
+        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdPart()).collect(Collectors.toList());
 
         List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
 

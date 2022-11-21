@@ -1,11 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -434,7 +430,12 @@ public class FhirMapper {
             QuestionModel question = null;
             boolean deprecated = false;
             int i = 0;
-            for (Questionnaire q : historicalQuestionnaires) {
+
+            var iterator = historicalQuestionnaires.iterator();
+
+
+            while (iterator.hasNext()){
+                Questionnaire q = iterator.next();
                 if (i > 0) deprecated = true;
                 boolean hasNext = i < historicalQuestionnaires.size()-1;
                 try {
@@ -446,6 +447,20 @@ public class FhirMapper {
                 }
                 i++;
             }
+
+            /*for (Questionnaire q : historicalQuestionnaires) {
+                if (i > 0) deprecated = true;
+                boolean hasNext = i < historicalQuestionnaires.size()-1;
+                try {
+                    question = getQuestion(q, item.getLinkId());
+                    question.setDeprecated(deprecated);
+                    break;
+                }catch (IllegalStateException e) {
+                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
+                }
+                i++;
+            }*/
+
             AnswerModel answer = getAnswer(item);
             answers.add(new QuestionAnswerPairModel(question, answer));
         }
