@@ -6,9 +6,11 @@ import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +18,49 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ExtensionMapperTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {Systems.CAREPLAN_SATISFIED_UNTIL, Systems.ACTIVITY_SATISFIED_UNTIL})
+    public void mapActivitySatisfiedUntil_maxValue_mapsCorrect_success(String extensionUrl) {
+        // Arrange
+        Instant satisfiedUntil = Instant.MAX;
+
+        // Act
+        Extension result = null;
+        if (extensionUrl.equals(Systems.ACTIVITY_SATISFIED_UNTIL)) {
+            result = ExtensionMapper.mapActivitySatisfiedUntil(satisfiedUntil);
+        }
+        else if (extensionUrl.equals(Systems.CAREPLAN_SATISFIED_UNTIL)) {
+            result = ExtensionMapper.mapCarePlanSatisfiedUntil(satisfiedUntil);
+        }
+
+        // Assert
+        assertEquals(extensionUrl, result.getUrl());
+        Instant expected = ExtensionMapper.MAX_SATISFIED_UNTIL_DATE.toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(Instant.now()));
+        assertEquals(Date.from(expected), ((DateTimeType) result.getValue()).getValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Systems.CAREPLAN_SATISFIED_UNTIL, Systems.ACTIVITY_SATISFIED_UNTIL})
+    public void extractActivitySatisfiedUntil_maxValue_mapsCorrect_success(String extensionUrl) {
+        // Arrange
+        Instant satisfiedUntilMax = ExtensionMapper.MAX_SATISFIED_UNTIL_DATE.toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(Instant.now()));
+        Extension extension = new Extension(extensionUrl, new DateTimeType(Date.from(satisfiedUntilMax)));
+
+        // Act
+        Instant result = null;
+        if (extensionUrl.equals(Systems.ACTIVITY_SATISFIED_UNTIL)) {
+            result = ExtensionMapper.extractActivitySatisfiedUntil(List.of(extension));
+        }
+        else if (extensionUrl.equals(Systems.CAREPLAN_SATISFIED_UNTIL)) {
+            result = ExtensionMapper.extractCarePlanSatisfiedUntil(List.of(extension));
+        }
+
+        // Assert
+        Instant expected = Instant.MAX;
+        assertEquals(expected, result);
+    }
+
     @Test
     public void mapActivitySatisfiedUntil_success() {
         // Arrange

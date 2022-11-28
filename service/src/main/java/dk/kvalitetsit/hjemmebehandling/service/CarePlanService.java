@@ -386,8 +386,11 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     private void refreshFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        // Invoke 'next' once - get the next deadline.
-        var nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().getPointInTime();
+        Instant nextDeadline = Instant.MAX;
+        if (!questionnaireWrapperModel.getFrequency().getWeekdays().isEmpty()) {
+            // Invoke 'next' once - get the next deadline.
+            nextDeadline = new FrequencyEnumerator(dateProvider.now(), questionnaireWrapperModel.getFrequency()).next().getPointInTime();
+        }
         questionnaireWrapperModel.setSatisfiedUntil(nextDeadline);
     }
 

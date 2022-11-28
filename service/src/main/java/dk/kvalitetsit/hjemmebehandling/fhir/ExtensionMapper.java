@@ -2,6 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -26,6 +29,8 @@ import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
 public class ExtensionMapper {
+    protected static final LocalDateTime MAX_SATISFIED_UNTIL_DATE = LocalDateTime.of(9999, Month.DECEMBER, 31, 11, 00);
+
     public static Extension mapActivitySatisfiedUntil(Instant pointInTime) {
         return buildDateTimeExtension(Systems.ACTIVITY_SATISFIED_UNTIL, pointInTime);
     }
@@ -161,6 +166,11 @@ public class ExtensionMapper {
     }
 
     private static Extension buildDateTimeExtension(String url, Instant value) {
+        // the need for this is so stupid..
+        if (value.equals(Instant.MAX)) {
+            // men hapi-fhir clientens json parser af dato har fixed dato-format med 4 digits år, så den knækker hvis man sender år 'en million millard'
+            value = MAX_SATISFIED_UNTIL_DATE.toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(Instant.now()));
+        }
         return new Extension(url, new DateTimeType(Date.from(value), TemporalPrecisionEnum.MILLI, TimeZone.getTimeZone("UTC")));
     }
 
@@ -190,7 +200,14 @@ public class ExtensionMapper {
     }
 
     private static Instant extractInstantFromExtensions(List<Extension> extensions, String url) {
-        return extractFromExtensions(extensions, url, v -> ((DateTimeType) v).getValue().toInstant());
+        return extractFromExtensions(extensions, url, v -> {
+            Instant result = ((DateTimeType) v).getValue().toInstant();
+
+            if (result.equals(MAX_SATISFIED_UNTIL_DATE.toInstant(ZoneId.of("Europe/Copenhagen").getRules().getOffset(Instant.now())))) {
+                return Instant.MAX;
+            }
+            return result;
+        });
     }
     
     private static String extractStringFromExtensions(List<Extension> extensions, String url) {
