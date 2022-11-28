@@ -6,6 +6,8 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
@@ -17,11 +19,14 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.PlanDefinition;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class PlanDefinitionService extends AccessValidatingService {
@@ -113,9 +119,9 @@ public class PlanDefinitionService extends AccessValidatingService {
         PlanDefinitionModel planDefinitionModel = fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult);
 
         // if questionnaire(s) has been removed, validate that they're not in use
-        boolean aQuestionnaireWasRemoved = planDefinitionModel.getQuestionnaires().stream().
-            map(questionnaireWrapperModel -> questionnaireWrapperModel.getQuestionnaire().getId())
-            .anyMatch(questionnaireId -> !questionnaireIds.contains(questionnaireId.toString()));
+        List<String> currentQuestionnaires = planDefinitionModel.getQuestionnaires().stream().map(q -> q.getQuestionnaire().getId().toString()).collect(Collectors.toList());
+        boolean aQuestionnaireWasRemoved = currentQuestionnaires.stream()
+            .anyMatch(questionnaireId -> !questionnaireIds.contains(questionnaireId));
 
         if (aQuestionnaireWasRemoved) {
             var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
@@ -133,6 +139,38 @@ public class PlanDefinitionService extends AccessValidatingService {
 
         // Save the updated PlanDefinition
         fhirClient.updatePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinitionModel));
+
+
+        // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
+        List<String> newQuestionnaires = questionnaireIds.stream().filter(qId -> !currentQuestionnaires.contains(qId)).collect(Collectors.toList());
+        if (!newQuestionnaires.isEmpty()) {
+            // get new questionnaires as list. We are going to add theese to each active careplan that references the edited plandefinition
+            List<QuestionnaireModel> newQuestionnaireList = questionnaires.stream()
+                .filter(q -> newQuestionnaires.contains(q.getId().toString()))
+                .collect(Collectors.toList());
+
+            // get careplans we are adding the questionnaire(s) to
+            FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
+            carePlanResult.getCarePlans().stream().forEach(carePlan -> {
+                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
+
+                // loop quesitonnaires and add
+                newQuestionnaireList.forEach(questionnaireModel -> {
+                    QuestionnaireWrapperModel qw = new QuestionnaireWrapperModel();
+                    qw.setQuestionnaire(questionnaireModel);
+
+                    FrequencyModel frequencyModel = new FrequencyModel();
+                    frequencyModel.setTimeOfDay(LocalTime.parse("11:00"));
+                    frequencyModel.setWeekdays(new ArrayList<>());
+                    qw.setFrequency(frequencyModel);
+                    qw.setSatisfiedUntil(Instant.MAX);
+
+                    carePlanModel.getQuestionnaires().add(qw);
+                });
+
+                fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
+            });
+        }
     }
 
     private void updatePlanDefinitionModel(PlanDefinitionModel planDefinitionModel, String name, PlanDefinitionStatus status, List<QuestionnaireModel> questionnaires, List<ThresholdModel> thresholds) {

@@ -1,11 +1,19 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
+import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.gclient.DateClientParam;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
@@ -18,8 +26,11 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Enumerations;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.Questionnaire;
@@ -30,9 +41,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -158,6 +176,7 @@ public class PlanDefinitionServiceTest {
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        planDefinition.getAction().add( buildPlanDefinitionAction(QUESTIONNAIRE_ID_1) );
 
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
@@ -165,7 +184,7 @@ public class PlanDefinitionServiceTest {
 
         List<QuestionModel> questions = questionnaireModel.getQuestions();
         questions.add(temperatureQuestion);
-
+        planDefinitionModel.getQuestionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1));
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
@@ -188,6 +207,15 @@ public class PlanDefinitionServiceTest {
 
     }
 
+    private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(String questionnaireId) {
+        PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();
+
+        CanonicalType definitionCanonical = new CanonicalType(questionnaireId);
+        action.setDefinition(definitionCanonical);
+
+        return action;
+    }
+
     @Test
     public void patchPlanDefinition_threshold_onMultipleQuestionnaires() throws ServiceException, AccessValidationException {
         // Arrange
@@ -195,6 +223,8 @@ public class PlanDefinitionServiceTest {
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
         Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        planDefinition.getAction().add( buildPlanDefinitionAction(QUESTIONNAIRE_ID_1) );
+        planDefinition.getAction().add( buildPlanDefinitionAction(QUESTIONNAIRE_ID_2) );
 
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
@@ -203,6 +233,8 @@ public class PlanDefinitionServiceTest {
         QuestionModel temperatureQuestion2 = buildMeasurementQuestionModel();
         questionnaireModel1.getQuestions().add(temperatureQuestion1);
         questionnaireModel2.getQuestions().add(temperatureQuestion2);
+        planDefinitionModel.getQuestionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1));
+        planDefinitionModel.getQuestionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2));
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire1, questionnaire2));
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireModel1);
@@ -282,11 +314,52 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+
         // Act
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
         // Assert
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
+    }
+
+    @Test
+    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists() throws ServiceException, AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        FhirLookupResult questionnaireResult = FhirLookupResult.fromResource(questionnaire);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(questionnaireResult);
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel1);
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+
+        CarePlan existingCarePlan = new CarePlan();
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(new ArrayList<>());
+
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
+
+        // Act
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+
+        // Assert
+        assertEquals(1, planDefinitionModel.getQuestionnaires().size());
+        assertEquals(1, existingCarePlanModel.getQuestionnaires().size());
+        assertNotNull(existingCarePlanModel.getQuestionnaires().get(0).getFrequency());
+        assertTrue(existingCarePlanModel.getQuestionnaires().get(0).getFrequency().getWeekdays().isEmpty());
+        assertNotNull(existingCarePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+
     }
 
     @Test
