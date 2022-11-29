@@ -71,7 +71,7 @@ public class CarePlanService extends AccessValidatingService {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
         var patient = fhirClient.lookupPatientByCpr(cpr);
-
+        
         // TODO: More validations should be performed - possibly?
         // If the patient did exist, check that no existing careplan exists for the patient
         if(patient.isPresent()) {
@@ -84,7 +84,10 @@ public class CarePlanService extends AccessValidatingService {
             }
 
             var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
-            if (newPatient != null) patient.get().setContact(newPatient.getContact());
+            if (newPatient != null) { 
+            	patient.get().setContact(newPatient.getContact());
+            	patient.get().setTelecom(newPatient.getTelecom());
+            }
 
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
             carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
