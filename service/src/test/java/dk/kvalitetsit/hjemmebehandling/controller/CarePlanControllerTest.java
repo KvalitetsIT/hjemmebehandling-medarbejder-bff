@@ -232,12 +232,13 @@ public class CarePlanControllerTest {
     public void resolveAlarm_success_200() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
+        String questionnaireId = "questionnaire-1";
 
         //Mockito.doNothing().when(carePlanService).resolveAlarm(carePlanId);
-        Mockito.when(carePlanService.resolveAlarm(carePlanId)).thenReturn(new CarePlanModel());
+        Mockito.when(carePlanService.resolveAlarm(carePlanId, questionnaireId)).thenReturn(new CarePlanModel());
 
         // Act
-        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId);
+        ResponseEntity<Void> result = subject.resolveAlarm(carePlanId, questionnaireId);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -247,39 +248,42 @@ public class CarePlanControllerTest {
     public void resolveAlarm_badRequest_400() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
+        String questionnaireId = "questionnaire-1";
 
-        Mockito.doThrow(new ServiceException("error", ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS)).when(carePlanService).resolveAlarm(carePlanId);
+        Mockito.doThrow(new ServiceException("error", ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS)).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
 
         // Act
 
         // Assert
-        assertThrows(BadRequestException.class, () -> subject.resolveAlarm(carePlanId));
+        assertThrows(BadRequestException.class, () -> subject.resolveAlarm(carePlanId, questionnaireId));
     }
 
     @Test
     public void resolveAlarm_accessViolation_403() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
+        String questionnaireId = "questionnaire-1";
 
-        Mockito.doThrow(AccessValidationException.class).when(carePlanService).resolveAlarm(carePlanId);
+        Mockito.doThrow(AccessValidationException.class).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
 
         // Act
 
         // Assert
-        assertThrows(ForbiddenException.class, () -> subject.resolveAlarm(carePlanId));
+        assertThrows(ForbiddenException.class, () -> subject.resolveAlarm(carePlanId, questionnaireId));
     }
 
     @Test
     public void resolveAlarm_failureToUpdate_500() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
+        String questionnaireId = "questionnaire-1";
 
-        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(carePlanService).resolveAlarm(carePlanId);
+        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
 
         // Act
 
         // Assert
-        assertThrows(InternalServerErrorException.class, () -> subject.resolveAlarm(carePlanId));
+        assertThrows(InternalServerErrorException.class, () -> subject.resolveAlarm(carePlanId, questionnaireId));
     }
 
     private static Stream<Arguments> searchCarePlans_ThrowBadRequestException_DependingOnTheArgument_400() {

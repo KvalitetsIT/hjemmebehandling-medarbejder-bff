@@ -193,7 +193,7 @@ public class CarePlanService extends AccessValidatingService {
         return Optional.of(mappedCarePlan);
     }
 
-    public CarePlanModel resolveAlarm(String carePlanId) throws ServiceException, AccessValidationException {
+    public CarePlanModel resolveAlarm(String carePlanId, String questionnaireId) throws ServiceException, AccessValidationException {
         // Get the careplan
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
@@ -213,7 +213,8 @@ public class CarePlanService extends AccessValidatingService {
         }
 
         // Recompute the 'satisfiedUntil'-timestamps
-        recomputeFrequencyTimestamps(carePlanModel, currentPointInTime);
+        String qualifiedQuestionnaireId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);
+        recomputeFrequencyTimestamps(carePlanModel, qualifiedQuestionnaireId, currentPointInTime);
 
         // Save the updated carePlan
         fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
@@ -376,14 +377,19 @@ public class CarePlanService extends AccessValidatingService {
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
-    private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, Instant currentPointInTime) {
-        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-
-
-            // Only recompute the timestamp if its current value is in the past.
-            if(questionnaireWrapper.getSatisfiedUntil().isBefore(currentPointInTime)) {
-                refreshFrequencyTimestamp(questionnaireWrapper);
-            }
+    private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, String questionnaireId, Instant currentPointInTime) {
+//        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
+//
+//
+//             Only recompute the timestamp if its current value is in the past.
+//            if(questionnaireWrapper.getSatisfiedUntil().isBefore(currentPointInTime)) {
+//                refreshFrequencyTimestamp(questionnaireWrapper);
+//            }
+//        }
+        Optional<QuestionnaireWrapperModel> questionnaireWrapper = carePlanModel.getQuestionnaires().stream().filter(qw -> questionnaireId.equals(qw.getQuestionnaire().getId().toString())).findFirst();
+//        Only recompute the timestamp if its current value is in the past.
+        if (questionnaireWrapper.isPresent() && questionnaireWrapper.get().getSatisfiedUntil().isBefore(currentPointInTime)) {
+            refreshFrequencyTimestamp(questionnaireWrapper.get());
         }
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }

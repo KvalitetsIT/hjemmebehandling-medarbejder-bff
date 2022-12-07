@@ -161,10 +161,10 @@ public class CarePlanController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping(value = "/v1/careplan/{id}/resolve-alarm")
-    public ResponseEntity<Void> resolveAlarm(@PathVariable String id) {
+    @PutMapping(value = "/v1/careplan/{id}/resolve-alarm/{questionnaireId}")
+    public ResponseEntity<Void> resolveAlarm(@PathVariable String id, @PathVariable String questionnaireId) {
         try {
-            CarePlanModel carePlan = carePlanService.resolveAlarm(id);
+            CarePlanModel carePlan = carePlanService.resolveAlarm(id, questionnaireId);
             auditLoggingService.log("PUT /v1/careplan/"+id+"/resolve-alarm", carePlan.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {

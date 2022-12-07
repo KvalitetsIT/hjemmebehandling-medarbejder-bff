@@ -492,7 +492,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
     }
 
     @Test
@@ -506,7 +506,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(AccessValidationException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+        assertThrows(AccessValidationException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
     }
 
     @Test
@@ -525,7 +525,7 @@ public class CarePlanServiceTest {
         // Act
 
         // Assert
-        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1));
+        assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
     }
 
     @Test
@@ -548,7 +548,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
 
         // Act
-        subject.resolveAlarm(CAREPLAN_ID_1);
+        subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1);
 
         // Assert
         // Verify that the first questionnaire has its satisfied-timestamp pushed to the next day,
