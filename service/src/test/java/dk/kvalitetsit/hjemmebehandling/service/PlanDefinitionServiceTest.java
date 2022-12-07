@@ -324,7 +324,7 @@ public class PlanDefinitionServiceTest {
     }
 
     @Test
-    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists() throws ServiceException, AccessValidationException {
+    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_without_same_questionnaire() throws ServiceException, AccessValidationException {
         // Arrange
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
@@ -359,7 +359,43 @@ public class PlanDefinitionServiceTest {
         assertNotNull(existingCarePlanModel.getQuestionnaires().get(0).getFrequency());
         assertTrue(existingCarePlanModel.getQuestionnaires().get(0).getFrequency().getWeekdays().isEmpty());
         assertNotNull(existingCarePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+    }
 
+    @Test
+    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_with_same_questionnaire() throws AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        FhirLookupResult questionnaireResult = FhirLookupResult.fromResource(questionnaire);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(questionnaireResult);
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        CarePlan existingCarePlan = new CarePlan();
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(List.of(questionnaireWrapperModel));
+
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
+
+        // Act
+        try {
+            subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+            fail();
+        }
+        catch (ServiceException se) {
+            // Assert
+            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+            assertEquals(ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
+        }
     }
 
     @Test

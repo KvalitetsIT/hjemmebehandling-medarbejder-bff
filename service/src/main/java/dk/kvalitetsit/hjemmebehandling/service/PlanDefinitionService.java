@@ -131,6 +131,22 @@ public class PlanDefinitionService extends AccessValidatingService {
             }
         }
 
+        // if new questionnaire(s) has been added, validate that they're not in use
+        List<String> newQuestionnaires = questionnaireIds.stream().filter(qId -> !currentQuestionnaires.contains(qId)).collect(Collectors.toList());
+        if (!newQuestionnaires.isEmpty()) {
+            FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
+            boolean newQuestionnaireInActiveUse = carePlanResult.getCarePlans().stream()
+                .map(carePlan -> fhirMapper.mapCarePlan(carePlan, carePlanResult))
+                .flatMap(carePlanModel -> carePlanModel.getQuestionnaires().stream().map(questionnaireWrapperModel -> questionnaireWrapperModel.getQuestionnaire().getId()))
+                .anyMatch(questionnaireId -> newQuestionnaires.contains(questionnaireId.toString()));
+
+            if (newQuestionnaireInActiveUse) {
+                throw new ServiceException(String.format("A questionnaire with id %s if used by active careplans!", newQuestionnaires), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+            }
+
+
+        }
+
         // Update carePlan
         List<QuestionnaireModel> questionnaires = questionnaireResult.getQuestionnaires().stream()
             .map(q -> fhirMapper.mapQuestionnaire(q))
@@ -142,7 +158,6 @@ public class PlanDefinitionService extends AccessValidatingService {
 
 
         // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
-        List<String> newQuestionnaires = questionnaireIds.stream().filter(qId -> !currentQuestionnaires.contains(qId)).collect(Collectors.toList());
         if (!newQuestionnaires.isEmpty()) {
             // get new questionnaires as list. We are going to add theese to each active careplan that references the edited plandefinition
             List<QuestionnaireModel> newQuestionnaireList = questionnaires.stream()
