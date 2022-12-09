@@ -168,6 +168,7 @@ public class CarePlanController extends BaseController {
             auditLoggingService.log("PUT /v1/careplan/"+id+"/resolve-alarm", carePlan.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
+            logger.error(String.format("resolveAlarm(%s, %s) error:", id, questionnaireId), e);
             throw toStatusCodeException(e);
         }
 
@@ -181,6 +182,7 @@ public class CarePlanController extends BaseController {
             auditLoggingService.log("PUT /v1/careplan/"+id+"/complete", carePlan.getPatient());
         }
         catch(ServiceException e) {
+            logger.error(String.format("completeCarePlan(%s) error:", id), e);
             throw toStatusCodeException(e);
         }
 

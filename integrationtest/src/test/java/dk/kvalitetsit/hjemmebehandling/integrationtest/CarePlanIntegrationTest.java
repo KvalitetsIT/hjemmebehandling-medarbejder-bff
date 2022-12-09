@@ -2,7 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.*;
@@ -11,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     private CarePlanApi subject;
 
@@ -22,6 +27,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(1)
     public void createCarePlan_success() throws Exception {
         // Arrange
         CarePlanDto carePlanDto = new CarePlanDto();
@@ -58,6 +64,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(2)
     public void createAndGetCarePlan_success() throws Exception {
         // Arrange
         String cpr = "4444444444";
@@ -105,6 +112,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(3)
     public void getCarePlan_success() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
@@ -117,6 +125,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(4)
     public void getCarePlansByCpr_success() throws Exception {
         // Arrange
         String cpr = "0101010101";
@@ -130,6 +139,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(5)
     public void getCarePlansWithUnsatisfiedSchedules_success() throws Exception {
         // Arrange
         boolean onlyUnsatisfiedSchedules = true;
@@ -145,6 +155,21 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(6)
+    public void resolveAlarm_success() throws Exception {
+        // Arrange
+        String id = "careplan-2";
+        String questionnaireId = "questionnaire-1";
+
+        // Act
+        ApiResponse<Void> response = subject.resolveAlarmWithHttpInfo(id, questionnaireId);
+
+        // Assert
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    @Order(7)
     public void patchCarePlan_success() throws Exception {
         // Arrange
         String id = "careplan-2";
@@ -181,19 +206,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void resolveAlarm_success() throws Exception {
-        // Arrange
-        String id = "careplan-2";
-        String questionnaireId = "questionnaire-1";
-
-        // Act
-        ApiResponse<Void> response = subject.resolveAlarmWithHttpInfo(id, questionnaireId);
-
-        // Assert
-        assertEquals(200, response.getStatusCode());
-    }
-
-    @Test
+    @Order(8)
     public void completeCarePlan_success() throws Exception {
         // Arrange
         String id = "careplan-2";
@@ -206,6 +219,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Order(9)
     public void completeCarePlan_twice_success() throws Exception {
         // Arrange
         String id = "careplan-2";
