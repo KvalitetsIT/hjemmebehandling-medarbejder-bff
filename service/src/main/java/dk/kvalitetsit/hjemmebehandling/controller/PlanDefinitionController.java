@@ -130,6 +130,24 @@ public class PlanDefinitionController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Checks if the plandefinition is in use by any careplans",
+        description = "Returns true if the plandefinition is in use by careplans and otherwise false if not"
+    )
+    @GetMapping(value = "/v1/plandefinition/{id}/used")
+    public ResponseEntity<Boolean> isPlanDefinitionInUse(@PathVariable String id) {
+        boolean isPlanDefinitionInUse;
+        try {
+            isPlanDefinitionInUse = !planDefinitionService.getCarePlansThatIncludes(id).isEmpty();
+        }
+        catch(ServiceException se) {
+            throw toStatusCodeException(se);
+        }
+
+        return ResponseEntity.ok().body(isPlanDefinitionInUse);
+
+    }
+
     private List<String> getQuestionnaireIds(List<String> questionnaireIds) {
         return collectionToStream(questionnaireIds)
             .map(id -> FhirUtils.qualifyId(id, ResourceType.Questionnaire))

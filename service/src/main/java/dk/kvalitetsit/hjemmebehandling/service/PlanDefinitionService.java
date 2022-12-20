@@ -260,4 +260,19 @@ public class PlanDefinitionService extends AccessValidatingService {
       PlanDefinition retiredPlanDefinition = planDefinition.get().setStatus(Enumerations.PublicationStatus.RETIRED);
       fhirClient.updatePlanDefinition(retiredPlanDefinition);
   }
+
+    public List<CarePlanModel> getCarePlansThatIncludes(String planDefinitionId) throws ServiceException {
+        String qualifiedId = FhirUtils.qualifyId(planDefinitionId, ResourceType.PlanDefinition);
+
+        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinition(qualifiedId);
+
+        if(lookupResult.getPlanDefinitions().isEmpty()) {
+            throw new ServiceException(String.format("Could not find plandefinition with tht requested id: %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
+        }
+
+        lookupResult.merge(fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId));
+        return lookupResult.getCarePlans().stream()
+            .map(carePlan -> fhirMapper.mapCarePlan(carePlan, lookupResult))
+            .collect(Collectors.toList());
+    }
 }
