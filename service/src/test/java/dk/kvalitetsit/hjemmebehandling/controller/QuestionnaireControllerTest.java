@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
@@ -84,7 +85,7 @@ public class QuestionnaireControllerTest {
         // Arrange
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         var questionnaireDto = new QuestionnaireDto();
-        questionnaireDto.setQuestions(List.of(new QuestionDto()));
+        questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(new QuestionnaireModel());
@@ -101,7 +102,7 @@ public class QuestionnaireControllerTest {
         // Arrange
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         var questionnaireDto = new QuestionnaireDto();
-        questionnaireDto.setQuestions(List.of(new QuestionDto()));
+        questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
@@ -123,7 +124,7 @@ public class QuestionnaireControllerTest {
     public void patchQuestionnaire_success_() throws Exception {
         // Arrange
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
-        request.setQuestions(List.of(new QuestionDto()));
+        request.setQuestions(List.of(buildQuestionDto()));
 
         // Act
         ResponseEntity<Void> result = subject.patchQuestionnaire("questionnaire-1", request);
@@ -165,7 +166,7 @@ public class QuestionnaireControllerTest {
         String qualifyId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
-        QuestionDto questionDto = new QuestionDto();
+        QuestionDto questionDto = buildQuestionDto();
         request.setQuestions(List.of(questionDto));
 
         QuestionModel questionModel =  new QuestionModel();
@@ -178,5 +179,12 @@ public class QuestionnaireControllerTest {
 
         // Assert
         assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id, request));
+    }
+
+    private QuestionDto buildQuestionDto() {
+        QuestionDto questionDto = new QuestionDto();
+        questionDto.setQuestionType(QuestionType.BOOLEAN);
+
+        return questionDto;
     }
 }

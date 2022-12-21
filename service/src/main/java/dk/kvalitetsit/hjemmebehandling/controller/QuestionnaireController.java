@@ -42,6 +42,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -202,6 +203,19 @@ public class QuestionnaireController extends BaseController {
             if(idIsInList)
                 throw new BadRequestException(ErrorDetails.QUESTIONS_ID_IS_NOT_UNIQUE);
             ids.add(question.getLinkId());
+
+            if (question.getQuestionType() == null) {
+                throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
+            }
+
+            switch (question.getQuestionType()) {
+                case QUANTITY:
+                    var measurementType = question.getMeasurementType();
+                    if (measurementType == null || (measurementType.getCode() == null || measurementType.getDisplay() == null) || measurementType.getSystem() == null) {
+                        throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
+                    }
+                    break;
+            }
         }
     }
     private Stream<QuestionDto> collectionToStream(Collection<QuestionDto> collection) {
