@@ -86,7 +86,7 @@ public class FhirClient {
     }
     
     
-    public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied, int offset, int count) {
+    public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied) {
         var criteria = new ArrayList<ICriterion<?>>();
 
         var organizationCriterion = buildOrganizationCriterion();
@@ -115,7 +115,7 @@ public class FhirClient {
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
 
-        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec), Optional.of(offset), Optional.of(count));
+        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec));
     }
 
     public FhirLookupResult lookupCarePlanById(String carePlanId) {
@@ -309,12 +309,12 @@ public class FhirClient {
     }
 
     private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) {
-        return lookupCarePlansByCriteria(criteria, Optional.empty(), Optional.empty(), Optional.empty());
+        return lookupCarePlansByCriteria(criteria, Optional.empty());
     }
 
-    private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+    private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec) {
         boolean withOrganizations = true;
-        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL), withOrganizations, sortSpec, offset, count);
+        var carePlanResult = lookupByCriteria(CarePlan.class, criteria, List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL), withOrganizations, sortSpec, Optional.empty(), Optional.empty());
 
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.

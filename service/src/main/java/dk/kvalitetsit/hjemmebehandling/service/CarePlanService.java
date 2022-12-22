@@ -162,18 +162,27 @@ public class CarePlanService extends AccessValidatingService {
 
     public List<CarePlanModel> getCarePlansWithFilters(Optional<String> cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, PageDetails pageDetails) throws ServiceException {
         Instant pointInTime = dateProvider.now();
-        int offset = pageDetails.getOffset();
-        int count = pageDetails.getPageSize();
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlans(cpr,pointInTime, onlyActiveCarePlans, onlyUnSatisfied, offset, count);
+        FhirLookupResult lookupResult = fhirClient.lookupCarePlans(cpr,pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
         if(lookupResult.getCarePlans().isEmpty()) {
             return List.of();
         }
 
-        // Map the resources
-        return lookupResult.getCarePlans()
-                .stream()
-                .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
-                .collect(Collectors.toList());
+        // Map and sort the resources
+        List<CarePlanModel> careplans = lookupResult.getCarePlans().stream()
+            .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult))
+            .sorted((careplan1, careplan2) -> {
+                String name1 = String.join(" ", careplan1.getPatient().getGivenName(), careplan1.getPatient().getFamilyName());
+                String name2 = String.join(" ", careplan2.getPatient().getGivenName(), careplan2.getPatient().getFamilyName());
+                return name1.compareTo(name2);
+            })
+            .collect(Collectors.toList());
+
+        // Perform paging if required.
+        if(pageDetails != null) {
+            careplans = pageResponses(careplans, pageDetails);
+        }
+
+        return careplans;
     }
 
     public Optional<CarePlanModel> getCarePlanById(String carePlanId) throws ServiceException, AccessValidationException {
@@ -410,5 +419,13 @@ public class CarePlanService extends AccessValidatingService {
                 .min(Comparator.naturalOrder())
                 .orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
+    }
+
+    private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, PageDetails pageDetails) {
+        return responses
+            .stream()
+            .skip((pageDetails.getPageNumber() - 1) * pageDetails.getPageSize())
+            .limit(pageDetails.getPageSize())
+            .collect(Collectors.toList());
     }
 }

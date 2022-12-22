@@ -156,13 +156,13 @@ public class FhirClientTest {
         int count = 4;
 
         CarePlan carePlan = new CarePlan();
-        setupSearchCarePlanClient(true, true, true, onlyActiveCarePlans, carePlan);
+        setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans, carePlan);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied, offset, count);
+        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -210,13 +210,13 @@ public class FhirClientTest {
         int offset = 2;
         int count = 4;
 
-        setupSearchCarePlanClient(true, true, true, onlyActiveCarePlans);
+        setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans);
 
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied, offset, count);
+        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());
