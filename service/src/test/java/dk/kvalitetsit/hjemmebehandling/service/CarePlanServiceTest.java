@@ -88,7 +88,7 @@ public class CarePlanServiceTest {
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
 
-    private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
+    private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T10:00:00.000Z");
 
     @Test
     public void createCarePlan_patientExists_patientIsNotCreated() throws Exception {
@@ -335,7 +335,7 @@ public class CarePlanServiceTest {
 
         // Assert
         var wrapper = carePlanModel.getQuestionnaires().get(0);
-        var expectedPointInTime = new FrequencyEnumerator(dateProvider.now(), wrapper.getFrequency()).next().getPointInTime();
+        var expectedPointInTime = new FrequencyEnumerator(wrapper.getFrequency()).getSatisfiedUntil(dateProvider.now());
         assertEquals(expectedPointInTime, wrapper.getSatisfiedUntil());
         assertEquals(expectedPointInTime, carePlanModel.getSatisfiedUntil());
     }
@@ -607,10 +607,10 @@ public class CarePlanServiceTest {
         subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1);
 
         // Assert
-        // Verify that the first questionnaire has its satisfied-timestamp pushed to the next day,
+        // Verify that the first questionnaire has its satisfied-timestamp pushed to the next scheduled weekday,
         // the second questionnaire has its timestamp left untouched, and the careplan has its timestamp set to
         // the earliest timestamp (now that of the second questionnaire).
-        assertEquals(Instant.parse("2021-11-23T03:00:00.000Z"), carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+        assertEquals(Instant.parse("2021-11-30T03:00:00.000Z"), carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getQuestionnaires().get(1).getSatisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.getSatisfiedUntil());
 
@@ -803,8 +803,8 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult)).thenReturn(carePlanModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        FrequencyEnumerator fe = new FrequencyEnumerator(POINT_IN_TIME, frequencies.get(QUESTIONNAIRE_ID_1));
-        Instant nextNextSatisfiedUntilTime = fe.next().getPointInTime();
+        FrequencyEnumerator fe = new FrequencyEnumerator(frequencies.get(QUESTIONNAIRE_ID_1));
+        Instant nextNextSatisfiedUntilTime = fe.getSatisfiedUntil(POINT_IN_TIME);
 
         // Act
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
