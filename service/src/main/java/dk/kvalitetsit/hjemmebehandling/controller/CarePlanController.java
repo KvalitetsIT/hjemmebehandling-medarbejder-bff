@@ -71,13 +71,13 @@ public class CarePlanController extends BaseController {
     @GetMapping(value = "/v1/careplan")
     public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
 
-        if(pageNumber.isEmpty() || pageSize.isEmpty()) {
-            logger.info("Detected unsupported parameter combination for SearchCarePlan, rejecting request.");
-            throw new BadRequestException(ErrorDetails.UNSUPPORTED_SEARCH_PARAMETER_COMBINATION);
-        }
-
         try {
-            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false),new PageDetails(pageNumber.get(),pageSize.get()));
+            PageDetails pageDetails = null;
+            if (pageNumber.isPresent() && pageSize.isPresent()) {
+                pageDetails = new PageDetails(pageNumber.get(), pageSize.get());
+            }
+
+            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false), pageDetails);
 
             auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));

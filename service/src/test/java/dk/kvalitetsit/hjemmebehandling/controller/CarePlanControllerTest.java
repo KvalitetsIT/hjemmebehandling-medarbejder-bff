@@ -286,33 +286,6 @@ public class CarePlanControllerTest {
         assertThrows(InternalServerErrorException.class, () -> subject.resolveAlarm(carePlanId, questionnaireId));
     }
 
-    private static Stream<Arguments> searchCarePlans_ThrowBadRequestException_DependingOnTheArgument_400() {
-        return Stream.of(
-                Arguments.of(Optional.empty(), Optional.empty(),Optional.empty(),Optional.empty(),Optional.empty()),
-                Arguments.of(Optional.of("0101788492"), Optional.empty(),Optional.empty(),Optional.empty(),Optional.empty()),
-                Arguments.of(Optional.empty(), Optional.of(true),Optional.empty(),Optional.empty(),Optional.empty()),
-                Arguments.of(Optional.empty(), Optional.empty(),Optional.of(true),Optional.empty(),Optional.empty()),
-                Arguments.of(Optional.of("0101788492"), Optional.of(true),Optional.of(true),Optional.empty(),Optional.empty())
-        );
-    }
-    @ParameterizedTest
-    @MethodSource // arguments comes from a method that is name the same as the test
-    public void searchCarePlans_ThrowBadRequestException_DependingOnTheArgument_400(
-            Optional<String> cpr,
-            Optional<Boolean> onlyUnsatisfiedSchedules,
-            Optional<Boolean> onlyActiveCarePlans,
-            Optional<Integer> pageNumber,
-            Optional<Integer> pageSize
-    ) {
-        // Arrange
-
-        // Act
-
-        // Assert
-        assertThrows(BadRequestException.class, () -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
-    }
-
-
     private static Stream<Arguments> searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200() {
         return Stream.of(
                 //GetCarePlansWithUnsatisfiedSchedules should be called
