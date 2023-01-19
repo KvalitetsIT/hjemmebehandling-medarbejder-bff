@@ -516,10 +516,26 @@ public class FhirMapper {
         String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
         CarePlan carePlan = lookupResult.getCarePlan(carePlanId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No CarePlan found with id %s!", carePlanId)));
-        String planDefinitionId = carePlan.getInstantiatesCanonical().get(0).getValue();
-        PlanDefinition planDefinition = lookupResult.getPlanDefinition(planDefinitionId)
-                .orElseThrow(() -> new IllegalStateException(String.format("No PlanDefinition found with id %s!", planDefinitionId)));
-        questionnaireResponseModel.setPlanDefinitionTitle(planDefinition.getTitle());
+
+        // loop careplanens plandefinitions for at finde den der har referencen til questionnaire
+        for (CanonicalType canonicalType : carePlan.getInstantiatesCanonical()) {
+            String planDefinitionId = canonicalType.getValue();
+            PlanDefinition planDefinition = lookupResult.getPlanDefinition(planDefinitionId)
+                    .orElseThrow(() -> new IllegalStateException(String.format("No PlanDefinition found with id %s!", planDefinitionId)));
+
+            boolean found = false;
+            for (PlanDefinition.PlanDefinitionActionComponent planDefinitionActionComponent : planDefinition.getAction()) {
+                if (planDefinitionActionComponent.getDefinitionCanonicalType().equals(questionnaireId)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                questionnaireResponseModel.setPlanDefinitionTitle(planDefinition.getTitle());
+                break;
+            }
+        }
 
         return questionnaireResponseModel;
     }

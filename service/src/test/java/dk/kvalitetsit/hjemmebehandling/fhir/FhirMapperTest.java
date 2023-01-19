@@ -40,8 +40,11 @@ public class FhirMapperTest {
     private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String PLANDEFINITION_ID_2 = "PlanDefinition/plandefinition-2";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
+    private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
     private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private static final String QUESTIONNAIRERESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
     private static final String PRACTITIONER_ID_1 = "Practitioner/practitioner-1";
 
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
@@ -486,6 +489,32 @@ public class FhirMapperTest {
     }
 
     @Test
+    public void mapQuestionnaireResponse_withMultiple_plandefinitions() {
+        var stringItem = buildStringItem("hej", "1");
+
+        QuestionnaireResponse questionnaireResponse1 = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID_1, List.of(stringItem));
+        QuestionnaireResponse questionnaireResponse2 = buildQuestionnaireResponse(QUESTIONNAIRERESPONSE_ID_2, QUESTIONNAIRE_ID_2, PATIENT_ID_1, List.of(stringItem));
+        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER), buildQuestionItem("3", Questionnaire.QuestionnaireItemType.QUANTITY)));
+        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2, List.of(buildQuestionItem("1", Questionnaire.QuestionnaireItemType.STRING), buildQuestionItem("2", Questionnaire.QuestionnaireItemType.INTEGER), buildQuestionItem("3", Questionnaire.QuestionnaireItemType.QUANTITY)));
+        Patient patient = buildPatient(PATIENT_ID_1, "0101010101");
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(PLANDEFINITION_ID_1, PLANDEFINITION_ID_2));
+        PlanDefinition planDefinition1 = buildPlanDefinition(PLANDEFINITION_ID_1, "title-1", QUESTIONNAIRE_ID_1);
+        PlanDefinition planDefinition2 = buildPlanDefinition(PLANDEFINITION_ID_2, "title-2", QUESTIONNAIRE_ID_2);
+        Practitioner practitioner = buildPractitioner(PRACTITIONER_ID_1);
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(patient, questionnaire1, questionnaire2, carePlan, planDefinition1, planDefinition2, practitioner);
+
+        // Act
+        QuestionnaireResponseModel result1 = subject.mapQuestionnaireResponse(questionnaireResponse1, lookupResult);
+        QuestionnaireResponseModel result2 = subject.mapQuestionnaireResponse(questionnaireResponse2, lookupResult);
+
+        // Assert
+        assertNotEquals(result1.getPlanDefinitionTitle(), result2.getPlanDefinitionTitle());
+        assertEquals(planDefinition1.getTitle(), result1.getPlanDefinitionTitle());
+        assertEquals(planDefinition2.getTitle(), result2.getPlanDefinitionTitle());
+    }
+
+    @Test
     public void mapQuestion_callToAction() {
         Questionnaire.QuestionnaireItemComponent question1 = buildQuestionItem("1", Questionnaire.QuestionnaireItemType.BOOLEAN, "Har du det godt?");
 
@@ -718,12 +747,17 @@ public class FhirMapperTest {
     }
 
     private CarePlan buildCarePlan(String careplanId, String patientId, String questionnaireId, String planDefinitionId) {
+        return buildCarePlan(careplanId, patientId, List.of(questionnaireId), List.of(planDefinitionId));
+    }
+
+    private CarePlan buildCarePlan(String careplanId, String patientId, List<String> questionnaireIds, List<String> planDefinitionIds) {
+
         CarePlan carePlan = new CarePlan();
 
         carePlan.setId(careplanId);
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         carePlan.setSubject(new Reference(patientId));
-        carePlan.addInstantiatesCanonical(planDefinitionId);
+        planDefinitionIds.forEach(planDefinitionId -> carePlan.addInstantiatesCanonical(planDefinitionId));
         carePlan.setPeriod(new Period());
         carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
@@ -731,12 +765,14 @@ public class FhirMapperTest {
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
         carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
 
-        var detail = new CarePlan.CarePlanActivityDetailComponent();
-        detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
-        detail.setScheduled(buildTiming());
-        detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
+        questionnaireIds.forEach(questionnaireId -> {
+            var detail = new CarePlan.CarePlanActivityDetailComponent();
+            detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId)));
+            detail.setScheduled(buildTiming());
+            detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
 
-        carePlan.addActivity().setDetail(detail);
+            carePlan.addActivity().setDetail(detail);
+        });
 
         return carePlan;
     }
@@ -837,9 +873,13 @@ public class FhirMapperTest {
     }
 
     private PlanDefinition buildPlanDefinition(String planDefinitionId, String questionnaireId) {
+        return buildPlanDefinition(planDefinitionId, "title", questionnaireId);
+    }
+    private PlanDefinition buildPlanDefinition(String planDefinitionId, String title, String questionnaireId) {
         PlanDefinition planDefinition = new PlanDefinition();
 
         planDefinition.setId(planDefinitionId);
+        planDefinition.setTitle(title);
         planDefinition.setStatus(Enumerations.PublicationStatus.ACTIVE);
         planDefinition.setDate(Date.from(POINT_IN_TIME));
         planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
