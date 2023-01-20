@@ -3,10 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,6 +82,7 @@ public class CarePlanServiceTest {
     private static final String PATIENT_ID_1 = "Patient/patient-1";
     private static final String PATIENT_ID_2 = "Patient/patient-2";
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
+    private static final String PLANDEFINITION_ID_2 = "PlanDefinition/plandefinition-2";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
 
@@ -761,6 +759,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult)).thenReturn(carePlanModel);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
@@ -805,6 +804,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         FrequencyEnumerator fe = new FrequencyEnumerator(frequencies.get(QUESTIONNAIRE_ID_1));
         Instant nextNextSatisfiedUntilTime = fe.getSatisfiedUntil(POINT_IN_TIME);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
@@ -816,6 +816,82 @@ public class CarePlanServiceTest {
 
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getSatisfiedUntil());
+    }
+
+    @Test
+    void updateCarePlan_removeQuestionnaire_withExeededDeadline_throwsError() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_2);
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_2);
+        Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_2, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
+        PatientDetails patientDetails = buildPatientDetails();
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
+
+        var threshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, threshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
+
+        Questionnaire questionnaire = new Questionnaire();
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+        FhirLookupResult carePlanResult = FhirLookupResult.fromResources(carePlan, patient, planDefinition);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(carePlanResult);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME.plusSeconds(1L));
+
+        // Act
+        try {
+            subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+            fail("No error was thrown");
+        } catch (ServiceException e){
+            assertEquals(ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES, e.getErrorDetails());
+        }
+    }
+
+    @Test
+    void updateCarePlan_removeQuestionnaire_withUnansweredQuestionnaireResponses_throwsError() throws Exception {
+        // Arrange
+        String carePlanId = "careplan-1";
+        List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_2);
+        List<String> questionnaireIds = List.of(QUESTIONNAIRE_ID_2);
+        Map<String, FrequencyModel> frequencies = Map.of(QUESTIONNAIRE_ID_2, buildFrequencyModel(List.of(Weekday.MON), "07:00"));
+        PatientDetails patientDetails = buildPatientDetails();
+
+        PlanDefinition planDefinition = new PlanDefinition();
+        FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
+
+        var threshold = new ThresholdModel();
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, threshold);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
+
+        Questionnaire questionnaire = new Questionnaire();
+        Mockito.when(fhirClient.lookupQuestionnairesById(questionnaireIds)).thenReturn(FhirLookupResult.fromResource(questionnaire));
+
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
+        Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
+        FhirLookupResult carePlanResult = FhirLookupResult.fromResources(carePlan, patient, planDefinition);
+        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(carePlanResult);
+
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1); // unanswered response for questionnaire that is removed
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId)).thenReturn(FhirLookupResult.fromResources(questionnaireResponse));
+
+        // Act
+        try {
+            subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+            fail("No error was thrown");
+        } catch (ServiceException e){
+            assertEquals(ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, e.getErrorDetails());
+        }
     }
 
     private CarePlanModel buildCarePlanModel(String cpr) {
@@ -976,7 +1052,7 @@ public class CarePlanServiceTest {
 
         QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
         questionnaireWrapperModel.setQuestionnaire(new QuestionnaireModel());
-        questionnaireWrapperModel.getQuestionnaire().setId(new QualifiedId(QUESTIONNAIRE_ID_1));
+        questionnaireWrapperModel.getQuestionnaire().setId(new QualifiedId(questionnaireId));
         questionnaireWrapperModel.setThresholds(List.of(questionnaireThreshold));
 
         planDefinitionModel.setQuestionnaires(List.of(questionnaireWrapperModel));

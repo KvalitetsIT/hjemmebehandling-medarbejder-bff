@@ -266,6 +266,35 @@ public class CarePlanService extends AccessValidatingService {
             throw new ServiceException("Not every questionnaireId could be found in the provided plan definitions.", ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN);
         }
 
+        // find evt. fjernede spørgeskemaer
+        List<String> removedQuestionnaireIds = carePlan.getActivity().stream()
+                .flatMap(carePlanActivityComponent -> carePlanActivityComponent.getDetail().getInstantiatesCanonical().stream())
+                .map(canonicalType -> canonicalType.getValue())
+                .filter(currentQuestionnaireId ->  !questionnaireIds.contains(currentQuestionnaireId))
+                .collect(Collectors.toList());
+
+        // check om et fjernet spørgeskema har blå alarm
+        if (!removedQuestionnaireIds.isEmpty()) {
+            boolean removedQuestionnaireWithExeededDeadline = carePlan.getActivity().stream()
+                    .filter(carePlanActivityComponent -> removedQuestionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().get(0).getValue()))
+                    .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
+
+            if (removedQuestionnaireWithExeededDeadline) {
+                throw new ServiceException("Not every questionnaireId could be found in the provided plan definitions.", ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
+            }
+        }
+
+        // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
+        var removedQuestionnaireWithNotExaminedResponses = fhirClient.lookupQuestionnaireResponsesByStatusAndCareplanId(List.of(ExaminationStatus.NOT_EXAMINED),carePlanId)
+                .getQuestionnaireResponses().stream()
+                .anyMatch(questionnaireResponse -> removedQuestionnaireIds.contains(questionnaireResponse.getQuestionnaire()));;
+
+        if(removedQuestionnaireWithNotExaminedResponses){
+            throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES);
+        }
+
+
+
         // Update carePlan
         CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult));
         updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);

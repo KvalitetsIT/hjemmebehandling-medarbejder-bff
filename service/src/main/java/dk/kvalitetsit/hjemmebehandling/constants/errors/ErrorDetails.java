@@ -22,7 +22,8 @@ public enum ErrorDetails {
     CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Monitoreringsplanen har blå alarmer på et eller flere spørgeskemaer.", 26),
     QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN("Spørgeskemaet bruges i patientgruppe på en eller flere aktive monitoreringsplaner.", 27),
     PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN("Patientgruppen bruges på en eller flere aktive monitoreringsplaner.", 28),
-
+    PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Patientgruppen indeholder et eller flere spørgeskemaer der har blå alarmer.", 29),
+    PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Patienggruppen indeholder et eller flere spørgeskemaer der har ubehandlede besvarelser.", 30),
 
 
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
