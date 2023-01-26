@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * https://github.com/KvalitetsIT/komo-documentation#missing-questionnairereponses
  * Definitioner:
  *  - SatisfiedUntil: hvornår vises den næste blå alarm (deadline for besvarelse)
  *  - Genberegning: Udregner 'SatisfiedUntil' udfra frekvens, deadline og tidspunkt for genberegningen.
@@ -24,7 +25,9 @@ import java.util.stream.Collectors;
  *
  * Regler til genberegning for kliniker:
  *  - Klikker man "fjern alarm" så laves der en genberegning til næste skemalagte dag.
- *  - Ændres frekvensen så laves der en genberegning til næste skemalagte dag.
+ *  - Ændres frekvensen så laves der en genberegning efter følgende regler for dag og tidspunkt:
+ *     * hvis ændringen foretages på en skemalagt dag og ændringen foretages inden deadline, returneres samme dag
+ *     * hvis ændringen foretages på en ikke-skemalagt dag så laves der en genberegning til næste skemalagte dag
  *
  *  Regler til genberegning for patient:
  *  - Indsendes der et spørgeskema på en skemalagt dag inden klokken 11, så laves en genberegning til næste skemalagte dag.
@@ -42,6 +45,17 @@ public class FrequencyEnumerator {
         this.weekDays = frequency.getWeekdays().stream().map(d -> toDayOfWeek(d)).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
     }
 
+    public Instant getSatisfiedUntilForFrequencyChange(Instant pointInTime) {
+        return getSatisfiedUntil(pointInTime, true);
+    }
+
+    public Instant getSatisfiedUntilForAlarmRemoval(Instant pointInTime) {
+        return getSatisfiedUntil(pointInTime, false);
+    }
+    public Instant getSatisfiedUntilForInitialization(Instant pointInTime) {
+        return getSatisfiedUntil(pointInTime, false);
+    }
+
     /**
      * Beregner SatisfiedUntil ud fra et givent tidspunkt
      *
@@ -50,18 +64,23 @@ public class FrequencyEnumerator {
      * @param pointInTime tidspunkt næste deadlines skal beregnes ud fra
      * @return
      */
-    public Instant getSatisfiedUntil(Instant pointInTime) {
+    public Instant getSatisfiedUntil(Instant pointInTime, boolean initiatedByFrequencyChange) {
         if (weekDays.isEmpty()) {
             return Instant.MAX; // no deadline
         }
 
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(pointInTime, ZoneId.of("Europe/Copenhagen"));
-        var successiveDayOfWeek = getSuccessiveDayOfWeek(zonedDateTime.getDayOfWeek());
+        if (initiatedByFrequencyChange && zonedDateTime.toLocalTime().isBefore(deadlineTime) && weekDays.contains(zonedDateTime.getDayOfWeek()) ) {
+            // don't adjust day, just use current
+        }
+        else {
+            var successiveDayOfWeek = getSuccessiveDayOfWeek(zonedDateTime.getDayOfWeek());
+            zonedDateTime = zonedDateTime.with(TemporalAdjusters.next(successiveDayOfWeek));
+
+        }
 
         // adjust deadline and return
-        return zonedDateTime
-            .with(TemporalAdjusters.next(successiveDayOfWeek))
-            .with(deadlineTime).toInstant();
+        return zonedDateTime.with(deadlineTime).toInstant();
     }
 
     private DayOfWeek getSuccessiveDayOfWeek(DayOfWeek dayOfWeek) {

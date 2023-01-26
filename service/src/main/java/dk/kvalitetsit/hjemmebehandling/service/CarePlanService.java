@@ -1,6 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -341,12 +344,25 @@ public class CarePlanService extends AccessValidatingService {
 
             if (currentQuestionnaire.isEmpty()) {
                 // Initialize the 'satisfied-until' timestamp-
-                refreshFrequencyTimestamp(wrapper);
+                FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(wrapper.getFrequency());
+                Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntilForInitialization(dateProvider.now());
+                wrapper.setSatisfiedUntil(satisfiedUntil);
             }
             else {
                 if (!updatedFrequency.equals(currentQuestionnaire.get().getFrequency())) {
                     // re-Initialize the 'satisfied-until' timestamp-
-                    refreshFrequencyTimestamp(wrapper);
+                    Instant currentSatisfiedUntil = currentQuestionnaire.get().getSatisfiedUntil();
+
+                    FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(wrapper.getFrequency());
+                    Instant newSatisfiedUntil = frequencyEnumerator.getSatisfiedUntilForFrequencyChange(dateProvider.now());
+
+                    if (ChronoUnit.DAYS.between(currentSatisfiedUntil, newSatisfiedUntil) > 0) {
+                        // keep old satisfiedUntil to not 'loose' blue alarm until next deadline
+                        wrapper.setSatisfiedUntil( currentQuestionnaire.get().getSatisfiedUntil() );
+                    }
+                    else {
+                        wrapper.setSatisfiedUntil(newSatisfiedUntil);
+                    }
                 }
                 else {
                     wrapper.setSatisfiedUntil( currentQuestionnaire.get().getSatisfiedUntil() );
@@ -408,34 +424,23 @@ public class CarePlanService extends AccessValidatingService {
     private void initializeFrequencyTimestamps(CarePlanModel carePlanModel) {
         // Mark how far into the future the careplan is 'satisfied' (a careplan is satisfied at a given point in time if it has not had its frequencies violated)
         for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-
-            //Only if changes were made
-            refreshFrequencyTimestamp(questionnaireWrapper);
+            FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(questionnaireWrapper.getFrequency());
+            Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntilForInitialization(dateProvider.now());
+            questionnaireWrapper.setSatisfiedUntil(satisfiedUntil);
         }
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
     private void recomputeFrequencyTimestamps(CarePlanModel carePlanModel, String questionnaireId, Instant currentPointInTime) {
-//        for(var questionnaireWrapper : carePlanModel.getQuestionnaires()) {
-//
-//
-//             Only recompute the timestamp if its current value is in the past.
-//            if(questionnaireWrapper.getSatisfiedUntil().isBefore(currentPointInTime)) {
-//                refreshFrequencyTimestamp(questionnaireWrapper);
-//            }
-//        }
         Optional<QuestionnaireWrapperModel> questionnaireWrapper = carePlanModel.getQuestionnaires().stream().filter(qw -> questionnaireId.equals(qw.getQuestionnaire().getId().toString())).findFirst();
 //        Only recompute the timestamp if its current value is in the past.
         if (questionnaireWrapper.isPresent() && questionnaireWrapper.get().getSatisfiedUntil().isBefore(currentPointInTime)) {
-            refreshFrequencyTimestamp(questionnaireWrapper.get());
+            //refreshFrequencyTimestamp(questionnaireWrapper.get());
+            FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(questionnaireWrapper.get().getFrequency());
+            Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntilForAlarmRemoval(dateProvider.now());
+            questionnaireWrapper.get().setSatisfiedUntil(satisfiedUntil);
         }
         refreshFrequencyTimestampForCarePlan(carePlanModel);
-    }
-
-    private void refreshFrequencyTimestamp(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(questionnaireWrapperModel.getFrequency());
-        Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntil(dateProvider.now());
-        questionnaireWrapperModel.setSatisfiedUntil(satisfiedUntil);
     }
 
     private void refreshFrequencyTimestampForCarePlan(CarePlanModel carePlanModel) {
