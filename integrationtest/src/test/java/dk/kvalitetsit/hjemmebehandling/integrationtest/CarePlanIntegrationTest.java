@@ -156,20 +156,6 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @Order(6)
-    public void resolveAlarm_success() throws Exception {
-        // Arrange
-        String id = "careplan-2";
-        String questionnaireId = "questionnaire-1";
-
-        // Act
-        ApiResponse<Void> response = subject.resolveAlarmWithHttpInfo(id, questionnaireId);
-
-        // Assert
-        assertEquals(200, response.getStatusCode());
-    }
-
-    @Test
-    @Order(7)
     public void patchCarePlan_success() throws Exception {
         // Arrange
         String id = "careplan-2";
@@ -203,6 +189,23 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         // Assert
         assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    @Order(7)
+    public void resolveAlarm_success() throws Exception {
+        // Arrange
+        String id = "careplan-2";
+        String questionnaireId1 = "questionnaire-1";
+        String questionnaireId2 = "questionnaire-2";
+
+        // Act
+        ApiResponse<Void> response1 = subject.resolveAlarmWithHttpInfo(id, questionnaireId1);
+        ApiResponse<Void> response2 = subject.resolveAlarmWithHttpInfo(id, questionnaireId2);
+
+        // Assert
+        assertEquals(200, response1.getStatusCode());
+        assertEquals(200, response2.getStatusCode());
     }
 
     @Test
