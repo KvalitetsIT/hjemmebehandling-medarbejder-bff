@@ -25,9 +25,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,6 +66,55 @@ public class QuestionnaireControllerTest {
         assertEquals(2, result.getBody().size());
         assertTrue(result.getBody().contains(questionnaireDto1));
         assertTrue(result.getBody().contains(questionnaireDto2));
+    }
+
+    @Test
+    public void getQuestionnaires_sorting() {
+        // Arrange
+        QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel3 = new QuestionnaireModel();
+        QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
+        QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
+        QuestionnaireDto questionnaireDto3 = new QuestionnaireDto();
+        questionnaireDto1.setLastUpdated(java.sql.Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+        questionnaireDto2.setLastUpdated(null);
+        questionnaireDto3.setLastUpdated(java.sql.Date.from(Instant.now()));
+
+        Mockito.when(questionnaireService.getQuestionnaires(Collections.emptyList())).thenReturn(List.of(questionnaireModel1, questionnaireModel2, questionnaireModel3));
+        Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel1)).thenReturn(questionnaireDto1);
+        Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
+        Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel3)).thenReturn(questionnaireDto3);
+
+        // Act
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(3, result.getBody().size());
+        assertEquals(questionnaireDto3, result.getBody().get(0));
+        assertEquals(questionnaireDto1, result.getBody().get(1));
+        assertEquals(questionnaireDto2, result.getBody().get(2));
+
+//
+//        Instant today = Instant.now();
+//        Instant yesterday = today.minus(1, ChronoUnit.DAYS);
+//
+//        QuestionnaireDto dto1 = new QuestionnaireDto();
+//        dto1.setId("1 (yesterday)");
+//        dto1.setLastUpdated(java.sql.Date.from(yesterday));
+//
+//        QuestionnaireDto dto2 = new QuestionnaireDto();
+//        dto2.setId("2 (null)");
+//
+//        QuestionnaireDto dto3 = new QuestionnaireDto();
+//        dto3.setId("3 (today)");
+//        dto3.setLastUpdated(java.sql.Date.from(today));
+//
+//        List.of(dto1, dto2, dto3).stream()
+//                .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
+//                .forEach(d -> System.out.println(d.getId()));
+
     }
 
     @Test

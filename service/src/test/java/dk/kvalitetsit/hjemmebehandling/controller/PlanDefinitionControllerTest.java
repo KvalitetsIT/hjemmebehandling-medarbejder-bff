@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -20,6 +21,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -85,6 +89,35 @@ public class PlanDefinitionControllerTest {
         // Assert
 
         assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions(Optional.empty()));
+    }
+
+    @Test
+    public void getPlandefinitions_sorting() throws ServiceException {
+        // Arrange
+        PlanDefinitionModel planDefinitionModel1 = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel2 = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel3 = new PlanDefinitionModel();
+        PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
+        PlanDefinitionDto planDefinitionDto2 = new PlanDefinitionDto();
+        PlanDefinitionDto planDefinitionDto3 = new PlanDefinitionDto();
+        planDefinitionDto1.setLastUpdated(Instant.now().minus(1, ChronoUnit.DAYS));
+        planDefinitionDto2.setLastUpdated(null);
+        planDefinitionDto3.setLastUpdated(Instant.now());
+
+        Mockito.when(planDefinitionService.getPlanDefinitions(Collections.emptyList())).thenReturn(List.of(planDefinitionModel1, planDefinitionModel2, planDefinitionModel3));
+        Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel1)).thenReturn(planDefinitionDto1);
+        Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
+        Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel3)).thenReturn(planDefinitionDto3);
+
+        // Act
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
+
+        // Assert
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(3, result.getBody().size());
+        assertEquals(planDefinitionDto3, result.getBody().get(0));
+        assertEquals(planDefinitionDto1, result.getBody().get(1));
+        assertEquals(planDefinitionDto2, result.getBody().get(2));
     }
 
     @Test

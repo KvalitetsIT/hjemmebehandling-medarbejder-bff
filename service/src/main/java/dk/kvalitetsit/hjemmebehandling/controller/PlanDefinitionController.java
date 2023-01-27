@@ -34,9 +34,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,7 +67,10 @@ public class PlanDefinitionController extends BaseController {
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
 
 
-            return ResponseEntity.ok(planDefinitions.stream().map(pd -> dtoMapper.mapPlanDefinitionModel(pd)).collect(Collectors.toList()));
+            return ResponseEntity.ok(planDefinitions.stream()
+                    .map(pd -> dtoMapper.mapPlanDefinitionModel(pd))
+                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
+                    .collect(Collectors.toList()));
         }
         catch(ServiceException e) {
             logger.error("Could not look up plandefinitions", e);

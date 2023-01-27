@@ -39,11 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,7 +71,10 @@ public class QuestionnaireController extends BaseController {
 
         List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(() -> List.of()));
 
-        return ResponseEntity.ok(questionnaires.stream().map(q -> dtoMapper.mapQuestionnaireModel(q)).collect(Collectors.toList()));
+        return ResponseEntity.ok(questionnaires.stream()
+                .map(q -> dtoMapper.mapQuestionnaireModel(q))
+                .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
+                .collect(Collectors.toList()));
     }
 
     @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")
