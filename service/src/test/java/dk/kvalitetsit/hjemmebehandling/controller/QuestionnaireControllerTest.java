@@ -95,26 +95,6 @@ public class QuestionnaireControllerTest {
         assertEquals(questionnaireDto3, result.getBody().get(0));
         assertEquals(questionnaireDto1, result.getBody().get(1));
         assertEquals(questionnaireDto2, result.getBody().get(2));
-
-//
-//        Instant today = Instant.now();
-//        Instant yesterday = today.minus(1, ChronoUnit.DAYS);
-//
-//        QuestionnaireDto dto1 = new QuestionnaireDto();
-//        dto1.setId("1 (yesterday)");
-//        dto1.setLastUpdated(java.sql.Date.from(yesterday));
-//
-//        QuestionnaireDto dto2 = new QuestionnaireDto();
-//        dto2.setId("2 (null)");
-//
-//        QuestionnaireDto dto3 = new QuestionnaireDto();
-//        dto3.setId("3 (today)");
-//        dto3.setLastUpdated(java.sql.Date.from(today));
-//
-//        List.of(dto1, dto2, dto3).stream()
-//                .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
-//                .forEach(d -> System.out.println(d.getId()));
-
     }
 
     @Test
