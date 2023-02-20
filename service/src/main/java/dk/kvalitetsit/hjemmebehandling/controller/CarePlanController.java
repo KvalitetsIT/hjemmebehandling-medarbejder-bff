@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +146,6 @@ public class CarePlanController extends BaseController {
         if(request.getPlanDefinitionIds() == null || request.getQuestionnaires() == null ) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
-
         try {
             List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaires());
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
@@ -157,8 +157,26 @@ public class CarePlanController extends BaseController {
         catch(AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
-
         return ResponseEntity.ok().build();
+    }
+
+
+    /**
+     * Returns unresolved questionnaires
+     * The questionnaires which still have unanswered questions
+    */
+    @GetMapping(value = "/v1/careplan/{id}/questionnaires/unresolved")
+    public ResponseEntity<List<String>> getUnresolvedQuestionnaires(@PathVariable String id){
+        try {
+            List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).collect(Collectors.toList());
+            return ResponseEntity.ok(ids);
+        }catch (ServiceException e){
+            logger.error(String.format("Unresolved questionnaires could not be fetched due to:  %s", e ));
+            throw toStatusCodeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @PutMapping(value = "/v1/careplan/{id}/resolve-alarm/{questionnaireId}")

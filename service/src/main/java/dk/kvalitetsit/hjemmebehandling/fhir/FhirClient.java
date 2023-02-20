@@ -84,7 +84,7 @@ public class FhirClient {
 
         return lookupCarePlansByCriteria(criteria);
     }
-    
+
     
     public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied) {
         var criteria = new ArrayList<ICriterion<?>>();
@@ -205,7 +205,7 @@ public class FhirClient {
         return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
     }
 
-    public FhirLookupResult lookupQuestionnaireResponsesByStatusAndCareplanId(List<ExaminationStatus> statuses,String carePlanId) {
+    public FhirLookupResult lookupQuestionnaireResponsesByStatusAndCarePlanId(List<ExaminationStatus> statuses, String carePlanId) {
 
         var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));

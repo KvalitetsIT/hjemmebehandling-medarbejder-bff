@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.hl7.fhir.r4.model.Base;
+import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,7 @@ public class PlanDefinitionController extends BaseController {
             throw toStatusCodeException(e);
         }
     }
+
 
     @Operation(summary = "Create a new PlanDefinition.", description = "Create a PlanDefinition.")
     @ApiResponses(value = {
