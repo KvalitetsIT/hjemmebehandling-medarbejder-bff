@@ -268,7 +268,7 @@ public class CarePlanService extends AccessValidatingService {
         // find evt. fjernede spørgeskemaer
         List<String> removedQuestionnaireIds = getIdsOfRemovedQuestionnaires(questionnaireIds, carePlan);
 
-        // check om et fjernet spørgeskema har blå alarm
+        // tjek om et fjernet spørgeskema har blå alarm
         if (!removedQuestionnaireIds.isEmpty()) {
             boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
             if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
@@ -312,9 +312,9 @@ public class CarePlanService extends AccessValidatingService {
                 .collect(Collectors.toList());
     }
 
-    private boolean questionnaireHasExceededDeadline(CarePlan carePlan, List<String> removedQuestionnaireIds) {
+    private boolean questionnaireHasExceededDeadline(CarePlan carePlan, List<String> questionnaireIds) {
         return carePlan.getActivity().stream()
-                .filter(carePlanActivityComponent -> removedQuestionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().get(0).getValue()))
+                .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().get(0).getValue()))
                 .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
     }
 
@@ -478,15 +478,34 @@ public class CarePlanService extends AccessValidatingService {
                 ErrorDetails.CAREPLAN_DOES_NOT_EXIST
         );
 
+        CarePlanModel carePlanModel = optional.get();
+
+        CarePlan carePlan = fhirMapper.mapCarePlanModel(carePlanModel );
+
+        List<String> idsOfQuestionnairesContainingAlarm = getIdsOfQuestionnairesContainingAlarm(carePlanModel, carePlan);
+        List<String> idsOfUnresolvedQuestionnaires = getIdsOfUnresolvedQuestionnaires(carePlanId);
+
+        return carePlanModel.getQuestionnaires().stream()
+                .map(QuestionnaireWrapperModel::getQuestionnaire)
+                .filter(questionnaire -> {
+                    String id = questionnaire.getId().toString();
+                    return idsOfUnresolvedQuestionnaires.contains(id) || idsOfQuestionnairesContainingAlarm.contains(id);
+                }).collect(Collectors.toList());
+    }
+
+    private List<String> getIdsOfQuestionnairesContainingAlarm(CarePlanModel carePlanModel, CarePlan carePlan) {
+        return carePlanModel.getQuestionnaires()
+                .stream()
+                .map(QuestionnaireWrapperModel::getQuestionnaire)
+                .filter(questionnaire -> questionnaireHasExceededDeadline(carePlan, List.of(questionnaire.getId().getId())))
+                .map(questionnaire -> questionnaire.getId().getId())
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getIdsOfUnresolvedQuestionnaires(String carePlanId) {
         List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId).getQuestionnaireResponses();
-        List<String> idsOfUnresolvedQuestionnaires = responses.stream()
+        return responses.stream()
                 .map(QuestionnaireResponse::getQuestionnaire)
                 .collect(Collectors.toList());
-
-        CarePlanModel carePlan = optional.get();
-
-        return carePlan.getQuestionnaires().stream()
-                .map(QuestionnaireWrapperModel::getQuestionnaire)
-                .filter(questionnaire -> idsOfUnresolvedQuestionnaires.contains(questionnaire.getId().toString())).collect(Collectors.toList());
     }
 }
