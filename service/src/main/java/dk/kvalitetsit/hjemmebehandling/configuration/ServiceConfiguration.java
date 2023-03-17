@@ -44,7 +44,7 @@ public class ServiceConfiguration {
 	@Value("${allowed.roles}")
 	private String allowedRoles;
 
-    @Value("${admin.roles}")
+    @Value("${allowed.admin.roles}")
     private String adminRoles;
   @Bean
   public AuditEventRepository auditEventRepository() {
