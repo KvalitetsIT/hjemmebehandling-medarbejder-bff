@@ -6,6 +6,8 @@ import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.context.MockContextHandler;
+import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
@@ -28,7 +30,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -210,6 +211,8 @@ public class QuestionnaireControllerTest {
         // Assert
         assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id, request));
     }
+
+
 
     private QuestionDto buildQuestionDto() {
         QuestionDto questionDto = new QuestionDto();

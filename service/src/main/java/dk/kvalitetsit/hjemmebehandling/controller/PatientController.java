@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import ca.uhn.fhir.interceptor.api.Interceptor;
 import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,8 @@ import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import javax.servlet.annotation.WebFilter;
 
 @RestController
 @Tag(name = "Patient", description = "API for manipulating and retrieving patients.")

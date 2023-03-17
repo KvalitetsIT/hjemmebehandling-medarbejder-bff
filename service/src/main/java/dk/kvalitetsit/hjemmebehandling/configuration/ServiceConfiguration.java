@@ -23,9 +23,14 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
-import dk.kvalitetsit.hjemmebehandling.security.RoleValiditionInterceptor;
+import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 @Configuration
 public class ServiceConfiguration {
@@ -39,6 +44,8 @@ public class ServiceConfiguration {
 	@Value("${allowed.roles}")
 	private String allowedRoles;
 
+    @Value("${allowed.admin.roles:#{null}}")
+    private String adminRoles;
   @Bean
   public AuditEventRepository auditEventRepository() {
     return new InMemoryAuditEventRepository();
@@ -89,12 +96,20 @@ public class ServiceConfiguration {
                 registry.addMapping("/**").allowedOrigins(allowedOrigins).allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
             }
 
+
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new UserContextInterceptor(client, userContextProvider, userContextHandler));
-                registry.addInterceptor(new RoleValiditionInterceptor(userContextProvider, allowedRoles));
+                registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(allowedRoles)));
+                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(adminRoles))).addPathPatterns("/v1/plandefinition","/v1/plandefinition/**","/v1/questionnaire", "/v1/questionnaire/**");
             }
         };
+    }
+
+    private static List<String> parseRoles(String str) {
+        return Collections.list(new StringTokenizer(str, ",")).stream()
+                .map(token -> ((String) token).trim())
+                .collect(Collectors.toList());
     }
 
     @Bean
