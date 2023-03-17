@@ -25,21 +25,11 @@ public class RoleValidationInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws UnauthorizedException {
     	String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
 
-		printRoles(userEntitlements);
-
 		for (String userEntitlement : userEntitlements) {
 			if (allowedRoles.contains(userEntitlement)) return true;
 		}
 
 		throw new UnauthorizedException("The user does not have the correct permissions");
 	}
-
-	private static void printRoles(String[] userEntitlements) {
-		System.out.println("Roles:");
-		for (String entitlement: userEntitlements) {
-			System.out.println("\t" + entitlement);
-		}
-	}
-
 
 }
