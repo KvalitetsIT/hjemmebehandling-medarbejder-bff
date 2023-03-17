@@ -44,7 +44,8 @@ public class ServiceConfiguration {
 	@Value("${allowed.roles}")
 	private String allowedRoles;
 
-
+    @Value("${admin.roles}")
+    private String adminRoles;
   @Bean
   public AuditEventRepository auditEventRepository() {
     return new InMemoryAuditEventRepository();
@@ -100,8 +101,7 @@ public class ServiceConfiguration {
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new UserContextInterceptor(client, userContextProvider, userContextHandler));
                 registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(allowedRoles)));
-                registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, List.of("Administrator"))).addPathPatterns("/v1/plandefinition","/v1/plandefinition/**","/v1/questionnaire", "/v1/questionnaire/**");
-
+                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(adminRoles))).addPathPatterns("/v1/plandefinition","/v1/plandefinition/**","/v1/questionnaire", "/v1/questionnaire/**");
             }
         };
     }
