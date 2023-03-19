@@ -101,7 +101,9 @@ public class ServiceConfiguration {
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new UserContextInterceptor(client, userContextProvider, userContextHandler));
                 registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(allowedRoles)));
-                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(adminRoles))).addPathPatterns("/v1/plandefinition","/v1/plandefinition/**","/v1/questionnaire", "/v1/questionnaire/**");
+                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(adminRoles)))
+                        .addPathPatterns("/v1/plandefinition","/v1/plandefinition/**", "/v1/questionnaire", "/v1/questionnaire/**")
+                        .excludePathPatterns("/v1/questionnaireresponse", "/v1/questionnaireresponse?", "/v1/questionnaireresponse/**");
             }
         };
     }

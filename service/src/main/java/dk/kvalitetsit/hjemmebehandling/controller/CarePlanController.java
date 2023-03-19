@@ -1,12 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,20 +21,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dk.kvalitetsit.hjemmebehandling.api.CarePlanDto;
-import dk.kvalitetsit.hjemmebehandling.api.CreateCarePlanRequest;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireFrequencyPairDto;
-import dk.kvalitetsit.hjemmebehandling.api.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -58,15 +50,18 @@ public class CarePlanController extends BaseController {
     private DtoMapper dtoMapper;
     private LocationHeaderBuilder locationHeaderBuilder;
 
+    private PlanDefinitionService planDefinitionService;
+
     private enum SearchType {
         CPR, UNSATISFIED_CAREPLANS,ACTIVE
     }
 
-    public CarePlanController(CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public CarePlanController(PlanDefinitionService planDefinitionService, CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
+        this.planDefinitionService = planDefinitionService;
     }
 
     @GetMapping(value = "/v1/careplan")
@@ -164,7 +159,7 @@ public class CarePlanController extends BaseController {
     /**
      * Returns unresolved questionnaires
      * The questionnaires which still have unanswered questions
-    */
+     */
     @GetMapping(value = "/v1/careplan/{id}/questionnaires/unresolved")
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(@PathVariable String id){
         try {
@@ -205,6 +200,30 @@ public class CarePlanController extends BaseController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/v1/careplan/plandefinition")
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestParam("statusesToInclude") Optional<Collection<String>> statusesToInclude) {
+        try {
+            if(statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()){
+                var details = ErrorDetails.PARAMETERS_INCOMPLETE;
+                details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
+                throw new BadRequestException(details);
+            }
+
+            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.isPresent() ? statusesToInclude.get() : List.of();
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
+
+
+            return ResponseEntity.ok(planDefinitions.stream()
+                    .map(pd -> dtoMapper.mapPlanDefinitionModel(pd))
+                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
+                    .collect(Collectors.toList()));
+        }
+        catch(ServiceException e) {
+            logger.error("Could not look up plandefinitions", e);
+            throw toStatusCodeException(e);
+        }
     }
 
     private List<String> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {

@@ -15,15 +15,17 @@ public class RoleValidationInterceptor implements HandlerInterceptor {
 
 	private final UserContextProvider userContextProvider;
 	private final List<String> allowedRoles;
-	
-    public RoleValidationInterceptor(UserContextProvider userContextProvider, List<String> allowedRoles) {
+
+	public RoleValidationInterceptor(UserContextProvider userContextProvider, List<String> allowedRoles) {
 		this.userContextProvider = userContextProvider;
-        this.allowedRoles = allowedRoles;
-    }
-    
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws UnauthorizedException {
-    	String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
+		this.allowedRoles = allowedRoles;
+	}
+
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws UnauthorizedException {
+
+
+		String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
 
 		for (String userEntitlement : userEntitlements) {
 			if (allowedRoles.contains(userEntitlement)) return true;
@@ -31,5 +33,4 @@ public class RoleValidationInterceptor implements HandlerInterceptor {
 
 		throw new UnauthorizedException("The user does not have the correct permissions");
 	}
-
 }
