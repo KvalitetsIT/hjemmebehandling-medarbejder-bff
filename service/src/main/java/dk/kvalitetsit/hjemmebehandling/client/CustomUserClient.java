@@ -51,12 +51,12 @@ public class CustomUserClient {
     
     
     // http://localhost:8080/api/v1/resetpassword
-    public void resetPassword(String cpr, String customUserLoginId) throws JsonMappingException, JsonProcessingException {
+    public void resetPassword(String cpr, String customUserLoginName) throws JsonMappingException, JsonProcessingException {
     	if("".equals(patientidpApiUrl)) {
     		logger.info("patientidpApiUrl is null. Cannot reset password");
     		return;
     	}
-    	if(cpr == null || customUserLoginId == null) {
+    	if(cpr == null || customUserLoginName == null) {
     		logger.info("resetPassword: Can not find cpr or customUserId");
     		return;
     	}
@@ -71,6 +71,6 @@ public class CustomUserClient {
     	String jsonArg = mapper.writeValueAsString(customUserRequestDto);
     	HttpEntity<String> request = new HttpEntity<String>(jsonArg,headers);
     	// send request
-    	restTemplate.put(patientidpApiUrl+"/"+customUserLoginId+"/reset-password",request);
+    	restTemplate.put(patientidpApiUrl+"/"+customUserLoginName+"/reset-password",request);
     }
 }

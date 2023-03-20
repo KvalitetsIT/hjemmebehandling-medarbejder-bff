@@ -121,7 +121,7 @@ public class PatientController extends BaseController {
     public void resetPassword(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
         logger.info("reset password for patient");
         PatientModel patientModel = patientService.getPatient(cpr);
-        customUserClient.resetPassword(cpr, patientModel.getCustomUserId());
+        customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
     }
 
     private String getClinicalIdentifier() {
