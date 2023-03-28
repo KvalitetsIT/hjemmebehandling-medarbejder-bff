@@ -366,10 +366,12 @@ public class CarePlanService extends AccessValidatingService {
                     FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(wrapper.getFrequency());
                     Instant newSatisfiedUntil = frequencyEnumerator.getSatisfiedUntilForFrequencyChange(dateProvider.now());
 
-                    if (ChronoUnit.DAYS.between(currentSatisfiedUntil, newSatisfiedUntil) > 0) {
-                        // keep old satisfiedUntil to not 'loose' blue alarm until next deadline
-                        wrapper.setSatisfiedUntil(currentQuestionnaire.get().getSatisfiedUntil());
-                    } else {
+                    // if current satisfied-until > new, this means that the patient has already answered today
+                    // and in this case we want to keep this as 'SatisfiedUntil'
+                    if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
+                        wrapper.setSatisfiedUntil(currentSatisfiedUntil);
+                    }
+                    else {
                         wrapper.setSatisfiedUntil(newSatisfiedUntil);
                     }
                 } else {

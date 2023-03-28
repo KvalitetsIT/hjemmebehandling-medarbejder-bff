@@ -71,11 +71,13 @@ public class FrequencyEnumerator {
 
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(pointInTime, ZoneId.of("Europe/Copenhagen"));
         if (initiatedByFrequencyChange && zonedDateTime.toLocalTime().isBefore(deadlineTime) && weekDays.contains(zonedDateTime.getDayOfWeek()) ) {
-            // don't adjust day, just use current
+            var previousScheduledDayOfWeek = getPreviousScheduledDayOfWeek(zonedDateTime.getDayOfWeek());
+            // return 'last' satisfied-until to avoid a temporary removal of a blue alarm
+            zonedDateTime = zonedDateTime.with(TemporalAdjusters.previous(previousScheduledDayOfWeek));
         }
         else {
-            var successiveDayOfWeek = getSuccessiveDayOfWeek(zonedDateTime.getDayOfWeek());
-            zonedDateTime = zonedDateTime.with(TemporalAdjusters.next(successiveDayOfWeek));
+            var nextScheduledDayOfWeek = getNextScheduledDayOfWeek(zonedDateTime.getDayOfWeek());
+            zonedDateTime = zonedDateTime.with(TemporalAdjusters.next(nextScheduledDayOfWeek));
 
         }
 
@@ -83,11 +85,18 @@ public class FrequencyEnumerator {
         return zonedDateTime.with(deadlineTime).toInstant();
     }
 
-    private DayOfWeek getSuccessiveDayOfWeek(DayOfWeek dayOfWeek) {
+    private DayOfWeek getNextScheduledDayOfWeek(DayOfWeek dayOfWeek) {
         return weekDays.stream()
             .filter(weekDay -> weekDay.compareTo(dayOfWeek) > 0)
             .findFirst()
             .orElseGet(() -> weekDays.get(0));
+    }
+
+    public DayOfWeek getPreviousScheduledDayOfWeek(DayOfWeek dayOfWeek) {
+        return weekDays.stream()
+                .filter(weekDay -> weekDay.compareTo(dayOfWeek) < 0)
+                .max(Comparator.naturalOrder())
+                .orElseGet(() -> weekDays.get(weekDays.size()-1));
     }
 
     private DayOfWeek toDayOfWeek(Weekday weekday) {

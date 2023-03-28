@@ -815,7 +815,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void updateCarePlan_updatesFrequency_addsToCurrentDay() throws Exception {
+    public void updateCarePlan_updatesFrequency_keepsMaxOf_currentSatistiedUntil_and_newCalculated() throws Exception {
         // Arrange
         String carePlanId = "careplan-1";
         List<String> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
@@ -857,8 +857,9 @@ public class CarePlanServiceTest {
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
         // Assert
-        assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
-        assertEquals(nextNextSatisfiedUntilTime, carePlanModel.getSatisfiedUntil());
+        assertTrue(nextNextSatisfiedUntilTime.isBefore(POINT_IN_TIME));
+        assertEquals(POINT_IN_TIME, carePlanModel.getQuestionnaires().get(0).getSatisfiedUntil());
+        assertEquals(POINT_IN_TIME, carePlanModel.getSatisfiedUntil());
     }
 
     @Test

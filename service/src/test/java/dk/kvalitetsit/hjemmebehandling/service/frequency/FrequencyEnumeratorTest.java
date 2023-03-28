@@ -133,10 +133,6 @@ public class FrequencyEnumeratorTest {
         // Act
         Instant result = subject.getSatisfiedUntilForInitialization(timeOfRecalculate);
 
-        LocalDate now = LocalDate.now();
-        //now.adjustInto()
-
-
         // Assert
         assertEquals(timeCalculatedResult, result);
     }
@@ -201,10 +197,6 @@ public class FrequencyEnumeratorTest {
         // Act
         Instant result = subject.getSatisfiedUntilForAlarmRemoval(timeOfRecalculate);
 
-        LocalDate now = LocalDate.now();
-        //now.adjustInto()
-
-
         // Assert
         assertEquals(timeCalculatedResult, result);
     }
@@ -220,7 +212,7 @@ public class FrequencyEnumeratorTest {
                 Arguments.of(FridayAt14,Instant.parse("2021-11-24T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, after deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-25T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, after deadline
-                Arguments.of(FridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), // friday, before deadline
+                Arguments.of(FridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-19T13:00:00.00Z")), // friday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-26T15:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), // friday, after deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), //saturday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-27T15:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), //saturday, after deadline
@@ -230,32 +222,32 @@ public class FrequencyEnumeratorTest {
 
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-22T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //monday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-22T15:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //monday,  after deadline
-                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //tuesday, before deadline
+                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-19T13:00:00.00Z")), //tuesday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //tuesday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-24T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-24T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-25T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, after deadline
-                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), // friday, before deadline
+                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), // friday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), // friday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //saturday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-27T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //saturday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-28T10:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //sunday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-28T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //sunday, after deadline
 
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-22T09:11:12.124Z"),Instant.parse("2021-11-22T10:00:00.00Z")), //monday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-22T09:11:12.124Z"),Instant.parse("2021-11-21T10:00:00.00Z")), //monday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-22T10:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //monday,  after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-23T09:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //tuesday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-23T09:11:12.124Z"),Instant.parse("2021-11-22T10:00:00.00Z")), //tuesday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //tuesday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-24T09:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //wednesday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-24T09:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //wednesday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-24T10:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), //wednesday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-25T09:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), //thursday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-25T09:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //thursday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), //thursday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-26T09:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), // friday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-26T09:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), // friday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), // friday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-27T09:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), //saturday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-27T09:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), //saturday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-11-28T10:00:00.00Z")), //saturday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-28T09:11:12.124Z"),Instant.parse("2021-11-28T10:00:00.00Z")), //sunday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-28T09:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), //sunday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-28T10:11:12.124Z"),Instant.parse("2021-11-29T10:00:00.00Z")) //sunday, after deadline
         );
     }
@@ -267,111 +259,9 @@ public class FrequencyEnumeratorTest {
         // Act
         Instant result = subject.getSatisfiedUntilForFrequencyChange(timeOfRecalculate);
 
-        LocalDate now = LocalDate.now();
-        //now.adjustInto()
-
-
         // Assert
         assertEquals(timeCalculatedResult, result);
     }
-
-    @Test
-    void tester() {
-        LocalDate today = LocalDate.now();
-        System.out.printf("%s\n",DayOfWeek.of(today.get(ChronoField.DAY_OF_WEEK)));
-
-        List list = new ArrayList();
-        list.add(DayOfWeek.MONDAY);
-        //list.add(DayOfWeek.TUESDAY);
-        //list.add(DayOfWeek.WEDNESDAY);
-
-
-        Instant pointInTime = Instant.now();
-        LocalDate date = LocalDate.ofInstant(pointInTime, ZoneId.of("Europe/Copenhagen"));
-
-
-        System.out.println();
-        System.out.printf("%s\n", date.with(TemporalAdjusters.next(DayOfWeek.TUESDAY)));
-
-
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-        if (list.contains(dayOfWeek)) {
-            DayOfWeek successiveDayOfWeek = getSuccessiveDayOfWeek(dayOfWeek, list);
-            System.out.printf("%s -> %s\n",dayOfWeek, successiveDayOfWeek);
-            //date = date.with(TemporalAdjusters.next(successiveDayOfWeek));
-            System.out.printf("%s -> %s\n",date, date.with(TemporalAdjusters.next(successiveDayOfWeek)));
-        }
-
-        LocalTime time = LocalTime.of(11, 0);
-        System.out.printf("%s\n", time);
-
-        LocalDateTime.of(date, time);
-
-        System.out.printf("%s\n", DayOfWeek.MONDAY.compareTo(DayOfWeek.TUESDAY));
-        System.out.printf("%s\n", DayOfWeek.MONDAY.compareTo(DayOfWeek.SUNDAY));
-
-        list.add(DayOfWeek.WEDNESDAY);
-
-
-        System.out.println("######");
-        System.out.println(ChronoUnit.DAYS.between(Instant.parse("2021-11-22T10:00:00.000Z"), Instant.parse("2021-11-23T09:59:59.999Z")));
-        System.out.println(ChronoUnit.DAYS.between(Instant.parse("2021-11-22T10:00:00.000Z"), Instant.parse("2021-11-23T10:00:00.000Z")));
-        System.out.println(ChronoUnit.DAYS.between(Instant.parse("2021-11-22T10:00:00.000Z"), Instant.parse("2021-11-23T10:00:00.001Z")));
-        System.out.println(ChronoUnit.DAYS.between(Instant.parse("2021-11-22T10:00:00.000Z"), Instant.parse("2021-11-24T09:59:59.999Z")));
-        System.out.println(ChronoUnit.DAYS.between(Instant.parse("2021-11-22T10:00:00.000Z"), Instant.parse("2021-11-24T10:00:00.000Z")));
-
-        Instant i1 = Instant.parse("2021-11-22T10:00:00.000Z");
-        Instant i2 = Instant.parse("2021-11-23T00:00:00.000Z");
-        Instant i3 = Instant.parse("2021-11-23T10:00:00.000Z");
-        Instant i4 = Instant.parse("2021-11-23T23:00:00.000Z");
-
-        ZonedDateTime now1 = ZonedDateTime.ofInstant(i1, ZoneId.of("Europe/Copenhagen"));
-        ZonedDateTime now2 = ZonedDateTime.ofInstant(i2, ZoneId.of("Europe/Copenhagen"));
-        ZonedDateTime now3 = ZonedDateTime.ofInstant(i3, ZoneId.of("Europe/Copenhagen"));
-        ZonedDateTime now4 = ZonedDateTime.ofInstant(i4, ZoneId.of("Europe/Copenhagen"));
-        System.out.println("====");
-        System.out.println(ChronoUnit.DAYS.between(now1.toLocalDate(), now2.toLocalDate()));
-        System.out.println(ChronoUnit.DAYS.between(now1.toLocalDate(), now3.toLocalDate()));
-        System.out.println(ChronoUnit.DAYS.between(now1.toLocalDate(), now4.toLocalDate()));
-
-
-
-    }
-
-    @Test
-    void test() {
-        List<DayOfWeek> list = new ArrayList();
-        list.add(DayOfWeek.MONDAY);
-        list.add(DayOfWeek.WEDNESDAY);
-        list.add(DayOfWeek.FRIDAY);
-
-        DayOfWeek today = DayOfWeek.MONDAY;
-        Stream.of(DayOfWeek.values()).forEach(dayOfWeek -> {
-            System.out.printf("%s -> %s\n", dayOfWeek, getNext(list, dayOfWeek));
-        });
-    }
-
-    DayOfWeek getNext(List<DayOfWeek> list, DayOfWeek day) {
-        return list.stream()
-            .filter(dayOfWeek -> dayOfWeek.compareTo(day) > 0)
-            .findFirst()
-            .orElseGet(() -> list.get(0));
-
-    }
-
-    private DayOfWeek getSuccessiveDayOfWeek(DayOfWeek currentDayOfWeek, List<DayOfWeek> weekDays) {
-        int i = weekDays.indexOf(currentDayOfWeek);
-        if (i+1 < weekDays.size()) {
-            return weekDays.get(i+1);
-        }
-        else {
-            return weekDays.get(0);
-        }
-
-    }
-
-
-
 
     @Test
     public void next_weekdaysOmitted_interpretedAsNoDeadline() {
