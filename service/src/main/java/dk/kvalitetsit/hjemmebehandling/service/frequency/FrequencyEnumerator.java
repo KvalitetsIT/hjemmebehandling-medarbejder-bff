@@ -71,9 +71,9 @@ public class FrequencyEnumerator {
 
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(pointInTime, ZoneId.of("Europe/Copenhagen"));
         if (initiatedByFrequencyChange && zonedDateTime.toLocalTime().isBefore(deadlineTime) && weekDays.contains(zonedDateTime.getDayOfWeek()) ) {
-            var previousScheduledDayOfWeek = getPreviousScheduledDayOfWeek(zonedDateTime.getDayOfWeek());
+            var previousScheduledDayOfWeek = getPreviousOrSameScheduledDayOfWeek(zonedDateTime.getDayOfWeek());
             // return 'last' satisfied-until to avoid a temporary removal of a blue alarm
-            zonedDateTime = zonedDateTime.with(TemporalAdjusters.previous(previousScheduledDayOfWeek));
+            zonedDateTime = zonedDateTime.with(TemporalAdjusters.previousOrSame(previousScheduledDayOfWeek));
         }
         else {
             var nextScheduledDayOfWeek = getNextScheduledDayOfWeek(zonedDateTime.getDayOfWeek());
@@ -92,9 +92,9 @@ public class FrequencyEnumerator {
             .orElseGet(() -> weekDays.get(0));
     }
 
-    public DayOfWeek getPreviousScheduledDayOfWeek(DayOfWeek dayOfWeek) {
+    public DayOfWeek getPreviousOrSameScheduledDayOfWeek(DayOfWeek dayOfWeek) {
         return weekDays.stream()
-                .filter(weekDay -> weekDay.compareTo(dayOfWeek) < 0)
+                .filter(weekDay -> weekDay.compareTo(dayOfWeek) <= 0)
                 .max(Comparator.naturalOrder())
                 .orElseGet(() -> weekDays.get(weekDays.size()-1));
     }

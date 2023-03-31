@@ -212,7 +212,7 @@ public class FrequencyEnumeratorTest {
                 Arguments.of(FridayAt14,Instant.parse("2021-11-24T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, after deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-25T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, after deadline
-                Arguments.of(FridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-19T13:00:00.00Z")), // friday, before deadline
+                Arguments.of(FridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), // friday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-26T15:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), // friday, after deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), //saturday, before deadline
                 Arguments.of(FridayAt14,Instant.parse("2021-11-27T15:11:12.124Z"),Instant.parse("2021-12-03T13:00:00.00Z")), //saturday, after deadline
@@ -222,32 +222,32 @@ public class FrequencyEnumeratorTest {
 
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-22T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //monday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-22T15:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //monday,  after deadline
-                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-19T13:00:00.00Z")), //tuesday, before deadline
+                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), //tuesday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-23T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //tuesday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-24T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-24T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //wednesday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-25T15:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), //thursday, after deadline
-                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-23T13:00:00.00Z")), // friday, before deadline
+                Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-26T13:00:00.00Z")), // friday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-26T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), // friday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //saturday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-27T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //saturday, after deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-28T10:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //sunday, before deadline
                 Arguments.of(tuesdayAndFridayAt14,Instant.parse("2021-11-28T15:11:12.124Z"),Instant.parse("2021-11-30T13:00:00.00Z")), //sunday, after deadline
 
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-22T09:11:12.124Z"),Instant.parse("2021-11-21T10:00:00.00Z")), //monday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-22T09:11:12.124Z"),Instant.parse("2021-11-22T10:00:00.00Z")), //monday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-22T10:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //monday,  after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-23T09:11:12.124Z"),Instant.parse("2021-11-22T10:00:00.00Z")), //tuesday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-23T09:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //tuesday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-23T10:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //tuesday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-24T09:11:12.124Z"),Instant.parse("2021-11-23T10:00:00.00Z")), //wednesday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-24T09:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //wednesday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-24T10:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), //wednesday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-25T09:11:12.124Z"),Instant.parse("2021-11-24T10:00:00.00Z")), //thursday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-25T09:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), //thursday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-25T10:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), //thursday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-26T09:11:12.124Z"),Instant.parse("2021-11-25T10:00:00.00Z")), // friday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-26T09:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), // friday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-26T10:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), // friday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-27T09:11:12.124Z"),Instant.parse("2021-11-26T10:00:00.00Z")), //saturday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-27T09:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), //saturday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-27T10:11:12.124Z"),Instant.parse("2021-11-28T10:00:00.00Z")), //saturday, after deadline
-                Arguments.of(allWeekAt11,Instant.parse("2021-11-28T09:11:12.124Z"),Instant.parse("2021-11-27T10:00:00.00Z")), //sunday, before deadline
+                Arguments.of(allWeekAt11,Instant.parse("2021-11-28T09:11:12.124Z"),Instant.parse("2021-11-28T10:00:00.00Z")), //sunday, before deadline
                 Arguments.of(allWeekAt11,Instant.parse("2021-11-28T10:11:12.124Z"),Instant.parse("2021-11-29T10:00:00.00Z")) //sunday, after deadline
         );
     }

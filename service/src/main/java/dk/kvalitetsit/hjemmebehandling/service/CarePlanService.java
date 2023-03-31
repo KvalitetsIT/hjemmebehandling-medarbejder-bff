@@ -1,7 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -337,13 +339,14 @@ public class CarePlanService extends AccessValidatingService {
         List<QuestionnaireWrapperModel> updatedQuestionnaires = planDefinitions.stream()
                 .flatMap(pd -> pd.getQuestionnaires().stream())
                 .collect(Collectors.toList());
-        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(carePlanModel.getQuestionnaires(), updatedQuestionnaires, updatedFrequencies));
+        carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(carePlanModel, updatedQuestionnaires, updatedFrequencies));
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
 
-    List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(List<QuestionnaireWrapperModel> currentQuestionnaires, List<QuestionnaireWrapperModel> updatedQuestionnaires, Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
+    List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(CarePlanModel carePlan, List<QuestionnaireWrapperModel> updatedQuestionnaires, Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
         List<QuestionnaireWrapperModel> result = new ArrayList<>();
 
+        List<QuestionnaireWrapperModel> currentQuestionnaires = carePlan.getQuestionnaires();
         for (var wrapper : updatedQuestionnaires) {
             Optional<QuestionnaireWrapperModel> currentQuestionnaire = currentQuestionnaires.stream()
                     .filter(q -> q.getQuestionnaire().getId().equals(wrapper.getQuestionnaire().getId()))
@@ -369,7 +372,27 @@ public class CarePlanService extends AccessValidatingService {
                     // if current satisfied-until > new, this means that the patient has already answered today
                     // and in this case we want to keep this as 'SatisfiedUntil'
                     if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
-                        wrapper.setSatisfiedUntil(currentSatisfiedUntil);
+                        String questionnaireId = currentQuestionnaire.get().getQuestionnaire().getId().getId();
+                        FhirLookupResult lookupQuestionnaireResponses = fhirClient.lookupQuestionnaireResponses(carePlan.getId().getId(), List.of(questionnaireId));
+
+                        ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
+
+
+                        boolean answerFromTodayExist = lookupQuestionnaireResponses.getQuestionnaireResponses().stream()
+                                .anyMatch(questionnaireResponse -> {
+                                    ZonedDateTime answered = ZonedDateTime.ofInstant(questionnaireResponse.getAuthored().toInstant(), ZoneId.of("Europe/Copenhagen"));
+
+                                    // check if answer is from 'today and before deadline'
+                                    return answered.toLocalDate().equals(now.toLocalDate()) && answered.toLocalTime().isBefore(updatedFrequency.getTimeOfDay());
+                                });
+
+                        if (answerFromTodayExist) {
+                            Instant nextSatisfiedUntil = frequencyEnumerator.getSatisfiedUntil(dateProvider.now(), false);
+                            wrapper.setSatisfiedUntil(nextSatisfiedUntil);
+                        }
+                        else {
+                            wrapper.setSatisfiedUntil(newSatisfiedUntil);
+                        }
                     }
                     else {
                         wrapper.setSatisfiedUntil(newSatisfiedUntil);
