@@ -84,15 +84,18 @@ The application API documentation(Json): `http://localhost:8080/api/v3/api-docs`
 
 ## Configuration
 
-| Environment variable | Description | Required |
-|----------------------|-------------|---------- |
-| cpr.url | URL - cprservice | Yes |
-| fhir.server.url | URL - fhir server | Yes|
-| user.context.handler | Handler for user context. Values MOCK or DIAS | Yes |
-| audit.url | URL - audit server | No|
-| LOG_LEVEL | Log Level for applikation  log. Defaults to INFO. | No |
-| LOG_LEVEL_FRAMEWORK | Log level for framework. Defaults to INFO. | No |
-| CORRELATION_ID | HTTP header to take correlation id from. Used to correlate log messages. Defaults to "x-request-id". | No|
+| Environment variable         | Description                                                                                          | Required                       |
+|------------------------------|------------------------------------------------------------------------------------------------------|--------------------------------|
+| cpr.url                      | URL - cprservice                                                                                     | Yes                            |
+| fhir.server.url              | URL - fhir server                                                                                    | Yes                            |
+| user.context.handler         | Handler for user context. Values MOCK or DIAS                                                        | Yes                            |
+| user.context.organization.id | Sets the organization id of the mocked context                                                       | if user.context.handler = MOCK |
+| user.context.entitlements    | Injects the entitlements into the mocked context (Has to match atleast one of the allowed.roles)     | if user.context.handler = MOCK |
+| audit.url                    | URL - audit server                                                                                   | No                             |
+| LOG_LEVEL                    | Log Level for applikation  log. Defaults to INFO.                                                    | No                             |
+| LOG_LEVEL_FRAMEWORK          | Log level for framework. Defaults to INFO.                                                           | No                             |
+| CORRELATION_ID               | HTTP header to take correlation id from. Used to correlate log messages. Defaults to "x-request-id". | No                             |
+| allowed.roles                | Sets the allowed roles                                                                               | Yes                            |
 
 ## Generate for frontend (bff.json)
 Start bff on port 8080. After that run the following command;

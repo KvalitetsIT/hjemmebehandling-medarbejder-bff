@@ -37,8 +37,13 @@ public class ServiceConfiguration {
 	
 	@Value("${user.mock.context.organization.id}")
 	private String mockContextOrganizationId;
-	
-	@Value("${fhir.server.url}")
+
+
+    @Value("${user.mock.context.entitlements}")
+    private String mockContextEntitlements;
+
+
+    @Value("${fhir.server.url}")
 	private String fhirServerUrl;
 	
 	@Value("${allowed.roles}")
@@ -100,15 +105,15 @@ public class ServiceConfiguration {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(new UserContextInterceptor(client, userContextProvider, userContextHandler));
-                registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(allowedRoles)));
-                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseRoles(adminRoles)))
+                registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseAsList(allowedRoles)));
+                if(adminRoles != null) registry.addInterceptor(new RoleValidationInterceptor(userContextProvider, parseAsList(adminRoles)))
                         .addPathPatterns("/v1/plandefinition","/v1/plandefinition/**", "/v1/questionnaire", "/v1/questionnaire/**")
                         .excludePathPatterns("/v1/questionnaireresponse", "/v1/questionnaireresponse?", "/v1/questionnaireresponse/**");
             }
         };
     }
 
-    private static List<String> parseRoles(String str) {
+    private static List<String> parseAsList(String str) {
         return Collections.list(new StringTokenizer(str, ",")).stream()
                 .map(token -> ((String) token).trim())
                 .collect(Collectors.toList());
@@ -120,7 +125,7 @@ public class ServiceConfiguration {
             case "DIAS":
                 return new DIASUserContextHandler();
             case "MOCK":
-                return new MockContextHandler(mockContextOrganizationId);
+                return new MockContextHandler(mockContextOrganizationId, parseAsList(mockContextEntitlements));
             default:
                 throw new IllegalArgumentException(String.format("Unknown userContextHandler value: %s", userContextHandler));
         }
