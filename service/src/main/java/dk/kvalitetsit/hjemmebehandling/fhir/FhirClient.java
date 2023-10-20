@@ -139,14 +139,13 @@ public class FhirClient {
 
     public Optional<Patient> lookupPatientById(String patientId) {
         var idCriterion = Patient.RES_ID.exactly().code(patientId);
-
-        return lookupPatient(idCriterion);
+        return lookupPatient(List.of(idCriterion));
     }
 
     public Optional<Patient> lookupPatientByCpr(String cpr) {
         var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
-
-        return lookupPatient(cprCriterion);
+        var organisationCriterion = buildOrganizationCriterion();
+        return lookupPatient(List.of(cprCriterion, organisationCriterion));
     }
 
     public FhirLookupResult searchPatients(List<String> searchStrings, CarePlan.CarePlanStatus status) {
@@ -224,6 +223,11 @@ public class FhirClient {
     }
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
+
+        // Sets the organisation which the contact is associated
+        var organisationId = buildOrganizationCriterion();
+        if (patient.hasContact()) patient.getContact().get(0).setOrganization(new Reference(organisationId.toString()));
+
         // Build a transaction bundle.
         var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
         addOrganizationTag(bundle);
@@ -338,8 +342,8 @@ public class FhirClient {
         return lookupByCriteria(Organization.class, criteria, List.of(), withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    private Optional<Patient> lookupPatient(ICriterion<?> criterion) {
-        var lookupResult = lookupByCriteria(Patient.class, List.of(criterion));
+    private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) {
+        var lookupResult = lookupByCriteria(Patient.class, criterion);
 
         if(lookupResult.getPatients().isEmpty()) {
             return Optional.empty();

@@ -76,6 +76,7 @@ public class CarePlanService extends AccessValidatingService {
 
             var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
             if (newPatient != null) {
+
                 patient.get().setContact(newPatient.getContact());
                 patient.get().setTelecom(newPatient.getTelecom());
             }
@@ -246,12 +247,16 @@ public class CarePlanService extends AccessValidatingService {
         // Look up the CarePlan, throw an exception in case it does not exist.
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
-        if (careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent())
+
+        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent();
+
+        if (emptyResult) {
             throw new ServiceException(
                     String.format("Could not lookup careplan with id %s!", qualifiedId),
                     ErrorKind.BAD_REQUEST,
                     ErrorDetails.CAREPLAN_DOES_NOT_EXIST
             );
+        }
 
         CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
 

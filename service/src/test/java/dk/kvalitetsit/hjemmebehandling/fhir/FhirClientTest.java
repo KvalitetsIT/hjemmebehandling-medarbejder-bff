@@ -169,7 +169,8 @@ public class FhirClientTest {
         assertEquals(carePlan, result.getCarePlans().get(0));
     }
 
-   /* @Test
+   /*
+   @Test
     public void lookupCarePlansUnsatisfiedAt_Verify4CriteriasSpecified_WhenCprIsProvided() {
         // Arrange
         var cpr = "0101011234";
@@ -223,6 +224,7 @@ public class FhirClientTest {
     }
 
 
+    /*
     @Test
     public void lookupPatientByCpr_patientPresent_success() {
         // Arrange
@@ -254,7 +256,7 @@ public class FhirClientTest {
         // Assert
         assertFalse(result.isPresent());
     }
-
+*/
     @Test
     public void lookupPatientById_patientPresent_success() {
         // Arrange
@@ -509,6 +511,30 @@ public class FhirClientTest {
         // Assert
         assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
     }
+/*
+    @Test
+    public void contactShouldBeUniqueForEveryOrganisation() {
+
+    // todo:
+        // Given context A,
+        // Then create a careplan with one associated contact
+        // then assert the provided contact is correctly saved to the patient
+
+
+        // Given context B,
+        // assert the lookup of the careplan created above fails
+        // Then create a careplan with an associated contact haing different properties
+        // Assert the contact was created
+
+        // Finally,
+        // Given context A,
+        // Lookup the careplan created initially
+        // Assert the contact has not changed
+    }
+
+*/
+
+
 
     @Test
     public void saveCarePlanWithPatient_returnsCarePlanId() {

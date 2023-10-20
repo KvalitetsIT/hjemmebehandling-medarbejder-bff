@@ -65,7 +65,18 @@ public class CarePlanController extends BaseController {
     }
 
     @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> searchCarePlans(@RequestParam("cpr") Optional<String> cpr, @RequestParam("only_unsatisfied_schedules") Optional<Boolean> onlyUnsatisfiedSchedules, @RequestParam("only_active_careplans") Optional<Boolean> onlyActiveCarePlans, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(
+                @RequestParam("cpr")
+                Optional<String> cpr,
+                @RequestParam("only_unsatisfied_schedules")
+                Optional<Boolean> onlyUnsatisfiedSchedules,
+                @RequestParam("only_active_careplans")
+                Optional<Boolean> onlyActiveCarePlans,
+                @RequestParam("page_number")
+                Optional<Integer> pageNumber,
+                @RequestParam("page_size")
+                Optional<Integer> pageSize
+    ) {
 
         try {
             PageDetails pageDetails = null;
@@ -90,7 +101,11 @@ public class CarePlanController extends BaseController {
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public ResponseEntity<CarePlanDto> getCarePlanById(@PathVariable @Parameter(description = "Id of the CarePlan to be retrieved.") String id) {
+    public ResponseEntity<CarePlanDto> getCarePlanById(
+            @PathVariable
+            @Parameter(description = "Id of the CarePlan to be retrieved.")
+            String id
+    ) {
         // Look up the CarePlan
         Optional<CarePlanModel> carePlan = Optional.empty();
 
@@ -146,7 +161,14 @@ public class CarePlanController extends BaseController {
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
             PatientDetails patientDetails = getPatientDetails(request);
 
-            CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
+            CarePlanModel carePlanModel = carePlanService.updateCarePlan(
+                    id,
+                    request.getPlanDefinitionIds(),
+                    questionnaireIds,
+                    frequencies,
+                    patientDetails
+            );
+
             auditLoggingService.log("PATCH /v1/careplan/"+id, carePlanModel.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {
