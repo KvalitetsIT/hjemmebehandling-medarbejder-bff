@@ -26,6 +26,8 @@ public class PatientIntegrationTest extends AbstractIntegrationTest {
         // Act
         ApiResponse<PatientDto> response = subject.getPatientWithHttpInfo(cpr);
 
+        System.out.println(response.getStatusCode());
+
         // Assert
         assertEquals(200, response.getStatusCode());
     }
