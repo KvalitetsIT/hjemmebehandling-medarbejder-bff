@@ -334,8 +334,8 @@ public class DtoMapperTest {
         PatientModel patientModel = new PatientModel();
 
         patientModel.setCpr("0101010101");
-        patientModel.setPatientContactDetails(buildContactDetailsModel());
-        patientModel.setPrimaryRelativeContactDetails(buildContactDetailsModel());
+        patientModel.setContactDetails(buildContactDetailsModel());
+        patientModel.getPrimaryContact().setContactDetails(buildContactDetailsModel());
         patientModel.setAdditionalRelativeContactDetails(List.of(buildContactDetailsModel()));
 
         return patientModel;

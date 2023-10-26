@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
@@ -56,6 +55,9 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 public class FhirMapper {
     @Autowired
     private DateProvider dateProvider;
+
+    @Autowired
+    private FhirClient fhirClient;
 
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
         CarePlan carePlan = new CarePlan();
@@ -196,8 +198,8 @@ public class FhirMapper {
         patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.getCustomUserId()));
         patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.getCustomUserName()));
 
-        if(patientModel.getPatientContactDetails() != null) {
-            var contactDetails = patientModel.getPatientContactDetails();
+        if(patientModel.getContactDetails() != null) {
+            var contactDetails = patientModel.getContactDetails();
 
             var address = buildAddress(contactDetails);
             patient.addAddress(address);
@@ -213,18 +215,21 @@ public class FhirMapper {
             }
         }
 
-        if(patientModel.getPrimaryRelativeName() != null) {
+        if(patientModel.getPrimaryContact().getName() != null) {
             var contact = new Patient.ContactComponent();
 
-            var contactName = buildName(patientModel.getPrimaryRelativeName());
+            var contactName = buildName(patientModel.getPrimaryContact().getName());
             contact.setName(contactName);
+            var organisation = new Reference();
+            organisation.setReference(patientModel.getPrimaryContact().getOrganisation());
+            contact.setOrganization(organisation);
 
-            if(patientModel.getPrimaryRelativeAffiliation() != null) {
-                contact.setRelationship(List.of(new CodeableConcept(new Coding(Systems.CONTACT_RELATIONSHIP, patientModel.getPrimaryRelativeAffiliation(), patientModel.getPrimaryRelativeAffiliation()))));
+            if(patientModel.getPrimaryContact().getAffiliation() != null) {
+                contact.setRelationship(List.of(new CodeableConcept(new Coding(Systems.CONTACT_RELATIONSHIP, patientModel.getPrimaryContact().getAffiliation(), patientModel.getPrimaryContact().getAffiliation()))));
             }
 
-            if(patientModel.getPrimaryRelativeContactDetails() != null) {
-                var primaryRelativeContactDetails = patientModel.getPrimaryRelativeContactDetails();
+            if(patientModel.getPrimaryContact().getContactDetails() != null) {
+                var primaryRelativeContactDetails = patientModel.getPrimaryContact().getContactDetails();
                 if(primaryRelativeContactDetails.getPrimaryPhone() != null) {
                     var relativePrimaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getPrimaryPhone(), 1);
                     contact.addTelecom(relativePrimaryContactPoint);
@@ -251,32 +256,39 @@ public class FhirMapper {
         patientModel.setGivenName(extractGivenNames(patient));
         patientModel.setFamilyName(extractFamilyName(patient));
         patientModel.setCpr(extractCpr(patient));
-        patientModel.setPatientContactDetails(extractPatientContactDetails(patient));
+        patientModel.setContactDetails(extractPatientContactDetails(patient));
 
         if(patient.getContact() != null && !patient.getContact().isEmpty()) {
-            var contact = patient.getContactFirstRep();
+            var optionalContact = patient.getContact().stream().filter(c -> c.getOrganization().getReference().equals(this.fhirClient.getOrganizationId())).collect(Collectors.toList()).stream().findFirst();
+            if (optionalContact.isPresent()){
 
-            patientModel.setPrimaryRelativeName(contact.getName().getText());
-            for(var coding : contact.getRelationshipFirstRep().getCoding()) {
-                if(coding.getSystem().equals(Systems.CONTACT_RELATIONSHIP)) {
-                    patientModel.setPrimaryRelativeAffiliation(coding.getCode());
-                }
-            }
+                var contact = optionalContact.get();
 
-            // Extract phone numbers
-            if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
-                var primaryRelativeContactDetails = new ContactDetailsModel();
+                patientModel.getPrimaryContact().setName(contact.getName().getText());
+                patientModel.getPrimaryContact().setOrganisation(contact.getOrganization().getReference());
 
-                for(var telecom : contact.getTelecom()) {
-                    if(telecom.getRank() == 1) {
-                        primaryRelativeContactDetails.setPrimaryPhone(telecom.getValue());
-                    }
-                    if(telecom.getRank() == 2) {
-                        primaryRelativeContactDetails.setSecondaryPhone(telecom.getValue());
+                for(var coding : contact.getRelationshipFirstRep().getCoding()) {
+                    if(coding.getSystem().equals(Systems.CONTACT_RELATIONSHIP)) {
+                        patientModel.getPrimaryContact().setAffiliation(coding.getCode());
                     }
                 }
 
-                patientModel.setPrimaryRelativeContactDetails(primaryRelativeContactDetails);
+                // Extract phone numbers
+                if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
+                    var primaryRelativeContactDetails = new ContactDetailsModel();
+
+                    for(var telecom : contact.getTelecom()) {
+                        if(telecom.getRank() == 1) {
+                            primaryRelativeContactDetails.setPrimaryPhone(telecom.getValue());
+                        }
+                        if(telecom.getRank() == 2) {
+                            primaryRelativeContactDetails.setSecondaryPhone(telecom.getValue());
+                        }
+                    }
+
+                    patientModel.getPrimaryContact().setContactDetails(primaryRelativeContactDetails);
+                }
+
             }
         }
 

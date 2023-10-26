@@ -57,7 +57,14 @@ public class ServiceConfiguration {
   }
 
     @Bean
-    public CarePlanService getCarePlanService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired DateProvider dateProvider, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper, @Autowired CustomUserClient customUserService ) {
+    public CarePlanService getCarePlanService(
+            @Autowired FhirClient client,
+            @Autowired FhirMapper mapper,
+            @Autowired DateProvider dateProvider,
+            @Autowired AccessValidator accessValidator,
+            @Autowired DtoMapper dtoMapper,
+            @Autowired CustomUserClient customUserService
+    ) {
         return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper, customUserService);
     }
 

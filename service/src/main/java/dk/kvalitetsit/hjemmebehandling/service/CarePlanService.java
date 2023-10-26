@@ -1,13 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.*;
@@ -45,6 +45,7 @@ public class CarePlanService extends AccessValidatingService {
 
     private DtoMapper dtoMapper;
 
+    private UserContextProvider userContextProvider;
     @Value("${patientidp.api.url}")
     private String patientidpApiUrl;
 
@@ -58,10 +59,43 @@ public class CarePlanService extends AccessValidatingService {
         this.customUserService = customUserService;
     }
 
+    private List<Patient.ContactComponent> mergeContacts(List<Patient.ContactComponent> oldContacts, List<Patient.ContactComponent> newContacts) {
+        for (var newContact : newContacts) {
+            boolean contactExists = false;
+            for (int i = 0; i < oldContacts.size(); i++) {
+                var oldContact = oldContacts.get(i);
+                if (oldContact.getOrganization().getReference().equals(newContact.getOrganization().getReference())) {
+                    oldContacts.set(i, newContact);
+                    contactExists = true;
+                    break;
+                }
+            }
+            if (!contactExists) {
+                oldContacts.add(newContact);
+            }
+        }
+        return oldContacts;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
         String cpr = carePlan.getPatient().getCpr();
         var patient = fhirClient.lookupPatientByCpr(cpr);
+
+        // Set organisation id
+        if (carePlan.getPatient() != null && carePlan.getPatient().getPrimaryContact() != null ) carePlan.getPatient().getPrimaryContact().setOrganisation(fhirClient.getOrganizationId());
+
 
         // TODO: More validations should be performed - possibly?
         // If the patient did exist, check that no existing careplan exists for the patient
@@ -75,11 +109,19 @@ public class CarePlanService extends AccessValidatingService {
             }
 
             var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
-            if (newPatient != null) {
 
-                patient.get().setContact(newPatient.getContact());
-                patient.get().setTelecom(newPatient.getTelecom());
+            if (carePlan.getPatient().getPrimaryContact() != null) {
+                newPatient.getContact().get(0).setOrganization(new Reference(fhirClient.getOrganizationId()));
+
+                var oldContacts = patient.get().getContact();
+                var newContacts = newPatient.getContact();
+
+                var contacts = this.mergeContacts(oldContacts, newContacts);
+
+                patient.get().setContact(contacts);
             }
+            patient.get().setTelecom(newPatient.getTelecom());
+
 
             // If we already knew the patient, replace the patient reference with the resource we just retrieved (to be able to map the careplan properly.)
             carePlan.setPatient(fhirMapper.mapPatient(patient.get()));
@@ -94,16 +136,17 @@ public class CarePlanService extends AccessValidatingService {
         try {
             // If the patient did not exist, create it along with the careplan. Otherwise just create the careplan.
             if (patient.isPresent()) {
+
                 fhirClient.updatePatient(patient.get());
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
             }
-
             // create customLoginUser if the patient do not exist. Done if an apiurl is set.
             if (patientidpApiUrl != null && !"".equals(patientidpApiUrl)) createCustomLogin(carePlan.getPatient());
 
+            var newPatient = carePlan.getPatient();
+
             // create patient and careplan
-            String careplanId = fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(carePlan.getPatient()));
-            return careplanId;
+            return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(newPatient));
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -302,12 +345,23 @@ public class CarePlanService extends AccessValidatingService {
 
         // Update patient
         String patientId = carePlanModel.getPatient().getId().toString();
-        PatientModel patientModel = fhirMapper.mapPatient(careplanResult.getPatient(carePlanModel.getPatient().getId().toString())
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))));
+
+
+        var oldPatient = careplanResult.getPatient(carePlanModel.getPatient().getId().toString());
+
+        PatientModel patientModel = fhirMapper.mapPatient(oldPatient.orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))));
         updatePatientModel(patientModel, patientDetails);
 
+
+        var newContacts = fhirMapper.mapPatientModel(patientModel).getContact();
+        var oldContacts = oldPatient.get().getContact();
+
+        var contacts = mergeContacts(oldContacts, newContacts);
+
+        var updatedPatient = fhirMapper.mapPatientModel(patientModel).setContact(contacts);
+
         // Save the updated CarePlan
-        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), fhirMapper.mapPatientModel(patientModel));
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), updatedPatient );
         return carePlanModel; // for auditlogging
     }
 
@@ -413,19 +467,23 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     private void updatePatientModel(PatientModel patientModel, PatientDetails patientDetails) {
-        patientModel.getPatientContactDetails().setPrimaryPhone(patientDetails.getPatientPrimaryPhone());
-        patientModel.getPatientContactDetails().setSecondaryPhone(patientDetails.getPatientSecondaryPhone());
 
-        patientModel.setPrimaryRelativeName(patientDetails.getPrimaryRelativeName());
-        patientModel.setPrimaryRelativeAffiliation(patientDetails.getPrimaryRelativeAffiliation());
+        var primaryContact = patientModel.getPrimaryContact();
+
+        patientModel.getContactDetails().setPrimaryPhone(patientDetails.getPatientPrimaryPhone());
+        patientModel.getContactDetails().setSecondaryPhone(patientDetails.getPatientSecondaryPhone());
+
+        primaryContact.setName(patientDetails.getPrimaryRelativeName());
+        primaryContact.setAffiliation(patientDetails.getPrimaryRelativeAffiliation());
         if (patientDetails.getPrimaryRelativePrimaryPhone() != null || patientDetails.getPrimaryRelativeSecondaryPhone() != null) {
-            if (patientModel.getPrimaryRelativeContactDetails() == null) {
-                patientModel.setPrimaryRelativeContactDetails(new ContactDetailsModel());
+            if (primaryContact.getContactDetails() == null) {
+                primaryContact.setContactDetails(new ContactDetailsModel());
             }
-            patientModel.getPrimaryRelativeContactDetails().setPrimaryPhone(patientDetails.getPrimaryRelativePrimaryPhone());
-            patientModel.getPrimaryRelativeContactDetails().setSecondaryPhone(patientDetails.getPrimaryRelativeSecondaryPhone());
+            primaryContact.getContactDetails().setPrimaryPhone(patientDetails.getPrimaryRelativePrimaryPhone());
+            primaryContact.getContactDetails().setSecondaryPhone(patientDetails.getPrimaryRelativeSecondaryPhone());
         }
     }
+
 
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException {
         // Validate questionnaires
@@ -538,4 +596,6 @@ public class CarePlanService extends AccessValidatingService {
                 .map(QuestionnaireResponse::getQuestionnaire)
                 .collect(Collectors.toList());
     }
+
+
 }

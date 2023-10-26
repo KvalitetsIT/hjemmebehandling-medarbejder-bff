@@ -144,8 +144,7 @@ public class FhirClient {
 
     public Optional<Patient> lookupPatientByCpr(String cpr) {
         var cprCriterion = Patient.IDENTIFIER.exactly().systemAndValues(Systems.CPR, cpr);
-        var organisationCriterion = buildOrganizationCriterion();
-        return lookupPatient(List.of(cprCriterion, organisationCriterion));
+        return lookupPatient(List.of(cprCriterion));
     }
 
     public FhirLookupResult searchPatients(List<String> searchStrings, CarePlan.CarePlanStatus status) {
@@ -224,9 +223,8 @@ public class FhirClient {
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
 
-        // Sets the organisation which the contact is associated
-        var organisationId = buildOrganizationCriterion();
-        if (patient.hasContact()) patient.getContact().get(0).setOrganization(new Reference(organisationId.toString()));
+
+
 
         // Build a transaction bundle.
         var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
@@ -556,7 +554,7 @@ public class FhirClient {
         return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId);
     }
 
-    private String getOrganizationId() {
+    public String getOrganizationId() {
         var context = userContextProvider.getUserContext();
         if(context == null) {
             throw new IllegalStateException("UserContext was not initialized!");

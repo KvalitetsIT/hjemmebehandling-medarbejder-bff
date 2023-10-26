@@ -1,7 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.api.ContactDetailsDto;
-
 import java.util.List;
 
 public class PatientModel {
@@ -9,15 +7,16 @@ public class PatientModel {
     private String givenName;
     private String familyName;
     private String cpr;
-    private ContactDetailsModel patientContactDetails;
-    private String primaryRelativeName;
-    private String primaryRelativeAffiliation;
-    private ContactDetailsModel primaryRelativeContactDetails;
+    private ContactDetailsModel contactDetails;
+    private PrimaryContact primaryContact;
     private List<ContactDetailsModel> additionalRelativeContactDetails;
     private String customUserId;
     private String customUserName;
-    
-    
+
+    public PatientModel() {
+        this.primaryContact = new PrimaryContact();
+    }
+
     public QualifiedId getId() {
         return id;
     }
@@ -50,37 +49,14 @@ public class PatientModel {
         this.cpr = cpr;
     }
 
-    public ContactDetailsModel getPatientContactDetails() {
-        return patientContactDetails;
+    public ContactDetailsModel getContactDetails() {
+        return contactDetails;
     }
 
-    public void setPatientContactDetails(ContactDetailsModel patientContactDetails) {
-        this.patientContactDetails = patientContactDetails;
+    public void setContactDetails(ContactDetailsModel contactDetails) {
+        this.contactDetails = contactDetails;
     }
 
-    public String getPrimaryRelativeName() {
-        return primaryRelativeName;
-    }
-
-    public void setPrimaryRelativeName(String primaryRelativeName) {
-        this.primaryRelativeName = primaryRelativeName;
-    }
-
-    public String getPrimaryRelativeAffiliation() {
-        return primaryRelativeAffiliation;
-    }
-
-    public void setPrimaryRelativeAffiliation(String primaryRelativeAffiliation) {
-        this.primaryRelativeAffiliation = primaryRelativeAffiliation;
-    }
-
-    public ContactDetailsModel getPrimaryRelativeContactDetails() {
-        return primaryRelativeContactDetails;
-    }
-
-    public void setPrimaryRelativeContactDetails(ContactDetailsModel primaryRelativeContactDetails) {
-        this.primaryRelativeContactDetails = primaryRelativeContactDetails;
-    }
 
     public List<ContactDetailsModel> getAdditionalRelativeContactDetails() {
         return additionalRelativeContactDetails;
@@ -105,4 +81,12 @@ public class PatientModel {
 	public void setCustomUserName(String customUserName) {
 		this.customUserName = customUserName;
 	}
+
+    public PrimaryContact getPrimaryContact() {
+        return primaryContact;
+    }
+
+    public void setPrimaryContact(PrimaryContact primaryContact) {
+        this.primaryContact = primaryContact;
+    }
 }
