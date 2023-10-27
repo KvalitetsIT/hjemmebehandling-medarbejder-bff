@@ -181,8 +181,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         request.setPatientSecondaryPhone("55667788");
         request.setPrimaryRelativeName("Sauron");
         request.setPrimaryRelativeAffiliation("Fjende");
+
         request.setPrimaryRelativePrimaryPhone("65412365");
         request.setPrimaryRelativeSecondaryPhone("77777777");
+
 
         // Act
         ApiResponse<Void> response = subject.patchCarePlanWithHttpInfo(id, request);

@@ -225,7 +225,10 @@ public class FhirMapper {
             contact.setOrganization(organisation);
 
             if(patientModel.getPrimaryContact().getAffiliation() != null) {
-                contact.setRelationship(List.of(new CodeableConcept(new Coding(Systems.CONTACT_RELATIONSHIP, patientModel.getPrimaryContact().getAffiliation(), patientModel.getPrimaryContact().getAffiliation()))));
+
+                var codeableConcept = new CodeableConcept();
+                codeableConcept.setText(patientModel.getPrimaryContact().getAffiliation());
+                contact.setRelationship(List.of(codeableConcept));
             }
 
             if(patientModel.getPrimaryContact().getContactDetails() != null) {
@@ -259,11 +262,15 @@ public class FhirMapper {
         patientModel.setContactDetails(extractPatientContactDetails(patient));
 
         if(patient.getContact() != null && !patient.getContact().isEmpty()) {
-            var optionalContact = patient.getContact().stream().filter(c -> c.getOrganization().getReference().equals(this.fhirClient.getOrganizationId())).collect(Collectors.toList()).stream().findFirst();
+            var organizationId = this.fhirClient.getOrganizationId();
+            if(organizationId == null) throw new IllegalStateException("Mapping contact is only possible while the organization id is known");
+
+            var optionalContact = patient.getContact().stream()
+                    .filter(c -> c.getOrganization().getReference().equals(organizationId))
+                    .findFirst();
+
             if (optionalContact.isPresent()){
-
                 var contact = optionalContact.get();
-
                 patientModel.getPrimaryContact().setName(contact.getName().getText());
                 patientModel.getPrimaryContact().setOrganisation(contact.getOrganization().getReference());
 

@@ -244,6 +244,8 @@ public class CarePlanService extends AccessValidatingService {
         }
         CarePlan carePlan = carePlanResult.getCarePlan(qualifiedId).get();
 
+        System.out.println(fhirMapper.mapCarePlan(carePlan, carePlanResult));
+
         // Validate access
         validateAccess(carePlan);
 
@@ -350,14 +352,16 @@ public class CarePlanService extends AccessValidatingService {
         var oldPatient = careplanResult.getPatient(carePlanModel.getPatient().getId().toString());
 
         PatientModel patientModel = fhirMapper.mapPatient(oldPatient.orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))));
-        updatePatientModel(patientModel, patientDetails);
 
+        patientModel.getPrimaryContact().setOrganisation(fhirClient.getOrganizationId());
+
+        updatePatientModel(patientModel, patientDetails);
 
         var newContacts = fhirMapper.mapPatientModel(patientModel).getContact();
         var oldContacts = oldPatient.get().getContact();
-
         var contacts = mergeContacts(oldContacts, newContacts);
 
+        // Without setting the contacts below, the old contacts for other departments/organisations will be discarded
         var updatedPatient = fhirMapper.mapPatientModel(patientModel).setContact(contacts);
 
         // Save the updated CarePlan
@@ -475,6 +479,7 @@ public class CarePlanService extends AccessValidatingService {
 
         primaryContact.setName(patientDetails.getPrimaryRelativeName());
         primaryContact.setAffiliation(patientDetails.getPrimaryRelativeAffiliation());
+
         if (patientDetails.getPrimaryRelativePrimaryPhone() != null || patientDetails.getPrimaryRelativeSecondaryPhone() != null) {
             if (primaryContact.getContactDetails() == null) {
                 primaryContact.setContactDetails(new ContactDetailsModel());

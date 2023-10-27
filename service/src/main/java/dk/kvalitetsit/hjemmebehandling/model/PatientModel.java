@@ -8,13 +8,28 @@ public class PatientModel {
     private String familyName;
     private String cpr;
     private ContactDetailsModel contactDetails;
-    private PrimaryContact primaryContact;
+    private PrimaryContactModel primaryContactModel;
     private List<ContactDetailsModel> additionalRelativeContactDetails;
     private String customUserId;
     private String customUserName;
 
+    @Override
+    public String toString() {
+        return "PatientModel{" +
+                "id=" + id +
+                ", givenName='" + givenName + '\'' +
+                ", familyName='" + familyName + '\'' +
+                ", cpr='" + cpr + '\'' +
+                ", contactDetails=" + contactDetails +
+                ", primaryContactMdeol=" + primaryContactModel +
+                ", additionalRelativeContactDetails=" + additionalRelativeContactDetails +
+                ", customUserId='" + customUserId + '\'' +
+                ", customUserName='" + customUserName + '\'' +
+                '}';
+    }
+
     public PatientModel() {
-        this.primaryContact = new PrimaryContact();
+        this.primaryContactModel = new PrimaryContactModel();
     }
 
     public QualifiedId getId() {
@@ -82,11 +97,11 @@ public class PatientModel {
 		this.customUserName = customUserName;
 	}
 
-    public PrimaryContact getPrimaryContact() {
-        return primaryContact;
+    public PrimaryContactModel getPrimaryContact() {
+        return primaryContactModel;
     }
 
-    public void setPrimaryContact(PrimaryContact primaryContact) {
-        this.primaryContact = primaryContact;
+    public void setPrimaryContact(PrimaryContactModel primaryContactModel) {
+        this.primaryContactModel = primaryContactModel;
     }
 }

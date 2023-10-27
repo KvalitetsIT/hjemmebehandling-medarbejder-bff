@@ -8,6 +8,18 @@ public class ContactDetailsModel {
     private String primaryPhone;
     private String secondaryPhone;
 
+    @Override
+    public String toString() {
+        return "ContactDetailsModel{" +
+                "street='" + street + '\'' +
+                ", postalCode='" + postalCode + '\'' +
+                ", country='" + country + '\'' +
+                ", city='" + city + '\'' +
+                ", primaryPhone='" + primaryPhone + '\'' +
+                ", secondaryPhone='" + secondaryPhone + '\'' +
+                '}';
+    }
+
     public String getStreet() {
         return street;
     }

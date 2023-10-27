@@ -17,6 +17,22 @@ public class CarePlanModel extends BaseModel {
     private String departmentName;
     private Instant satisfiedUntil;
 
+    @Override
+    public String toString() {
+        return "CarePlanModel{" +
+                "title='" + title + '\'' +
+                ", status=" + status +
+                ", created=" + created +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", patient=" + patient +
+                ", questionnaires=" + questionnaires +
+                ", planDefinitions=" + planDefinitions +
+                ", departmentName='" + departmentName + '\'' +
+                ", satisfiedUntil=" + satisfiedUntil +
+                '}';
+    }
+
     public String getTitle() {
         return title;
     }

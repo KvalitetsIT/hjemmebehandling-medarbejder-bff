@@ -742,6 +742,9 @@ public class CarePlanServiceTest {
 
         var contact = new Patient.ContactComponent();
         contact.setName((new HumanName()).setGiven(List.of(new StringType("lonnie"))));
+        var affiliation = new CodeableConcept();
+        affiliation.setText("Tante");
+        contact.setRelationship(List.of(affiliation));
         contact.setOrganization(this.buildReference());
 
         patient.setContact(new ArrayList<Patient.ContactComponent>(List.of(contact)));
@@ -844,11 +847,11 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(carePlanResult);
 
         PatientModel patientModel = buildPatientModel(PATIENT_ID_1);
-        PrimaryContact primaryContact = new PrimaryContact();
-        primaryContact.setOrganisation(buildReference().getReference());
+        PrimaryContactModel primaryContactModel = new PrimaryContactModel();
+        primaryContactModel.setOrganisation(buildReference().getReference());
 
 
-        patientModel.setPrimaryContact(primaryContact);
+        patientModel.setPrimaryContact(primaryContactModel);
 
         Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientModel);
 
@@ -1002,6 +1005,10 @@ public class CarePlanServiceTest {
         }
     }
 
+
+
+
+
     private CarePlanModel buildCarePlanModel(String cpr) {
         return buildCarePlanModel(cpr, null, null);
     }
@@ -1033,8 +1040,8 @@ public class CarePlanServiceTest {
         return patientModel;
     }
 
-    private PrimaryContact buildPrimaryContact() {
-        var primaryContact = new PrimaryContact();
+    private PrimaryContactModel buildPrimaryContact() {
+        var primaryContact = new PrimaryContactModel();
 
         primaryContact.setName("Poul");
         primaryContact.setOrganisation(this.buildReference().getReference());
@@ -1144,6 +1151,9 @@ public class CarePlanServiceTest {
         var name = new HumanName();
         name.setGiven(List.of(new StringType("Yvonne")));
         contact.setName(name);
+
+        var affiliation = List.of(new CodeableConcept().setText("Moster"));
+        contact.setRelationship(affiliation);
         contact.setOrganization(buildReference());
 
         patient.setContact(new ArrayList<Patient.ContactComponent>(List.of(contact)));

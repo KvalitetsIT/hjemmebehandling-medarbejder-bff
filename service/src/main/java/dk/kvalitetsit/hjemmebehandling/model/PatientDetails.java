@@ -8,6 +8,18 @@ public class PatientDetails {
     private String primaryRelativePrimaryPhone;
     private String primaryRelativeSecondaryPhone;
 
+    @Override
+    public String toString() {
+        return "PatientDetails{" +
+                "patientPrimaryPhone='" + patientPrimaryPhone + '\'' +
+                ", patientSecondaryPhone='" + patientSecondaryPhone + '\'' +
+                ", primaryRelativeName='" + primaryRelativeName + '\'' +
+                ", primaryRelativeAffiliation='" + primaryRelativeAffiliation + '\'' +
+                ", primaryRelativePrimaryPhone='" + primaryRelativePrimaryPhone + '\'' +
+                ", primaryRelativeSecondaryPhone='" + primaryRelativeSecondaryPhone + '\'' +
+                '}';
+    }
+
     public String getPatientPrimaryPhone() {
         return patientPrimaryPhone;
     }

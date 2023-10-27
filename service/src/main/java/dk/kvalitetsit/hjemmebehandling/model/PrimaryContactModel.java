@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PrimaryContact {
+public class PrimaryContactModel {
 
     private ContactDetailsModel contactDetails;
     private String name;
@@ -14,6 +14,15 @@ public class PrimaryContact {
      */
     private String organisation;
 
+    @Override
+    public String toString() {
+        return "PrimaryContactMdeol{" +
+                "contactDetails=" + contactDetails +
+                ", name='" + name + '\'' +
+                ", affiliation='" + affiliation + '\'' +
+                ", organisation='" + organisation + '\'' +
+                '}';
+    }
 
     public String getOrganisation() {
         return organisation;
