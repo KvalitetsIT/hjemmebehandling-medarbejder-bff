@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private UserContextProvider userContextProvider;
+    private final UserContextProvider userContextProvider;
 
     public UserController(UserContextProvider userContextProvider) {
         this.userContextProvider = userContextProvider;

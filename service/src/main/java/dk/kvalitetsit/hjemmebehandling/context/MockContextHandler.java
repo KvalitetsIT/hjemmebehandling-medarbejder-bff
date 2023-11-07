@@ -4,12 +4,11 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MockContextHandler implements IUserContextHandler {
-    private String orgId;
-    private List<String> entitlements;
+    private final String orgId;
+    private final List<String> entitlements;
     public MockContextHandler(String orgId, List<String> entitlements) {
         this.orgId = orgId;
         this.entitlements = entitlements;
@@ -26,7 +25,7 @@ public class MockContextHandler implements IUserContextHandler {
         context.setUserId("TesTes");
         context.setEmail("test@rm.dk");
         context.setEntitlements(entitlements.toArray(new String[0]));
-        context.setAutorisationsids(new String[]{"1234"} );
+        context.setAuthorizationIds(new String[]{"1234"} );
 
         return context;
 	}

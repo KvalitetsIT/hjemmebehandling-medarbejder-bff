@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
@@ -95,7 +95,7 @@ public class PatientService extends AccessValidatingService {
         return patientIsInList;
     }
 
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, PageDetails pageDetails) {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) {
 
         var patients = new ArrayList<Patient>();
 
@@ -110,17 +110,25 @@ public class PatientService extends AccessValidatingService {
             patients.addAll(patientsWithInactiveCareplan);
         }
 
-        var offset = pageDetails.getOffset();
-        var count = pageDetails.getPageSize();
         // Map the resources
         return patients
                 .stream()
                 .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
-                .skip(offset)
-                .limit(count)
                 .map(p -> fhirMapper.mapPatient(p))
                 .collect(Collectors.toList());
     }
+
+
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) {
+        var offset = pagination.getOffset();
+        var count = pagination.getLimit();
+
+        return this.getPatients(includeActive, includeCompleted).stream()
+            .skip(offset)
+            .limit(count)
+            .collect(Collectors.toList());
+    }
+
 
     public List<PatientModel> searchPatients(List<String> searchStrings) {
         FhirLookupResult lookupResult = fhirClient.searchPatients(searchStrings, CarePlan.CarePlanStatus.ACTIVE);

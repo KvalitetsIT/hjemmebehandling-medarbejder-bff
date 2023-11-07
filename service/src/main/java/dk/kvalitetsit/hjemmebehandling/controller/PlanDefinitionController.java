@@ -4,17 +4,10 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientDetails;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -26,8 +19,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import org.hl7.fhir.r4.model.Base;
-import org.hl7.fhir.r4.model.PlanDefinition;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +36,9 @@ import java.util.stream.Stream;
 public class PlanDefinitionController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionController.class);
 
-    private PlanDefinitionService planDefinitionService;
-    private DtoMapper dtoMapper;
-    private LocationHeaderBuilder locationHeaderBuilder;
+    private final PlanDefinitionService planDefinitionService;
+    private final DtoMapper dtoMapper;
+    private final LocationHeaderBuilder locationHeaderBuilder;
 
     public PlanDefinitionController(PlanDefinitionService planDefinitionService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.planDefinitionService = planDefinitionService;
@@ -64,12 +55,12 @@ public class PlanDefinitionController extends BaseController {
                 throw new BadRequestException(details);
             }
 
-            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.isPresent() ? statusesToInclude.get() : List.of();
+            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.orElseGet(List::of);
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
 
 
             return ResponseEntity.ok(planDefinitions.stream()
-                    .map(pd -> dtoMapper.mapPlanDefinitionModel(pd))
+                    .map(dtoMapper::mapPlanDefinitionModel)
                     .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }
@@ -118,8 +109,7 @@ public class PlanDefinitionController extends BaseController {
         catch(Exception e) {
             throw toStatusCodeException(e);
         }
-        ResponseEntity<Void> response = ResponseEntity.ok().build();
-        return response;
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping(value = "/v1/plandefinition/{id}/retire")
@@ -160,13 +150,11 @@ public class PlanDefinitionController extends BaseController {
 
     private List<ThresholdModel> getThresholds(List<ThresholdDto> thresholdDtos) {
         return collectionToStream(thresholdDtos)
-            .map(t -> dtoMapper.mapThresholdDto(t))
+            .map(dtoMapper::mapThresholdDto)
             .collect(Collectors.toList());
     }
 
     private <T> Stream<T> collectionToStream(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-            .map(Collection::stream)
-            .orElseGet(Stream::empty);
+        return Optional.ofNullable(collection).stream().flatMap(Collection::stream);
     }
 }

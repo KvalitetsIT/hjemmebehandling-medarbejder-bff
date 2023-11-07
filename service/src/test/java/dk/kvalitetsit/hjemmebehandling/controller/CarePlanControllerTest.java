@@ -10,8 +10,7 @@ import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
-import org.hl7.fhir.r4.model.Questionnaire;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -319,7 +317,7 @@ public class CarePlanControllerTest {
 
         // Assert
         assertDoesNotThrow(() -> subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize));
-        Mockito.verify(carePlanService,times(1)).getCarePlansWithFilters(cpr,expectedOnlyActive,expectedUnsatisfied,new PageDetails(pageNumber.get(),pageSize.get()));
+        Mockito.verify(carePlanService,times(1)).getCarePlansWithFilters(cpr,expectedOnlyActive,expectedUnsatisfied,new Pagination(pageNumber.get(),pageSize.get()));
     }
 
     @Test
@@ -336,7 +334,7 @@ public class CarePlanControllerTest {
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
-        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber.get(),pageSize.get()))).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new Pagination(pageNumber.get(),pageSize.get()))).thenReturn(List.of(carePlanModel1, carePlanModel2));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
@@ -358,14 +356,14 @@ public class CarePlanControllerTest {
         Optional<Boolean> onlyActiveCarePlans = Optional.of(true);
         Optional<Integer> pageNumber = Optional.of(1);
         Optional<Integer> pageSize = Optional.of(10);
-        PageDetails pageDetails = new PageDetails(1, 10);
+        Pagination pagination = new Pagination(1, 10);
 
         CarePlanModel carePlanModel1 = new CarePlanModel();
         CarePlanModel carePlanModel2 = new CarePlanModel();
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
-        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans.get(),onlyUnsatisfiedSchedules.get(), pageDetails)).thenReturn(List.of(carePlanModel1, carePlanModel2));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans.get(),onlyUnsatisfiedSchedules.get(), pagination)).thenReturn(List.of(carePlanModel1, carePlanModel2));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
@@ -388,7 +386,7 @@ public class CarePlanControllerTest {
         int pageNumber = 1;
         int pageSize = 10;
 
-        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber,pageSize))).thenReturn(List.of());
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new Pagination(pageNumber,pageSize))).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(cpr, onlyUnsatisfiedSchedules, onlyActiveCarePlans, Optional.of(pageNumber), Optional.of(pageSize));
@@ -407,7 +405,7 @@ public class CarePlanControllerTest {
         int pageNumber = 1;
         int pageSize = 10;
 
-        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new PageDetails(pageNumber,pageSize))).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
+        Mockito.when(carePlanService.getCarePlansWithFilters(Optional.of("0101010101"), onlyActiveCarePlans.get(),false,new Pagination(pageNumber,pageSize))).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         // Act
 

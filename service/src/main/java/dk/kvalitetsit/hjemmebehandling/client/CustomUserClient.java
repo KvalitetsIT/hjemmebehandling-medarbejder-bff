@@ -24,7 +24,7 @@ public class CustomUserClient {
 	@Value("${patientidp.api.url}")
 	private String patientidpApiUrl;
     
-	private RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 
 	private final ObjectMapper mapper = new ObjectMapper();
 
@@ -33,7 +33,7 @@ public class CustomUserClient {
     }
 
     public Optional<CustomUserResponseDto> createUser(CustomUserRequestDto userCreateRequest) throws JsonMappingException, JsonProcessingException {
-    	if(patientidpApiUrl==null || patientidpApiUrl.equals("")) {
+    	if(patientidpApiUrl==null || patientidpApiUrl.isEmpty()) {
     		logger.info("The custom url: patientidp.api.url i not set. User not created in customuser");
     		return Optional.ofNullable(null);
     	}

@@ -48,10 +48,10 @@ import java.util.stream.Stream;
 public class QuestionnaireController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireController.class);
 
-    private QuestionnaireService questionnaireService;
+    private final QuestionnaireService questionnaireService;
     private AuditLoggingService auditLoggingService;
-    private DtoMapper dtoMapper;
-    private LocationHeaderBuilder locationHeaderBuilder;
+    private final DtoMapper dtoMapper;
+    private final LocationHeaderBuilder locationHeaderBuilder;
 
     public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.questionnaireService = questionnaireService;
@@ -72,7 +72,7 @@ public class QuestionnaireController extends BaseController {
         List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(() -> List.of()));
 
         return ResponseEntity.ok(questionnaires.stream()
-                .map(q -> dtoMapper.mapQuestionnaireModel(q))
+                .map(dtoMapper::mapQuestionnaireModel)
                 .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
                 .collect(Collectors.toList()));
     }
@@ -96,7 +96,7 @@ public class QuestionnaireController extends BaseController {
             throw toStatusCodeException(e);
         }
 
-        if(!questionnaire.isPresent()) {
+        if(questionnaire.isEmpty()) {
             throw new ResourceNotFoundException(String.format("Questionnaire with id %s not found.", id), ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
         return ResponseEntity.ok(dtoMapper.mapQuestionnaireModel(questionnaire.get()));
@@ -114,7 +114,7 @@ public class QuestionnaireController extends BaseController {
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
         
         List<QuestionModel> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
-                .map(c -> dtoMapper.mapQuestionDto(c))
+                .map(dtoMapper::mapQuestionDto)
                 .collect(Collectors.toList());
         questionnaire.setCallToActions(callToActions);
         
@@ -138,11 +138,11 @@ public class QuestionnaireController extends BaseController {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
             List<QuestionModel> questions = collectionToStream(request.getQuestions())
-                .map(q -> dtoMapper.mapQuestionDto(q))
+                .map(dtoMapper::mapQuestionDto)
                 .collect(Collectors.toList());
 
             List<QuestionModel> callToActions = collectionToStream(request.getCallToActions())
-                .map(c -> dtoMapper.mapQuestionDto(c))
+                .map(dtoMapper::mapQuestionDto)
                 .collect(Collectors.toList());
 
             questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);
@@ -207,19 +207,15 @@ public class QuestionnaireController extends BaseController {
                 throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
             }
 
-            switch (question.getQuestionType()) {
-                case QUANTITY:
-                    var measurementType = question.getMeasurementType();
-                    if (measurementType == null || (measurementType.getCode() == null || measurementType.getDisplay() == null) || measurementType.getSystem() == null) {
-                        throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
-                    }
-                    break;
+            if (Objects.requireNonNull(question.getQuestionType()) == QuestionType.QUANTITY) {
+                var measurementType = question.getMeasurementType();
+                if (measurementType == null || (measurementType.getCode() == null || measurementType.getDisplay() == null) || measurementType.getSystem() == null) {
+                    throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
+                }
             }
         }
     }
     private Stream<QuestionDto> collectionToStream(Collection<QuestionDto> collection) {
-        return Optional.ofNullable(collection)
-            .map(Collection::stream)
-            .orElseGet(Stream::empty);
+        return Optional.ofNullable(collection).stream().flatMap(Collection::stream);
     }
 }

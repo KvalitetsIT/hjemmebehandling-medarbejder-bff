@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.QuestionnaireResponseApi;
+import org.openapitools.client.model.PaginatedListQuestionnaireResponseDto;
 import org.openapitools.client.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.client.model.QuestionnaireResponseDto;
 
@@ -28,8 +29,10 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         // Act
-        ApiResponse<List<QuestionnaireResponseDto>> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1,1);
+        ApiResponse<PaginatedListQuestionnaireResponseDto> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1,1);
 
+
+        assertEquals(3, response.getData().getTotal());
         // Assert
         assertEquals(200, response.getStatusCode());
     }

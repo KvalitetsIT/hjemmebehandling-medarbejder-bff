@@ -30,7 +30,7 @@ import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -45,12 +45,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class CarePlanController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
-    private CarePlanService carePlanService;
-    private AuditLoggingService auditLoggingService;
-    private DtoMapper dtoMapper;
-    private LocationHeaderBuilder locationHeaderBuilder;
+    private final CarePlanService carePlanService;
+    private final AuditLoggingService auditLoggingService;
+    private final DtoMapper dtoMapper;
+    private final LocationHeaderBuilder locationHeaderBuilder;
 
-    private PlanDefinitionService planDefinitionService;
+    private final PlanDefinitionService planDefinitionService;
 
     private enum SearchType {
         CPR, UNSATISFIED_CAREPLANS,ACTIVE
@@ -78,16 +78,17 @@ public class CarePlanController extends BaseController {
                 Optional<Integer> pageSize
     ) {
 
+        // TODO: Validate the request params
         try {
-            PageDetails pageDetails = null;
+            Pagination pagination = null;
             if (pageNumber.isPresent() && pageSize.isPresent()) {
-                pageDetails = new PageDetails(pageNumber.get(), pageSize.get());
+                pagination = new Pagination(pageNumber.get(), pageSize.get());
             }
 
-            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false), pageDetails);
+            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false), pagination);
 
             auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
-            return ResponseEntity.ok(carePlans.stream().map(cp -> dtoMapper.mapCarePlanModel(cp)).collect(Collectors.toList()));
+            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
@@ -233,12 +234,12 @@ public class CarePlanController extends BaseController {
                 throw new BadRequestException(details);
             }
 
-            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.isPresent() ? statusesToInclude.get() : List.of();
+            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.orElseGet(List::of);
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
 
 
             return ResponseEntity.ok(planDefinitions.stream()
-                    .map(pd -> dtoMapper.mapPlanDefinitionModel(pd))
+                    .map(dtoMapper::mapPlanDefinitionModel)
                     .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }

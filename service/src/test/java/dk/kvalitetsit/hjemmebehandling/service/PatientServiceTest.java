@@ -5,7 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,7 +80,7 @@ public class PatientServiceTest {
     Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
 
     // Act
-    var pagedetails = new PageDetails(1,10);
+    var pagedetails = new Pagination(1,10);
     var includeActive = false;
     var includeCompleted = true;
     List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
@@ -106,7 +106,7 @@ public class PatientServiceTest {
     Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
 
     // Act
-    var pagedetails = new PageDetails(1,10);
+    var pagedetails = new Pagination(0,10);
     var includeActive = false;
     var includeCompleted = true;
     List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
@@ -117,9 +117,9 @@ public class PatientServiceTest {
 
   private static Stream<Arguments> getPatients_TwoResponses_ReturnAlphabetically() {
     return Stream.of(
-            Arguments.of(List.of("A","B"),List.of("A","B"),1,2),
-            Arguments.of(List.of("B","A"),List.of("A","B"),1,2),
-            Arguments.of(List.of("C","B","A"),List.of("A","B","C"),1,3),
+            Arguments.of(List.of("A","B"),List.of("A","B"),0,2),
+            Arguments.of(List.of("B","A"),List.of("A","B"),0,2),
+            Arguments.of(List.of("C","B","A"),List.of("A","B","C"),0,3),
             Arguments.of(List.of("B","A","C"),List.of("C"),2,2),
             Arguments.of(List.of("C","A","B"),List.of("C"),2,2)
     );
@@ -154,7 +154,7 @@ public class PatientServiceTest {
     Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
 
     // Act
-    var pagedetails = new PageDetails(page,pageSize);
+    var pagedetails = new Pagination(page,pageSize);
     var includeActive = true;
     var includeCompleted = false;
     List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
@@ -181,10 +181,10 @@ public class PatientServiceTest {
     Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
 
     // Act
-    var pagedetails = new PageDetails(1,10);
+    var pagination = new Pagination(0,10);
     var includeActive = true;
     var includeCompleted = false;
-    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagedetails);
+    List<PatientModel> result = subject.getPatients(includeActive,includeCompleted,pagination);
 
     // Assert
     assertEquals(1,result.size());

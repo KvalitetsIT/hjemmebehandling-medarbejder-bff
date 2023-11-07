@@ -29,7 +29,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 
 public class CarePlanService extends AccessValidatingService {
@@ -193,7 +193,7 @@ public class CarePlanService extends AccessValidatingService {
         return fhirMapper.mapCarePlan(completedCarePlan, lookupResult); // for auditlog
     }
 
-    public List<CarePlanModel> getCarePlansWithFilters(Optional<String> cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, PageDetails pageDetails) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(Optional<String> cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
         Instant pointInTime = dateProvider.now();
         FhirLookupResult lookupResult = fhirClient.lookupCarePlans(cpr, pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
         if (lookupResult.getCarePlans().isEmpty()) {
@@ -211,8 +211,8 @@ public class CarePlanService extends AccessValidatingService {
                 .collect(Collectors.toList());
 
         // Perform paging if required.
-        if (pageDetails != null) {
-            careplans = pageResponses(careplans, pageDetails);
+        if (pagination != null) {
+            careplans = pageResponses(careplans, pagination);
         }
 
         return careplans;
@@ -553,11 +553,11 @@ public class CarePlanService extends AccessValidatingService {
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
     }
 
-    private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, PageDetails pageDetails) {
+    private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, Pagination pagination) {
         return responses
                 .stream()
-                .skip((pageDetails.getPageNumber() - 1) * pageDetails.getPageSize())
-                .limit(pageDetails.getPageSize())
+                .skip((pagination.getOffset() - 1) * pagination.getLimit())
+                .limit(pagination.getLimit())
                 .collect(Collectors.toList());
     }
 

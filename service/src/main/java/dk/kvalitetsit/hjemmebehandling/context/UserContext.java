@@ -5,7 +5,7 @@ public class UserContext {
 	private String firstName;
 	private String lastName;
 	private String fullName;
-	private String[] autorisationsids;
+	private String[] authorizationIds;
 	private String userId;
 	private String email;
 	private String[] entitlements;
@@ -49,12 +49,12 @@ public class UserContext {
 		this.fullName = fullName;
 	}
 
-	public String[] getAutorisationsids() {
-		return autorisationsids;
+	public String[] getAuthorizationIds() {
+		return authorizationIds;
 	}
 
-	public void setAutorisationsids(String[] autorisationsids) {
-		this.autorisationsids = autorisationsids;
+	public void setAuthorizationIds(String[] authorizationIds) {
+		this.authorizationIds = authorizationIds;
 	}
 
 	public String getUserId() {

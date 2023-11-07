@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import ca.uhn.fhir.interceptor.api.Interceptor;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,17 +34,15 @@ import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import javax.servlet.annotation.WebFilter;
-
 @RestController
 @Tag(name = "Patient", description = "API for manipulating and retrieving patients.")
 public class PatientController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
-    private PatientService patientService;
-    private AuditLoggingService auditLoggingService;
-    private DtoMapper dtoMapper;
-	private CustomUserClient customUserClient;
+    private final PatientService patientService;
+    private final AuditLoggingService auditLoggingService;
+    private final DtoMapper dtoMapper;
+	private final CustomUserClient customUserClient;
 
     public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
         this.patientService = patientService;
@@ -105,13 +103,19 @@ public class PatientController extends BaseController {
     }
 
     @GetMapping(value = "/v1/patients")
-    public @ResponseBody PatientListResponse getPatients(boolean includeActive, boolean includeCompleted, @RequestParam("page_number") Optional<Integer> pageNumber, @RequestParam("page_size") Optional<Integer> pageSize) {
+    public @ResponseBody PatientListResponse getPatients(
+            boolean includeActive,
+            boolean includeCompleted,
+            @RequestParam("page_number") Integer pageNumber,
+            @RequestParam("page_size") Integer pageSize
+    ) {
         logger.info("Getting patient ...");
-        if(!includeActive && !includeCompleted)
-            return buildResponse(new ArrayList<>());
+        if(!includeActive && !includeCompleted) return buildResponse(new ArrayList<>());
 
-        var pagedetails = new PageDetails(pageNumber.get(), pageSize.get());
-        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagedetails);
+        var pagination = new Pagination(pageNumber, pageSize);
+        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagination);
+
+        patientService.getPatients(includeActive,includeCompleted);
         auditLoggingService.log("GET /v1/patients", patients);
 
         return buildResponse(patients);
@@ -132,7 +136,7 @@ public class PatientController extends BaseController {
     private PatientListResponse buildResponse(List<PatientModel> patients) {
         PatientListResponse response = new PatientListResponse();
 
-        response.setPatients(patients.stream().map(p -> dtoMapper.mapPatientModel(p)).collect(Collectors.toList()));
+        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).collect(Collectors.toList()));
 
         return response;
     }

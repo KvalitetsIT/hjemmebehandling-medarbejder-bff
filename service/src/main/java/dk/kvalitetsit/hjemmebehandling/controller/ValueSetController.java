@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 public class ValueSetController extends BaseController {
   private static final Logger logger = LoggerFactory.getLogger(ValueSetController.class);
 
-  private ValueSetService valueSetService;
-  private DtoMapper dtoMapper;
+  private final ValueSetService valueSetService;
+  private final DtoMapper dtoMapper;
 
   public ValueSetController(ValueSetService valueSetService, DtoMapper dtoMapper) {
     this.valueSetService = valueSetService;
@@ -41,6 +41,6 @@ public class ValueSetController extends BaseController {
   public ResponseEntity<List<MeasurementTypeDto>> getMeasurementTypes() {
     List<MeasurementTypeModel> measurementTypes = valueSetService.getMeasurementTypes();
 
-    return ResponseEntity.ok(measurementTypes.stream().map(mt -> dtoMapper.mapMeasurementTypeModel(mt)).collect(Collectors.toList()));
+    return ResponseEntity.ok(measurementTypes.stream().map(dtoMapper::mapMeasurementTypeModel).collect(Collectors.toList()));
   }
 }

@@ -33,7 +33,7 @@ import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
-import dk.kvalitetsit.hjemmebehandling.types.PageDetails;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -357,7 +357,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new PageDetails(1,10));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new Pagination(1,10));
 
         // Assert
         assertEquals(1, result.size());
@@ -376,7 +376,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlans(Optional.of(CPR_1), unstaisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new PageDetails(1,10));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.of(CPR_1), onlyActiveCarePlans,onlyUnSatisfied,new Pagination(1,10));
 
         // Assert
         assertEquals(0, result.size());
@@ -399,7 +399,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult)).thenReturn(carePlanModel);
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new Pagination(pageNumber, pageSize));
 
         // Assert
         assertEquals(1, result.size());
@@ -418,7 +418,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlans(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new Pagination(pageNumber, pageSize));
 
         // Assert
         assertEquals(0, result.size());
@@ -436,7 +436,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupCarePlans(Optional.empty(),POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(FhirLookupResult.fromResources());
 
         // Act
-        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new PageDetails(pageNumber, pageSize));
+        List<CarePlanModel> result = subject.getCarePlansWithFilters(Optional.empty(),onlyActiveCarePlans,unsatisfied, new Pagination(pageNumber, pageSize));
 
         // Assert
     }
