@@ -46,15 +46,15 @@ public class QuestionnaireResponseController extends BaseController {
     public ResponseEntity<PaginatedList<QuestionnaireResponseDto>> getQuestionnaireResponsesByCarePlanId(
             @PathVariable("carePlanId") String carePlanId,
             @RequestParam("questionnaireIds") List<String> questionnaireIds,
-            int offset,
-            int limit
+            int pageNumber,
+            int pageSize
     ) {
         if(carePlanId == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {
-            Pagination pagination = new Pagination(offset,limit);
+            Pagination pagination = new Pagination(pageNumber,pageSize);
 
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
 
