@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.Bundle;
@@ -120,13 +121,9 @@ public class PatientService extends AccessValidatingService {
 
 
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) {
-        var offset = pagination.getOffset();
-        var count = pagination.getLimit();
+        List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
 
-        return this.getPatients(includeActive, includeCompleted).stream()
-            .skip(offset)
-            .limit(count)
-            .collect(Collectors.toList());
+        return new PaginatedList<>(patients, pagination).getList();
     }
 
 
