@@ -16,6 +16,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
