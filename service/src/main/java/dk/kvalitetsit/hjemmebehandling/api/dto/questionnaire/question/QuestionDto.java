@@ -4,6 +4,8 @@ import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 
+import java.util.stream.Collectors;
+
 public class QuestionDto<T extends Answer> extends BaseQuestionDto<T> {
 
     private T answer;
@@ -23,12 +25,17 @@ public class QuestionDto<T extends Answer> extends BaseQuestionDto<T> {
 
     @Override
     public BaseQuestion<?> toModel() {
+        Question<dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer> questionModel = new Question<>(this.getText());
 
+        questionModel.setLinkId(this.getLinkId());
+        questionModel.setAbbreviation(this.getAbbreviation());
 
-        Question<?> questionModel = new Question<>(this.getText());
-
-
-        questionModel.answer(this.getAnswer());
+        questionModel.setEnableWhens(this.getEnableWhens()
+                .stream()
+                .map(EnableWhen::toDto)
+                .collect(Collectors.toList())
+        );
+        questionModel.answer(this.getAnswer().toModel());
 
         return questionModel;
     }

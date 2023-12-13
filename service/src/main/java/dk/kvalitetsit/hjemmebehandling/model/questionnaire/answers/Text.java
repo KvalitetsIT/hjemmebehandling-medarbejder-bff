@@ -29,4 +29,9 @@ public class Text extends Answer {
     public int hashCode() {
         return Objects.hash(value);
     }
+
+    @Override
+    public dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer toDto() {
+        return new dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Text(this.value);
+    }
 }

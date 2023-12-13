@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question;
 
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
 import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
@@ -78,15 +79,6 @@ public abstract class BaseQuestionDto<T extends Answer> implements ToModel<BaseQ
         this.required = required;
     }
 
-    /*
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public void setQuestionType(QuestionType questionType) {
-        this.questionType = questionType;
-    }
-    */
 
     public List<EnableWhen> getEnableWhens() {
         return enableWhens;
@@ -97,7 +89,7 @@ public abstract class BaseQuestionDto<T extends Answer> implements ToModel<BaseQ
     }
 
 
-    public static class EnableWhen {
+    public static class EnableWhen implements ToDto<BaseQuestion.EnableWhen> {
         private AnswerModel answer; // contains linkId for another question and desired answer[type,value]
         private EnableWhenOperator operator;
 
@@ -115,6 +107,16 @@ public abstract class BaseQuestionDto<T extends Answer> implements ToModel<BaseQ
 
         public void setOperator(EnableWhenOperator operator) {
             this.operator = operator;
+        }
+
+
+        @Override
+        public BaseQuestion.EnableWhen toDto() {
+            var model = new BaseQuestion.EnableWhen();
+            model.setAnswer(this.answer);
+            model.setOperator(this.operator);
+
+            return model;
         }
     }
 }

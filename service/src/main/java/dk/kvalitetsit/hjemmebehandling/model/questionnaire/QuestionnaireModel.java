@@ -15,8 +15,8 @@ public class QuestionnaireModel extends BaseModel implements ToDto<Questionnaire
     private String title;
     private String description;
     private QuestionnaireStatus status;
-    private List<BaseQuestion<Answer>> questions;
-    private List<BaseQuestion<Answer>> callToActions;
+    private List<BaseQuestion<? extends Answer>> questions;
+    private List<BaseQuestion<? extends Answer>> callToActions;
     private String version;
     private Date lastUpdated;
 
@@ -61,19 +61,19 @@ public class QuestionnaireModel extends BaseModel implements ToDto<Questionnaire
         return lastUpdated;
     }
 
-    public List<BaseQuestion<Answer>> getQuestions() {
+    public List<BaseQuestion<? extends Answer>> getQuestions() {
         return questions;
     }
 
-    public void setQuestions(List<BaseQuestion<Answer>> questions) {
+    public void setQuestions(List<BaseQuestion<? extends Answer>> questions) {
         this.questions = questions;
     }
 
-    public List<BaseQuestion<Answer>> getCallToActions() {
+    public List<BaseQuestion<? extends Answer>> getCallToActions() {
         return callToActions;
     }
 
-    public void setCallToActions(List<BaseQuestion<Answer>> callToActions) {
+    public void setCallToActions(List<BaseQuestion<? extends Answer>> callToActions) {
         this.callToActions = callToActions;
     }
 
@@ -88,7 +88,7 @@ public class QuestionnaireModel extends BaseModel implements ToDto<Questionnaire
         questionnaireDto.setLastUpdated(this.getLastUpdated());
 
         if(this.getQuestions() != null) {
-            questionnaireDto.setQuestions(this.getQuestions().stream().map(ToDto::toDto).collect(Collectors.toList()));
+            questionnaireDto.setQuestions(this.getQuestions().stream().map(x -> x.toDto()).collect(Collectors.toList()));
         }
         if(this.getCallToActions() != null) {
             questionnaireDto.setCallToActions(this.getCallToActions().stream().map(ToDto::toDto).collect(Collectors.toList()));

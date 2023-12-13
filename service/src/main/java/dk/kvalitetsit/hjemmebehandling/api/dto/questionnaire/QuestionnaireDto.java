@@ -84,7 +84,11 @@ public class QuestionnaireDto extends BaseDto implements ToModel<QuestionnaireMo
             questionnaireModel.setStatus(QuestionnaireStatus.valueOf(this.getStatus()));
         }
         if(this.getQuestions() != null) {
-            questionnaireModel.setQuestions(this.getQuestions().stream().map(QuestionDto::toModel).collect(Collectors.toList()));
+            questionnaireModel.setQuestions(
+                    this.getQuestions()
+                            .stream()
+                            .map(ToModel::toModel)
+                            .collect(Collectors.toList()));
         }
 
         return questionnaireModel;

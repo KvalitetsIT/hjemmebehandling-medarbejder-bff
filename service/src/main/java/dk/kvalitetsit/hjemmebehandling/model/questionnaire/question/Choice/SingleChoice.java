@@ -3,6 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Choice;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 
+import java.util.HashSet;
+
 public class SingleChoice<T extends Answer> extends Choice<T> {
 
     private T answer;
@@ -28,6 +30,13 @@ public class SingleChoice<T extends Answer> extends Choice<T> {
 
     @Override
     public QuestionDto<?> toDto() {
-        return null;
+        var dto = new dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.Choice.SingleChoice<>(this.getText());
+
+        HashSet<?> x = this.getOptions();
+        dto.setOptions(x);
+
+        if (this.answer != null) dto.answer(this.answer.toDto());
+
+        return dto;
     }
 }

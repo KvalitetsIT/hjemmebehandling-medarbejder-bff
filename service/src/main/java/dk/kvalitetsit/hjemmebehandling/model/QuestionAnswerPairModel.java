@@ -1,3 +1,4 @@
+/*
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionAnswerPairDto;
@@ -39,3 +40,4 @@ public class QuestionAnswerPairModel implements ToDto<QuestionAnswerPairDto> {
         return null;
     }
 }
+*/

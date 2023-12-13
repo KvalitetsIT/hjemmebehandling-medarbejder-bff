@@ -41,6 +41,6 @@ public class ValueSetController extends BaseController {
   public ResponseEntity<List<MeasurementTypeDto>> getMeasurementTypes() {
     List<MeasurementTypeModel> measurementTypes = valueSetService.getMeasurementTypes();
 
-    return ResponseEntity.ok(measurementTypes.stream().map(dtoMapper::mapMeasurementTypeModel).collect(Collectors.toList()));
+    return ResponseEntity.ok(measurementTypes.stream().map(MeasurementTypeModel::toDto).collect(Collectors.toList()));
   }
 }

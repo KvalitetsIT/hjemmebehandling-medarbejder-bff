@@ -62,7 +62,7 @@ public class QuestionnaireResponseController extends BaseController {
 
             var dtos = questionnaireResponses
                     .stream()
-                    .map(dtoMapper::mapQuestionnaireResponseModel)
+                    .map(QuestionnaireResponseModel::toDto)
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(new PaginatedList<>(dtos, pagination));
@@ -86,7 +86,7 @@ public class QuestionnaireResponseController extends BaseController {
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, new Pagination(pageNumber, pageSize));
             auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).collect(Collectors.toList()));
-            return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).collect(Collectors.toList()));
+            return ResponseEntity.ok(questionnaireResponses.stream().map(QuestionnaireResponseModel::toDto).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
             logger.error("Could not look up questionnaire responses by status", e);

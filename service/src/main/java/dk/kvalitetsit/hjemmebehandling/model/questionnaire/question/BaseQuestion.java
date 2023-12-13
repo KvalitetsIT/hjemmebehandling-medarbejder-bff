@@ -29,7 +29,7 @@ public abstract class BaseQuestion<T extends Answer> implements ToDto<QuestionDt
     }
 
     public abstract void answer(T answer);
-
+    public abstract T getAnswer();
 
     public boolean isDeprecated() {
         return deprecated;

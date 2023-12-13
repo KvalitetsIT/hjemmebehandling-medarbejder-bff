@@ -9,12 +9,14 @@ import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDt
 import dk.kvalitetsit.hjemmebehandling.api.request.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.request.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
@@ -200,7 +202,7 @@ public class QuestionnaireController extends BaseController {
     }
 
 
-    @GetMapping(value = "/v1/questionnaire-2")
+    @GetMapping(value = "/v1/questionnaire/mock")
     @Operation(summary = "Get a questionnaire.", description = "Get a questionnaire")
     @ApiResponses(value = {
             @ApiResponse(
@@ -250,6 +252,17 @@ public class QuestionnaireController extends BaseController {
         q6.addOption(new Number(4));
 
         QuestionnaireModel questionnaire = new QuestionnaireModel();
+
+        // Mock questionnaire
+        questionnaire.setStatus(QuestionnaireStatus.ACTIVE);
+        questionnaire.setTitle("some fake title");
+        questionnaire.setDescription("some fake description");
+        questionnaire.setVersion("1");
+        questionnaire.setLastUpdated(new Date());
+        questionnaire.setLastUpdated(new Date());
+        questionnaire.setOrganizationId("Organization/fakemedicinsk");
+
+        questionnaire.setId(new QualifiedId("1", ResourceType.Questionnaire));
         questionnaire.setQuestions(List.of(q1, q2, q3, q4, q5, q6));
 
         return ResponseEntity.accepted().body(questionnaire.toDto());
@@ -269,6 +282,7 @@ public class QuestionnaireController extends BaseController {
                 throw new BadRequestException(ErrorDetails.QUESTIONS_ID_IS_NOT_UNIQUE);
             ids.add(question.getLinkId());
 
+            /* TODO: Include code below. It has been temporarily excluded
             if (question.getQuestionType() == null) {
                 throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
             }
@@ -279,6 +293,8 @@ public class QuestionnaireController extends BaseController {
                     throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
                 }
             }
+            */
+
         }
     }
     private Stream<BaseQuestionDto<?>> collectionToStream(Collection<BaseQuestionDto<?>> collection) {

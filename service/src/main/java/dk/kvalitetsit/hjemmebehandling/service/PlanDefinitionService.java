@@ -207,7 +207,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
                 wrapper.setQuestionnaire(questionnaire);
 
-                /* This has been temporarily excluded
+                /* TODO: Include code below. It has been temporarily excluded
                 List<ThresholdModel> questionnaireThresholds = questionnaire.getQuestions()
                         .stream()
                         .filter(questionModel -> Objects.nonNull(questionModel.getThresholds()))

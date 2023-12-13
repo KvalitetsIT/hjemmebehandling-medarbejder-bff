@@ -9,6 +9,8 @@ import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import org.hl7.fhir.r4.model.*;
 
@@ -345,8 +347,7 @@ public class FhirMapper {
             case ACTIVE -> QuestionnaireStatus.ACTIVE;
             case DRAFT -> QuestionnaireStatus.DRAFT;
             case RETIRED -> QuestionnaireStatus.RETIRED;
-            default ->
-                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
+            default -> throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
         };
     }
 
@@ -356,8 +357,9 @@ public class FhirMapper {
         mapBaseAttributesToFhir(questionnaireResponse, questionnaireResponseModel);
 
         questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId().toString());
-        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
-            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
+
+        for(var question : questionnaireResponseModel.getQuestions()) {
+            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(adaptAnswer(question.getAnswer())));
         }
         questionnaireResponse.setBasedOn(List.of(new Reference(questionnaireResponseModel.getCarePlanId().toString())));
         questionnaireResponse.setAuthor(new Reference(questionnaireResponseModel.getAuthorId().toString()));
@@ -381,12 +383,15 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireResponse.getQuestionnaire())));
 
         // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
+        List<BaseQuestion<?>> questions = new ArrayList<>();
 
         for(var item : questionnaireResponse.getItem()) {
             BaseQuestion<?> question;
             try {
                 question = getQuestion(questionnaire, item.getLinkId());
+                question.answer(adaptAnswerModel(getAnswer(item)));
+                questions.add( question );
+
             }   catch (IllegalStateException e) {
                 // Corresponding question could not be found in the current/newest questionnaire
                 // ignore
@@ -394,11 +399,8 @@ public class FhirMapper {
                 // and returns deprecated questions
                 question = null;
             }
-            AnswerModel answer = getAnswer(item);
-            answers.add( new QuestionAnswerPairModel(question, answer));
         }
-
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
+        questionnaireResponseModel.setQuestions(questions);
 
         return questionnaireResponseModel;
     }
@@ -408,7 +410,7 @@ public class FhirMapper {
         QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
 
         // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
+        List<BaseQuestion<? extends Answer>> questions = new ArrayList<>();
 
         //Look through all the given questionnaires
         for(var item : questionnaireResponse.getItem()) {
@@ -445,9 +447,13 @@ public class FhirMapper {
             }*/
 
             AnswerModel answer = getAnswer(item);
-            answers.add(new QuestionAnswerPairModel(question, answer));
+            if (question != null) {
+                question.answer(adaptAnswerModel(answer));
+            }
+            questions.add(question);
         }
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
+
+        questionnaireResponseModel.setQuestions(questions);
         return questionnaireResponseModel;
     }
 
@@ -695,32 +701,31 @@ public class FhirMapper {
         item.setLinkId(question.getLinkId());
         item.setText(question.getText());
 
-
-
-        if (question.getAbbreviation() != null) {
-            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
-        }
-        if (question.getThresholds() != null) {
-            item.getExtension().addAll(ExtensionMapper.mapThresholds(question.getThresholds()));
-        }
-        if (question.getHelperText() != null) {
-            item.addItem(mapQuestionHelperText(question.getHelperText()));
-        }
-        item.setRequired(question.isRequired());
-        if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
-        }
-        item.setType( mapQuestionType(question.getQuestionType()) );
-        if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
-        }
-
-        if (question.getMeasurementType() != null ) {
-            item.getCodeFirstRep()
-                    .setCode(question.getMeasurementType().getCode())
-                    .setDisplay(question.getMeasurementType().getDisplay())
-                    .setSystem(question.getMeasurementType().getSystem());
-        }
+//        TODO: Must be implemented. Temporarily excluded
+//        if (question.getAbbreviation() != null) {
+//            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
+//        }
+//        if (question.getThresholds() != null) {
+//            item.getExtension().addAll(ExtensionMapper.mapThresholds(question.getThresholds()));
+//        }
+//        if (question.getHelperText() != null) {
+//            item.addItem(mapQuestionHelperText(question.getHelperText()));
+//        }
+//        item.setRequired(question.isRequired());
+//        if (question.getOptions() != null) {
+//            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+//        }
+//        item.setType( mapQuestionType(question.getQuestionType()) );
+//        if (question.getEnableWhens() != null) {
+//            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+//        }
+//
+//        if (question.getMeasurementType() != null ) {
+//            item.getCodeFirstRep()
+//                    .setCode(question.getMeasurementType().getCode())
+//                    .setDisplay(question.getMeasurementType().getDisplay())
+//                    .setSystem(question.getMeasurementType().getSystem());
+//        }
         return item;
     }
 
@@ -732,18 +737,20 @@ public class FhirMapper {
         question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
         question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
         question.setRequired(item.getRequired());
-        if(item.getAnswerOption() != null) {
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
-        }
-        question.setQuestionType( mapQuestionType(item.getType()) );
-        if (item.hasEnableWhen()) {
-            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
-        }
-        if (item.hasCode()) {
-            question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
-        }
-
-        question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
+//
+//       TODO: Must be implemented. Temporarily excluded
+//        if(item.getAnswerOption() != null) {
+//            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
+//        }
+//        question.setQuestionType( mapQuestionType(item.getType()) );
+//        if (item.hasEnableWhen()) {
+//            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
+//        }
+//        if (item.hasCode()) {
+//            question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
+//        }
+//
+//        question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
 
         return question;
     }
@@ -790,16 +797,17 @@ public class FhirMapper {
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(BaseQuestion<?> question) {
         Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
 
-        item.setLinkId(question.getLinkId());
-        item.setText(question.getText());
-        item.setRequired(question.isRequired());
-        if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
-        }
-        item.setType( mapQuestionType(question.getQuestionType()) );
-        if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
-        }
+//      TODO: Must be implemented. Temporarily excluded
+//        item.setLinkId(question.getLinkId());
+//        item.setText(question.getText());
+//        item.setRequired(question.isRequired());
+//        if (question.getOptions() != null) {
+//            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+//        }
+//        item.setType( mapQuestionType(question.getQuestionType()) );
+//        if (question.getEnableWhens() != null) {
+//            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+//        }
         return item;
     }
 
@@ -1005,6 +1013,23 @@ public class FhirMapper {
 
         return detail;
     }
+
+    private <T extends Answer> AnswerModel adaptAnswer(T answer){
+        var model = new AnswerModel();
+
+        // TODO: implement the conversion
+
+        return model;
+    }
+
+    private <T extends Answer> T adaptAnswerModel(AnswerModel answer){
+        var a = new Text("");
+
+        // TODO: implement the conversion
+
+        return (T) a;
+    }
+
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
         var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
