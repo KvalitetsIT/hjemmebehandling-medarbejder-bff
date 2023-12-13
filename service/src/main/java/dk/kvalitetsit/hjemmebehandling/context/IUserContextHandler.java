@@ -6,5 +6,5 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 
 public interface IUserContextHandler {
 
-	public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt);
+	UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt);
 }

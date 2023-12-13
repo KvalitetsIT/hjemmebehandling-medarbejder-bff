@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+
 public abstract class BaseModel {
     private QualifiedId id;
     private String organizationId;
@@ -19,4 +20,10 @@ public abstract class BaseModel {
     public void setOrganizationId(String organizationId) {
         this.organizationId = organizationId;
     }
+
+    // Proposal: forces the implementer to include the mapping
+    // Same could be done for the BaseDto - public abstract T toDto() etc.
+    // TODO: public abstract T toDto();
+
+
 }

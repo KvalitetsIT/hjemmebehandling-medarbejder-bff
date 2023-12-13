@@ -4,6 +4,12 @@ import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModelOld;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -44,15 +50,15 @@ public class FhirMapperTest {
 
 
 
-    private QuestionModel buildCallToAction(QuestionModel questionModel) {
-        QuestionModel callToAction = buildCallToAction();
+    private BaseQuestion<?> buildCallToAction(BaseQuestion<?> questionModel) {
+        BaseQuestion<?> callToAction = buildCallToAction();
 
         AnswerModel answer = new AnswerModel();
         answer.setLinkId(questionModel.getLinkId());
         answer.setAnswerType(AnswerType.BOOLEAN);
         answer.setValue(Boolean.TRUE.toString());
 
-        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
+        BaseQuestion.EnableWhen enableWhen = new BaseQuestion.EnableWhen();
         enableWhen.setAnswer(answer);
         enableWhen.setOperator(EnableWhenOperator.EQUAL);
 
@@ -60,10 +66,8 @@ public class FhirMapperTest {
         return callToAction;
     }
 
-    private QuestionModel buildCallToAction() {
-        QuestionModel callToAction = buildQuestionModel(QuestionType.DISPLAY, "call to action text");
-
-        return callToAction;
+    private BaseQuestion<?> buildCallToAction() {
+        return buildQuestionModel(QuestionType.DISPLAY, "call to action text");
     }
 
     private ValueSet buildMeasurementTypesValueSet() {
@@ -330,14 +334,14 @@ public class FhirMapperTest {
 
         model.setAnswered(Instant.parse("2021-11-03T00:00:00Z"));
 
-        model.setQuestionAnswerPairs(new ArrayList<>());
+        model.setQuestions(new ArrayList<>());
 
-        QuestionModel question = new QuestionModel();
-        AnswerModel answer = new AnswerModel();
-        answer.setAnswerType(AnswerType.INTEGER);
-        answer.setValue("2");
+        BaseQuestion<Number> question = new Question<Number>("hvad er 1 + 1");
 
-        model.getQuestionAnswerPairs().add(new QuestionAnswerPairModel(question, answer));
+        question.answer(new Number(2));
+
+
+        model.getQuestions().add(question);
 
         model.setExaminationStatus(ExaminationStatus.NOT_EXAMINED);
         model.setTriagingCategory(TriagingCategory.GREEN);
@@ -349,19 +353,19 @@ public class FhirMapperTest {
         return model;
     }
 
-    private QuestionModel buildQuestionModel() {
+    private BaseQuestion<?> buildQuestionModel() {
         return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", "dagsform");
     }
 
-    private QuestionModel buildQuestionModel(QuestionType type, String text) {
+    private BaseQuestion<?> buildQuestionModel(QuestionType type, String text) {
         return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?",null);
     }
 
-    private QuestionModel buildQuestionModel(QuestionType type, String text, String abbreviation) {
-        QuestionModel questionModel = new QuestionModel();
-        questionModel.setText(text);
+    private BaseQuestion<?> buildQuestionModel(QuestionType type, String text, String abbreviation) {
+        BaseQuestion<?> questionModel = new Question<Text>(text);
+
         questionModel.setAbbreviation(abbreviation);
-        questionModel.setQuestionType(type);
+        //questionModel.setQuestionType(type);
 
         return questionModel;
     }

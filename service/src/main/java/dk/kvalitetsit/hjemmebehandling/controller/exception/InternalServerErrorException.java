@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
 public class InternalServerErrorException extends RuntimeException {
-    private ErrorDetails errorDetails;
+    private final ErrorDetails errorDetails;
 
     public InternalServerErrorException(ErrorDetails errorDetails) {
         this.errorDetails = errorDetails;

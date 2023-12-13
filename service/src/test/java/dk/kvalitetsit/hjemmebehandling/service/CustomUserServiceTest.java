@@ -4,9 +4,9 @@
 //import ch.qos.logback.classic.spi.ILoggingEvent;
 //import ch.qos.logback.core.read.ListAppender;
 //import com.fasterxml.jackson.databind.ObjectMapper;
-//import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestAttributesDto;
-//import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestDto;
-//import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+//import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserRequestAttributesDto;
+//import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserRequestDto;
+//import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserResponseDto;
 //import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 //import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 //import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;

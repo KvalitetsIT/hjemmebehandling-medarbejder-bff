@@ -38,7 +38,7 @@
 	<description>KITHUGS service</description>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<testcontainers.version>1.15.1</testcontainers.version>
 		<spring-prometheus-app-info-version>1.0.3</spring-prometheus-app-info-version>
         <hapi-fhir.version>5.5.1</hapi-fhir.version>

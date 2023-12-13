@@ -1,24 +1,27 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionAnswerPairDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 
-public class QuestionAnswerPairModel {
-    private QuestionModel question;
+
+public class QuestionAnswerPairModel implements ToDto<QuestionAnswerPairDto> {
+    private BaseQuestion<?> question;
     private AnswerModel answer;
 
 
 
-    public QuestionAnswerPairModel(QuestionModel question, AnswerModel answer) {
+    public QuestionAnswerPairModel(BaseQuestion<?> question, AnswerModel answer) {
         this.question = question;
         this.answer = answer;
     }
 
-    public QuestionModel getQuestion() {
+    public BaseQuestion<?> getQuestion() {
         return question;
     }
 
-    public void setQuestion(QuestionModel question) {
+    public void setQuestion(BaseQuestion<?> question) {
         this.question = question;
     }
 
@@ -31,4 +34,8 @@ public class QuestionAnswerPairModel {
     }
 
 
+    @Override
+    public QuestionAnswerPairDto toDto() {
+        return null;
+    }
 }

@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service.exception;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 
 public class ServiceException extends Exception {
-    private ErrorKind errorKind;
-    private ErrorDetails errorDetails;
+    private final ErrorKind errorKind;
+    private final ErrorDetails errorDetails;
 
     public ServiceException(String message, ErrorKind errorKind, ErrorDetails errorDetails) {
         super(message);

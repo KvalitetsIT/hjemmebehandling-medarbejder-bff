@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class AuditLoggingService {
@@ -50,7 +51,7 @@ public class AuditLoggingService {
   }
 
   public void log(String message, PersonModel person) {
-    auditLog(message, List.of(person).stream()
+    auditLog(message, Stream.of(person)
         .collect(Collectors.toMap(
             p -> p.getIdentifier().getId(),
             p -> String.join(" ", p.getName().getGiven()) + " " + p.getName().getFamily())))

@@ -1,6 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PersonModel {
+import dk.kvalitetsit.hjemmebehandling.api.dto.ContactDetailsDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PersonDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+
+public class PersonModel implements ToDto<PersonDto> {
     private String resourceType;
     private PersonIdentifierModel identifier;
     private boolean active;
@@ -59,5 +63,24 @@ public class PersonModel {
 		this.address = address;
 	}
 
-   
+
+	@Override
+	public PersonDto toDto() {
+		PersonDto personDto = new PersonDto();
+
+		personDto.setCpr(this.getIdentifier().getId());
+		personDto.setFamilyName(this.getName().getFamily());
+		personDto.setGivenName(String.join(" ", this.getName().getGiven()));
+		personDto.setBirthDate(this.getBirthDate());
+		personDto.setDeceasedBoolean(this.isDeceasedBoolean());
+		personDto.setGender(this.getGender());
+
+		personDto.setPatientContactDetails(new ContactDetailsDto());
+		personDto.getPatientContactDetails().setCountry(this.getAddress().getCountry());
+		personDto.getPatientContactDetails().setPostalCode(this.getAddress().getPostalCode());
+		personDto.getPatientContactDetails().setStreet(this.getAddress().getLine());
+		personDto.getPatientContactDetails().setCity(this.getAddress().getCity());
+
+		return personDto;
+	}
 }

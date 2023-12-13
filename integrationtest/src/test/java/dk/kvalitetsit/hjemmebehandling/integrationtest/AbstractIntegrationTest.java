@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 
 public abstract class AbstractIntegrationTest {
     private static String host = "localhost";
-    private static String exposedServicePort = "8080";
+    private static final String exposedServicePort = "8080";
 
     @BeforeAll
     public static void setupEnvironment() throws Exception {

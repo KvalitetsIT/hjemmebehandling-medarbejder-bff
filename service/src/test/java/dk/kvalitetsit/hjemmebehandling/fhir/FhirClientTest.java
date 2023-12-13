@@ -33,7 +33,7 @@ public class FhirClientTest {
     @Mock
     private FhirContext context;
 
-    private String endpoint = "http://foo";
+    private final String endpoint = "http://foo";
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private IGenericClient client;

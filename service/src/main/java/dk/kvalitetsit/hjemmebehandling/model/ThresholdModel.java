@@ -1,8 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.ThresholdDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
-public class ThresholdModel {
+public class ThresholdModel implements ToDto<ThresholdDto> {
   private String questionnaireItemLinkId;
   private ThresholdType type;
   private Double valueQuantityLow;
@@ -47,5 +49,16 @@ public class ThresholdModel {
 
   public void setValueBoolean(Boolean valueBoolean) {
     this.valueBoolean = valueBoolean;
+  }
+
+  @Override
+  public ThresholdDto toDto() {
+    ThresholdDto thresholdDto = new ThresholdDto();
+    thresholdDto.setQuestionId(this.getQuestionnaireItemLinkId());
+    thresholdDto.setType(this.getType());
+    thresholdDto.setValueBoolean(this.getValueBoolean());
+    thresholdDto.setValueQuantityLow(this.getValueQuantityLow());
+    thresholdDto.setValueQuantityHigh(this.getValueQuantityHigh());
+    return thresholdDto;
   }
 }

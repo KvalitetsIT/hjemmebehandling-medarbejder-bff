@@ -1,6 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PlanDefinitionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.ThresholdDto;
+import dk.kvalitetsit.hjemmebehandling.api.request.CreatePlanDefinitionRequest;
+import dk.kvalitetsit.hjemmebehandling.api.request.PatchPlanDefinitionRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
@@ -60,7 +65,7 @@ public class PlanDefinitionController extends BaseController {
 
 
             return ResponseEntity.ok(planDefinitions.stream()
-                    .map(dtoMapper::mapPlanDefinitionModel)
+                    .map(PlanDefinitionModel::toDto)
                     .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }
@@ -80,7 +85,7 @@ public class PlanDefinitionController extends BaseController {
     public ResponseEntity<Void> createPlanDefinition(@RequestBody CreatePlanDefinitionRequest request) {
         String planDefinitionId = null;
         try {
-            PlanDefinitionModel planDefinition = dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition());
+            PlanDefinitionModel planDefinition = request.getPlanDefinition().toModel();
             planDefinitionId = planDefinitionService.createPlanDefinition(planDefinition);
         }
         catch(AccessValidationException | ServiceException e) {
@@ -150,7 +155,7 @@ public class PlanDefinitionController extends BaseController {
 
     private List<ThresholdModel> getThresholds(List<ThresholdDto> thresholdDtos) {
         return collectionToStream(thresholdDtos)
-            .map(dtoMapper::mapThresholdDto)
+            .map(ThresholdDto::toModel)
             .collect(Collectors.toList());
     }
 

@@ -7,14 +7,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FhirLookupResult {
-    private Map<String, CarePlan> carePlansById;
-    private Map<String, Organization> organizationsById;
-    private Map<String, Patient> patientsById;
-    private Map<String, PlanDefinition> planDefinitionsById;
-    private Map<String, Questionnaire> questionnairesById;
-    private Map<String, QuestionnaireResponse> questionnaireResponsesById;
-    private Map<String, Practitioner> practitionersById;
-    private Map<String, ValueSet> valueSetsById;
+    private final Map<String, CarePlan> carePlansById;
+    private final Map<String, Organization> organizationsById;
+    private final Map<String, Patient> patientsById;
+    private final Map<String, PlanDefinition> planDefinitionsById;
+    private final Map<String, Questionnaire> questionnairesById;
+    private final Map<String, QuestionnaireResponse> questionnaireResponsesById;
+    private final Map<String, Practitioner> practitionersById;
+    private final Map<String, ValueSet> valueSetsById;
 
     private FhirLookupResult() {
         // Using LinkedHashMap preserves the insertion order (necessary for eg. returning sorted results).
@@ -157,38 +157,21 @@ public class FhirLookupResult {
     }
 
     private <T extends Resource> List<T> getResources(Map<String, T> resourcesById) {
-        return resourcesById.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(resourcesById.values());
     }
 
     private void addResource(Resource resource) {
         String resourceId = resource.getIdElement().toUnqualifiedVersionless().getValue();
-        switch(resource.getResourceType()) {
-            case CarePlan:
-                carePlansById.put(resourceId, (CarePlan) resource);
-                break;
-            case Organization:
-                organizationsById.put(resourceId, (Organization) resource);
-                break;
-            case Patient:
-                patientsById.put(resourceId, (Patient) resource);
-                break;
-            case PlanDefinition:
-                planDefinitionsById.put(resourceId, (PlanDefinition) resource);
-                break;
-            case Questionnaire:
-                questionnairesById.put(resourceId, (Questionnaire) resource);
-                break;
-            case QuestionnaireResponse:
-                questionnaireResponsesById.put(resourceId, (QuestionnaireResponse) resource);
-                break;
-            case Practitioner:
-                practitionersById.put(resourceId, (Practitioner) resource);
-                break;
-            case ValueSet:
-                valueSetsById.put(resourceId, (ValueSet) resource);
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown resource type: %s", resource.getResourceType().toString()));
+        switch (resource.getResourceType()) {
+            case CarePlan -> carePlansById.put(resourceId, (CarePlan) resource);
+            case Organization -> organizationsById.put(resourceId, (Organization) resource);
+            case Patient -> patientsById.put(resourceId, (Patient) resource);
+            case PlanDefinition -> planDefinitionsById.put(resourceId, (PlanDefinition) resource);
+            case Questionnaire -> questionnairesById.put(resourceId, (Questionnaire) resource);
+            case QuestionnaireResponse -> questionnaireResponsesById.put(resourceId, (QuestionnaireResponse) resource);
+            case Practitioner -> practitionersById.put(resourceId, (Practitioner) resource);
+            case ValueSet -> valueSetsById.put(resourceId, (ValueSet) resource);
+            default -> throw new IllegalArgumentException(String.format("Unknown resource type: %s", resource.getResourceType().toString()));
         }
     }
 }

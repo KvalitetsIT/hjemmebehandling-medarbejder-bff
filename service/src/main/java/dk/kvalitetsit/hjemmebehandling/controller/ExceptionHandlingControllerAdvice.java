@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
 import org.springframework.http.HttpStatus;

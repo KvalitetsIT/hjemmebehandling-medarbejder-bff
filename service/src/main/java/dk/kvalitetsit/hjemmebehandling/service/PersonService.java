@@ -23,7 +23,7 @@ public class PersonService {
 	@Value("${cpr.url}")
 	private String cprUrl;
     
-	private RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 	
 
     public PersonService(RestTemplate restTemplate) {
@@ -41,7 +41,7 @@ public class PersonService {
         	if (HttpStatus.NOT_FOUND.equals(httpClientErrorException.getStatusCode())) {
         		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "entity not found");
         	}
-			throw new ServiceException(String.format("Could not fetch person from cpr-service"), ErrorKind.BAD_GATEWAY, ErrorDetails.CPRSERVICE_UNKOWN_ERROR);
+			throw new ServiceException("Could not fetch person from cpr-service", ErrorKind.BAD_GATEWAY, ErrorDetails.CPRSERVICE_UNKOWN_ERROR);
         }
         return person;
     }

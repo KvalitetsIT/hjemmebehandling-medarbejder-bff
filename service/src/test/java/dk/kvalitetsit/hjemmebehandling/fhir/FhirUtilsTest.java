@@ -113,7 +113,7 @@ public class FhirUtilsTest {
     @Test
     public void isQualifiedId_illegalId_failure() {
         // Arrange
-        String qualifiedId = "Questionnaire/###";;
+        String qualifiedId = "Questionnaire/###";
         ResourceType qualifier = ResourceType.Questionnaire;
 
         // Act

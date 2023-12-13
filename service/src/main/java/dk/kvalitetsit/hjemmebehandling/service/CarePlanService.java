@@ -10,12 +10,13 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserResponseDto;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
@@ -35,15 +36,15 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 public class CarePlanService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
 
-    private DateProvider dateProvider;
+    private final DateProvider dateProvider;
 
-    private CustomUserClient customUserService;
+    private final CustomUserClient customUserService;
 
-    private DtoMapper dtoMapper;
+    private final DtoMapper dtoMapper;
 
     private UserContextProvider userContextProvider;
     @Value("${patientidp.api.url}")
@@ -76,16 +77,6 @@ public class CarePlanService extends AccessValidatingService {
         }
         return oldContacts;
     }
-
-
-
-
-
-
-
-
-
-
 
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
@@ -141,7 +132,7 @@ public class CarePlanService extends AccessValidatingService {
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
             }
             // create customLoginUser if the patient do not exist. Done if an apiurl is set.
-            if (patientidpApiUrl != null && !"".equals(patientidpApiUrl)) createCustomLogin(carePlan.getPatient());
+            if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) createCustomLogin(carePlan.getPatient());
 
             var newPatient = carePlan.getPatient();
 
@@ -175,12 +166,12 @@ public class CarePlanService extends AccessValidatingService {
 
         Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
 
-        if (!carePlan.isPresent()) {
+        if (carePlan.isEmpty()) {
             throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
 
         var questionnaireResponsesStillNotExamined = fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId).getQuestionnaireResponses();
-        if (questionnaireResponsesStillNotExamined.size() > 0) {
+        if (!questionnaireResponsesStillNotExamined.isEmpty()) {
             throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
         }
 
@@ -223,7 +214,7 @@ public class CarePlanService extends AccessValidatingService {
         FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
 
         Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
-        if (!carePlan.isPresent()) {
+        if (carePlan.isEmpty()) {
             return Optional.empty();
         }
 
@@ -239,7 +230,7 @@ public class CarePlanService extends AccessValidatingService {
         // Get the careplan
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
-        if (!carePlanResult.getCarePlan(qualifiedId).isPresent()) {
+        if (carePlanResult.getCarePlan(qualifiedId).isEmpty()) {
             throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         CarePlan carePlan = carePlanResult.getCarePlan(qualifiedId).get();
@@ -293,7 +284,7 @@ public class CarePlanService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
 
-        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent();
+        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
 
         if (emptyResult) {
             throw new ServiceException(
@@ -547,7 +538,7 @@ public class CarePlanService extends AccessValidatingService {
     private void refreshFrequencyTimestampForCarePlan(CarePlanModel carePlanModel) {
         var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires()
                 .stream()
-                .map(qw -> qw.getSatisfiedUntil())
+                .map(QuestionnaireWrapperModel::getSatisfiedUntil)
                 .min(Comparator.naturalOrder())
                 .orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
@@ -556,7 +547,7 @@ public class CarePlanService extends AccessValidatingService {
     private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, Pagination pagination) {
         return responses
                 .stream()
-                .skip((pagination.getOffset() - 1) * pagination.getLimit())
+                .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
                 .limit(pagination.getLimit())
                 .collect(Collectors.toList());
     }

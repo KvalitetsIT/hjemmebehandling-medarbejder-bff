@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 public class DiasAuditLogger {
   private static final Logger logger = LoggerFactory.getLogger(DiasAuditLogger.class);
 
-  private boolean enabled;
+  private final boolean enabled;
 
   @Autowired
   public WebClient client;

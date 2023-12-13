@@ -1,13 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.request.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireDto;
+import dk.kvalitetsit.hjemmebehandling.api.request.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.context.MockContextHandler;
-import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;

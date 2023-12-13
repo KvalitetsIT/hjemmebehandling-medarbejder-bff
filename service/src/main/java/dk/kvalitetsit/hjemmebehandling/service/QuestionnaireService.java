@@ -1,14 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -25,9 +24,9 @@ import java.util.stream.Collectors;
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
 
     public QuestionnaireService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
         super(accessValidator);
@@ -39,7 +38,7 @@ public class QuestionnaireService extends AccessValidatingService {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(questionnaireId);
-        if(!questionnaire.isPresent()) {
+        if(questionnaire.isEmpty()) {
             return Optional.empty();
         }
 
@@ -54,7 +53,7 @@ public class QuestionnaireService extends AccessValidatingService {
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
 
-        return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
+        return lookupResult.getQuestionnaires().stream().map(fhirMapper::mapQuestionnaire).collect(Collectors.toList());
     }
 
     public String createQuestionnaire(QuestionnaireModel questionnaire) {
@@ -79,11 +78,11 @@ public class QuestionnaireService extends AccessValidatingService {
         }
     }
 
-    public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) throws ServiceException, AccessValidationException {
+    public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<BaseQuestion<?>> updatedQuestions, List<BaseQuestion<?>> updatedCallToActions) throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
-        if(lookupResult.getQuestionnaires().size() != 1 || !lookupResult.getQuestionnaire(questionnaireId).isPresent()) {
+        if(lookupResult.getQuestionnaires().size() != 1 || lookupResult.getQuestionnaire(questionnaireId).isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId).get();
@@ -102,7 +101,7 @@ public class QuestionnaireService extends AccessValidatingService {
         fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaireModel));
     }
 
-    private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) {
+    private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<BaseQuestion<?>> updatedQuestions, List<BaseQuestion<?>> updatedCallToActions) {
         // make sure all question(s) and call-to-action has a unique id
         updatedQuestions.stream().filter(q -> q.getLinkId()==null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
         updatedCallToActions.stream().filter(cta -> cta.getLinkId()==null).forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
@@ -115,18 +114,11 @@ public class QuestionnaireService extends AccessValidatingService {
     }
 
     private void validateStatusChangeIsLegal(Questionnaire questionnaire, String updatedStatus) throws ServiceException {
-        List<Enumerations.PublicationStatus> validStatuses;
-        switch (questionnaire.getStatus()) {
-            case ACTIVE:
-                validStatuses = List.of(Enumerations.PublicationStatus.ACTIVE, Enumerations.PublicationStatus.RETIRED);
-                break;
-            case DRAFT:
-                validStatuses = List.of(Enumerations.PublicationStatus.DRAFT, Enumerations.PublicationStatus.ACTIVE);
-                break;
-            default:
-                validStatuses = List.of();
-                break;
-        }
+        List<Enumerations.PublicationStatus> validStatuses = switch (questionnaire.getStatus()) {
+            case ACTIVE -> List.of(Enumerations.PublicationStatus.ACTIVE, Enumerations.PublicationStatus.RETIRED);
+            case DRAFT -> List.of(Enumerations.PublicationStatus.DRAFT, Enumerations.PublicationStatus.ACTIVE);
+            default -> List.of();
+        };
 
         if (!validStatuses.contains(Enumerations.PublicationStatus.valueOf(updatedStatus))) {
             throw new ServiceException(String.format("Could not change status for questionnaire with id %s!", questionnaire.getId()), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
@@ -138,7 +130,7 @@ public class QuestionnaireService extends AccessValidatingService {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(qualifiedId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(qualifiedId);
-        if (!questionnaire.isPresent()) {
+        if (questionnaire.isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 

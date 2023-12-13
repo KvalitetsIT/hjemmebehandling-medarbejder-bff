@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
 
-    private FhirContext context;
-    private String endpoint;
-    private UserContextProvider userContextProvider;
+    private final FhirContext context;
+    private final String endpoint;
+    private final UserContextProvider userContextProvider;
 
     private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
 
@@ -36,12 +36,11 @@ public class FhirClient {
     }
 
     public FhirLookupResult lookupActiveCarePlansWithQuestionnaire(String questionnaireId) {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var questionnaireCriterion = CarePlan.INSTANTIATES_CANONICAL.hasChainedProperty(PlanDefinition.DEFINITION.hasId(questionnaireId));
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
 
         return lookupCarePlansByCriteria(criteria);
     }
@@ -49,34 +48,31 @@ public class FhirClient {
 
 
     public FhirLookupResult lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var statusCriterion = PlanDefinition.STATUS.exactly().code(Enumerations.PublicationStatus.ACTIVE.toCode());
         var questionnaireCriterion = PlanDefinition.DEFINITION.hasId(questionnaireId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
 
         return lookupPlanDefinitionsByCriteria(criteria);
     }
 
 
-    public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) {
-        var criteria = new ArrayList<ICriterion<?>>();
+    public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String definitionId) {
 
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
-        var plandefinitionCriterion = CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId);
+        var definitionCriterion = CarePlan.INSTANTIATES_CANONICAL.hasId(definitionId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, definitionCriterion, organizationCriterion));
 
         return lookupCarePlansByCriteria(criteria);
     }
 
     public FhirLookupResult lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(patientCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(patientCriterion, organizationCriterion));
         if(onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
@@ -87,10 +83,9 @@ public class FhirClient {
 
     
     public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied) {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         if(onlyUnSatisfied){
@@ -105,7 +100,7 @@ public class FhirClient {
 
         if(cpr.isPresent()){
             Optional<Patient> patient = lookupPatientByCpr(cpr.get());
-            if(!patient.isPresent()) {
+            if(patient.isEmpty()) {
                 return FhirLookupResult.fromResources();
             }
             String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
@@ -164,8 +159,7 @@ public class FhirClient {
     public FhirLookupResult getPatientsByStatus(CarePlan.CarePlanStatus status) {
         var organizationCriterion = buildOrganizationCriterion();
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion));
-        return fhirLookupResult;
+        return lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion));
     }
 
     public FhirLookupResult lookupQuestionnaireResponseById(String questionnaireResponseId) {
@@ -196,8 +190,7 @@ public class FhirClient {
 
     public FhirLookupResult lookupQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) {
 
-        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
-        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(statuses.stream().map(Enum::toString).toArray(String[]::new));
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
@@ -205,8 +198,7 @@ public class FhirClient {
 
     public FhirLookupResult lookupQuestionnaireResponsesByStatusAndCarePlanId(List<ExaminationStatus> statuses, String carePlanId) {
 
-        var codes = statuses.stream().map(s -> s.toString()).collect(Collectors.toList());
-        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(codes.toArray(new String[codes.size()]));
+        var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(statuses.stream().map(Enum::toString).toArray(String[]::new));
         var organizationCriterion = buildOrganizationCriterion();
         var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId);
 
@@ -222,9 +214,6 @@ public class FhirClient {
     }
 
     public String saveCarePlan(CarePlan carePlan, Patient patient) {
-
-
-
 
         // Build a transaction bundle.
         var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
@@ -265,28 +254,28 @@ public class FhirClient {
 
     public FhirLookupResult lookupPlanDefinitionsByStatus(Collection<String> statusesToInclude) {
         var organizationCriterion = buildOrganizationCriterion();
-        var criterias = new ArrayList<ICriterion<?>>();
-        criterias.add(organizationCriterion);
+        var criteria = new ArrayList<ICriterion<?>>();
+        criteria.add(organizationCriterion);
 
         if(!statusesToInclude.isEmpty()){
             Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
-            var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToIncludeToLowered);
-            criterias.add(statusCriteron);
+            var statusCriterion = PlanDefinition.STATUS.exactly().codes(statusesToIncludeToLowered);
+            criteria.add(statusCriterion);
         }
-        return lookupPlanDefinitionsByCriteria(criterias);
+        return lookupPlanDefinitionsByCriteria(criteria);
     }
 
     public FhirLookupResult lookupQuestionnairesByStatus(Collection<String> statusesToInclude) {
-        var criterias = new ArrayList<ICriterion<?>>();
+        var criteria = new ArrayList<ICriterion<?>>();
         var organizationCriterion = buildOrganizationCriterion();
-        criterias.add(organizationCriterion);
+        criteria.add(organizationCriterion);
 
         if(!statusesToInclude.isEmpty()){
             Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
-            var statusCriteron = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
-            criterias.add(statusCriteron);
+            var statusCriterion = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
+            criteria.add(statusCriterion);
         }
-        return lookupByCriteria(Questionnaire.class, criterias);
+        return lookupByCriteria(Questionnaire.class, criteria);
     }
 
     public FhirLookupResult lookupQuestionnairesById(Collection<String> questionnaireIds) {
@@ -399,7 +388,7 @@ public class FhirClient {
     private List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {
         return carePlans
                 .stream()
-                .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(ic -> ic.getValue()))
+                .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(PrimitiveType::getValue))
                 .collect(Collectors.toList());
     }
 
@@ -407,7 +396,7 @@ public class FhirClient {
         return questionnaireResponses
             .stream()
             .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
-            .filter(id -> id != null)
+            .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toList());
     }
@@ -428,13 +417,21 @@ public class FhirClient {
         return lookupByCriteria(resourceClass, criteria, includes, withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+    private <T extends Resource> FhirLookupResult lookupByCriteria(
+            Class<T> resourceClass,
+            List<ICriterion<?>> criteria,
+            List<Include> includes,
+            boolean withOrganizations,
+            Optional<SortSpec> sortSpec,
+            Optional<Integer> offset,
+            Optional<Integer> count
+    ) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         var query = client
                 .search()
                 .forResource(resourceClass);
-        if(criteria != null && criteria.size() > 0) {
+        if(criteria != null && !criteria.isEmpty()) {
             query = query.where(criteria.get(0));
             for(int i = 1; i < criteria.size(); i++) {
                 query = query.and(criteria.get(i));
@@ -461,8 +458,8 @@ public class FhirClient {
             List<String> organizationIds = lookupResult.values()
                     .stream()
                     .map(r -> ExtensionMapper.tryExtractOrganizationId(r.getExtension()))
-                    .filter(id -> id.isPresent())
-                    .map(id -> id.get())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -539,7 +536,7 @@ public class FhirClient {
             return;
         }
         if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
-            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", extendable.getId()));
+            throw new IllegalArgumentException(String.format("Trying to add organization tag '%s'  to resource, but the tag was already present!", extendable.getId()));
         }
 
         extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));
@@ -563,8 +560,7 @@ public class FhirClient {
         var organization = lookupOrganizationBySorCode(context.getOrgId())
                 .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getOrgId())));
 
-        var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
-        return organizationId;
+        return organization.getIdElement().toUnqualifiedVersionless().getValue();
     }
 
     public Practitioner getOrCreateUserAsPractitioner() {
@@ -588,7 +584,7 @@ public class FhirClient {
             p.getNameFirstRep().setFamily(userContextProvider.getUserContext().getLastName());
 
             String practitionerId = save(p);
-            return lookupPractitionerById(practitionerId).get();
+            return lookupPractitionerById(practitionerId).orElseThrow();
         }
     }
 

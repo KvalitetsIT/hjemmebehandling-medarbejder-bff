@@ -1,15 +1,27 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireDto;
+
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.request.CreateQuestionnaireRequest;
+import dk.kvalitetsit.hjemmebehandling.api.request.PatchQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Choice.MultipleChoice;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Choice.SingleChoice;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -22,12 +34,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -49,14 +58,13 @@ public class QuestionnaireController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireController.class);
 
     private final QuestionnaireService questionnaireService;
-    private AuditLoggingService auditLoggingService;
-    private final DtoMapper dtoMapper;
+    private final AuditLoggingService auditLoggingService;
+
     private final LocationHeaderBuilder locationHeaderBuilder;
 
-    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, LocationHeaderBuilder locationHeaderBuilder) {
         this.questionnaireService = questionnaireService;
         this.auditLoggingService = auditLoggingService;
-        this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
     }
 
@@ -69,17 +77,18 @@ public class QuestionnaireController extends BaseController {
             throw new BadRequestException(details);
         }
 
-        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(() -> List.of()));
+        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(List::of));
 
         return ResponseEntity.ok(questionnaires.stream()
-                .map(dtoMapper::mapQuestionnaireModel)
+                .map(QuestionnaireModel::toDto)
                 .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
                 .collect(Collectors.toList()));
     }
 
     @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = QuestionnaireDto.class))),
+            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(
+                    schema = @Schema(implementation = QuestionnaireDto.class))),
             @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
     })
     @GetMapping(value = "/v1/questionnaire/{id}", produces = { "application/json" })
@@ -99,7 +108,7 @@ public class QuestionnaireController extends BaseController {
         if(questionnaire.isEmpty()) {
             throw new ResourceNotFoundException(String.format("Questionnaire with id %s not found.", id), ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
-        return ResponseEntity.ok(dtoMapper.mapQuestionnaireModel(questionnaire.get()));
+        return ResponseEntity.ok(questionnaire.get().toDto());
     }
 
     @Operation(summary = "Create a new Questionnaire.", description = "Create a Questionnaire.")
@@ -111,10 +120,10 @@ public class QuestionnaireController extends BaseController {
     public ResponseEntity<Void> createQuestionnaire(@RequestBody CreateQuestionnaireRequest request) {
         validateQuestions(request.getQuestionnaire().getQuestions());
 
-        QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
+        QuestionnaireModel questionnaire = request.getQuestionnaire().toModel();
         
-        List<QuestionModel> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
-                .map(dtoMapper::mapQuestionDto)
+        List<BaseQuestion<?>> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
+                .map(ToModel::toModel)
                 .collect(Collectors.toList());
         questionnaire.setCallToActions(callToActions);
         
@@ -137,12 +146,13 @@ public class QuestionnaireController extends BaseController {
         try {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
-            List<QuestionModel> questions = collectionToStream(request.getQuestions())
-                .map(dtoMapper::mapQuestionDto)
+            List<BaseQuestion<?>> questions = request.getQuestions()
+                    .stream()
+                .map(ToModel::toModel)
                 .collect(Collectors.toList());
 
-            List<QuestionModel> callToActions = collectionToStream(request.getCallToActions())
-                .map(dtoMapper::mapQuestionDto)
+            List<BaseQuestion<?>> callToActions = collectionToStream(request.getCallToActions())
+                .map(ToModel::toModel)
                 .collect(Collectors.toList());
 
             questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);
@@ -189,8 +199,63 @@ public class QuestionnaireController extends BaseController {
     }
 
 
+    @GetMapping(value = "/v1/questionnaire-2")
+    @Operation(summary = "Get a questionnaire.", description = "Get a questionnaire")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Successful operation.",
+                    headers = {},
+                    content = @Content(
+                            schema = @Schema())),
+    })
+    public ResponseEntity<QuestionnaireDto> getNewQuestionnaire(){
 
-    private void validateQuestions(List<QuestionDto> questions){
+        Question<Text> q1 = new Question<Text>("Hvad er dit navn");
+        q1.answer(new Text("Bob"));
+
+
+        Question<Number> q2 = new Question<>("Hvor gammel er du?");
+        q2.answer(new Number(20));
+
+
+        MultipleChoice<Text> q3 = new MultipleChoice<>("Hvad hedder dine forældre?");
+        q3.addOption(new Text("Bob"));
+        q3.addOption(new Text("Alice"));
+        q3.addOption(new Text("Charles"));
+
+        q3.answer(List.of(new Text("Alice"), new Text("Charles")));
+
+
+        SingleChoice<Text> q4 = new SingleChoice<>("Hvad hedder din mor?");
+        q4.addOption(new Text("Bob"));
+        q4.addOption(new Text("Alice"));
+        q4.addOption(new Text("Charles"));
+
+        q4.answer(new Text("Alice"));
+
+
+        SingleChoice<Text> q5 = new SingleChoice<>("Er du syg?");
+        q5.addOption(new Text("Ja"));
+        q5.addOption(new Text("Nej"));
+
+        q5.answer(new Text("Nej"));
+
+
+        SingleChoice<Number> q6 = new SingleChoice<>("Hvor måltider har du spist i dag?");
+        q6.addOption(new Number(1));
+        q6.addOption(new Number(2));
+        q6.addOption(new Number(3));
+        q6.addOption(new Number(4));
+
+        QuestionnaireModel questionnaire = new QuestionnaireModel();
+        questionnaire.setQuestions(List.of(q1, q2, q3, q4, q5, q6));
+
+        return ResponseEntity.accepted().body(questionnaire.toDto());
+    }
+
+
+    private void validateQuestions(List<BaseQuestionDto<?>> questions){
         if(questions == null || questions.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
@@ -215,7 +280,7 @@ public class QuestionnaireController extends BaseController {
             }
         }
     }
-    private Stream<QuestionDto> collectionToStream(Collection<QuestionDto> collection) {
+    private Stream<BaseQuestionDto<?>> collectionToStream(Collection<BaseQuestionDto<?>> collection) {
         return Optional.ofNullable(collection).stream().flatMap(Collection::stream);
     }
 }

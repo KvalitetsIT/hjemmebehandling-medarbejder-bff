@@ -15,8 +15,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestDto;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserRequestDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserResponseDto;
 
 public class CustomUserClient {
     private static final Logger logger = LoggerFactory.getLogger(CustomUserClient.class);
@@ -32,7 +32,7 @@ public class CustomUserClient {
     	this.restTemplate = restTemplate;
     }
 
-    public Optional<CustomUserResponseDto> createUser(CustomUserRequestDto userCreateRequest) throws JsonMappingException, JsonProcessingException {
+    public Optional<CustomUserResponseDto> createUser(CustomUserRequestDto userCreateRequest) throws JsonProcessingException {
     	if(patientidpApiUrl==null || patientidpApiUrl.isEmpty()) {
     		logger.info("The custom url: patientidp.api.url i not set. User not created in customuser");
     		return Optional.ofNullable(null);
@@ -51,7 +51,7 @@ public class CustomUserClient {
     
     
     // http://localhost:8080/api/v1/resetpassword
-    public void resetPassword(String cpr, String customUserLoginName) throws JsonMappingException, JsonProcessingException {
+    public void resetPassword(String cpr, String customUserLoginName) throws JsonProcessingException {
     	if("".equals(patientidpApiUrl)) {
     		logger.info("patientidpApiUrl is null. Cannot reset password");
     		return;

@@ -1,10 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireWrapperDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class QuestionnaireWrapperModel {
+public class QuestionnaireWrapperModel implements ToDto<QuestionnaireWrapperDto> {
     private QuestionnaireModel questionnaire;
     private FrequencyModel frequency;
     private Instant satisfiedUntil;
@@ -52,5 +57,20 @@ public class QuestionnaireWrapperModel {
 
     public void setThresholds(List<ThresholdModel> thresholds) {
         this.thresholds = thresholds;
+    }
+
+    @Override
+    public QuestionnaireWrapperDto toDto() {
+        QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
+
+        questionnaireWrapperDto.setQuestionnaire(this.getQuestionnaire().toDto());
+        if (this.getFrequency() != null) {
+            questionnaireWrapperDto.setFrequency(this.getFrequency().toDto());
+        }
+
+        questionnaireWrapperDto.setSatisfiedUntil(this.getSatisfiedUntil());
+        questionnaireWrapperDto.setThresholds( this.getThresholds().stream().map(ThresholdModel::toDto).collect(Collectors.toList()) );
+
+        return questionnaireWrapperDto;
     }
 }

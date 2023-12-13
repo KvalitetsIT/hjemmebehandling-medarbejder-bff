@@ -6,7 +6,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.api.dto.CarePlanDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PlanDefinitionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireFrequencyPairDto;
+import dk.kvalitetsit.hjemmebehandling.api.request.CreateCarePlanRequest;
+import dk.kvalitetsit.hjemmebehandling.api.request.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -88,7 +95,7 @@ public class CarePlanController extends BaseController {
             List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false), pagination);
 
             auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
-            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).collect(Collectors.toList()));
+            return ResponseEntity.ok(carePlans.stream().map(CarePlanModel::toDto).collect(Collectors.toList()));
         }
         catch(ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
@@ -118,11 +125,11 @@ public class CarePlanController extends BaseController {
             throw toStatusCodeException(e);
         }
 
-        if(!carePlan.isPresent()) {
+        if(carePlan.isEmpty()) {
             throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         auditLoggingService.log("GET /v1/careplan/"+id, carePlan.get().getPatient());
-        return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
+        return ResponseEntity.ok(carePlan.get().toDto());
     }
 
     @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")
@@ -134,7 +141,7 @@ public class CarePlanController extends BaseController {
     public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
-            CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
+            CarePlanModel carePlan = request.getCarePlan().toModel();
             carePlanId = carePlanService.createCarePlan(carePlan);
             auditLoggingService.log("POST /v1/careplan", carePlan.getPatient());
         }
@@ -239,7 +246,7 @@ public class CarePlanController extends BaseController {
 
 
             return ResponseEntity.ok(planDefinitions.stream()
-                    .map(dtoMapper::mapPlanDefinitionModel)
+                    .map(PlanDefinitionModel::toDto)
                     .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }

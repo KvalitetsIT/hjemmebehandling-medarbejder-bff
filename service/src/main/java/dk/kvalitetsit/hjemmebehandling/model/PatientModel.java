@@ -1,8 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import java.util.List;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PatientDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
 
-public class PatientModel {
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class PatientModel implements ToDto<PatientDto> {
     private QualifiedId id;
     private String givenName;
     private String familyName;
@@ -103,5 +107,28 @@ public class PatientModel {
 
     public void setPrimaryContact(PrimaryContactModel primaryContactModel) {
         this.primaryContactModel = primaryContactModel;
+    }
+
+    @Override
+    public PatientDto toDto() {
+        PatientDto patientDto = new PatientDto();
+
+        patientDto.setCpr(this.getCpr());
+        patientDto.setFamilyName(this.getFamilyName());
+        patientDto.setGivenName(this.getGivenName());
+        patientDto.setCustomUserName(this.getCustomUserName());
+        if(this.getContactDetails() != null) {
+            patientDto.setPatientContactDetails(this.getContactDetails().toDto());
+        }
+        patientDto.setPrimaryRelativeName(this.getPrimaryContact().getName());
+        patientDto.setPrimaryRelativeAffiliation(this.getPrimaryContact().getAffiliation());
+        if(this.getPrimaryContact().getContactDetails() != null) {
+            patientDto.setPrimaryRelativeContactDetails(this.getPrimaryContact().getContactDetails().toDto());
+        }
+        if(this.getAdditionalRelativeContactDetails() != null) {
+            patientDto.setAdditionalRelativeContactDetails(this.getAdditionalRelativeContactDetails().stream().map(ContactDetailsModel::toDto).collect(Collectors.toList()));
+        }
+
+        return patientDto;
     }
 }

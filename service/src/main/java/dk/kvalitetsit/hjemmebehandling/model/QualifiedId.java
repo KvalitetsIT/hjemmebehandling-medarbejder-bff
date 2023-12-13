@@ -4,7 +4,6 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class QualifiedId {
     private String id;
@@ -28,9 +27,8 @@ public class QualifiedId {
         if(!FhirUtils.isPlainId(parts[1])) {
             throw new IllegalArgumentException(String.format("Cannot unqualify id: %s! Illegal id", id));
         }
-        String id = parts[1];
 
-        this.id = id;
+        this.id = parts[1];
         this.qualifier = qualifier;
     }
 

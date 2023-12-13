@@ -13,8 +13,8 @@ import java.util.List;
 
 @Component
 public class AccessValidator {
-    private UserContextProvider userContextProvider;
-    private FhirClient fhirClient;
+    private final UserContextProvider userContextProvider;
+    private final FhirClient fhirClient;
 
     public AccessValidator(UserContextProvider userContextProvider, FhirClient fhirClient) {
         this.userContextProvider = userContextProvider;

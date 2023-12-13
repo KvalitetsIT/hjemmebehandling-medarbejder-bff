@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.BAD_GATEWAY)
 public class BadGatewayException extends RuntimeException {
-    private ErrorDetails errorDetails;
+    private final ErrorDetails errorDetails;
 
     public BadGatewayException(ErrorDetails errorDetails) {
         this.errorDetails = errorDetails;

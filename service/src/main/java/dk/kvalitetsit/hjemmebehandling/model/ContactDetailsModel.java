@@ -1,6 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class ContactDetailsModel {
+import dk.kvalitetsit.hjemmebehandling.api.dto.ContactDetailsDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+
+public class ContactDetailsModel implements ToDto<ContactDetailsDto> {
     private String street;
     private String postalCode;
     private String country;
@@ -66,5 +69,19 @@ public class ContactDetailsModel {
 
     public void setSecondaryPhone(String secondaryPhone) {
         this.secondaryPhone = secondaryPhone;
+    }
+
+    @Override
+    public ContactDetailsDto toDto() {
+        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
+
+        contactDetailsDto.setCountry(this.getCountry());
+        contactDetailsDto.setCity(this.getCity());
+        contactDetailsDto.setPrimaryPhone(this.getPrimaryPhone());
+        contactDetailsDto.setSecondaryPhone(this.getSecondaryPhone());
+        contactDetailsDto.setPostalCode(this.getPostalCode());
+        contactDetailsDto.setStreet(this.getStreet());
+
+        return contactDetailsDto;
     }
 }

@@ -25,7 +25,7 @@ public class UserController extends BaseController {
     }
 
     @GetMapping(value = "/v1/user")
-    public @ResponseBody UserContext getUser() throws JsonMappingException, JsonProcessingException {
+    public @ResponseBody UserContext getUser() throws JsonProcessingException {
         logger.info("Getting user context information");
         return userContextProvider.getUserContext();
     }

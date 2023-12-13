@@ -1,8 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.request.PartialUpdateQuestionnaireResponseRequest;
+import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;

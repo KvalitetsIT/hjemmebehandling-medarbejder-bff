@@ -1,6 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class MeasurementTypeModel {
+import dk.kvalitetsit.hjemmebehandling.api.dto.MeasurementTypeDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+
+// TODO: Update to record
+public class MeasurementTypeModel implements ToDto<MeasurementTypeDto> {
   private String system;
   private String code;
   private String display;
@@ -27,5 +31,16 @@ public class MeasurementTypeModel {
 
   public void setDisplay(String display) {
     this.display = display;
+  }
+
+  @Override
+  public MeasurementTypeDto toDto() {
+    MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
+
+    measurementTypeDto.setSystem(this.getSystem());
+    measurementTypeDto.setCode(this.getCode());
+    measurementTypeDto.setDisplay(this.getDisplay());
+
+    return measurementTypeDto;
   }
 }

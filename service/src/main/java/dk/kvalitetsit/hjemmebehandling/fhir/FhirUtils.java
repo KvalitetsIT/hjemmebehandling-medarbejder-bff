@@ -5,7 +5,7 @@ import org.hl7.fhir.r4.model.ResourceType;
 import java.util.regex.Pattern;
 
 public class FhirUtils {
-    private static Pattern plainIdPattern = Pattern.compile("^[a-z0-9\\-]+$");
+    private static final Pattern plainIdPattern = Pattern.compile("^[a-z0-9\\-]+$");
 
     public static String qualifyId(String id, ResourceType qualifier) {
         if(isQualifiedId(id, qualifier)) {

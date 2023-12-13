@@ -29,8 +29,8 @@ public enum ErrorDetails {
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
 
 
-    private String errorMessage;
-    private int errorCode;
+    private final String errorMessage;
+    private final int errorCode;
     private String details;
 
     ErrorDetails(String errorMessage, int errorCode) {

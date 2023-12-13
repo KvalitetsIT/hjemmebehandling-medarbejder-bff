@@ -36,13 +36,13 @@ import java.util.stream.Collectors;
  *  - Blå alarmer vises efter klokken 11.
  */
 public class FrequencyEnumerator {
-    private List<DayOfWeek> weekDays;
-    private LocalTime deadlineTime; //fx if you wanna say "Før kl 11", deadlineTime should be 11:00
+    private final List<DayOfWeek> weekDays;
+    private final LocalTime deadlineTime; //fx if you wanna say "Før kl 11", deadlineTime should be 11:00
 
     public FrequencyEnumerator(FrequencyModel frequency) {
         //currentPointInTime = seed;
         this.deadlineTime = frequency.getTimeOfDay();
-        this.weekDays = frequency.getWeekdays().stream().map(d -> toDayOfWeek(d)).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+        this.weekDays = frequency.getWeekdays().stream().map(this::toDayOfWeek).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
     }
 
     public Instant getSatisfiedUntilForFrequencyChange(Instant pointInTime) {
@@ -100,23 +100,15 @@ public class FrequencyEnumerator {
     }
 
     private DayOfWeek toDayOfWeek(Weekday weekday) {
-        switch(weekday) {
-            case MON:
-                return DayOfWeek.MONDAY;
-            case TUE:
-                return DayOfWeek.TUESDAY;
-            case WED:
-                return DayOfWeek.WEDNESDAY;
-            case THU:
-                return DayOfWeek.THURSDAY;
-            case FRI:
-                return DayOfWeek.FRIDAY;
-            case SAT:
-                return DayOfWeek.SATURDAY;
-            case SUN:
-                return DayOfWeek.SUNDAY;
-            default:
-                throw new IllegalArgumentException(String.format("Can't map Weekday: %s", weekday));
-        }
+        return switch (weekday) {
+            case MON -> DayOfWeek.MONDAY;
+            case TUE -> DayOfWeek.TUESDAY;
+            case WED -> DayOfWeek.WEDNESDAY;
+            case THU -> DayOfWeek.THURSDAY;
+            case FRI -> DayOfWeek.FRIDAY;
+            case SAT -> DayOfWeek.SATURDAY;
+            case SUN -> DayOfWeek.SUNDAY;
+            default -> throw new IllegalArgumentException(String.format("Can't map Weekday: %s", weekday));
+        };
     }
 }

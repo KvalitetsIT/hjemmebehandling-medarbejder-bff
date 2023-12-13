@@ -7,7 +7,7 @@ import org.hl7.fhir.r4.model.DomainResource;
 import java.util.List;
 
 public abstract class AccessValidatingService {
-    private AccessValidator accessValidator;
+    private final AccessValidator accessValidator;
 
     public AccessValidatingService(AccessValidator accessValidator) {
         this.accessValidator = accessValidator;

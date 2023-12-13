@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BundleBuilderTest {
-    private BundleBuilder subject = new BundleBuilder();
+    private final BundleBuilder subject = new BundleBuilder();
 
     private static final String CAREPLAN_ID = "careplan-1";
     private static final String PATIENT_ID = "patient-1";

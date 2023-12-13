@@ -2,10 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-import dk.kvalitetsit.hjemmebehandling.api.CreatePatientRequest;
+import dk.kvalitetsit.hjemmebehandling.api.request.CreatePatientRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PatientDto;
+import dk.kvalitetsit.hjemmebehandling.api.response.PatientListResponse;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
@@ -67,7 +65,7 @@ public class PatientController extends BaseController {
     public void createPatient(@RequestBody CreatePatientRequest request) {
         // Create the patient
         try {
-            PatientModel patient = dtoMapper.mapPatientDto(request.getPatient());
+            PatientModel patient = request.getPatient().toModel();
             patientService.createPatient(patient);
             auditLoggingService.log("POST /v1/patient", patient);
         }
@@ -89,7 +87,7 @@ public class PatientController extends BaseController {
         if(patient == null) {
             throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
         }
-        return dtoMapper.mapPatientModel(patient);
+        return patient.toDto();
     }
 
     @GetMapping(value = "/v1/patient/search")
@@ -122,7 +120,7 @@ public class PatientController extends BaseController {
     }
     
     @PutMapping(value = "/v1/resetpassword")
-    public void resetPassword(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
+    public void resetPassword(@RequestParam("cpr") String cpr) throws JsonProcessingException {
         logger.info("reset password for patient");
         PatientModel patientModel = patientService.getPatient(cpr);
         customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
@@ -136,7 +134,7 @@ public class PatientController extends BaseController {
     private PatientListResponse buildResponse(List<PatientModel> patients) {
         PatientListResponse response = new PatientListResponse();
 
-        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).collect(Collectors.toList()));
+        response.setPatients(patients.stream().map(PatientModel::toDto).collect(Collectors.toList()));
 
         return response;
     }

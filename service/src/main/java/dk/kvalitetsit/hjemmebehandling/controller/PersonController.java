@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PersonDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PersonDto;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +38,7 @@ public class PersonController extends BaseController {
         try {
             PersonModel personModel = personService.getPerson(cpr);
             auditLoggingService.log("GET /v1/person", personModel);
-            return dtoMapper.mapPersonModel(personModel);
+            return personModel.toDto();
         } catch(ServiceException e) {
             logger.error("Error fetching person", e);
             throw toStatusCodeException(e);

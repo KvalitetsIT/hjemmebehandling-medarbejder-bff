@@ -1,38 +1,22 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
-import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.api.dto.*;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
-import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 
 @Component
 public class DtoMapper {
+
+    /*
     public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
@@ -58,7 +42,9 @@ public class DtoMapper {
 
         return carePlanModel;
     }
+    */
 
+    /*
     public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
 
@@ -68,14 +54,15 @@ public class DtoMapper {
         carePlanDto.setCreated(carePlan.getCreated());
         carePlanDto.setStartDate(carePlan.getStartDate());
         carePlanDto.setEndDate(carePlan.getEndDate());
-        carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
+        carePlanDto.setPatientDto(carePlan.getPatient().intoDto());
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperModel).collect(Collectors.toList()));
-        carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(this::mapPlanDefinitionModel).collect(Collectors.toList()));
+        carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(PlanDefinitionModel::intoDto).collect(Collectors.toList()));
         carePlanDto.setDepartmentName(carePlan.getDepartmentName());
 
         return carePlanDto;
     }
-
+*/
+    /*
     public ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
         ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
 
@@ -88,6 +75,7 @@ public class DtoMapper {
 
         return contactDetailsModel;
     }
+    /*
 
     public ContactDetailsDto mapContactDetailsModel(ContactDetailsModel contactDetails) {
         ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
@@ -101,7 +89,7 @@ public class DtoMapper {
 
         return contactDetailsDto;
     }
-
+*/
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
@@ -116,7 +104,7 @@ public class DtoMapper {
 
         return frequencyModel;
     }
-
+/*
     public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
         FrequencyDto frequencyDto = new FrequencyDto();
 
@@ -126,7 +114,8 @@ public class DtoMapper {
 
         return frequencyDto;
     }
-
+*/
+    /*
     public PatientModel mapPatientDto(PatientDto patient) {
         PatientModel patientModel = new PatientModel();
 
@@ -147,7 +136,9 @@ public class DtoMapper {
 
         return patientModel;
     }
+*/
 
+    /*
     public PatientDto mapPatientModel(PatientModel patient) {
         PatientDto patientDto = new PatientDto();
 
@@ -169,7 +160,8 @@ public class DtoMapper {
 
         return patientDto;
     }
-
+*/
+    /*
     public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
@@ -188,6 +180,9 @@ public class DtoMapper {
 
         return planDefinitionModel;
     }
+    */
+
+    /*
 
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
@@ -205,31 +200,35 @@ public class DtoMapper {
 
         return planDefinitionDto;
     }
+*/
 
-    public ThresholdModel mapThresholdDto(ThresholdDto thresholdDto) {
-        ThresholdModel thresholdModel = new ThresholdModel();
+    /*
+     public ThresholdModel mapThresholdDto(ThresholdDto thresholdDto) {
+         ThresholdModel thresholdModel = new ThresholdModel();
 
-        thresholdModel.setQuestionnaireItemLinkId(thresholdDto.getQuestionId());
-        thresholdModel.setType(thresholdDto.getType());
-        thresholdModel.setValueBoolean(thresholdDto.getValueBoolean());
-        thresholdModel.setValueQuantityLow(thresholdDto.getValueQuantityLow());
-        thresholdModel.setValueQuantityHigh(thresholdDto.getValueQuantityHigh());
+         thresholdModel.setQuestionnaireItemLinkId(thresholdDto.getQuestionId());
+         thresholdModel.setType(thresholdDto.getType());
+         thresholdModel.setValueBoolean(thresholdDto.getValueBoolean());
+         thresholdModel.setValueQuantityLow(thresholdDto.getValueQuantityLow());
+         thresholdModel.setValueQuantityHigh(thresholdDto.getValueQuantityHigh());
 
-        return thresholdModel;
-    }
+         return thresholdModel;
+     }
+    */
+     /*
+     public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
+         ThresholdDto thresholdDto = new ThresholdDto();
 
-    public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
-        ThresholdDto thresholdDto = new ThresholdDto();
+         thresholdDto.setQuestionId(thresholdModel.getQuestionnaireItemLinkId());
+         thresholdDto.setType(thresholdModel.getType());
+         thresholdDto.setValueBoolean(thresholdModel.getValueBoolean());
+         thresholdDto.setValueQuantityLow(thresholdModel.getValueQuantityLow());
+         thresholdDto.setValueQuantityHigh(thresholdModel.getValueQuantityHigh());
 
-        thresholdDto.setQuestionId(thresholdModel.getQuestionnaireItemLinkId());
-        thresholdDto.setType(thresholdModel.getType());
-        thresholdDto.setValueBoolean(thresholdModel.getValueBoolean());
-        thresholdDto.setValueQuantityLow(thresholdModel.getValueQuantityLow());
-        thresholdDto.setValueQuantityHigh(thresholdModel.getValueQuantityHigh());
-
-        return thresholdDto;
-    }
-    
+         return thresholdDto;
+     }
+     */
+    /*
     public PersonDto mapPersonModel(PersonModel person) {
         PersonDto personDto = new PersonDto();
 
@@ -248,7 +247,9 @@ public class DtoMapper {
 
         return personDto;
     }
+    */
 
+    /*
     public QuestionnaireModel mapQuestionnaireDto(QuestionnaireDto questionnaireDto) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
@@ -264,7 +265,8 @@ public class DtoMapper {
 
         return questionnaireModel;
     }
-
+    */
+    /*
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
@@ -283,7 +285,9 @@ public class DtoMapper {
 
         return questionnaireDto;
     }
-    
+
+
+     */
 	public CustomUserRequestDto mapPatientModelToCustomUserRequest(PatientModel patientModel) {
         CustomUserRequestDto customUserRequestDto = new CustomUserRequestDto();
 
@@ -313,6 +317,7 @@ public class DtoMapper {
 		return initials;
 	}
 
+    /*
     public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
 
@@ -329,8 +334,10 @@ public class DtoMapper {
 
         return questionnaireResponseDto;
     }
+    */
 
-    private void mapBaseAttributesToModel(BaseModel target, BaseDto source, ResourceType resourceType) {
+
+    public static void mapBaseAttributesToModel(BaseModel target, BaseDto source, ResourceType resourceType) {
         if(source.getId() == null) {
             // OK, in case a resource is being created.
             return;
@@ -343,9 +350,10 @@ public class DtoMapper {
             target.setId(new QualifiedId(source.getId()));
         }
         else {
-            throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType.toString(), source.getId()));
+            throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType, source.getId()));
         }
     }
+    /*
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
         QuestionAnswerPairDto questionAnswerPairDto = new QuestionAnswerPairDto();
@@ -354,8 +362,10 @@ public class DtoMapper {
 
         return questionAnswerPairDto;
     }
-
+*/
+/*
     public QuestionModel mapQuestionDto(QuestionDto questionDto) {
+
         QuestionModel questionModel = new QuestionModel();
 
         questionModel.setLinkId(questionDto.getLinkId());
@@ -389,7 +399,6 @@ public class DtoMapper {
         return measurementTypeModel;
     }
 
-
     private QuestionDto mapQuestionModel(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
         questionDto.setDeprecated(questionModel.isDeprecated());
@@ -411,16 +420,9 @@ public class DtoMapper {
         }
         return questionDto;
     }
+    */
 
-    private AnswerDto mapAnswerModel(AnswerModel answerModel) {
-        AnswerDto answerDto = new AnswerDto();
-        answerDto.setLinkId(answerModel.getLinkId());
-        answerDto.setValue(answerModel.getValue());
-        answerDto.setAnswerType(answerModel.getAnswerType());
-
-        return answerDto;
-    }
-
+    /*
     private QuestionnaireWrapperModel mapQuestionnaireWrapperDto(QuestionnaireWrapperDto questionnaireWrapper) {
         QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
 
@@ -432,7 +434,20 @@ public class DtoMapper {
 
         return questionnaireWrapperModel;
     }
+    */
 
+
+    /*
+    private AnswerDto mapAnswerModel(AnswerModel answerModel) {
+        AnswerDto answerDto = new AnswerDto();
+        answerDto.setLinkId(answerModel.getLinkId());
+        answerDto.setValue(answerModel.getValue());
+        answerDto.setAnswerType(answerModel.getAnswerType());
+
+        return answerDto;
+    }
+*/
+    /*
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
         QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
 
@@ -445,7 +460,8 @@ public class DtoMapper {
 
         return questionnaireWrapperDto;
     }
-
+*/
+    /*
     public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
         MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
 
@@ -455,6 +471,8 @@ public class DtoMapper {
 
         return measurementTypeDto;
     }
+
+    */
 }
 
 

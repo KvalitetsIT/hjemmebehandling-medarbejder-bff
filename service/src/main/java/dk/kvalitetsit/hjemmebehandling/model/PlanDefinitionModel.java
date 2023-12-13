@@ -1,13 +1,16 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class PlanDefinitionModel extends BaseModel {
+public class PlanDefinitionModel extends BaseModel implements ToDto<PlanDefinitionDto> {
     private String name;
     private String title;
     private PlanDefinitionStatus status;
@@ -68,5 +71,23 @@ public class PlanDefinitionModel extends BaseModel {
 
     public void setQuestionnaires(List<QuestionnaireWrapperModel> questionnaires) {
         this.questionnaires = questionnaires;
+    }
+
+    @Override
+    public PlanDefinitionDto toDto() {
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+
+        planDefinitionDto.setId(this.getId().toString());
+        planDefinitionDto.setName(this.getName());
+        planDefinitionDto.setTitle(this.getTitle());
+        planDefinitionDto.setStatus(this.getStatus().toString());
+        planDefinitionDto.setCreated(this.getCreated());
+        planDefinitionDto.setLastUpdated(this.getLastUpdated());
+        // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
+        if(this.getQuestionnaires() != null) {
+            planDefinitionDto.setQuestionnaires(this.getQuestionnaires().stream().map(QuestionnaireWrapperModel::toDto).collect(Collectors.toList()));
+        }
+
+        return planDefinitionDto;
     }
 }

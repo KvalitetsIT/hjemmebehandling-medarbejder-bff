@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 public class PrimaryContactModel {
 
     private ContactDetailsModel contactDetails;
+
     private String name;
     /**
      * How the primary contact relates to the patient. It may be mother, brother, friend etc.

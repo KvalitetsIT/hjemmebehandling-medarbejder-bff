@@ -26,9 +26,9 @@ public class QuestionnaireResponsePriorityComparatorTest {
 
     @Test
     public void ensure_correct_triagingCategoryPriority_order() {
-        assertTrue((TriagingCategory.GREEN.getPriority() - TriagingCategory.GREEN.getPriority()) == 0);
-        assertTrue((TriagingCategory.YELLOW.getPriority() - TriagingCategory.YELLOW.getPriority()) == 0);
-        assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.RED.getPriority()) == 0);
+        assertEquals((0), 0);
+        assertEquals((0), 0);
+        assertEquals((0), 0);
 
         assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.YELLOW.getPriority()) < 0);
         assertTrue((TriagingCategory.RED.getPriority() - TriagingCategory.GREEN.getPriority()) < 0);
@@ -42,9 +42,9 @@ public class QuestionnaireResponsePriorityComparatorTest {
 
     @Test
     public void ensure_correct_examinationStatusPriority_order() {
-        assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.UNDER_EXAMINATION.getPriority()) == 0);
-        assertTrue((ExaminationStatus.NOT_EXAMINED.getPriority() - ExaminationStatus.NOT_EXAMINED.getPriority()) == 0);
-        assertTrue((ExaminationStatus.EXAMINED.getPriority() - ExaminationStatus.EXAMINED.getPriority()) == 0);
+        assertEquals((0), 0);
+        assertEquals((0), 0);
+        assertEquals((0), 0);
 
         assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.NOT_EXAMINED.getPriority()) < 0);
         assertTrue((ExaminationStatus.UNDER_EXAMINATION.getPriority() - ExaminationStatus.EXAMINED.getPriority()) < 0);
@@ -66,9 +66,9 @@ public class QuestionnaireResponsePriorityComparatorTest {
         // Act
 
         // Assert
-        assertTrue( subject.compare(green, green) == 0);
-        assertTrue( subject.compare(yellow, yellow) == 0);
-        assertTrue( subject.compare(red, red) == 0);
+        assertEquals(0, subject.compare(green, green));
+        assertEquals(0, subject.compare(yellow, yellow));
+        assertEquals(0, subject.compare(red, red));
 
         assertTrue( subject.compare(green, yellow) > 0);
         assertTrue( subject.compare(green, red) > 0);
@@ -90,9 +90,9 @@ public class QuestionnaireResponsePriorityComparatorTest {
         // Act
 
         // Assert
-        assertTrue( subject.compare(examined, examined) == 0);
-        assertTrue( subject.compare(notExamined, notExamined) == 0);
-        assertTrue( subject.compare(underExamination, underExamination) == 0);
+        assertEquals(0, subject.compare(examined, examined));
+        assertEquals(0, subject.compare(notExamined, notExamined));
+        assertEquals(0, subject.compare(underExamination, underExamination));
 
         assertTrue( subject.compare(examined, underExamination) > 0);
         assertTrue( subject.compare(examined, notExamined) > 0);
@@ -115,8 +115,8 @@ public class QuestionnaireResponsePriorityComparatorTest {
         // Act
 
         // Assert
-        assertTrue( subject.compare(first, first) == 0);
-        assertTrue( subject.compare(last, last) == 0);
+        assertEquals(0, subject.compare(first, first));
+        assertEquals(0, subject.compare(last, last));
 
         assertTrue( subject.compare(first, last) < 0);
         assertTrue( subject.compare(last, first) > 0);

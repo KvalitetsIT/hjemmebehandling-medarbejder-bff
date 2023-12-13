@@ -15,9 +15,9 @@ import java.util.List;
 public class ValueSetService {
     private static final Logger logger = LoggerFactory.getLogger(ValueSetService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
 
     public ValueSetService(FhirClient fhirClient, FhirMapper fhirMapper) {
         this.fhirClient = fhirClient;
@@ -29,7 +29,7 @@ public class ValueSetService {
         FhirLookupResult lookupResult = fhirClient.lookupValueSet();
 
         List<MeasurementTypeModel> result = new ArrayList<>();
-        lookupResult.getValueSets().stream()
+        lookupResult.getValueSets()
             .forEach(vs -> {
                 var list = fhirMapper.extractMeasurementTypes(vs);
                 result.addAll(list);

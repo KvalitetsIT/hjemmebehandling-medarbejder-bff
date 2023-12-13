@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.CustomUserResponseDto;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
@@ -27,11 +27,11 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
     
-    private DtoMapper dtoMapper;
+    private final DtoMapper dtoMapper;
     
     private CustomUserClient customUserService;
 
@@ -77,22 +77,18 @@ public class PatientService extends AccessValidatingService {
     public PatientModel getPatient(String cpr) {
         // Look up the patient
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
-            return null;
-        }
+        return patient.map(fhirMapper::mapPatient).orElse(null);
 
         // Map to the domain model
-        return fhirMapper.mapPatient(patient.get());
     }
 
     boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
-        var patientIsInList = listToSearchForPatient
+        return listToSearchForPatient
                 .stream().
                 anyMatch(listP -> Objects.equals(
                         fhirMapper.extractCpr(listP),
                         fhirMapper.extractCpr(patientToSearchFor)
                 ));
-        return patientIsInList;
     }
 
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) {
@@ -114,7 +110,7 @@ public class PatientService extends AccessValidatingService {
         return patients
                 .stream()
                 .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
-                .map(p -> fhirMapper.mapPatient(p))
+                .map(fhirMapper::mapPatient)
                 .collect(Collectors.toList());
     }
 
@@ -139,7 +135,7 @@ public class PatientService extends AccessValidatingService {
         // Map the resources
         return lookupResult.getPatients()
             .stream()
-            .map(p -> fhirMapper.mapPatient(p))
+            .map(fhirMapper::mapPatient)
             .collect(Collectors.toList());
     }
 }
