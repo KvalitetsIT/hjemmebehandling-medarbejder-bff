@@ -20,7 +20,7 @@ public abstract class BaseQuestion<T extends Answer<?>> implements Model<BaseQue
         this.text = text;
     }
 
-    public abstract void answer(Answer<?> answer);
+    public abstract void answer(T answer);
     public abstract T getAnswer();
 
     public boolean isDeprecated() {

@@ -5,7 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import java.util.List;
 import java.util.Set;
 
-public class MultipleChoice<T extends Answer> extends SingleChoice<T> {
+public class MultipleChoice<T extends Answer<?>> extends SingleChoice<T> {
 
     private List<T> answers;
 

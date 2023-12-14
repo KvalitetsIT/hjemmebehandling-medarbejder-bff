@@ -92,12 +92,11 @@ public abstract class BaseQuestionDto<T extends Answer> implements Dto<BaseQuest
 
 
     /**
-     * Since this abstract class cannot have the toModel method this is intended as a workaround
+     * Since this abstract class cannot have the toModel method this is intended as a workaround.
      * It mutates the model with the base fields
      * @param model
      */
-    protected void decorateModel(dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion<dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer> model) {
-
+    protected void decorateModel(dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion<dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer<?>> model) {
         model.setAbbreviation(this.abbreviation);
         model.setHelperText(this.getHelperText());
         model.setRequired(isRequired());

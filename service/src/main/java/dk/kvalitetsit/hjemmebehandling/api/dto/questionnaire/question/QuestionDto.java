@@ -22,7 +22,7 @@ public class QuestionDto<T extends Answer> extends BaseQuestionDto<T> {
 
     @Override
     public BaseQuestion<?> toModel() {
-        Question<dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer> questionModel = new Question<>(this.getText());
+        Question<dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer<?>> questionModel = new Question<>(this.getText());
 
         questionModel.setLinkId(this.getLinkId());
         questionModel.setAbbreviation(this.getAbbreviation());

@@ -7,7 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion
 import java.util.HashSet;
 import java.util.Set;
 
-abstract class Choice<T extends Answer> extends BaseQuestion<T> {
+public abstract class Choice<T extends Answer<?>> extends BaseQuestion<T> {
 
     private HashSet<T> options = new HashSet<>();
 

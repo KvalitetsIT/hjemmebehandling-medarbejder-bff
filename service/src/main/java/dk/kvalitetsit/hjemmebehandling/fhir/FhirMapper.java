@@ -15,6 +15,7 @@ import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Measurement;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Choice.SingleChoice;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import org.hl7.fhir.r4.model.*;
 
@@ -393,8 +394,9 @@ public class FhirMapper {
             BaseQuestion<?> question;
             try {
                 question = getQuestion(questionnaire, item.getLinkId());
-                Answer<?> t = getAnswer(item);
-                question.answer(t);
+
+                // TODO: Temporarily excluded
+                //question.answer(getAnswer(item).getValue());
                 questions.add( question );
 
             }   catch (IllegalStateException e) {
@@ -439,7 +441,8 @@ public class FhirMapper {
             Answer<?> answer = getAnswer(item);
 
             if (question != null) {
-                question.answer(answer);
+                // TODO: Temporarily excluded
+                // question.setAnswer(answer.getValue());
             }
             questions.add(question);
         }
@@ -793,14 +796,30 @@ public class FhirMapper {
         item.setText(question.getText());
         item.setRequired(question.isRequired());
 
-        if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+        if (question instanceof SingleChoice<?> choice){
+            if (choice.getOptions() != null) {
+                item.setAnswerOption( mapAnswerOptions(choice.getOptions().stream().map(String::valueOf).collect(Collectors.toList())) );
+            }
         }
-        item.setType( mapQuestionType(question.getQuestionType()) );
+
+        item.setType( getTypeFromQuestion(question) );
         if (question.getEnableWhens() != null) {
             item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
         }
         return item;
+    }
+
+    private Questionnaire.QuestionnaireItemType getTypeFromQuestion(BaseQuestion<?> question) {
+
+        if(question.getAnswer() instanceof Measurement measurement) {
+            return Questionnaire.QuestionnaireItemType.QUANTITY;
+        }else if (question.getAnswer() instanceof Text text) {
+            return Questionnaire.QuestionnaireItemType.STRING;
+        }else if (question.getAnswer() instanceof Number number) {
+            return Questionnaire.QuestionnaireItemType.INTEGER;
+        }
+        throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s",question.getAnswer().getClass().getTypeName()));
+
     }
 
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<BaseQuestion.EnableWhen> enableWhens) {
@@ -1025,11 +1044,11 @@ public class FhirMapper {
     }
     public static Type getValue(Answer<?> answer) {
         if (answer instanceof Number) {
-            return new IntegerType(answer.getValue());
+            return new IntegerType(String.valueOf(answer.getValue()));
         }else if (answer instanceof Measurement) {
-            return new Quantity(Double.parseDouble(answer.getValue()));
+            return new Quantity((double) answer.getValue());
         }else if (answer instanceof Text) {
-            return new StringType(answer.getValue());
+            return new StringType(String.valueOf(answer.getValue()));
         }
         throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getClass().getName()));
     }

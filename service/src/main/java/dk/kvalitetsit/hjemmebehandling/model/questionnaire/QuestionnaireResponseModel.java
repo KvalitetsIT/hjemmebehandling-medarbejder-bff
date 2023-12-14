@@ -21,7 +21,7 @@ public class QuestionnaireResponseModel extends BaseModel implements Model<Quest
     private QualifiedId authorId;
     private QualifiedId sourceId;
     private String questionnaireName;
-    private List<BaseQuestion<? extends Answer>> questions;
+    private List<BaseQuestion<? extends Answer<?>>> questions;
     private Instant answered;
     private ExaminationStatus examinationStatus;
     private PractitionerModel examinationAuthor;
@@ -74,7 +74,7 @@ public class QuestionnaireResponseModel extends BaseModel implements Model<Quest
         return questions;
     }
 
-    public void setQuestions(List<BaseQuestion<? extends Answer>> questions) {
+    public void setQuestions(List<BaseQuestion<? extends Answer<?>>> questions) {
         this.questions = questions;
     }
 

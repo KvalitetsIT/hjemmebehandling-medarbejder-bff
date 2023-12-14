@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuesti
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 
-public class Question<T extends Answer> extends BaseQuestion<T> {
+public class Question<T extends Answer<?>> extends BaseQuestion<T> {
 
     private T answer;
 
@@ -13,9 +13,11 @@ public class Question<T extends Answer> extends BaseQuestion<T> {
     }
 
     @Override
-    public void answer(Answer<?> answer) {
+    public void answer(T answer) {
         this.answer = answer;
+
     }
+
 
     public T getAnswer() {
         return answer;

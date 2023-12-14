@@ -6,7 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 
 import java.util.HashSet;
 
-public class SingleChoice<T extends Answer> extends Choice<T> {
+public class SingleChoice<T extends Answer<?>> extends Choice<T> {
 
     private T answer;
 
@@ -14,7 +14,7 @@ public class SingleChoice<T extends Answer> extends Choice<T> {
         super(text);
     }
 
-    public void answer(Answer<?> answer) {
+    public void answer(T answer) {
         if (!this.getOptions().contains(answer)){
             throw new IllegalArgumentException("The answer is invalid. It does not match the given options");
         }
