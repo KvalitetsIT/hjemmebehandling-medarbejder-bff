@@ -1,24 +1,20 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireDto;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
-import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.api.request.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.request.PatchQuestionnaireRequest;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
@@ -116,7 +112,14 @@ public class QuestionnaireController extends BaseController {
 
     @Operation(summary = "Create a new Questionnaire.", description = "Create a Questionnaire.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Successful operation.", headers = { @Header(name = "Location", description = "URL pointing to the created Questionnaire.")}, content = @Content),
+        @ApiResponse(
+                responseCode = "201",
+                description = "Successful operation.",
+                headers = { @Header(
+                        name = "Location",
+                        description = "URL pointing to the created Questionnaire."
+                )},
+                content = @Content(schema = @Schema(implementation = QuestionnaireDto.class))),
         @ApiResponse(responseCode = "500", description = "Error during creation of Questionnaire.", content = @Content(schema = @Schema(implementation = ErrorDto.class)))
     })
     @PostMapping(value = "/v1/questionnaire", consumes = { "application/json" })
@@ -126,7 +129,7 @@ public class QuestionnaireController extends BaseController {
         QuestionnaireModel questionnaire = request.getQuestionnaire().toModel();
         
         List<BaseQuestion<?>> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
-                .map(ToModel::toModel)
+                .map(Dto::toModel)
                 .collect(Collectors.toList());
         questionnaire.setCallToActions(callToActions);
         
@@ -151,11 +154,11 @@ public class QuestionnaireController extends BaseController {
 
             List<BaseQuestion<?>> questions = request.getQuestions()
                     .stream()
-                .map(ToModel::toModel)
+                .map(Dto::toModel)
                 .collect(Collectors.toList());
 
             List<BaseQuestion<?>> callToActions = collectionToStream(request.getCallToActions())
-                .map(ToModel::toModel)
+                .map(Dto::toModel)
                 .collect(Collectors.toList());
 
             questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);

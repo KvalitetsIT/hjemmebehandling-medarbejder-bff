@@ -1,23 +1,27 @@
-package dk.kvalitetsit.hjemmebehandling.model;
+package dk.kvalitetsit.hjemmebehandling.model.questionnaire;
 
-import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.response.QuestionnaireResponseDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PractitionerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QuestionnaireResponseModel extends BaseModel implements ToDto<QuestionnaireResponseDto> {
+public class QuestionnaireResponseModel extends BaseModel implements Model<QuestionnaireResponseDto> {
     private QualifiedId questionnaireId;
     private QualifiedId carePlanId;
     private QualifiedId authorId;
     private QualifiedId sourceId;
     private String questionnaireName;
-    private List<BaseQuestion<?>> questions;
+    private List<BaseQuestion<? extends Answer>> questions;
     private Instant answered;
     private ExaminationStatus examinationStatus;
     private PractitionerModel examinationAuthor;
@@ -70,7 +74,7 @@ public class QuestionnaireResponseModel extends BaseModel implements ToDto<Quest
         return questions;
     }
 
-    public void setQuestions(List<BaseQuestion<?>> questions) {
+    public void setQuestions(List<BaseQuestion<? extends Answer>> questions) {
         this.questions = questions;
     }
 

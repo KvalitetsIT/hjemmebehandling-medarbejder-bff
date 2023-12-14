@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;

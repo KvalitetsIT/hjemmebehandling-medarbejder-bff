@@ -9,16 +9,13 @@ import java.util.stream.Collectors;
 public class QuestionDto<T extends Answer> extends BaseQuestionDto<T> {
 
     private T answer;
-
     public QuestionDto(String text) {
         super(text);
     }
-
     @Override
     public void answer(T answer) {
         this.answer = answer;
     }
-
     public T getAnswer() {
         return answer;
     }
@@ -32,7 +29,7 @@ public class QuestionDto<T extends Answer> extends BaseQuestionDto<T> {
 
         questionModel.setEnableWhens(this.getEnableWhens()
                 .stream()
-                .map(EnableWhen::toDto)
+                .map(EnableWhen::toModel)
                 .collect(Collectors.toList())
         );
         questionModel.answer(this.getAnswer().toModel());

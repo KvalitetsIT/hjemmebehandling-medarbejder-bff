@@ -1,9 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
 
-public class PersonDto implements ToModel<PersonModel> {
+public class PersonDto implements Dto<PersonModel> {
 	private String cpr;
     private String givenName;
     private String familyName;

@@ -1,7 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -11,12 +9,9 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -24,7 +19,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +29,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class PlanDefinitionService extends AccessValidatingService {

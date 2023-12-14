@@ -1,15 +1,17 @@
-package dk.kvalitetsit.hjemmebehandling.api.dto;
+package dk.kvalitetsit.hjemmebehandling.api.response;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.BaseDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.PatientDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireResponseModel;
 
 import java.time.Instant;
 import java.util.List;
 
-public class QuestionnaireResponseDto extends BaseDto implements ToModel<QuestionnaireResponseModel> {
+public class QuestionnaireResponseDto extends BaseDto implements Dto<QuestionnaireResponseModel> {
     private String questionnaireId;
     private String carePlanId;
     private String questionnaireName;

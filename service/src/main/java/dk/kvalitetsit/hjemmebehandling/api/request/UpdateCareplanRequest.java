@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api.request;
 
-import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireFrequencyPairDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireFrequencyPairDto;
 
 import java.util.List;
 

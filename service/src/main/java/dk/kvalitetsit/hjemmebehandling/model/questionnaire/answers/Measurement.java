@@ -2,12 +2,16 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers;
 
 import java.util.Objects;
 
-public class Measurement extends Answer {
+public class Measurement extends Answer<Double> {
 
     private double value;
     private String system;
     private String code;
     private String display;
+
+    public Measurement(double value) {
+        this.value = value;
+    }
 
     public Measurement(double value, String system, String code, String display) {
         this.value = value;
@@ -40,7 +44,7 @@ public class Measurement extends Answer {
         this.display = display;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 

@@ -9,7 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.api.dto.CarePlanDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.PlanDefinitionDto;
-import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireFrequencyPairDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireFrequencyPairDto;
 import dk.kvalitetsit.hjemmebehandling.api.request.CreateCarePlanRequest;
 import dk.kvalitetsit.hjemmebehandling.api.request.UpdateCareplanRequest;
 import dk.kvalitetsit.hjemmebehandling.model.*;

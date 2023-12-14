@@ -9,7 +9,11 @@ import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Measurement;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import org.hl7.fhir.r4.model.*;
@@ -22,7 +26,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -359,7 +363,7 @@ public class FhirMapper {
         questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId().toString());
 
         for(var question : questionnaireResponseModel.getQuestions()) {
-            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(adaptAnswer(question.getAnswer())));
+            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(question.getAnswer()));
         }
         questionnaireResponse.setBasedOn(List.of(new Reference(questionnaireResponseModel.getCarePlanId().toString())));
         questionnaireResponse.setAuthor(new Reference(questionnaireResponseModel.getAuthorId().toString()));
@@ -389,7 +393,8 @@ public class FhirMapper {
             BaseQuestion<?> question;
             try {
                 question = getQuestion(questionnaire, item.getLinkId());
-                question.answer(adaptAnswerModel(getAnswer(item)));
+                Answer<?> t = getAnswer(item);
+                question.answer(t);
                 questions.add( question );
 
             }   catch (IllegalStateException e) {
@@ -410,14 +415,13 @@ public class FhirMapper {
         QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
 
         // Populate questionAnswerMap
-        List<BaseQuestion<? extends Answer>> questions = new ArrayList<>();
+        List<BaseQuestion<? extends Answer<?>>> questions = new ArrayList<>();
 
         //Look through all the given questionnaires
         for(var item : questionnaireResponse.getItem()) {
             BaseQuestion<?> question = null;
             boolean deprecated = false;
             int i = 0;
-
 
             for (Questionnaire q : historicalQuestionnaires) {
                 if (i > 0) deprecated = true;
@@ -427,28 +431,15 @@ public class FhirMapper {
                     question.setDeprecated(deprecated);
                     break;
                 } catch (IllegalStateException e) {
-                    if (!hasNext)
-                        throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
+                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
                 }
                 i++;
             }
 
-            /*for (Questionnaire q : historicalQuestionnaires) {
-                if (i > 0) deprecated = true;
-                boolean hasNext = i < historicalQuestionnaires.size()-1;
-                try {
-                    question = getQuestion(q, item.getLinkId());
-                    question.setDeprecated(deprecated);
-                    break;
-                }catch (IllegalStateException e) {
-                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
-                }
-                i++;
-            }*/
+            Answer<?> answer = getAnswer(item);
 
-            AnswerModel answer = getAnswer(item);
             if (question != null) {
-                question.answer(adaptAnswerModel(answer));
+                question.answer(answer);
             }
             questions.add(question);
         }
@@ -797,17 +788,18 @@ public class FhirMapper {
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(BaseQuestion<?> question) {
         Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
 
-//      TODO: Must be implemented. Temporarily excluded
-//        item.setLinkId(question.getLinkId());
-//        item.setText(question.getText());
-//        item.setRequired(question.isRequired());
-//        if (question.getOptions() != null) {
-//            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
-//        }
-//        item.setType( mapQuestionType(question.getQuestionType()) );
-//        if (question.getEnableWhens() != null) {
-//            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
-//        }
+        // TODO: Must be implemented. Temporarily excluded
+        item.setLinkId(question.getLinkId());
+        item.setText(question.getText());
+        item.setRequired(question.isRequired());
+
+        if (question.getOptions() != null) {
+            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+        }
+        item.setType( mapQuestionType(question.getQuestionType()) );
+        if (question.getEnableWhens() != null) {
+            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+        }
         return item;
     }
 
@@ -845,31 +837,27 @@ public class FhirMapper {
         return newEnableWhen;
     }
 
-    private AnswerModel mapAnswer(String question, Type answer) {
-        AnswerModel answerModel = new AnswerModel();
+    private Answer<?> mapAnswer(String question, Type answer) {
+        Answer<?> answerModel = getAnswer(answer);
         answerModel.setLinkId(question);
 
+        return answerModel;
+    }
+
+    private static Answer<?> getAnswer(Type answer) {
         if (answer instanceof StringType) {
-            answerModel.setAnswerType(AnswerType.STRING);
-            answerModel.setValue( ((StringType)answer).asStringValue() );
+            return new Text(((StringType) answer).asStringValue());
         }
         else if (answer instanceof BooleanType) {
-            answerModel.setAnswerType(AnswerType.BOOLEAN);
-            answerModel.setValue(((BooleanType) answer).asStringValue() );
+            // TODO: Handle boolean case
         }
         else if (answer instanceof Quantity) {
-            answerModel.setAnswerType(AnswerType.QUANTITY);
-            answerModel.setValue(((Quantity) answer).getValueElement().asStringValue() );
+            return new Measurement(Double.parseDouble(((Quantity) answer).getValueElement().asStringValue()) );
         }
         else if (answer instanceof IntegerType) {
-            answerModel.setAnswerType(AnswerType.INTEGER);
-            answerModel.setValue(((IntegerType) answer).asStringValue() );
+            return new Number(Double.parseDouble(((IntegerType) answer).asStringValue()));
         }
-        else {
-            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
-        }
-
-        return answerModel;
+        throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
     }
 
     private Questionnaire.QuestionnaireItemOperator mapEnableWhenOperator(EnableWhenOperator operator) {
@@ -934,27 +922,33 @@ public class FhirMapper {
         };
     }
 
-    private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
-        AnswerModel answer = new AnswerModel();
+    private Answer<?> getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
 
         var answerItem = extractAnswerItem(item);
+        var answer = getAnswerItem(answerItem);
+
         answer.setLinkId(item.getLinkId());
 
+        return answer;
+    }
+
+    private static Answer<?> getAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
+
         if(answerItem.hasValueStringType()) {
-            answer.setValue(answerItem.getValue().primitiveValue());
+            return new Text(answerItem.getValue().primitiveValue());
         }
         else if(answerItem.hasValueIntegerType()) {
-            answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+            return new Number(Integer.parseInt(answerItem.getValueIntegerType().primitiveValue()));
         }
         else if(answerItem.hasValueQuantity()) {
-            answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
+            return new Measurement(Double.parseDouble(answerItem.getValueQuantity().getValueElement().primitiveValue()));
         }
         else if(answerItem.hasValueBooleanType()) {
-            answer.setValue(answerItem.getValueBooleanType().primitiveValue());
-        }
-        answer.setAnswerType(getAnswerType(answerItem));
 
-        return answer;
+            // TODO: Handle the boolean type
+
+        }
+        throw new IllegalStateException("Could not recognize answer type");
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent extractAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
@@ -1014,24 +1008,8 @@ public class FhirMapper {
         return detail;
     }
 
-    private <T extends Answer> AnswerModel adaptAnswer(T answer){
-        var model = new AnswerModel();
 
-        // TODO: implement the conversion
-
-        return model;
-    }
-
-    private <T extends Answer> T adaptAnswerModel(AnswerModel answer){
-        var a = new Text("");
-
-        // TODO: implement the conversion
-
-        return (T) a;
-    }
-
-
-    private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
+    private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(Answer<?> answer) {
         var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
 
         item.setLinkId(answer.getLinkId());
@@ -1040,23 +1018,20 @@ public class FhirMapper {
         return item;
     }
 
-    private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(AnswerModel answer) {
+    private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(Answer<?> answer) {
         var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
-
         answerItem.setValue(getValue(answer));
-
         return answerItem;
     }
-
-    public static Type getValue(AnswerModel answer) {
-        return switch (answer.getAnswerType()) {
-            case INTEGER -> new IntegerType(answer.getValue());
-            case STRING -> new StringType(answer.getValue());
-            case QUANTITY -> new Quantity(Double.parseDouble(answer.getValue()));
-            case BOOLEAN -> new BooleanType(answer.getValue());
-            default ->
-                    throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
-        };
+    public static Type getValue(Answer<?> answer) {
+        if (answer instanceof Number) {
+            return new IntegerType(answer.getValue());
+        }else if (answer instanceof Measurement) {
+            return new Quantity(Double.parseDouble(answer.getValue()));
+        }else if (answer instanceof Text) {
+            return new StringType(answer.getValue());
+        }
+        throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getClass().getName()));
     }
 
     private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {

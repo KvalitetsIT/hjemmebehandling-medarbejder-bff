@@ -1,7 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireWrapperDto;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import org.hl7.fhir.r4.model.ResourceType;
 
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 import static dk.kvalitetsit.hjemmebehandling.api.DtoMapper.mapBaseAttributesToModel;
 
-public class PlanDefinitionDto extends BaseDto implements ToModel<PlanDefinitionModel> {
+public class PlanDefinitionDto extends BaseDto implements Dto<PlanDefinitionModel> {
     private String name;
     private String title;
     private String status;
@@ -77,17 +78,14 @@ public class PlanDefinitionDto extends BaseDto implements ToModel<PlanDefinition
 
         planDefinitionModel.setName(this.getName());
         planDefinitionModel.setTitle(this.getTitle());
-        if(this.getStatus() != null) {
-            planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, this.getStatus()));
-        }
         planDefinitionModel.setCreated(this.getCreated());
-        // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
-        if(this.getQuestionnaires() != null) {
-            planDefinitionModel.setQuestionnaires(this.getQuestionnaires().stream().map(QuestionnaireWrapperDto::toModel).collect(Collectors.toList()));
-        }
+
+        // Consider throwing an error if any of the subsequent fields return null
+        if(this.getStatus() != null) planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, this.getStatus()));
+        if(this.getQuestionnaires() != null) planDefinitionModel.setQuestionnaires(this.getQuestionnaires().stream().map(QuestionnaireWrapperDto::toModel).collect(Collectors.toList()));
+
 
         return planDefinitionModel;
-
     }
 
 

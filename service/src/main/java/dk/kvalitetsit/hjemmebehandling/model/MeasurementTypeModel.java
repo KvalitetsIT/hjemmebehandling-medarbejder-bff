@@ -1,10 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.MeasurementTypeDto;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 
 // TODO: Update to record
-public class MeasurementTypeModel implements ToDto<MeasurementTypeDto> {
+public class MeasurementTypeModel implements Model<MeasurementTypeDto> {
   private String system;
   private String code;
   private String display;

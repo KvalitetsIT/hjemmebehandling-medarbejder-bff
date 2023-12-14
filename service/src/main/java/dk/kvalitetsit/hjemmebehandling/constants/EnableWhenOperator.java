@@ -1,9 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.constants;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 import org.hl7.fhir.r4.model.Questionnaire;
 
-public enum EnableWhenOperator implements ToDto<Questionnaire.QuestionnaireItemOperator> {
+public enum EnableWhenOperator  {
   EQUAL("="), GREATER_THAN(">"), LESS_THAN("<"), GREATER_OR_EQUAL(">="), LESS_OR_EQUAL("<=");
 
   private final String code;
@@ -12,7 +12,7 @@ public enum EnableWhenOperator implements ToDto<Questionnaire.QuestionnaireItemO
     this.code = code;
   }
 
-  @Override
+
   public Questionnaire.QuestionnaireItemOperator toDto() {
       return switch (this) {
           case EQUAL -> Questionnaire.QuestionnaireItemOperator.EQUAL;

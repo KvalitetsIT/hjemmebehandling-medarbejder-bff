@@ -15,11 +15,9 @@ public class MultipleChoice<T extends Answer> extends SingleChoice<T> {
 
     public void answer(List<T> answers) {
         Set<T> options = this.getOptions();
-
         if(!options.containsAll(answers) ) {
-            throw new IllegalArgumentException("The answers is invalid. It does not match the given options");
+            throw INVALID_ANSWER_EXCEPTION;
         }
-
         this.answers = answers;
     }
 

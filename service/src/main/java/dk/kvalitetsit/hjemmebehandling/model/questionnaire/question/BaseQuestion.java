@@ -1,34 +1,26 @@
 package dk.kvalitetsit.hjemmebehandling.model.questionnaire.question;
 
-import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
-import org.hl7.fhir.r4.model.Questionnaire;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper.getValue;
-
-public abstract class BaseQuestion<T extends Answer> implements ToDto<QuestionDto<?>> {
+public abstract class BaseQuestion<T extends Answer<?>> implements Model<BaseQuestionDto<?>> {
     private String linkId;
     private String text;
     private String abbreviation;
     private String helperText;
     private boolean required;
-    //private QuestionType questionType;
-
     private List<EnableWhen> enableWhens;
-
     private boolean deprecated;
-
-
     public BaseQuestion(String text) {
         this.text = text;
     }
 
-    public abstract void answer(T answer);
+    public abstract void answer(Answer<?> answer);
     public abstract T getAnswer();
 
     public boolean isDeprecated() {
@@ -79,16 +71,6 @@ public abstract class BaseQuestion<T extends Answer> implements ToDto<QuestionDt
         this.required = required;
     }
 
-    /*
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public void setQuestionType(QuestionType questionType) {
-        this.questionType = questionType;
-    }
-    */
-
     public List<EnableWhen> getEnableWhens() {
         return enableWhens;
     }
@@ -97,18 +79,35 @@ public abstract class BaseQuestion<T extends Answer> implements ToDto<QuestionDt
         this.enableWhens = enableWhens;
     }
 
+    /**
+     * Since this abstract class cannot have the toDTO method this is intended as a workaround
+     * It mutates the dto with the base fields
+     * @param dto
+     */
+    protected void decorateDto(BaseQuestionDto<?> dto){
+
+        dto.setHelperText(this.getHelperText());
+        dto.setAbbreviation(this.getAbbreviation());
+        dto.setDeprecated(this.isDeprecated());
+
+        if (this.getEnableWhens() != null) dto.setEnableWhens(this.getEnableWhens().stream().map(EnableWhen::toDto).collect(Collectors.toList()));
+
+        dto.setRequired(this.isRequired());
+        dto.setLinkId(this.getLinkId());
+
+    }
 
 
 
-    public static class EnableWhen implements ToDto<Questionnaire.QuestionnaireItemEnableWhenComponent> {
-        private AnswerModel answer; // contains linkId for another question and desired answer[type,value]
+    public static class EnableWhen implements Model<BaseQuestionDto.EnableWhen> {
+        private Answer<?> answer; // contains linkId for another question and desired answer[type,value]
         private EnableWhenOperator operator;
 
-        public AnswerModel getAnswer() {
+        public Answer<?> getAnswer() {
             return answer;
         }
 
-        public void setAnswer(AnswerModel answer) {
+        public void setAnswer(Answer<?> answer) {
             this.answer = answer;
         }
 
@@ -122,16 +121,11 @@ public abstract class BaseQuestion<T extends Answer> implements ToDto<QuestionDt
 
 
         @Override
-        public Questionnaire.QuestionnaireItemEnableWhenComponent toDto() {
-            Questionnaire.QuestionnaireItemEnableWhenComponent enableWhenComponent = new Questionnaire.QuestionnaireItemEnableWhenComponent();
+        public BaseQuestionDto.EnableWhen toDto() {
+            BaseQuestionDto.EnableWhen enableWhenComponent = new BaseQuestionDto.EnableWhen();
 
-            enableWhenComponent.setOperator( this.getOperator().toDto() );
-            enableWhenComponent.setQuestion(this.getAnswer().getLinkId());
-            enableWhenComponent.setAnswer(getValue(this.getAnswer()));
-            enableWhenComponent.setOperator(this.getOperator().toDto());
-
-
-            // TODO: Determine which question this is
+            enableWhenComponent.setAnswer(this.answer.toDto());
+            enableWhenComponent.setOperator(this.operator);
 
             return enableWhenComponent;
         }

@@ -1,6 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
-public class MeasurementTypeDto {
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
+import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+
+public class MeasurementTypeDto implements Dto<MeasurementTypeModel> {
   private String system;
   private String code;
   private String display;
@@ -27,5 +30,10 @@ public class MeasurementTypeDto {
 
   public void setDisplay(String display) {
     this.display = display;
+  }
+
+  @Override
+  public MeasurementTypeModel toModel() {
+    return null;
   }
 }

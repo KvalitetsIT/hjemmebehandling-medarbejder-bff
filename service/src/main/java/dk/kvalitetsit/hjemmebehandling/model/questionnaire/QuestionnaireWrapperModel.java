@@ -1,15 +1,16 @@
-package dk.kvalitetsit.hjemmebehandling.model;
+package dk.kvalitetsit.hjemmebehandling.model.questionnaire;
 
-import dk.kvalitetsit.hjemmebehandling.api.dto.QuestionnaireWrapperDto;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireWrapperDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
+import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QuestionnaireWrapperModel implements ToDto<QuestionnaireWrapperDto> {
+public class QuestionnaireWrapperModel implements Model<QuestionnaireWrapperDto> {
     private QuestionnaireModel questionnaire;
     private FrequencyModel frequency;
     private Instant satisfiedUntil;

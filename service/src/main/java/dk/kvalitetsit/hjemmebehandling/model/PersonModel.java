@@ -2,9 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.ContactDetailsDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.PersonDto;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 
-public class PersonModel implements ToDto<PersonDto> {
+public class PersonModel implements Model<PersonDto> {
     private String resourceType;
     private PersonIdentifierModel identifier;
     private boolean active;

@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.BaseQuestion;
 
@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QuestionnaireModel extends BaseModel implements ToDto<QuestionnaireDto> {
+public class QuestionnaireModel extends BaseModel implements Model<QuestionnaireDto> {
     private String title;
     private String description;
     private QuestionnaireStatus status;
@@ -88,10 +88,10 @@ public class QuestionnaireModel extends BaseModel implements ToDto<Questionnaire
         questionnaireDto.setLastUpdated(this.getLastUpdated());
 
         if(this.getQuestions() != null) {
-            questionnaireDto.setQuestions(this.getQuestions().stream().map(x -> x.toDto()).collect(Collectors.toList()));
+            questionnaireDto.setQuestions(this.getQuestions().stream().map(Model::toDto).collect(Collectors.toList()));
         }
         if(this.getCallToActions() != null) {
-            questionnaireDto.setCallToActions(this.getCallToActions().stream().map(ToDto::toDto).collect(Collectors.toList()));
+            questionnaireDto.setCallToActions(this.getCallToActions().stream().map(Model::toDto).collect(Collectors.toList()));
         }
 
         return questionnaireDto;

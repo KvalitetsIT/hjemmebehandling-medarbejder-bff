@@ -1,14 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.FrequencyDto;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
-public class FrequencyModel implements ToDto<FrequencyDto> {
+public class FrequencyModel implements Model<FrequencyDto> {
     private List<Weekday> weekdays;
     private LocalTime timeOfDay;
 

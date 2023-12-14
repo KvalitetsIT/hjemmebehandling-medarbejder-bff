@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model.questionnaire.question;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
 
@@ -12,7 +13,7 @@ public class Question<T extends Answer> extends BaseQuestion<T> {
     }
 
     @Override
-    public void answer(T answer) {
+    public void answer(Answer<?> answer) {
         this.answer = answer;
     }
 
@@ -21,10 +22,14 @@ public class Question<T extends Answer> extends BaseQuestion<T> {
     }
 
     @Override
-    public QuestionDto<?> toDto() {
+    public BaseQuestionDto<? extends dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer> toDto() {
 
-        //TODO: must be mapped into the correct QuestionDto
-        return new QuestionDto<>(this.getText());
+        var dto = new QuestionDto<>(this.getText());
 
+        decorateDto(dto);
+
+        if (this.answer != null) dto.answer(this.answer.toDto());
+
+        return dto;
     }
 }

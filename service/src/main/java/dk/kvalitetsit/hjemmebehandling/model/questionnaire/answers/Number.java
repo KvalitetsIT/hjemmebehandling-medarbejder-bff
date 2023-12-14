@@ -2,16 +2,16 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers;
 
 import java.util.Objects;
 
-public class Number extends Answer{
+public class Number extends Answer<Double>{
 
-    private final double value;
+    private final Double value;
 
 
     public Number(double value) {
         this.value = value;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 

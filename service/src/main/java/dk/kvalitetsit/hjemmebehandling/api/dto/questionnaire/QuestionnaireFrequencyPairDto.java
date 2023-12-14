@@ -1,4 +1,6 @@
-package dk.kvalitetsit.hjemmebehandling.api.dto;
+package dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire;
+
+import dk.kvalitetsit.hjemmebehandling.api.dto.FrequencyDto;
 
 public class QuestionnaireFrequencyPairDto{
     String id;

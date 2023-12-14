@@ -2,12 +2,15 @@ package dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.BaseDto;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
-import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.Choice.MultipleChoice;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.Choice.SingleChoice;
 import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.QuestionDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.question.BaseQuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hl7.fhir.r4.model.ResourceType;
 
 import java.util.Date;
@@ -16,10 +19,13 @@ import java.util.stream.Collectors;
 
 import static dk.kvalitetsit.hjemmebehandling.api.DtoMapper.mapBaseAttributesToModel;
 
-public class QuestionnaireDto extends BaseDto implements ToModel<QuestionnaireModel> {
+public class QuestionnaireDto extends BaseDto implements Dto<QuestionnaireModel> {
     private String title;
     private String status;
+
     private List<BaseQuestionDto<?>> questions;
+
+
     private List<BaseQuestionDto<?>> callToActions;
     private String version;
     private Date lastUpdated;
@@ -87,7 +93,7 @@ public class QuestionnaireDto extends BaseDto implements ToModel<QuestionnaireMo
             questionnaireModel.setQuestions(
                     this.getQuestions()
                             .stream()
-                            .map(ToModel::toModel)
+                            .map(Dto::toModel)
                             .collect(Collectors.toList()));
         }
 

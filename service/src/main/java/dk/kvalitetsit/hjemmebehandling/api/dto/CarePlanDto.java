@@ -1,7 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
+import dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.QuestionnaireWrapperDto;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import org.hl7.fhir.r4.model.ResourceType;
 
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 import static dk.kvalitetsit.hjemmebehandling.api.DtoMapper.mapBaseAttributesToModel;
 
-public class CarePlanDto extends BaseDto implements ToModel<CarePlanModel> {
+public class CarePlanDto extends BaseDto implements Dto<CarePlanModel> {
     private String title;
     private String status;
     private Instant created;

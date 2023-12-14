@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers;
 
 import java.util.Objects;
 
-public class Text extends Answer {
+public class Text extends Answer<String> {
     private String value;
 
     public Text(String value) {

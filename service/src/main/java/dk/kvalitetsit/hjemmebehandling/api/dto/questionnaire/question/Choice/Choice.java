@@ -8,6 +8,7 @@ import java.util.Set;
 
 abstract class Choice<T extends Answer> extends BaseQuestionDto<T> {
 
+    protected static IllegalArgumentException INVALID_ANSWER_EXCEPTION= new IllegalArgumentException("The answers is invalid. It does not match the given options");
     private HashSet<T> options = new HashSet<>();
 
     public Choice(String text) {

@@ -1,11 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 
-public abstract class Answer implements ToDto<dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer> {
+public abstract class Answer<T> implements Model<dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer> {
 
     private String linkId;
-
 
     public String getLinkId() {
         return linkId;
@@ -16,5 +15,8 @@ public abstract class Answer implements ToDto<dk.kvalitetsit.hjemmebehandling.ap
     }
 
     public abstract int hashCode();
+
+    public abstract T getValue();
+
 
 }

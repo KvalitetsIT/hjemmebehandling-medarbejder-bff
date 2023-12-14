@@ -1,9 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
 
-public class ContactDetailsDto implements ToModel<ContactDetailsModel> {
+public class ContactDetailsDto implements Dto<ContactDetailsModel> {
     private String street;
     private String postalCode;
     private String country;

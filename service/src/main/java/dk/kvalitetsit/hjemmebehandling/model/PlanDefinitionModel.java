@@ -3,14 +3,15 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PlanDefinitionModel extends BaseModel implements ToDto<PlanDefinitionDto> {
+public class PlanDefinitionModel extends BaseModel implements Model<PlanDefinitionDto> {
     private String name;
     private String title;
     private PlanDefinitionStatus status;

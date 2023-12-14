@@ -1,11 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
 
-public class ThresholdDto implements ToModel<ThresholdModel> {
+public class ThresholdDto implements Dto<ThresholdModel> {
     private String questionId;
     private ThresholdType type;
     private Boolean valueBoolean;

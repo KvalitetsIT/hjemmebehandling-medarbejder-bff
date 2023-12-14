@@ -11,6 +11,7 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

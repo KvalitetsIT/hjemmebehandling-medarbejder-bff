@@ -1,10 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.ThresholdDto;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
-public class ThresholdModel implements ToDto<ThresholdDto> {
+public class ThresholdModel implements Model<ThresholdDto> {
   private String questionnaireItemLinkId;
   private ThresholdType type;
   private Double valueQuantityLow;

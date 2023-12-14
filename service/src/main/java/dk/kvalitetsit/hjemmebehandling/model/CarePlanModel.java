@@ -2,13 +2,14 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.api.dto.CarePlanDto;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.mapping.ToDto;
+import dk.kvalitetsit.hjemmebehandling.mapping.Model;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CarePlanModel extends BaseModel implements ToDto<CarePlanDto> {
+public class CarePlanModel extends BaseModel implements Model<CarePlanDto> {
     private String title;
     private CarePlanStatus status;
     private Instant created;

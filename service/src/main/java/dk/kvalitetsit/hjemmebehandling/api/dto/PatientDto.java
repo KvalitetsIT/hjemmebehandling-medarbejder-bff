@@ -1,12 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.api.dto;
 
-import dk.kvalitetsit.hjemmebehandling.mapping.ToModel;
+import dk.kvalitetsit.hjemmebehandling.mapping.Dto;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PatientDto extends BaseDto  implements ToModel<PatientModel> {
+public class PatientDto extends BaseDto  implements Dto<PatientModel> {
 
     private String givenName;
     private String familyName;
