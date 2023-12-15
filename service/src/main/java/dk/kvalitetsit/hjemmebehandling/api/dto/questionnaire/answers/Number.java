@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers;
 
 import java.util.Objects;
 
-public class Number extends Answer {
+public class Number extends Answer<Double> {
 
     private final double value;
 
@@ -29,7 +29,7 @@ public class Number extends Answer {
     }
 
     @Override
-    public dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer toModel() {
+    public dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer<Double> toModel() {
         return new dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number(this.value);
     }
 }

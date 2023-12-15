@@ -12,10 +12,10 @@ import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.QuestionnaireWrapperModel;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Answer;
-import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Measurement;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Number;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers.Text;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Choice.SingleChoice;
+import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Measurement;
 import dk.kvalitetsit.hjemmebehandling.model.questionnaire.question.Question;
 import org.hl7.fhir.r4.model.*;
 
@@ -724,29 +724,56 @@ public class FhirMapper {
     }
 
     private BaseQuestion<?> mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
-        BaseQuestion<?> question = new Question<>(item.getText());
+
+        BaseQuestion<?> question = createQuestionFromItem(item);
 
         question.setLinkId(item.getLinkId());
         //question.setText(item.getText());
         question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
         question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
         question.setRequired(item.getRequired());
-//
-//       TODO: Must be implemented. Temporarily excluded
-//        if(item.getAnswerOption() != null) {
-//            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
-//        }
-//        question.setQuestionType( mapQuestionType(item.getType()) );
-//        if (item.hasEnableWhen()) {
-//            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
-//        }
-//        if (item.hasCode()) {
-//            question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
-//        }
-//
-//        question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
+
+
+        if (item.hasEnableWhen()) {
+            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
+        }
+
+        if (question != null) return question;
+
 
         return question;
+    }
+
+    private BaseQuestion<?> createQuestionFromItem(Questionnaire.QuestionnaireItemComponent item) {
+        switch (item.getType()){
+            case CHOICE -> {
+                // Handle choice - multipleChoice / singleChoice
+                // TODO: determine what type options is before instantiating the question below as TEXT
+                SingleChoice<Text> question = new SingleChoice<>(item.getText());
+                if(item.getAnswerOption() != null ) {
+                    question.setOptions( new HashSet<>(mapAnswerOptionComponents(item.getAnswerOption()).stream().map(Text::new).collect(Collectors.toList())) );
+                }
+                return question;
+            }
+            case INTEGER -> {
+                // Handle standard question with number
+                Question<Number> question = new Question<>(item.getText());
+                // TODO: add additional fields for question
+                return question;
+            }
+            case QUANTITY -> {
+                // Handle measurement
+                Measurement<Number> question = new Measurement<>(item.getText());
+                question.set
+                question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
+                question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
+
+                return question;
+            }
+        }
+
+
+        return null;
     }
 
     private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {

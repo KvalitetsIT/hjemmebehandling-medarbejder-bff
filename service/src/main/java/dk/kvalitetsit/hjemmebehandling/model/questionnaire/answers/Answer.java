@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.model.questionnaire.answers;
 
 import dk.kvalitetsit.hjemmebehandling.mapping.Model;
 
-public abstract class Answer<T> implements Model<dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer> {
+public abstract class Answer<T> implements Model<dk.kvalitetsit.hjemmebehandling.api.dto.questionnaire.answers.Answer<T>> {
 
     private String linkId;
 
