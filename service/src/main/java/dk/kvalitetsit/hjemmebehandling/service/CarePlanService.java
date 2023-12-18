@@ -603,4 +603,8 @@ public class CarePlanService extends AccessValidatingService {
     }
 
 
+    public TimeType getDefaultDeadlineTime() {
+        Organization organization = fhirClient.getCurrentUsersOrganization();
+         return ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension());
+    }
 }
