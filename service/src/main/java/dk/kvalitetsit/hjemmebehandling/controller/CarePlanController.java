@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.api.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.TimeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -134,6 +135,12 @@ public class CarePlanController extends BaseController {
     public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
         String carePlanId = null;
         try {
+            // force time for deadline to organization configured default.
+            if (request.getCarePlan().getQuestionnaires() != null) {
+                TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
+                request.getCarePlan().getQuestionnaires().forEach(q -> q.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+            }
+
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
             carePlanId = carePlanService.createCarePlan(carePlan);
             auditLoggingService.log("POST /v1/careplan", carePlan.getPatient());
@@ -257,6 +264,10 @@ public class CarePlanController extends BaseController {
     }
 
     private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
+        // force time for deadline to organization configured default.
+        TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
+        questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+
         return questionnaireFrequencyPairs
                 .stream()
                 .collect(Collectors.toMap(

@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
@@ -102,6 +103,24 @@ public class ExtensionMapperTest {
     }
 
     @Test
+    public void mapOrganizationDeadlineTimeDefault_success() {
+        // Arrange
+        TimeType defaultTime = new TimeType("11:00");
+
+        // Act
+        Extension result = ExtensionMapper.mapOrganizationDeadlineTimeDefault(defaultTime);
+        Organization organization = new Organization();
+        organization.addExtension(result);
+        System.out.println( FhirContext.forR4().newXmlParser().setPrettyPrint(true).encodeResourceToString(organization) );
+
+        // Assert
+        assertEquals(Systems.ORGANIZATION_QUESTIONNAIRE_DEADLINE_TIME_DEFAULT, result.getUrl());
+        assertEquals(TimeType.class, result.getValue().getClass());
+        assertEquals(defaultTime,  result.getValue());
+        assertEquals(defaultTime.getValue(), ((TimeType) result.getValue()).getValue());
+    }
+
+    @Test
     public void extractActivitySatisfiedUntil_success() {
         // Arrange
         Extension extension = new Extension(Systems.ACTIVITY_SATISFIED_UNTIL, new DateTimeType(Date.from(Instant.parse("2021-12-07T10:11:12.124Z"))));
@@ -135,6 +154,19 @@ public class ExtensionMapperTest {
 
         // Assert
         assertEquals("Organization/organization-1", result);
+    }
+
+    @Test
+    public void extractOrganizationDeadlineTimeDefault_success() {
+        // Arrange
+        TimeType time = new TimeType("11:00");
+        Extension extension = new Extension(Systems.ORGANIZATION_QUESTIONNAIRE_DEADLINE_TIME_DEFAULT, time);
+
+        // Act
+        TimeType result = ExtensionMapper.extractOrganizationDeadlineTimeDefault(List.of(extension));
+
+        // Assert
+        assertEquals(time, result);
     }
 
     @Test

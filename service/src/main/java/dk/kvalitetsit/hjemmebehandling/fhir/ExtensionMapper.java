@@ -19,6 +19,7 @@ import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Range;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
@@ -57,6 +58,10 @@ public class ExtensionMapper {
 
     public static Extension mapOrganizationId(String organizationId) {
         return buildReferenceExtension(Systems.ORGANIZATION, organizationId);
+    }
+
+    public static Extension mapOrganizationDeadlineTimeDefault(TimeType time) {
+        return new Extension(Systems.ORGANIZATION_QUESTIONNAIRE_DEADLINE_TIME_DEFAULT, time);
     }
 
     public static List<Extension> mapThresholds(List<ThresholdModel> thresholds) {
@@ -99,6 +104,10 @@ public class ExtensionMapper {
 
     public static String extractOrganizationId(List<Extension> extensions) {
         return extractReferenceFromExtensions(extensions, Systems.ORGANIZATION);
+    }
+
+    public static TimeType extractOrganizationDeadlineTimeDefault(List<Extension> extensions) {
+        return extractFromExtensions(extensions, Systems.ORGANIZATION_QUESTIONNAIRE_DEADLINE_TIME_DEFAULT, v -> ((TimeType) v));
     }
     
     public static String extractCustomUserId(List<Extension> extensions) {

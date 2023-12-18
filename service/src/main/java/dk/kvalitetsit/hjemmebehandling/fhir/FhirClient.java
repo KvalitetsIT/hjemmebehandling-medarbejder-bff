@@ -555,6 +555,13 @@ public class FhirClient {
     }
 
     public String getOrganizationId() {
+        Organization organization = getCurrentUsersOrganization();
+
+        var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
+        return organizationId;
+    }
+
+    public Organization getCurrentUsersOrganization() {
         var context = userContextProvider.getUserContext();
         if(context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
@@ -563,8 +570,7 @@ public class FhirClient {
         var organization = lookupOrganizationBySorCode(context.getOrgId())
                 .orElseThrow(() -> new IllegalStateException(String.format("No Organization was present for sorCode %s!", context.getOrgId())));
 
-        var organizationId = organization.getIdElement().toUnqualifiedVersionless().getValue();
-        return organizationId;
+        return organization;
     }
 
     public Practitioner getOrCreateUserAsPractitioner() {

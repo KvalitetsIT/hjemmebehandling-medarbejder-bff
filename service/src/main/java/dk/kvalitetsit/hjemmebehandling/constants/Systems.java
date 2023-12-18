@@ -9,6 +9,7 @@ public class Systems {
     public static final String EXAMINATION_STATUS = "http://hjemmebehandling.rm.dk/examination-status";
     public static final String EXAMINATION_AUTHOR = "http://hjemmebehandling.rm.dk/examination-author";
     public static final String ORGANIZATION = "http://hjemmebehandling.rm.dk/organization";
+    public static final String ORGANIZATION_QUESTIONNAIRE_DEADLINE_TIME_DEFAULT = "http://hjemmebehandling.rm.dk/organization-questionnaire-deadline-time-default";
     public static final String TRIAGING_CATEGORY = "http://hjemmebehandling.rm.dk/triaging-category";
     public static final String ACTIVITY_SATISFIED_UNTIL = "http://hjemmebehandling.rm.dk/activity-satisfied-until";
     public static final String CAREPLAN_SATISFIED_UNTIL = "http://hjemmebehandling.rm.dk/careplan-satisfied-until";

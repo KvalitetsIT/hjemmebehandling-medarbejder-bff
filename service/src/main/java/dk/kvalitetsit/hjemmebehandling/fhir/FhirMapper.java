@@ -1116,6 +1116,20 @@ public class FhirMapper {
 
         wrapper.setThresholds( ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD)) );
 
+        // initialize timeofday from responsible organization
+        String organizationId = ExtensionMapper.extractOrganizationId(questionnaire.getExtension());
+        Organization organization = lookupResult
+                .getOrganization(organizationId)
+                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Organization with id %s!", organizationId)));
+
+        TimeType timeType = ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension());
+        if (timeType != null) {
+            Timing timing = new Timing();
+            timing.getRepeat().getTimeOfDay().add(timeType);
+            wrapper.setFrequency(mapTiming(timing));
+        }
+
+
         return wrapper;
     }
 
