@@ -165,14 +165,14 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
 
         FrequencyDto frequencyDto1 = new FrequencyDto();
         frequencyDto1.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
-        frequencyDto1.setTimeOfDay("15:43");
+        frequencyDto1.setTimeOfDay("11:00");
         request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
                 .id("Questionnaire/questionnaire-1")
                 .frequency(frequencyDto1));
 
         FrequencyDto frequencyDto2 = new FrequencyDto();
         frequencyDto2.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.WED));
-        frequencyDto2.setTimeOfDay("05:00");
+        frequencyDto2.setTimeOfDay("11:00");
         request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
                 .id("Questionnaire/questionnaire-2")
                 .frequency(frequencyDto2));
@@ -197,7 +197,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Order(7)
     public void resolveAlarm_success() throws Exception {
         // Arrange
-        String id = "careplan-2";
+        String id = "careplan-1";
         String questionnaireId1 = "questionnaire-1";
 
         // Act
