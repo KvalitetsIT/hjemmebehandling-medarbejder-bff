@@ -111,7 +111,7 @@ public class CarePlanService extends AccessValidatingService {
             var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
 
             if (carePlan.getPatient().getPrimaryContact() != null) {
-                newPatient.getContact().get(0).setOrganization(new Reference(fhirClient.getOrganizationId()));
+                newPatient.getContactFirstRep().setOrganization(new Reference(fhirClient.getOrganizationId()));
 
                 var oldContacts = patient.get().getContact();
                 var newContacts = newPatient.getContact();
