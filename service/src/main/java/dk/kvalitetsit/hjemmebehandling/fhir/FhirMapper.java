@@ -273,12 +273,7 @@ public class FhirMapper {
                 var contact = optionalContact.get();
                 patientModel.getPrimaryContact().setName(contact.getName().getText());
                 patientModel.getPrimaryContact().setOrganisation(contact.getOrganization().getReference());
-
-                for(var coding : contact.getRelationshipFirstRep().getCoding()) {
-                    if(coding.getSystem().equals(Systems.CONTACT_RELATIONSHIP)) {
-                        patientModel.getPrimaryContact().setAffiliation(coding.getCode());
-                    }
-                }
+                patientModel.getPrimaryContact().setAffiliation( contact.getRelationshipFirstRep().getText() );
 
                 // Extract phone numbers
                 if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
