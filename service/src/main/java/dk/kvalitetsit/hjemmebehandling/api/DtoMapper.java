@@ -261,6 +261,9 @@ public class DtoMapper {
         if(questionnaireDto.getQuestions() != null) {
             questionnaireModel.setQuestions(questionnaireDto.getQuestions().stream().map(this::mapQuestionDto).collect(Collectors.toList()));
         }
+        if (questionnaireDto.getCallToAction() != null) {
+            questionnaireModel.setCallToAction(this.mapQuestionDto(questionnaireDto.getCallToAction()));
+        }
 
         return questionnaireModel;
     }
@@ -277,8 +280,8 @@ public class DtoMapper {
         if(questionnaireModel.getQuestions() != null) {
             questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
         }
-        if(questionnaireModel.getCallToActions() != null) {
-            questionnaireDto.setCallToActions(questionnaireModel.getCallToActions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
+        if(questionnaireModel.getCallToAction() != null) {
+            questionnaireDto.setCallToAction(mapQuestionModel(questionnaireModel.getCallToAction()));
         }
 
         return questionnaireDto;

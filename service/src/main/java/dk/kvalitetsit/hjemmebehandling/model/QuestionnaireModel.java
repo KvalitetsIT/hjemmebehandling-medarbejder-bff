@@ -12,7 +12,7 @@ public class QuestionnaireModel extends BaseModel {
     private String description;
     private QuestionnaireStatus status;
     private List<QuestionModel> questions;
-    private List<QuestionModel> callToActions;
+    private QuestionModel callToAction;
     private String version;
     private Date lastUpdated;
 
@@ -56,12 +56,12 @@ public class QuestionnaireModel extends BaseModel {
         return version;
     }
 
-    public List<QuestionModel> getCallToActions() {
-        return callToActions;
+    public QuestionModel getCallToAction() {
+        return callToAction;
     }
 
-    public void setCallToActions(List<QuestionModel> callToActions) {
-        this.callToActions = callToActions;
+    public void setCallToAction(QuestionModel callToAction) {
+        this.callToAction = callToAction;
     }
 
     public void setLastUpdated(Date lastUpdated) {

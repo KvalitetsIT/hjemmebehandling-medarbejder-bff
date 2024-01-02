@@ -327,7 +327,9 @@ public class FhirMapper {
         questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
             .map(questionModel -> mapQuestionnaireItem(questionModel))
             .collect(Collectors.toList()));
-        questionnaire.getItem().addAll(mapQuestionnaireCallToActions(questionnaireModel.getCallToActions()));
+        if (questionnaireModel.getCallToAction() != null) {
+            questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.getCallToAction()));
+        }
         questionnaire.setVersion(questionnaireModel.getVersion());
 
         return questionnaire;
@@ -343,12 +345,13 @@ public class FhirMapper {
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
         questionnaireModel.setQuestions(questionnaire.getItem().stream()
-            .filter(type -> !type.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // filter out call-to-action's
+            .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
             .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
-        questionnaireModel.setCallToActions(questionnaire.getItem().stream()
-            .filter(q -> q.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // process call-to-action's
-            .flatMap(group -> group.getItem().stream())
-            .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
+        questionnaireModel.setCallToAction(questionnaire.getItem().stream()
+                .filter(q -> q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // process call-to-action's
+                .findFirst()
+                .map(item -> mapQuestionnaireItem(item))
+                .orElse(null));
         questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
     }
@@ -798,25 +801,12 @@ public class FhirMapper {
         return item;
     }
 
-    private List<Questionnaire.QuestionnaireItemComponent> mapQuestionnaireCallToActions(List<QuestionModel> callToActions) {
-        List<Questionnaire.QuestionnaireItemComponent> result = new ArrayList<>();
-        if (callToActions == null || callToActions.isEmpty()) {
-            return result;
-        }
+    private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToActions(QuestionModel callToAction) {
+        Questionnaire.QuestionnaireItemComponent item = mapQuestionnaireItem(callToAction);
+        item.setType(Questionnaire.QuestionnaireItemType.DISPLAY);
+        item.setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
 
-        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
-        item.setType(Questionnaire.QuestionnaireItemType.GROUP);
-
-        int counter = 1;
-        for (QuestionModel callToAction : callToActions) {
-            Questionnaire.QuestionnaireItemComponent cta = mapQuestionnaireItem(callToAction);
-            cta.setLinkId(String.format("call-to-action%s", counter++));
-
-            item.addItem(cta);
-        }
-
-        result.add(item);
-        return result;
+        return item;
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(QuestionModel question) {

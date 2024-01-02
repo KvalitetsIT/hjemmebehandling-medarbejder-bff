@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -121,7 +122,7 @@ public class QuestionnaireServiceTest {
         String nullLinkId = null; // this should trigger the system to set new random uuid with prefix 'urn:uuid'";
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
         questionnaireModel.setQuestions( List.of( buildQuestionModel(linkId), buildQuestionModel(nullLinkId) ));
-        questionnaireModel.setCallToActions( List.of( buildQuestionModel(linkId), buildQuestionModel(nullLinkId) ));
+        questionnaireModel.setCallToAction( buildQuestionModel(nullLinkId) );
 
         Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
 
@@ -135,10 +136,8 @@ public class QuestionnaireServiceTest {
         assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().startsWith("urn:uuid")));
         assertTrue(questionnaireModel.getQuestions().stream().noneMatch(q -> q.getLinkId().equals(nullLinkId)));
 
-        assertEquals(2, questionnaireModel.getCallToActions().size());
-        assertTrue(questionnaireModel.getCallToActions().stream().anyMatch(cta -> cta.getLinkId().equals(linkId)));
-        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().startsWith("urn:uuid")));
-        assertTrue(questionnaireModel.getCallToActions().stream().noneMatch(cta -> cta.getLinkId().equals(nullLinkId)));
+        assertNotNull(questionnaireModel.getCallToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.getCallToAction().getLinkId());
     }
 
     @Test
@@ -148,7 +147,7 @@ public class QuestionnaireServiceTest {
         String newDescription = "new description";
         String newStatus = "ACTIVE";
         List<QuestionModel> newQuestions = List.of(new QuestionModel());
-        List<QuestionModel> newCallToActions = List.of(new QuestionModel());
+        QuestionModel newCallToAction = new QuestionModel();
 
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
@@ -158,7 +157,7 @@ public class QuestionnaireServiceTest {
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         // Act
-        subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, newTitle, newDescription, newStatus, newQuestions, newCallToActions);
+        subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, newTitle, newDescription, newStatus, newQuestions, newCallToAction);
 
         // Assert
         assertEquals(newTitle, questionnaireModel.getTitle());
@@ -166,8 +165,7 @@ public class QuestionnaireServiceTest {
         assertEquals(newStatus, questionnaireModel.getStatus().toString());
         assertEquals(newQuestions.size(), questionnaireModel.getQuestions().size());
         assertEquals(newQuestions.get(0), questionnaireModel.getQuestions().get(0));
-        assertEquals(newCallToActions.size(), questionnaireModel.getCallToActions().size());
-        assertEquals(newCallToActions.get(0), questionnaireModel.getCallToActions().get(0));
+        assertEquals(newCallToAction, questionnaireModel.getCallToAction());
     }
 
     @Test
@@ -176,7 +174,7 @@ public class QuestionnaireServiceTest {
         String linkId = null; // The system will generate a new random uuid with prefix 'urn:uuid' as linkId";
         String newStatus = "ACTIVE";
         List<QuestionModel> newQuestions = List.of( buildQuestionModel(linkId) );
-        List<QuestionModel> newCallToActions = List.of( buildQuestionModel(linkId) );
+        QuestionModel newCallToAction = buildQuestionModel(linkId);
 
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
@@ -186,16 +184,15 @@ public class QuestionnaireServiceTest {
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         // Act
-        subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToActions);
+        subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToAction);
 
         // Assert
         assertEquals(1, questionnaireModel.getQuestions().size());
         assertNotNull(questionnaireModel.getQuestions().get(0).getLinkId());
         assertTrue(questionnaireModel.getQuestions().get(0).getLinkId().startsWith("urn:uuid"));
 
-        assertEquals(1, questionnaireModel.getCallToActions().size());
-        assertNotNull(questionnaireModel.getCallToActions().get(0).getLinkId());
-        assertTrue(questionnaireModel.getCallToActions().get(0).getLinkId().startsWith("urn:uuid"));
+        assertNotNull(questionnaireModel.getCallToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.getCallToAction().getLinkId());
     }
 
     @Test
