@@ -112,12 +112,7 @@ public class QuestionnaireController extends BaseController {
         validateQuestions(request.getQuestionnaire().getQuestions());
 
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
-        
-        List<QuestionModel> callToActions = collectionToStream(request.getQuestionnaire().getCallToActions())
-                .map(dtoMapper::mapQuestionDto)
-                .collect(Collectors.toList());
-        questionnaire.setCallToActions(callToActions);
-        
+
         String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
 
         URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
@@ -141,11 +136,9 @@ public class QuestionnaireController extends BaseController {
                 .map(dtoMapper::mapQuestionDto)
                 .collect(Collectors.toList());
 
-            List<QuestionModel> callToActions = collectionToStream(request.getCallToActions())
-                .map(dtoMapper::mapQuestionDto)
-                .collect(Collectors.toList());
+            QuestionModel callToAction = dtoMapper.mapQuestionDto(request.getCallToAction());
 
-            questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToActions);
+            questionnaireService.updateQuestionnaire(questionnaireId, request.getTitle(), request.getDescription(), request.getStatus(), questions, callToAction);
 
             return ResponseEntity.ok().build();
 

@@ -9,7 +9,7 @@ public class PatchQuestionnaireRequest {
     private String description;
     private String status;
     private List<QuestionDto> questions;
-    private List<QuestionDto> callToActions;
+    private QuestionDto callToAction;
 
     public String getTitle() {
         return title;
@@ -43,11 +43,11 @@ public class PatchQuestionnaireRequest {
         this.questions = questions;
     }
 
-    public List<QuestionDto> getCallToActions() {
-        return callToActions;
+    public QuestionDto getCallToAction() {
+        return callToAction;
     }
 
-    public void setCallToActions(List<QuestionDto> callToActions) {
-        this.callToActions = callToActions;
+    public void setCallToAction(QuestionDto callToAction) {
+        this.callToAction = callToAction;
     }
 }

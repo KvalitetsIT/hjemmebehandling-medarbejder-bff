@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -17,22 +18,14 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -126,9 +119,24 @@ public class PlanDefinitionService extends AccessValidatingService {
         if (aQuestionnaireWasRemoved) {
             var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
 
-            if (!activeCarePlansWithQuestionnaire.isEmpty()) {
-                throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+            List<String> differences = currentQuestionnaires.stream()
+                    .filter(element -> !questionnaireIds.contains(element))
+                    .collect(Collectors.toList());
+
+            List<ExaminationStatus> statuses = Arrays.asList(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED);
+
+            for (CarePlan carePlan : activeCarePlansWithQuestionnaire) {
+                FhirLookupResult fhirLookupResult = fhirClient.lookupQuestionnaireResponses(carePlan.getId(), differences);
+                boolean inUse = fhirLookupResult.getQuestionnaireResponses().stream()
+                        .anyMatch(questionnaireResponse -> statuses.contains(questionnaireResponse.getStatus()));
+
+                if (inUse) {
+                    throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+                }
             }
+
+
+
         }
 
         // if new questionnaire(s) has been added, validate that they're not in use

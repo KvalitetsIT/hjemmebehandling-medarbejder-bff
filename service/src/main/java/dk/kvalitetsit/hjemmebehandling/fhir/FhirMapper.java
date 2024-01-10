@@ -327,7 +327,9 @@ public class FhirMapper {
         questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
             .map(questionModel -> mapQuestionnaireItem(questionModel))
             .collect(Collectors.toList()));
-        questionnaire.getItem().addAll(mapQuestionnaireCallToActions(questionnaireModel.getCallToActions()));
+        if (questionnaireModel.getCallToAction() != null) {
+            questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.getCallToAction()));
+        }
         questionnaire.setVersion(questionnaireModel.getVersion());
 
         return questionnaire;
@@ -343,12 +345,13 @@ public class FhirMapper {
         questionnaireModel.setTitle(questionnaire.getTitle());
         questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
         questionnaireModel.setQuestions(questionnaire.getItem().stream()
-            .filter(type -> !type.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // filter out call-to-action's
+            .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
             .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
-        questionnaireModel.setCallToActions(questionnaire.getItem().stream()
-            .filter(q -> q.getType().equals(Questionnaire.QuestionnaireItemType.GROUP)) // process call-to-action's
-            .flatMap(group -> group.getItem().stream())
-            .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
+        questionnaireModel.setCallToAction(questionnaire.getItem().stream()
+                .filter(q -> q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // process call-to-action's
+                .findFirst()
+                .map(item -> mapQuestionnaireItem(item))
+                .orElse(null));
         questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
     }
@@ -773,9 +776,19 @@ public class FhirMapper {
             question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
         }
 
+        if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
+            question.setSubQuestions( mapQuestionnaireItemGroupQuestions(item.getItem()) );
+        }
         question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
 
         return question;
+    }
+
+    private List<QuestionModel> mapQuestionnaireItemGroupQuestions(List<Questionnaire.QuestionnaireItemComponent> item) {
+        return item.stream()
+                .filter(i -> i.getType() != Questionnaire.QuestionnaireItemType.DISPLAY)
+                .map(this::mapQuestionnaireItem)
+                .collect(Collectors.toList());
     }
 
     private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {
@@ -798,25 +811,12 @@ public class FhirMapper {
         return item;
     }
 
-    private List<Questionnaire.QuestionnaireItemComponent> mapQuestionnaireCallToActions(List<QuestionModel> callToActions) {
-        List<Questionnaire.QuestionnaireItemComponent> result = new ArrayList<>();
-        if (callToActions == null || callToActions.isEmpty()) {
-            return result;
-        }
+    private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToActions(QuestionModel callToAction) {
+        Questionnaire.QuestionnaireItemComponent item = mapQuestionnaireItem(callToAction);
+        item.setType(Questionnaire.QuestionnaireItemType.DISPLAY);
+        item.setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
 
-        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
-        item.setType(Questionnaire.QuestionnaireItemType.GROUP);
-
-        int counter = 1;
-        for (QuestionModel callToAction : callToActions) {
-            Questionnaire.QuestionnaireItemComponent cta = mapQuestionnaireItem(callToAction);
-            cta.setLinkId(String.format("call-to-action%s", counter++));
-
-            item.addItem(cta);
-        }
-
-        result.add(item);
-        return result;
+        return item;
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(QuestionModel question) {
@@ -958,6 +958,8 @@ public class FhirMapper {
                 return QuestionType.BOOLEAN;
             case DISPLAY:
                 return QuestionType.DISPLAY;
+            case GROUP:
+                return QuestionType.GROUP;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
         }
@@ -984,23 +986,30 @@ public class FhirMapper {
 
     private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
         AnswerModel answer = new AnswerModel();
-
-        var answerItem = extractAnswerItem(item);
         answer.setLinkId(item.getLinkId());
 
-        if(answerItem.hasValueStringType()) {
-            answer.setValue(answerItem.getValue().primitiveValue());
+        boolean emptyAnswer = item.getAnswer().isEmpty();
+        boolean hasSubAnswers = !item.getItem().isEmpty();
+        if (emptyAnswer && hasSubAnswers) {
+            // group answer with sub-answers
+            answer.setAnswerType(AnswerType.GROUP);
+            answer.setSubAnswers(item.getItem().stream().map(this::getAnswer).collect(Collectors.toList()));
         }
-        else if(answerItem.hasValueIntegerType()) {
-            answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+        else {
+
+            var answerItem = extractAnswerItem(item);
+
+            if (answerItem.hasValueStringType()) {
+                answer.setValue(answerItem.getValue().primitiveValue());
+            } else if (answerItem.hasValueIntegerType()) {
+                answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+            } else if (answerItem.hasValueQuantity()) {
+                answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
+            } else if (answerItem.hasValueBooleanType()) {
+                answer.setValue(answerItem.getValueBooleanType().primitiveValue());
+            }
+            answer.setAnswerType(getAnswerType(answerItem));
         }
-        else if(answerItem.hasValueQuantity()) {
-            answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
-        }
-        else if(answerItem.hasValueBooleanType()) {
-            answer.setValue(answerItem.getValueBooleanType().primitiveValue());
-        }
-        answer.setAnswerType(getAnswerType(answerItem));
 
         return answer;
     }

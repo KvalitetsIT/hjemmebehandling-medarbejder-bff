@@ -20,6 +20,7 @@ public class QuestionModel {
     private List<EnableWhen> enableWhens;
     private List<ThresholdModel> thresholds;
 
+    private List<QuestionModel> subQuestions;
     private boolean deprecated;
 
     public boolean isDeprecated() {
@@ -108,6 +109,14 @@ public class QuestionModel {
 
     public void setThresholds(List<ThresholdModel> thresholds) {
         this.thresholds = thresholds;
+    }
+
+    public List<QuestionModel> getSubQuestions() {
+        return subQuestions;
+    }
+
+    public void setSubQuestions(List<QuestionModel> subQuestions) {
+        this.subQuestions = subQuestions;
     }
 
     public static class EnableWhen {

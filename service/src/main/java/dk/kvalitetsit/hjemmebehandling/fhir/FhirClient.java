@@ -188,7 +188,7 @@ public class FhirClient {
 
         ids.forEach( id -> {
             Bundle bundle = client.history().onInstance(new IdType("Questionnaire", id)).returnBundle(Bundle.class).execute();
-            bundle.getEntry().forEach(x -> resources.add((Questionnaire) x.getResource()));
+            bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
         });
 
         return resources;

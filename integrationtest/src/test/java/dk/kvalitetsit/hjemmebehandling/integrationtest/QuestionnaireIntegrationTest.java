@@ -80,7 +80,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         request.status(questionnaire.getStatus());
         request.setDescription(request.getDescription());
         request.setQuestions(questionnaire.getQuestions());
-        request.setCallToActions(questionnaire.getCallToActions());
+        request.setCallToAction(questionnaire.getCallToAction());
 
 
         // Act

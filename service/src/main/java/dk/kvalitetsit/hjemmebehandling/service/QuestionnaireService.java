@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.api.PlanDefinitionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -74,12 +75,12 @@ public class QuestionnaireService extends AccessValidatingService {
         if (questionnaire.getQuestions() != null) {
             questionnaire.getQuestions().stream().filter(q -> q.getLinkId()==null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
         }
-        if (questionnaire.getCallToActions() != null) {
-            questionnaire.getCallToActions().stream().filter(cta -> cta.getLinkId()==null).forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        if (questionnaire.getCallToAction() != null) {
+            questionnaire.getCallToAction().setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
         }
     }
 
-    public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) throws ServiceException, AccessValidationException {
+    public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
@@ -96,22 +97,24 @@ public class QuestionnaireService extends AccessValidatingService {
 
         // Update questionnaire
         QuestionnaireModel questionnaireModel = fhirMapper.mapQuestionnaire(questionnaire);
-        updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToActions);
+        updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
         fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaireModel));
     }
 
-    private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, List<QuestionModel> updatedCallToActions) {
+    private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) {
         // make sure all question(s) and call-to-action has a unique id
         updatedQuestions.stream().filter(q -> q.getLinkId()==null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
-        updatedCallToActions.stream().filter(cta -> cta.getLinkId()==null).forEach(cta -> cta.setLinkId(IdType.newRandomUuid().getValueAsString()));
+        if (updatedCallToAction.getLinkId() == null) {
+            updatedCallToAction.setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
+        }
 
         questionnaireModel.setTitle(updatedTitle);
         questionnaireModel.setDescription(updatedDescription);
         questionnaireModel.setStatus(QuestionnaireStatus.valueOf(updatedStatus));
         questionnaireModel.setQuestions(updatedQuestions);
-        questionnaireModel.setCallToActions(updatedCallToActions);
+        questionnaireModel.setCallToAction(updatedCallToAction);
     }
 
     private void validateStatusChangeIsLegal(Questionnaire questionnaire, String updatedStatus) throws ServiceException {

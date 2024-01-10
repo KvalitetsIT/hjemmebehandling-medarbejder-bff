@@ -18,6 +18,7 @@ public class QuestionDto {
     private List<QuestionModel.EnableWhen> enableWhen;
     private List<ThresholdDto> thresholds;
     private MeasurementTypeDto measurementType;
+    private List<QuestionDto> subQuestions;
 
     private boolean deprecated;
 
@@ -36,7 +37,6 @@ public class QuestionDto {
     public void setMeasurementType(MeasurementTypeDto measurementType) {
         this.measurementType = measurementType;
     }
-
 
     public String getLinkId() {
         return linkId;
@@ -108,5 +108,13 @@ public class QuestionDto {
 
     public void setThresholds(List<ThresholdDto> thresholds) {
         this.thresholds = thresholds;
+    }
+
+    public List<QuestionDto> getSubQuestions() {
+        return subQuestions;
+    }
+
+    public void setSubQuestions(List<QuestionDto> subQuestions) {
+        this.subQuestions = subQuestions;
     }
 }

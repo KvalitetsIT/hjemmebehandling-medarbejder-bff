@@ -9,7 +9,7 @@ public class QuestionnaireDto extends BaseDto {
     private String title;
     private String status;
     private List<QuestionDto> questions;
-    private List<QuestionDto> callToActions;
+    private QuestionDto callToAction;
     private String version;
     private Date lastUpdated;
 
@@ -45,12 +45,12 @@ public class QuestionnaireDto extends BaseDto {
         return version;
     }
 
-    public List<QuestionDto> getCallToActions() {
-        return callToActions;
+    public QuestionDto getCallToAction() {
+        return callToAction;
     }
 
-    public void setCallToActions(List<QuestionDto> callToActions) {
-        this.callToActions = callToActions;
+    public void setCallToAction(QuestionDto callToAction) {
+        this.callToAction = callToAction;
     }
 
     public void setLastUpdated(Date lastUpdated) {

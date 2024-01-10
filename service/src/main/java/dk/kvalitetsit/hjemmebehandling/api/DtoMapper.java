@@ -5,15 +5,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.springframework.stereotype.Component;
 
 import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
@@ -261,6 +259,9 @@ public class DtoMapper {
         if(questionnaireDto.getQuestions() != null) {
             questionnaireModel.setQuestions(questionnaireDto.getQuestions().stream().map(this::mapQuestionDto).collect(Collectors.toList()));
         }
+        if (questionnaireDto.getCallToAction() != null) {
+            questionnaireModel.setCallToAction(this.mapQuestionDto(questionnaireDto.getCallToAction()));
+        }
 
         return questionnaireModel;
     }
@@ -277,8 +278,8 @@ public class DtoMapper {
         if(questionnaireModel.getQuestions() != null) {
             questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
         }
-        if(questionnaireModel.getCallToActions() != null) {
-            questionnaireDto.setCallToActions(questionnaireModel.getCallToActions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
+        if(questionnaireModel.getCallToAction() != null) {
+            questionnaireDto.setCallToAction(mapQuestionModel(questionnaireModel.getCallToAction()));
         }
 
         return questionnaireDto;
@@ -409,6 +410,10 @@ public class DtoMapper {
         if (questionModel.getThresholds() != null) {
             questionDto.setThresholds(questionModel.getThresholds().stream().map(this::mapThresholdModel).collect(Collectors.toList()));
         }
+
+        if (questionModel.getQuestionType() == QuestionType.GROUP && questionModel.getSubQuestions() != null) {
+            questionDto.setSubQuestions(questionModel.getSubQuestions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
+        }
         return questionDto;
     }
 
@@ -417,6 +422,10 @@ public class DtoMapper {
         answerDto.setLinkId(answerModel.getLinkId());
         answerDto.setValue(answerModel.getValue());
         answerDto.setAnswerType(answerModel.getAnswerType());
+
+        if (answerModel.getAnswerType() == AnswerType.GROUP && answerModel.getSubAnswers() != null) {
+            answerDto.setSubAnswers(answerModel.getSubAnswers().stream().map(this::mapAnswerModel).collect(Collectors.toList()));
+        }
 
         return answerDto;
     }

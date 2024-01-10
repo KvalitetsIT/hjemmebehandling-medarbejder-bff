@@ -127,15 +127,13 @@ public class DtoMapperTest {
     public void mapQuestionnaireModel_callToAction() {
         // Arrange
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        questionnaireModel.setQuestions( List.of(buildQuestionModel()) );
-        questionnaireModel.setCallToActions( List.of(buildQuestionModel()) );
+        questionnaireModel.setCallToAction(buildQuestionModel());
 
         // Act
         QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
 
         // Assert
-        assertEquals(1, result.getQuestions().size());
-        assertEquals(1, result.getCallToActions().size());
+        assertNotNull(result.getCallToAction());
     }
 
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
