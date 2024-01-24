@@ -754,6 +754,10 @@ public class FhirMapper {
                     .setDisplay(question.getMeasurementType().getDisplay())
                     .setSystem(question.getMeasurementType().getSystem());
         }
+
+        if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
+            item.setItem( question.getSubQuestions().stream().map(this::mapQuestionnaireItem).collect(Collectors.toList()) );
+        }
         return item;
     }
 
@@ -979,6 +983,8 @@ public class FhirMapper {
                 return Questionnaire.QuestionnaireItemType.BOOLEAN;
             case DISPLAY:
                 return Questionnaire.QuestionnaireItemType.DISPLAY;
+            case GROUP:
+                return Questionnaire.QuestionnaireItemType.GROUP;
             default:
                 throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s", type.toString()));
         }
