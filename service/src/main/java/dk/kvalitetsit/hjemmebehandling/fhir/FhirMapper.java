@@ -1083,6 +1083,10 @@ public class FhirMapper {
         item.setLinkId(answer.getLinkId());
         item.getAnswer().add(getAnswerItem(answer));
 
+        if (answer.getAnswerType() == AnswerType.GROUP && answer.getSubAnswers() != null) {
+            item.setItem(answer.getSubAnswers().stream().map(this::getQuestionnaireResponseItem).collect(Collectors.toList()));
+        }
+
         return item;
     }
 
@@ -1108,6 +1112,9 @@ public class FhirMapper {
                 break;
             case BOOLEAN:
                 value = new BooleanType(answer.getValue());
+                break;
+            case GROUP:
+                // return default = null
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
