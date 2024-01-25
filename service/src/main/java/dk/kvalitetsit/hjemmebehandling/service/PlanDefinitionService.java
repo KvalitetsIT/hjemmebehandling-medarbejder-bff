@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
@@ -239,7 +240,14 @@ public class PlanDefinitionService extends AccessValidatingService {
                 Optional<QuestionnaireWrapperModel> questionnaireWrapperModel = planDefinitionModel.getQuestionnaires().stream()
                     .filter(qw -> {
                         return qw.getQuestionnaire().getQuestions().stream()
-                            .anyMatch(q -> q.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
+                            .anyMatch(q -> {
+                                boolean directMatch = q.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId());
+                                boolean subQuesitonMatch = false;
+                                if (q.getQuestionType() == QuestionType.GROUP) {
+                                    subQuesitonMatch = q.getSubQuestions().stream().anyMatch(sq -> sq.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
+                                }
+                                return directMatch || subQuesitonMatch;
+                            });
                     })
                     .findFirst();
 
