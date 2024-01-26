@@ -82,6 +82,14 @@ public class ExtensionMapper {
         return buildCompositeExtension(Systems.THRESHOLD, List.of(linkIdExtension, thresholdTypeExtension, thresholdValueExtension));
     }
 
+    public static Extension mapAnswerOptionComment(String comment) {
+        return buildStringExtension(Systems.ANSWER_OPTION_COMMENT, comment);
+    }
+
+    public static String extractAnswerOptionComment(List<Extension> extensions) {
+        return extractStringFromExtensions(extensions, Systems.ANSWER_OPTION_COMMENT);
+    }
+
     public static Extension mapTriagingCategory(TriagingCategory triagingCategory) {
         return buildStringExtension(Systems.TRIAGING_CATEGORY, triagingCategory.toString());
     }

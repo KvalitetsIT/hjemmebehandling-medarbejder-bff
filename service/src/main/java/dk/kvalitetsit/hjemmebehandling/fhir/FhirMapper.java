@@ -9,37 +9,9 @@ import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import org.hl7.fhir.r4.model.Address;
-import org.hl7.fhir.r4.model.BooleanType;
-import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.ContactPoint;
-import org.hl7.fhir.r4.model.DomainResource;
-import org.hl7.fhir.r4.model.EnumFactory;
-import org.hl7.fhir.r4.model.Enumeration;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.HumanName;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Identifier;
-import org.hl7.fhir.r4.model.IntegerType;
-import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Period;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Quantity;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.StringType;
-import org.hl7.fhir.r4.model.TimeType;
-import org.hl7.fhir.r4.model.Timing;
-import org.hl7.fhir.r4.model.Type;
-import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.*;
 
-import org.hl7.fhir.r4.model.ValueSet;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -743,7 +715,7 @@ public class FhirMapper {
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
             // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
-            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
+            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
         }
         item.setType( mapQuestionType(question.getQuestionType()) );
         if (question.getEnableWhens() != null) {
@@ -773,7 +745,7 @@ public class FhirMapper {
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
             // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()).stream().map(x -> new Option(x, "")).collect(Collectors.toList()) );
+            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
         }
         question.setQuestionType( mapQuestionType(item.getType()) );
         if (item.hasEnableWhen()) {
@@ -832,10 +804,10 @@ public class FhirMapper {
         item.setLinkId(question.getLinkId());
         item.setText(question.getText());
         item.setRequired(question.isRequired());
-        if (question.getOptions() != null) {
-            // TODO: Fix the line below - it has to include comment and triage
-            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
-        }
+//        if (question.getOptions() != null) {
+//             TODO: Fix the line below - it has to include comment and triage
+//            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
+//        }
         item.setType( mapQuestionType(question.getQuestionType()) );
         if (question.getEnableWhens() != null) {
             item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
@@ -938,17 +910,19 @@ public class FhirMapper {
         }
     }
 
-    private List<Questionnaire.QuestionnaireItemAnswerOptionComponent> mapAnswerOptions(List<String> answerOptions) {
+    private List<Questionnaire.QuestionnaireItemAnswerOptionComponent> mapAnswerOptions(List<Option> answerOptions) {
         return answerOptions
             .stream()
-            .map(oc -> new Questionnaire.QuestionnaireItemAnswerOptionComponent().setValue( new StringType(oc)))
+            .map(oc -> (Questionnaire.QuestionnaireItemAnswerOptionComponent) new Questionnaire.QuestionnaireItemAnswerOptionComponent()
+                    .setValue(new StringType(oc.getOption()))
+                    .addExtension(ExtensionMapper.mapAnswerOptionComment(oc.getComment())))
             .collect(Collectors.toList());
     }
 
-    private List<String> mapAnswerOptionComponents(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
+    private List<Option> mapAnswerOptionComponents(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
         return optionComponents
                 .stream()
-                .map(oc -> oc.getValue().primitiveValue())
+                .map(oc -> new Option(oc.getValue().primitiveValue(), ExtensionMapper.extractAnswerOptionComment(oc.getExtension())))
                 .collect(Collectors.toList());
     }
 
