@@ -3,15 +3,13 @@ package dk.kvalitetsit.hjemmebehandling.api.question;
 public class Option {
     private String option;
     private String comment;
-    private String triage;
 
     public Option() {
     }
 
-    public Option(String option, String comment, String triage) {
+    public Option(String option, String comment) {
         this.option = option;
         this.comment = comment;
-        this.triage = triage;
     }
 
     public String getOption() {
@@ -30,11 +28,4 @@ public class Option {
         this.comment = comment;
     }
 
-    public String getTriage() {
-        return triage;
-    }
-
-    public void setTriage(String triage) {
-        this.triage = triage;
-    }
 }

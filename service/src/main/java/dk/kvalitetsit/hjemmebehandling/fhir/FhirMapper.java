@@ -773,7 +773,7 @@ public class FhirMapper {
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
             // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()).stream().map(x -> new Option(x, "", "")).collect(Collectors.toList()) );
+            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()).stream().map(x -> new Option(x, "")).collect(Collectors.toList()) );
         }
         question.setQuestionType( mapQuestionType(item.getType()) );
         if (item.hasEnableWhen()) {

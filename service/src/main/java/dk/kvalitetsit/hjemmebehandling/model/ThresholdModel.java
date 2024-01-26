@@ -8,6 +8,7 @@ public class ThresholdModel {
   private Double valueQuantityLow;
   private Double valueQuantityHigh;
   private Boolean valueBoolean;
+  private String valueOption;
 
   public String getQuestionnaireItemLinkId() {
     return questionnaireItemLinkId;
@@ -47,5 +48,13 @@ public class ThresholdModel {
 
   public void setValueBoolean(Boolean valueBoolean) {
     this.valueBoolean = valueBoolean;
+  }
+
+  public String getValueOption() {
+    return valueOption;
+  }
+
+  public void setValueOption(String valueOption) {
+    this.valueOption = valueOption;
   }
 }

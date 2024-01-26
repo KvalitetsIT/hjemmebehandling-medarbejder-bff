@@ -9,6 +9,7 @@ public class ThresholdDto {
     private Boolean valueBoolean;
     private Double valueQuantityLow;
     private Double valueQuantityHigh;
+    private String ValueOption;
 
     public String getQuestionId() {
         return questionId;
@@ -48,5 +49,13 @@ public class ThresholdDto {
 
     public void setValueQuantityHigh(Double valueQuantityHigh) {
         this.valueQuantityHigh = valueQuantityHigh;
+    }
+
+    public String getValueOption() {
+        return ValueOption;
+    }
+
+    public void setValueOption(String valueOption) {
+        ValueOption = valueOption;
     }
 }
