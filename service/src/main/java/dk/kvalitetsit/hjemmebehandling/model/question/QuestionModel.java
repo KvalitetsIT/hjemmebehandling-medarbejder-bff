@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model.question;
 
+import dk.kvalitetsit.hjemmebehandling.api.question.Option;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
@@ -16,7 +17,7 @@ public class QuestionModel {
     private boolean required;
     private QuestionType questionType;
     private MeasurementTypeModel measurementType;
-    private List<String> options;
+    private List<Option> options;
     private List<EnableWhen> enableWhens;
     private List<ThresholdModel> thresholds;
 
@@ -87,11 +88,11 @@ public class QuestionModel {
         this.measurementType = measurementType;
     }
 
-    public List<String> getOptions() {
+    public List<Option> getOptions() {
         return options;
     }
 
-    public void setOptions(List<String> options) {
+    public void setOptions(List<Option> options) {
         this.options = options;
     }
 

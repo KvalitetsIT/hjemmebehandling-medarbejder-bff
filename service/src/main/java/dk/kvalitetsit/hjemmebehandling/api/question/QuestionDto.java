@@ -14,7 +14,7 @@ public class QuestionDto {
     private String helperText;
     private boolean required;
     private QuestionType questionType;
-    private List<String> options;
+    private List<Option> options;
     private List<QuestionModel.EnableWhen> enableWhen;
     private List<ThresholdDto> thresholds;
     private MeasurementTypeDto measurementType;
@@ -86,11 +86,11 @@ public class QuestionDto {
         this.questionType = questionType;
     }
 
-    public List<String> getOptions() {
+    public List<Option> getOptions() {
         return options;
     }
 
-    public void setOptions(List<String> options) {
+    public void setOptions(List<Option> options) {
         this.options = options;
     }
 

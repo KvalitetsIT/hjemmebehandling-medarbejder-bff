@@ -4,6 +4,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import dk.kvalitetsit.hjemmebehandling.api.question.Option;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
@@ -741,7 +742,8 @@ public class FhirMapper {
         }
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+            // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
+            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
         }
         item.setType( mapQuestionType(question.getQuestionType()) );
         if (question.getEnableWhens() != null) {
@@ -770,7 +772,8 @@ public class FhirMapper {
         question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
         question.setRequired(item.getRequired());
         if(item.getAnswerOption() != null) {
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
+            // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
+            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()).stream().map(x -> new Option(x, "", "")).collect(Collectors.toList()) );
         }
         question.setQuestionType( mapQuestionType(item.getType()) );
         if (item.hasEnableWhen()) {
@@ -830,7 +833,8 @@ public class FhirMapper {
         item.setText(question.getText());
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+            // TODO: Fix the line below - it has to include comment and triage
+            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
         }
         item.setType( mapQuestionType(question.getQuestionType()) );
         if (question.getEnableWhens() != null) {
