@@ -298,7 +298,7 @@ public class FhirMapper {
         questionnaire.setTitle(questionnaireModel.getTitle());
         questionnaire.setStatus( mapQuestionnaireStatus(questionnaireModel.getStatus()) );
         questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
-            .map(questionModel -> mapQuestionnaireItem(questionModel))
+            .map(this::mapQuestionnaireItem)
             .collect(Collectors.toList()));
         if (questionnaireModel.getCallToAction() != null) {
             questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.getCallToAction()));
@@ -714,7 +714,6 @@ public class FhirMapper {
         }
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
-            // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
             item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
         }
         item.setType( mapQuestionType(question.getQuestionType()) );

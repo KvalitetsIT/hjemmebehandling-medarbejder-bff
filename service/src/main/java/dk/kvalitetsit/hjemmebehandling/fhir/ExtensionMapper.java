@@ -75,11 +75,14 @@ public class ExtensionMapper {
         if(threshold.getValueBoolean() != null) {
             thresholdValueExtension = buildBooleanExtension(Systems.THRESHOLD_VALUE_BOOLEAN, threshold.getValueBoolean());
         }
+        else if(threshold.getValueOption() != null) {
+            thresholdValueExtension = buildStringExtension(Systems.THRESHOLD_VALUE_OPTION, threshold.getValueOption());
+        }
         else if(threshold.getValueQuantityLow() != null || threshold.getValueQuantityHigh() != null) {
             thresholdValueExtension = buildRangeExtension(Systems.THRESHOLD_VALUE_RANGE, threshold.getValueQuantityLow(), threshold.getValueQuantityHigh());
         }
-
-        return buildCompositeExtension(Systems.THRESHOLD, List.of(linkIdExtension, thresholdTypeExtension, thresholdValueExtension));
+        if(thresholdValueExtension != null)  return buildCompositeExtension(Systems.THRESHOLD, List.of(linkIdExtension, thresholdTypeExtension, thresholdValueExtension));
+        return buildCompositeExtension(Systems.THRESHOLD, List.of(linkIdExtension, thresholdTypeExtension));
     }
 
     public static Extension mapAnswerOptionComment(String comment) {
@@ -143,6 +146,14 @@ public class ExtensionMapper {
             BooleanType valueBoolean = (BooleanType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_BOOLEAN).getValue();
             thresholdModel.setValueBoolean( valueBoolean.booleanValue() );
         }
+
+        if ( extension.hasExtension(Systems.THRESHOLD_VALUE_OPTION) ) {
+            StringType valueOption = (StringType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_OPTION).getValue();
+            thresholdModel.setValueOption( valueOption.getValue() );
+        }
+
+
+
         if ( extension.hasExtension(Systems.THRESHOLD_VALUE_RANGE) ) {
             Range valueRange = (Range) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_RANGE).getValue();
             if (valueRange.hasLow()) {

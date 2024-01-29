@@ -212,7 +212,7 @@ public class DtoMapper {
         thresholdModel.setValueBoolean(thresholdDto.getValueBoolean());
         thresholdModel.setValueQuantityLow(thresholdDto.getValueQuantityLow());
         thresholdModel.setValueQuantityHigh(thresholdDto.getValueQuantityHigh());
-
+        thresholdModel.setValueOption(thresholdDto.getValueOption());
         return thresholdModel;
     }
 
@@ -224,7 +224,7 @@ public class DtoMapper {
         thresholdDto.setValueBoolean(thresholdModel.getValueBoolean());
         thresholdDto.setValueQuantityLow(thresholdModel.getValueQuantityLow());
         thresholdDto.setValueQuantityHigh(thresholdModel.getValueQuantityHigh());
-
+        thresholdDto.setValueOption(thresholdModel.getValueOption());
         return thresholdDto;
     }
     
