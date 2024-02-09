@@ -24,6 +24,8 @@ public enum ErrorDetails {
     PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN("Patientgruppen har tilknyttet patienter med en eller flere aktive monitoreringsplaner, der først skal afsluttes.", 28),
     PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Patientgruppen indeholder et eller flere spørgeskemaer, der har blå alarmer.", 29),
     PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Patienggruppen indeholder et eller flere spørgeskemaer der har ubehandlede besvarelser.", 30),
+    REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Et eller flere af de fjernede spørgeskemaer har blå alarmer.", 31),
+    REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Et eller flere af de fjernede spørgeskemaer har ubehandlede besvarelser.", 32),
 
 
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);

@@ -4,10 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
@@ -114,30 +111,32 @@ public class PlanDefinitionService extends AccessValidatingService {
 
         // if questionnaire(s) has been removed, validate that they're not in use
         List<String> currentQuestionnaires = planDefinitionModel.getQuestionnaires().stream().map(q -> q.getQuestionnaire().getId().toString()).collect(Collectors.toList());
-        boolean aQuestionnaireWasRemoved = currentQuestionnaires.stream()
-            .anyMatch(questionnaireId -> !questionnaireIds.contains(questionnaireId));
+        List<String> removedQuestionnaireIds = currentQuestionnaires.stream().filter(questionnaireId -> !questionnaireIds.contains(questionnaireId)).collect(Collectors.toList());
 
-        if (aQuestionnaireWasRemoved) {
+        if (!removedQuestionnaireIds.isEmpty()) {
             var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
 
-            List<String> differences = currentQuestionnaires.stream()
-                    .filter(element -> !questionnaireIds.contains(element))
-                    .collect(Collectors.toList());
-
-            List<ExaminationStatus> statuses = Arrays.asList(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED);
+            // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
 
             for (CarePlan carePlan : activeCarePlansWithQuestionnaire) {
-                FhirLookupResult fhirLookupResult = fhirClient.lookupQuestionnaireResponses(carePlan.getId(), differences);
-                boolean inUse = fhirLookupResult.getQuestionnaireResponses().stream()
-                        .anyMatch(questionnaireResponse -> statuses.contains(questionnaireResponse.getStatus()));
+                String carePlanId = carePlan.getIdElement().toUnqualifiedVersionless().getValue();
 
-                if (inUse) {
-                    throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
-                }
+                // tjek om et fjernet spørgeskema har blå alarm
+                boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
+                if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
+                    String.format("Careplan with id %s has missing scheduled questionnaire-responses!", carePlanId),
+                    ErrorKind.BAD_REQUEST,
+                    ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
+                );
+
+                // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
+                boolean removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
+                if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
+                        String.format("Careplan with id %s still has unhandled questionnaire-responses!", carePlanId),
+                        ErrorKind.BAD_REQUEST,
+                        ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
+                );
             }
-
-
-
         }
 
         // if new questionnaire(s) has been added, validate that they're not in use
@@ -152,8 +151,6 @@ public class PlanDefinitionService extends AccessValidatingService {
             if (newQuestionnaireInActiveUse) {
                 throw new ServiceException(String.format("A questionnaire with id %s if used by active careplans!", newQuestionnaires), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
             }
-
-
         }
 
         // Update carePlan
@@ -165,6 +162,18 @@ public class PlanDefinitionService extends AccessValidatingService {
         // Save the updated PlanDefinition
         fhirClient.updatePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinitionModel));
 
+        // if questionnaire(s) has been removed, remove them from appropriate careplans
+        if (!removedQuestionnaireIds.isEmpty()) {
+            // get careplans we are removing the questionnaire(s) to
+            FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
+            carePlanResult.getCarePlans().stream().forEach(carePlan -> {
+                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
+                carePlanModel.getQuestionnaires()
+                        .removeIf(qw -> removedQuestionnaireIds.contains(qw.getQuestionnaire().getId().toString()));
+
+                fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
+            });
+        }
 
         // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
         if (!newQuestionnaires.isEmpty()) {
@@ -292,6 +301,15 @@ public class PlanDefinitionService extends AccessValidatingService {
             .collect(Collectors.toList());
     }
 
+    private boolean questionnaireHasExceededDeadline(CarePlan carePlan, List<String> questionnaireIds) {
+        return carePlan.getActivity().stream()
+                .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().get(0).getValue()))
+                .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
+    }
 
-
+    private boolean questionnaireHasUnexaminedResponses(String carePlanId, List<String> questionnaireIds) {
+        return fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), carePlanId)
+                .getQuestionnaireResponses().stream()
+                .anyMatch(questionnaireResponse -> questionnaireIds.contains(questionnaireResponse.getQuestionnaire()));
+    }
 }

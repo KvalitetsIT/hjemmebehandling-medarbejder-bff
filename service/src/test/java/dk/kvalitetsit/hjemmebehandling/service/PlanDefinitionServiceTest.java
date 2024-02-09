@@ -5,6 +5,7 @@ import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
+import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
@@ -13,27 +14,15 @@ import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.PlanDefinition;
-import org.hl7.fhir.r4.model.Questionnaire;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -47,10 +36,7 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,6 +54,9 @@ public class PlanDefinitionServiceTest {
 
     @Mock
     private AccessValidator accessValidator;
+
+    @Mock
+    private DateProvider dateProvider;
 
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
@@ -395,6 +384,272 @@ public class PlanDefinitionServiceTest {
             // Assert
             assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
             assertEquals(ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
+        }
+    }
+
+    @Test
+    public void patchPlanDefinition_questionnaire_remove() throws ServiceException, AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+        planDefinitionModel.setQuestionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire1));
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireWrapperModel1.getQuestionnaire());
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+
+        // Act
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+
+        // Assert
+        assertEquals(1, planDefinitionModel.getQuestionnaires().size());
+    }
+
+    /**
+     * Given:
+     *  PlanDefinition with questionnaires1 and questionnaire2
+     *  CarePlan based on PlanDefinition with questionnaire1
+     * When:
+     *  Remove questionnaire2 from PlanDefinition
+     * Then:
+     *  PlanDefinition only has questionnaire1
+     *  CarePlan still have questionnaire1
+     * @throws ServiceException
+     * @throws AccessValidationException
+     */
+    @Test
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_without_questionnaire() throws ServiceException, AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+        planDefinitionModel.setQuestionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire1));
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireWrapperModel1.getQuestionnaire());
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        CarePlan existingCarePlan = new CarePlan();
+        existingCarePlan.setId("CarePlan/careplan-1");
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(Arrays.asList(questionnaireWrapperModel1));
+
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
+
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
+        // Act
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+
+        // Assert
+        assertEquals(1, planDefinitionModel.getQuestionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_1, planDefinitionModel.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+
+        assertEquals(1, existingCarePlanModel.getQuestionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_1, existingCarePlanModel.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+
+    }
+
+    /**
+     * Given:
+     *  PlanDefinition with questionnaires1 and questionnaire2
+     *  CarePlan based on PlanDefinition with questionnaire1 and questionnaire2
+     * When:
+     *  Remove questionnaire1 from PlanDefinition
+     * Then:
+     *  PlanDefinition only has questionnaire2
+     *  CarePlan still have questionnaire2
+     * @throws ServiceException
+     * @throws AccessValidationException
+     */
+    @Test
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire() throws ServiceException, AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+
+        planDefinitionModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire2)).thenReturn(questionnaireWrapperModel2.getQuestionnaire());
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        CarePlan existingCarePlan = new CarePlan();
+        existingCarePlan.setId("CarePlan/careplan-1");
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
+
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
+        // Act
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
+
+        // Assert
+        assertEquals(1, planDefinitionModel.getQuestionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_2, planDefinitionModel.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+
+        assertEquals(1, existingCarePlanModel.getQuestionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_2, existingCarePlanModel.getQuestionnaires().get(0).getQuestionnaire().getId().toString());
+    }
+
+    /**
+     * Given:
+     *  PlanDefinition with questionnaires1 and questionnaire2
+     *  CarePlan based on PlanDefinition with questionnaire1 and questionnaire2
+     *   - careplan has missing scheduled responses on questionnaire1 (blå alarm)
+     * When:
+     *  Remove questionnaire1 from PlanDefinition
+     * Then:
+     *  Error is thrown
+     * @throws ServiceException
+     * @throws AccessValidationException
+     */
+    @Test
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_missingScheduledResponses() throws  AccessValidationException {
+        // Arrange
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+
+        planDefinitionModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        // setup and mock careplen
+        CarePlan existingCarePlan = new CarePlan();
+        existingCarePlan.setId("CarePlan/careplan-1");
+        CarePlan.CarePlanActivityComponent activityComponent1 = new CarePlan.CarePlanActivityComponent();
+        activityComponent1.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_1).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
+        existingCarePlan.addActivity(activityComponent1);
+        CarePlan.CarePlanActivityComponent activityComponent2 = new CarePlan.CarePlanActivityComponent();
+        activityComponent2.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_2).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
+        existingCarePlan.addActivity(activityComponent2);
+        existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now()));
+
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+
+        Mockito.when(dateProvider.now()).thenReturn(Instant.now());
+
+        // Act
+        try {
+            subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
+            fail();
+        }
+        catch (ServiceException se) {
+            // Assert
+            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+            assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES, se.getErrorDetails());
+        }
+    }
+
+
+    /**
+     * Given:
+     *  PlanDefinition with questionnaires1 and questionnaire2
+     *  CarePlan based on PlanDefinition with questionnaire1 and questionnaire2
+     *   - careplan has unhandled responses on questionnaire1
+     * When:
+     *  Remove questionnaire1 from PlanDefinition
+     * Then:
+     *  Error is thrown
+     * @throws ServiceException
+     * @throws AccessValidationException
+     */
+    @Test
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_unhandledResponses() throws  AccessValidationException {
+        // Arrange
+        Instant before = Instant.now();
+        Instant after = Instant.now();
+
+        String id = "plandefinition-1";
+        PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
+        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
+        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireModel questionnaireModel2 = buildQuestionnaireModel(QUESTIONNAIRE_ID_2);
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+
+        planDefinitionModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
+
+        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirMapper.mapPlanDefinition(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+
+        // setup and mock careplen
+        CarePlan existingCarePlan = new CarePlan();
+        existingCarePlan.setId("CarePlan/careplan-1");
+        CarePlan.CarePlanActivityComponent activityComponent1 = new CarePlan.CarePlanActivityComponent();
+        activityComponent1.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_1).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.MAX));
+        existingCarePlan.addActivity(activityComponent1);
+        CarePlan.CarePlanActivityComponent activityComponent2 = new CarePlan.CarePlanActivityComponent();
+        activityComponent2.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_2).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.MAX));
+        existingCarePlan.addActivity(activityComponent2);
+        existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(after));
+
+        CarePlanModel existingCarePlanModel = new CarePlanModel();
+        existingCarePlanModel.setQuestionnaires(new ArrayList<>(Arrays.asList(questionnaireWrapperModel1, questionnaireWrapperModel2)));
+        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+
+
+        Mockito.when(dateProvider.now()).thenReturn(before);
+
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1);
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources(questionnaireResponse));
+
+        // Act
+        try {
+            subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
+            fail();
+        }
+        catch (ServiceException se) {
+            // Assert
+            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+            assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, se.getErrorDetails());
         }
     }
 
