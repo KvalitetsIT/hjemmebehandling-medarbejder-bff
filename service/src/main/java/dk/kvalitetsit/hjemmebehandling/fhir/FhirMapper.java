@@ -729,7 +729,9 @@ public class FhirMapper {
         }
 
         if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
-            item.setItem( question.getSubQuestions().stream().map(this::mapQuestionnaireItem).collect(Collectors.toList()) );
+            question.getSubQuestions().forEach(questionModel -> {
+                item.addItem( this.mapQuestionnaireItem(questionModel) );
+            });
         }
         return item;
     }
