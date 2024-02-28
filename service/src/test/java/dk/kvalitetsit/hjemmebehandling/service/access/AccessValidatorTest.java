@@ -61,7 +61,7 @@ public class AccessValidatorTest {
         // Act
 
         // Assert
-        assertThrows(IllegalStateException.class, () -> subject.validateAccess(resource));
+        assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
@@ -131,6 +131,16 @@ public class AccessValidatorTest {
 
         // Assert
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(List.of(resource1, resource2)));
+    }
+
+    @Test
+    public void whenGettingOrganisationGivenNoSorCodeThenReturnError() {
+        var resource1 = buildResource(ORGANIZATION_ID_1);
+
+        var context = new UserContext("");
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
+
+        assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource1));
     }
 
     @Test

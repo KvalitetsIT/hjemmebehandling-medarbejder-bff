@@ -125,6 +125,7 @@ public class FhirClient {
     }
 
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) {
+        if(sorCode == null || sorCode.isBlank() || sorCode.isEmpty()) throw new IllegalStateException("The SOR-code was not specified");
         var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode);
 
         var lookupResult = lookupOrganizationsByCriteria(List.of(sorCodeCriterion));
@@ -132,7 +133,7 @@ public class FhirClient {
             return Optional.empty();
         }
         if(lookupResult.getOrganizations().size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Organization.class));
+            throw new IllegalStateException(String.format("Could not lookup single resource of %s!", Organization.class));
         }
         return Optional.of(lookupResult.getOrganizations().get(0));
     }

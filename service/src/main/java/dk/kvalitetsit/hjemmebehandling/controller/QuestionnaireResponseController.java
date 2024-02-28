@@ -88,7 +88,7 @@ public class QuestionnaireResponseController extends BaseController {
             auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).collect(Collectors.toList()));
         }
-        catch(ServiceException e) {
+        catch(Exception e) {
             logger.error("Could not look up questionnaire responses by status", e);
             throw toStatusCodeException(e);
         }

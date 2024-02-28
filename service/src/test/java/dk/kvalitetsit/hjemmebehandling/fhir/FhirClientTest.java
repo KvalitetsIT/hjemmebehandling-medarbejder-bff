@@ -19,6 +19,8 @@ import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.Instant;
 import java.util.List;
@@ -640,6 +642,8 @@ public class FhirClientTest {
         // Assert
         assertThrows(IllegalStateException.class, () -> subject.saveQuestionnaireResponse(questionnaireResponse));
     }
+
+
 
     private void setupReadCarePlanClient(String carePlanId, CarePlan carePlan) {
         setupReadClient(carePlanId, carePlan, CarePlan.class);

@@ -29,11 +29,12 @@ public class AccessValidator {
         // Validate that the user is allowed to access all the resources.
         String userOrganizationId = getOrganizationIdForUser();
 
-        for(var resource : resources) {
+        for (var resource : resources) {
             String resourceOrganizationId = getOrganizationIdForResource(resource);
 
-            if(!userOrganizationId.equals(resourceOrganizationId)) {
-                throw new AccessValidationException(String.format("Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
+            if (!userOrganizationId.equals(resourceOrganizationId)) {
+                throw new AccessValidationException(String.format(
+                        "Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
                         resource.getResourceType(),
                         resource.getId(),
                         userOrganizationId,
@@ -42,14 +43,17 @@ public class AccessValidator {
         }
     }
 
-    private String getOrganizationIdForUser() {
+    private String getOrganizationIdForUser() throws AccessValidationException {
         var context = userContextProvider.getUserContext();
-        if(context == null) {
+        if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
         }
 
+
+
         Organization organization = fhirClient.lookupOrganizationBySorCode(context.getOrgId())
-                .orElseThrow(() -> new IllegalStateException(String.format("No organization was present for sorCode %s!", context.getOrgId())));
+                .orElseThrow(() -> new AccessValidationException(
+                        String.format("No organization was present for sorCode %s!", context.getOrgId())));
 
         return organization.getIdElement().toUnqualifiedVersionless().getValue();
     }
@@ -59,7 +63,8 @@ public class AccessValidator {
                 .stream()
                 .filter(e -> e.getUrl().equals(Systems.ORGANIZATION) && e.getValue() instanceof Reference)
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException(String.format("No organization id was present on resource %s!", resource.getId())));
+                .orElseThrow(() -> new IllegalStateException(
+                        String.format("No organization id was present on resource %s!", resource.getId())));
         return ((Reference) extension.getValue()).getReference();
     }
 }
