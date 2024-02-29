@@ -26,11 +26,8 @@ public enum ErrorDetails {
     PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Patienggruppen indeholder et eller flere spørgeskemaer der har ubehandlede besvarelser.", 30),
     REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES("Et eller flere af de fjernede spørgeskemaer har blå alarmer.", 31),
     REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Et eller flere af de fjernede spørgeskemaer har ubehandlede besvarelser.", 32),
-
-
+    MISSING_SOR_CODE("En organisation kunne ikke tilkyttes SOR-koden", 33),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
-
-
     private String errorMessage;
     private int errorCode;
     private String details;

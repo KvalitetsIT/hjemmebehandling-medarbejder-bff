@@ -83,23 +83,31 @@ public class PatientController extends BaseController {
 
         String clinicalIdentifier = getClinicalIdentifier();
 
-        PatientModel patient = patientService.getPatient(cpr);
-        auditLoggingService.log("GET /v1/patient", patient);
+        try {
+            PatientModel patient = patientService.getPatient(cpr);
+            auditLoggingService.log("GET /v1/patient", patient);
 
-        if(patient == null) {
-            throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
+            if(patient == null) {
+                throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
+            }
+            return dtoMapper.mapPatientModel(patient);
+        }catch (ServiceException e ) {
+            throw toStatusCodeException(e);
         }
-        return dtoMapper.mapPatientModel(patient);
+
     }
 
     @GetMapping(value = "/v1/patient/search")
     public @ResponseBody PatientListResponse searchPatients(String searchString) {
         logger.info("Getting patient ...");
+        try {
+            List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
+            auditLoggingService.log("GET /v1/patient/search", patients);
+            return buildResponse(patients);
+        }catch (ServiceException e ) {
+            throw toStatusCodeException(e);
+        }
 
-        List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
-        auditLoggingService.log("GET /v1/patient/search", patients);
-
-        return buildResponse(patients);
     }
 
     @GetMapping(value = "/v1/patients")
@@ -113,19 +121,27 @@ public class PatientController extends BaseController {
         if(!includeActive && !includeCompleted) return buildResponse(new ArrayList<>());
 
         var pagination = new Pagination(pageNumber, pageSize);
-        List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagination);
+        try {
+            List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagination);
+            patientService.getPatients(includeActive,includeCompleted);
+            auditLoggingService.log("GET /v1/patients", patients);
 
-        patientService.getPatients(includeActive,includeCompleted);
-        auditLoggingService.log("GET /v1/patients", patients);
+            return buildResponse(patients);
+        }catch (ServiceException e ) {
+            throw toStatusCodeException(e);
+        }
 
-        return buildResponse(patients);
     }
     
     @PutMapping(value = "/v1/resetpassword")
     public void resetPassword(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
         logger.info("reset password for patient");
-        PatientModel patientModel = patientService.getPatient(cpr);
-        customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
+         try {
+            PatientModel patientModel = patientService.getPatient(cpr);
+            customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
+        }catch (ServiceException e ) {
+            throw toStatusCodeException(e);
+        }
     }
 
     private String getClinicalIdentifier() {

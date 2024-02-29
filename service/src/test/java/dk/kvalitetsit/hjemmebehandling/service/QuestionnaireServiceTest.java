@@ -276,7 +276,7 @@ public class QuestionnaireServiceTest {
     }
 
     @Test
-    public void retirePlanDefinition_activeCarePlanReferences_throwsError() {
+    public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
         // Arrange
         String id = "questionnaire-1";
         Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1, Enumerations.PublicationStatus.ACTIVE);

@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 
 import org.hl7.fhir.r4.model.Enumeration;
@@ -28,9 +29,6 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 public class FhirMapper {
     @Autowired
     private DateProvider dateProvider;
-
-    @Autowired
-    private FhirClient fhirClient;
 
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
         CarePlan carePlan = new CarePlan();
@@ -55,7 +53,7 @@ public class FhirMapper {
         if(carePlanModel.getQuestionnaires() != null) {
             carePlan.setActivity(carePlanModel.getQuestionnaires()
                     .stream()
-                    .map(q -> buildCarePlanActivity(q))
+                    .map(this::buildCarePlanActivity)
                     .collect(Collectors.toList()));
         }
 
@@ -70,7 +68,7 @@ public class FhirMapper {
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult) {
+    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult, String organisationId)  {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         mapBaseAttributesToModel(carePlanModel, carePlan);
@@ -83,9 +81,10 @@ public class FhirMapper {
             carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
         }
 
+
         String patientId = carePlan.getSubject().getReference();
         Patient patient = lookupResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId())));
-        carePlanModel.setPatient(mapPatient(patient));
+        carePlanModel.setPatient(mapPatient(patient, organisationId));
 
         carePlanModel.setPlanDefinitions(new ArrayList<>());
         for(var ic : carePlan.getInstantiatesCanonical()) {
@@ -123,10 +122,8 @@ public class FhirMapper {
                 .flatMap(p -> p.getQuestionnaires().stream())
                 .filter(q -> q.getQuestionnaire().getId().equals(questionnaireModel.getId()))
                 .findFirst()
-                .map(qw -> qw.getThresholds());
-            if (thresholds.isPresent()) {
-                wrapper.getThresholds().addAll(thresholds.get());
-            }
+                .map(QuestionnaireWrapperModel::getThresholds);
+            thresholds.ifPresent(thresholdModels -> wrapper.getThresholds().addAll(thresholdModels));
 
             carePlanModel.getQuestionnaires().add(wrapper);
         }
@@ -223,7 +220,7 @@ public class FhirMapper {
         return patient;
     }
 
-    public PatientModel mapPatient(Patient patient) {
+    public PatientModel mapPatient(Patient patient, String organizationId) {
         PatientModel patientModel = new PatientModel();
 
         patientModel.setId(extractId(patient));
@@ -235,7 +232,7 @@ public class FhirMapper {
         patientModel.setContactDetails(extractPatientContactDetails(patient));
 
         if(patient.getContact() != null && !patient.getContact().isEmpty()) {
-            var organizationId = this.fhirClient.getOrganizationId();
+
             if(organizationId == null) throw new IllegalStateException("Mapping contact is only possible while the organization id is known");
 
             var optionalContact = patient.getContact().stream()
@@ -319,11 +316,11 @@ public class FhirMapper {
         questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
         questionnaireModel.setQuestions(questionnaire.getItem().stream()
             .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
-            .map(item -> mapQuestionnaireItem(item)).collect(Collectors.toList()));
+            .map(this::mapQuestionnaireItem).collect(Collectors.toList()));
         questionnaireModel.setCallToAction(questionnaire.getItem().stream()
                 .filter(q -> q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // process call-to-action's
                 .findFirst()
-                .map(item -> mapQuestionnaireItem(item))
+                .map(this::mapQuestionnaireItem)
                 .orElse(null));
         questionnaireModel.setVersion(questionnaire.getVersion());
         return questionnaireModel;
@@ -379,8 +376,8 @@ public class FhirMapper {
     }
 
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
-        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
 
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireResponse.getQuestionnaire())
                 .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireResponse.getQuestionnaire())));
@@ -407,10 +404,15 @@ public class FhirMapper {
 
         return questionnaireResponseModel;
     }
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, List<Questionnaire> historicalQuestionnaires) {
-        if (historicalQuestionnaires == null) return mapQuestionnaireResponse(questionnaireResponse, lookupResult);
+    public QuestionnaireResponseModel mapQuestionnaireResponse(
+            QuestionnaireResponse questionnaireResponse,
+            FhirLookupResult lookupResult,
+            List<Questionnaire> historicalQuestionnaires,
+            String organisationId
+    ) {
+        if (historicalQuestionnaires == null) return mapQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
 
-        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult);
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
 
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = new ArrayList<>();
@@ -421,19 +423,17 @@ public class FhirMapper {
             boolean deprecated = false;
             int i = 0;
 
-            var iterator = historicalQuestionnaires.iterator();
 
-
-            while (iterator.hasNext()){
-                Questionnaire q = iterator.next();
+            for (Questionnaire q : historicalQuestionnaires) {
                 if (i > 0) deprecated = true;
-                boolean hasNext = i < historicalQuestionnaires.size()-1;
+                boolean hasNext = i < historicalQuestionnaires.size() - 1;
                 try {
                     question = getQuestion(q, item.getLinkId());
                     question.setDeprecated(deprecated);
                     break;
-                }catch (IllegalStateException e) {
-                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
+                } catch (IllegalStateException e) {
+                    if (!hasNext)
+                        throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
                 }
                 i++;
             }
@@ -460,7 +460,7 @@ public class FhirMapper {
 
 
 
-    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult) {
+    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
         mapBaseAttributesToModel(questionnaireResponseModel, questionnaireResponse);
@@ -494,14 +494,13 @@ public class FhirMapper {
 
         String practitionerId = ExtensionMapper.tryExtractExaminationAuthorPractitionerId(questionnaireResponse.getExtension());
         Optional<Practitioner> practitioner = lookupResult.getPractitioner(practitionerId);
-        if (practitioner.isPresent()) {
-            questionnaireResponseModel.setExaminationAuthor(mapPractitioner(practitioner.get()));
-        }
+        practitioner.ifPresent(value -> questionnaireResponseModel.setExaminationAuthor(mapPractitioner(value)));
+
 
         String patientId = questionnaireResponse.getSubject().getReference();
         Patient patient = lookupResult.getPatient(patientId)
                 .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
-        questionnaireResponseModel.setPatient(mapPatient(patient));
+        questionnaireResponseModel.setPatient(mapPatient(patient, organisationId));
 
         String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
         CarePlan carePlan = lookupResult.getCarePlan(carePlanId)

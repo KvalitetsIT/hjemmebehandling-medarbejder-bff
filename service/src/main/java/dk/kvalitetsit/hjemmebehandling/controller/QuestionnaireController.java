@@ -68,13 +68,17 @@ public class QuestionnaireController extends BaseController {
             details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
             throw new BadRequestException(details);
         }
+        try {
 
-        List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(() -> List.of()));
+            List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElseGet(List::of));
 
-        return ResponseEntity.ok(questionnaires.stream()
-                .map(dtoMapper::mapQuestionnaireModel)
-                .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
-                .collect(Collectors.toList()));
+            return ResponseEntity.ok(questionnaires.stream()
+                    .map(dtoMapper::mapQuestionnaireModel)
+                    .sorted(Comparator.comparing(QuestionnaireDto::getLastUpdated, Comparator.nullsFirst(Date::compareTo).reversed()))
+                    .collect(Collectors.toList()));
+        }catch (ServiceException e){
+            throw toStatusCodeException(e);
+        }
     }
 
     @Operation(summary = "Get Questionnaire by id.", description = "Retrieves a Questionnaire by its id.")
@@ -112,11 +116,14 @@ public class QuestionnaireController extends BaseController {
         validateQuestions(request.getQuestionnaire().getQuestions());
 
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(request.getQuestionnaire());
-
-        String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
-
-        URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
-        return ResponseEntity.created(location).build();
+        try {
+            String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
+            URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
+            return ResponseEntity.created(location).build();
+        }catch (ServiceException e) {
+            logger.error("Could not create questionnaire");
+            throw toStatusCodeException(e);
+        }
     }
 
     @PutMapping(value = "/v1/questionnaire")

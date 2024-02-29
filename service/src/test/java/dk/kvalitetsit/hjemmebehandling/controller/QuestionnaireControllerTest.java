@@ -16,6 +16,7 @@ import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,7 +71,7 @@ public class QuestionnaireControllerTest {
     }
 
     @Test
-    public void getQuestionnaires_sorting() {
+    public void getQuestionnaires_sorting() throws ServiceException {
         // Arrange
         QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
         QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();

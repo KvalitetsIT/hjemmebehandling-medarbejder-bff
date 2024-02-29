@@ -52,9 +52,11 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Sort the responses by priority.
         responses = sortResponsesByDate(responses);
 
+        var orgId = fhirClient.getOrganizationId();
+
         return responses
                 .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires))
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
                 .collect(Collectors.toList());
 
     }
@@ -62,18 +64,25 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds, Pagination pagination) throws ServiceException, AccessValidationException {
 
         if(pagination != null) {
-            // TODO: the pagination is supposed to be done during the fhir request.
+            // TODO: the pagination is supposed to be done during the fhir request. otherwise, a lot of entrees may be requested which may not be relevant
             // Perform paging if required.
             return pageResponses(this.getQuestionnaireResponses(carePlanId, questionnaireIds), pagination);
         }
         return this.getQuestionnaireResponses(carePlanId, questionnaireIds);
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException {
+
+        FhirLookupResult lookupResult;
 
         // Get the questionnaires by status
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
+
+        lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
+
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
+
+        // Validate that the user is allowed to retrieve the QuestionnaireResponses.
+        validateAccess(responses);
 
         if(responses.isEmpty()) return List.of();
 
@@ -93,23 +102,27 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         responses = sortResponses(responses);
 
 
+        var orgId = fhirClient.getOrganizationId();
+
         // Map and return the responses
         return responses
                 .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires))
+                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
                 .collect(Collectors.toList());
 
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException, AccessValidationException {
 
-        var responses = getQuestionnaireResponsesByStatus(statuses);
 
-        // Perform paging if required.
-        if(pagination == null) {
-            return responses;
-        }
-        return pageResponses(responses, pagination);
+            var responses = getQuestionnaireResponsesByStatus(statuses);
+
+            // Perform paging if required.
+            if(pagination == null) {
+                return responses;
+            }
+            return pageResponses(responses, pagination);
+
 
     }
 
@@ -125,8 +138,10 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Validate that the user is allowed to update the QuestionnaireResponse.
         validateAccess(questionnaireResponse);
 
+        var orgId = fhirClient.getOrganizationId();
+
         // Update the Questionnaireresponse
-        QuestionnaireResponseModel mappedResponse = fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult);
+        QuestionnaireResponseModel mappedResponse = fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult, orgId);
         mappedResponse.setExaminationStatus(examinationStatus);
 
         Practitioner user = fhirClient.getOrCreateUserAsPractitioner();

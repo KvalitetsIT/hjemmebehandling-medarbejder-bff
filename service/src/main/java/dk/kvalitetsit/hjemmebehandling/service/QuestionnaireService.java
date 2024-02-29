@@ -52,13 +52,13 @@ public class QuestionnaireService extends AccessValidatingService {
         return Optional.of(mappedCarePlan);
     }
 
-    public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) {
+    public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
 
         return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
     }
 
-    public String createQuestionnaire(QuestionnaireModel questionnaire) {
+    public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         initializeAttributesForNewQuestionnaire(questionnaire);
 

@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Organization;
@@ -49,7 +50,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_unknownOrganization() {
+    public void validateAccess_unknownOrganization() throws ServiceException {
         // Arrange
         var resource = buildResource();
 
@@ -65,7 +66,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_noOrganizationTag() {
+    public void validateAccess_noOrganizationTag() throws ServiceException {
         // Arrange
         var resource = buildResource();
 
@@ -82,7 +83,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_wrongOrganization_accessViolation() {
+    public void validateAccess_wrongOrganization_accessViolation() throws ServiceException {
         // Arrange
         var resource = buildResource(ORGANIZATION_ID_2);
 
@@ -99,7 +100,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_correctOrganization_success() {
+    public void validateAccess_correctOrganization_success() throws ServiceException {
         // Arrange
         var resource = buildResource(ORGANIZATION_ID_1);
 
@@ -116,7 +117,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_conjunction_failure() {
+    public void validateAccess_conjunction_failure() throws ServiceException {
         // Arrange
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_2);
@@ -144,7 +145,7 @@ public class AccessValidatorTest {
     }
 
     @Test
-    public void validateAccess_conjunction_success() {
+    public void validateAccess_conjunction_success() throws ServiceException {
         // Arrange
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_1);

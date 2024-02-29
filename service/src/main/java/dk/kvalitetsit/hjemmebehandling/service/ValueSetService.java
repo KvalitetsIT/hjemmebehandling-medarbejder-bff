@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,7 @@ public class ValueSetService {
         this.fhirMapper = fhirMapper;
     }
 
-    public List<MeasurementTypeModel> getMeasurementTypes() {
+    public List<MeasurementTypeModel> getMeasurementTypes() throws ServiceException {
         // as of now we only have one ValueSet in the system which holds the measurement type codes, so no special search handling is needed.
         FhirLookupResult lookupResult = fhirClient.lookupValueSet();
 

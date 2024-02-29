@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class PatientServiceTest {
+  private static final String ORGANISATION_ID_1 = "";
   @InjectMocks
   private PatientService subject;
 
@@ -44,7 +46,7 @@ public class PatientServiceTest {
   private static final String PATIENT_ID_1 = "Patient/patient-1";
 
   @Test
-  public void searchPatients() {
+  public void searchPatients() throws ServiceException {
     // Arrange
     CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
     Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
@@ -52,9 +54,11 @@ public class PatientServiceTest {
     FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, patient);
     Mockito.when(fhirClient.searchPatients(List.of(CPR_1), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
 
-    PatientModel patientModel = new PatientModel();
-    Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientModel);
+    var orgId = "";
 
+    PatientModel patientModel = new PatientModel();
+    Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientModel);
+    Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
     // Act
     List<PatientModel> result = subject.searchPatients(List.of(CPR_1));
 
@@ -64,7 +68,7 @@ public class PatientServiceTest {
   }
 
   @Test
-  public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCareplan() {
+  public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCareplan() throws ServiceException {
     // Arrange
     CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
     carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
@@ -90,7 +94,7 @@ public class PatientServiceTest {
   }
 
   @Test
-  public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() {
+  public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() throws ServiceException {
     // Arrange
     CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
     carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
@@ -132,7 +136,7 @@ public class PatientServiceTest {
           List<String> namesInExpectedOrder,
           int page,
           int pageSize
-  ) {
+  ) throws ServiceException {
     // Arrange
     CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
     carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
@@ -148,10 +152,12 @@ public class PatientServiceTest {
       PatientModel patientmodel = new PatientModel();
       patientmodel.setGivenName(name);
 
-      Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientmodel);
+      var orgId = "";
+      Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientmodel);
     }
 
     Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
+    Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
     // Act
     var pagedetails = new Pagination(page,pageSize);
@@ -166,7 +172,7 @@ public class PatientServiceTest {
     }
   }
   @Test
-  public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() {
+  public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() throws ServiceException {
     // Arrange
     CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
     carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
@@ -193,7 +199,7 @@ public class PatientServiceTest {
 
 
   @Test
-  public void searchPatients_emptyResult() {
+  public void searchPatients_emptyResult() throws ServiceException {
     // Arrange
     FhirLookupResult lookupResult = FhirLookupResult.fromResources();
     Mockito.when(fhirClient.searchPatients(List.of(CPR_1), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
@@ -206,7 +212,7 @@ public class PatientServiceTest {
   }
 
   @Test
-  public void searchPatients_emptyResult_emptySearch() {
+  public void searchPatients_emptyResult_emptySearch() throws ServiceException {
     // Arrange
     Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
@@ -223,8 +229,8 @@ public class PatientServiceTest {
     Mockito.when(fhirClient.searchPatients(new ArrayList<>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
 
     PatientModel patientModel = new PatientModel();
-    Mockito.when(fhirMapper.mapPatient(patient)).thenReturn(patientModel);
-
+    Mockito.when(fhirMapper.mapPatient(patient, "")).thenReturn(patientModel);
+    Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
     // Act
     List<PatientModel> result = subject.searchPatients(new ArrayList<>());
 

@@ -54,6 +54,7 @@ public abstract class BaseController {
             case QUESTIONNAIRE_DOES_NOT_EXIST:
                 throw new ResourceNotFoundException(e);
             case ACCESS_VIOLATION:
+            case MISSING_SOR_CODE:
                 throw new ForbiddenException(e);
             case CUSTOMLOGIN_UNKNOWN_ERROR:
                 throw new BadGatewayException(e);

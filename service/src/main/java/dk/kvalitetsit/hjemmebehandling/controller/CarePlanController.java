@@ -263,7 +263,7 @@ public class CarePlanController extends BaseController {
                 .collect(Collectors.toList());
     }
 
-    private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
+    private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
         // force time for deadline to organization configured default.
         TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
         questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));

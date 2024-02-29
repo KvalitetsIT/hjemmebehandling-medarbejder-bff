@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import java.util.Optional;
 
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -21,7 +22,7 @@ public class DIASUserContextHandler implements IUserContextHandler {
 	private static final String BSK_AUTORISATIONS_INFORMATION = "bSKAutorisationsInformation";
 
 	
-	public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) {
+	public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) throws ServiceException {
 		var context = new UserContext();
 		if(jwt==null) {
 			return context;

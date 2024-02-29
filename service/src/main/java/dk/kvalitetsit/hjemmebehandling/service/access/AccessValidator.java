@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Reference;
@@ -21,11 +22,11 @@ public class AccessValidator {
         this.fhirClient = fhirClient;
     }
 
-    public void validateAccess(DomainResource resource) throws AccessValidationException {
+    public void validateAccess(DomainResource resource) throws AccessValidationException, ServiceException {
         validateAccess(List.of(resource));
     }
 
-    public void validateAccess(List<? extends DomainResource> resources) throws AccessValidationException {
+    public void validateAccess(List<? extends DomainResource> resources) throws AccessValidationException, ServiceException {
         // Validate that the user is allowed to access all the resources.
         String userOrganizationId = getOrganizationIdForUser();
 
@@ -43,7 +44,7 @@ public class AccessValidator {
         }
     }
 
-    private String getOrganizationIdForUser() throws AccessValidationException {
+    private String getOrganizationIdForUser() throws AccessValidationException, ServiceException {
         var context = userContextProvider.getUserContext();
         if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");

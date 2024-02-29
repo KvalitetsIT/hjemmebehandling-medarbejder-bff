@@ -11,6 +11,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlanById_carePlanPresent_success() {
+    public void lookupCarePlanById_carePlanPresent_success() throws ServiceException {
         // Arrange
         String carePlanId = "careplan-1";
         CarePlan carePlan = new CarePlan();
@@ -77,7 +78,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlanById_carePlanMissing_empty() {
+    public void lookupCarePlanById_carePlanMissing_empty() throws ServiceException {
         // Arrange
         String carePlanId = "careplan-1";
         CarePlan carePlan = new CarePlan();
@@ -94,7 +95,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlanById_resultIncludesOrganization() {
+    public void lookupCarePlanById_resultIncludesOrganization() throws ServiceException {
         // Arrange
         String carePlanId = "careplan-1";
         CarePlan carePlan = new CarePlan();
@@ -113,7 +114,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlanByPatientId_carePlanPresent_success() {
+    public void lookupCarePlanByPatientId_carePlanPresent_success() throws ServiceException {
         // Arrange
         String patientId = "patient-1";
         boolean onlyActiveCarePlans = true;
@@ -132,7 +133,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlanByPatientId_carePlanMissing_empty() {
+    public void lookupCarePlanByPatientId_carePlanMissing_empty() throws ServiceException {
         // Arrange
         String patientId = "patient-1";
         boolean onlyActiveCarePlans = false;
@@ -149,7 +150,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupCarePlansUnsatisfiedAt_success() {
+    public void lookupCarePlansUnsatisfiedAt_success() throws ServiceException {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
         boolean onlyActiveCarePlans = true;
@@ -205,7 +206,7 @@ public class FhirClientTest {
 
 
     @Test
-    public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() {
+    public void lookupCarePlansUnsatisfiedAt_noCarePlans_returnsEmpty() throws ServiceException {
         // Arrange
         Instant pointInTime = Instant.parse("2021-11-07T10:11:12.124Z");
         boolean onlyActiveCarePlans = true;
@@ -347,7 +348,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupPlanDefinitions_success() {
+    public void lookupPlanDefinitions_success() throws ServiceException {
         // Arrange
         PlanDefinition planDefinition = new PlanDefinition();
 
@@ -411,7 +412,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupQuestionnaireResponsesByStatus_oneStatus_success() {
+    public void lookupQuestionnaireResponsesByStatus_oneStatus_success() throws ServiceException {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
 
@@ -431,7 +432,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupQuestionnaireResponsesByStatus_twoStatuses_success() {
+    public void lookupQuestionnaireResponsesByStatus_twoStatuses_success() throws ServiceException {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION);
 
@@ -451,7 +452,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void lookupQuestionnaireResponsesByStatus_duplicateStatuses_success() {
+    public void lookupQuestionnaireResponsesByStatus_duplicateStatuses_success() throws ServiceException {
         // Arrange
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED, ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED, ExaminationStatus.EXAMINED);
 
@@ -471,7 +472,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void saveCarePlan_created_returnsId() {
+    public void saveCarePlan_created_returnsId() throws ServiceException {
         //Arrange
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
@@ -486,7 +487,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void saveCarePlan_addsOrganizationTag() {
+    public void saveCarePlan_addsOrganizationTag() throws ServiceException {
         //Arrange
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
@@ -539,7 +540,7 @@ public class FhirClientTest {
 
 
     @Test
-    public void saveCarePlanWithPatient_returnsCarePlanId() {
+    public void saveCarePlanWithPatient_returnsCarePlanId() throws ServiceException {
         // Arrange
         CarePlan carePlan = new CarePlan();
         Patient patient = new Patient();
@@ -585,7 +586,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void saveCarePlanWithPatient_addsOrganizationTag() {
+    public void saveCarePlanWithPatient_addsOrganizationTag() throws ServiceException {
         // Arrange
         CarePlan carePlan = new CarePlan();
         Patient patient = new Patient();
@@ -602,7 +603,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void savePatient_organizationTagIsOmitted() {
+    public void savePatient_organizationTagIsOmitted() throws ServiceException {
         // Arrange
         Patient patient = new Patient();
 
@@ -616,7 +617,7 @@ public class FhirClientTest {
     }
 
     @Test
-    public void saveQuestionnaireResponse_created_returnsId() {
+    public void saveQuestionnaireResponse_created_returnsId() throws ServiceException {
         //Arrange
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId("1");

@@ -65,7 +65,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds)).thenReturn(null);
 
         QuestionnaireResponseModel responseModel = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null)).thenReturn(responseModel);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null, null)).thenReturn(responseModel);
 
         // Act
         Pagination pagination = new Pagination(1,5);
@@ -122,10 +122,10 @@ public class QuestionnaireResponseServiceTest {
 
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(null)).thenReturn(List.of());
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response1,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response1));
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response2,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response2));
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response3,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response3));
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response4,lookupResult1, List.of())).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response4));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response1,lookupResult1, List.of(), null)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response1));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response2,lookupResult1, List.of(), null)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response2));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response3,lookupResult1, List.of(), null)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response3));
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response4,lookupResult1, List.of(), null)).thenReturn(questionnaireResponseToQuestionnaireResponseModel(response4));
 
         //ACTION
         Pagination pagination1 = new Pagination(1,2);
@@ -230,7 +230,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(null);
 
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult,null, null)).thenReturn(model);
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
@@ -271,7 +271,7 @@ public class QuestionnaireResponseServiceTest {
 
         List<Questionnaire> historicalQuestionnaires = null;
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, historicalQuestionnaires)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, historicalQuestionnaires, null)).thenReturn(model);
 
         // Impose that the second response is greater than the first.
         Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(1);
@@ -292,11 +292,13 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponse firstResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, PATIENT_ID);
         QuestionnaireResponse secondResponse = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_2, PATIENT_ID);
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(firstResponse, secondResponse);
+
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(null);
+        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANIZATION_ID_1);
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(firstResponse, lookupResult, null)).thenReturn(new QuestionnaireResponseModel());
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, null)).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(firstResponse, lookupResult, null, ORGANIZATION_ID_1)).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, null, ORGANIZATION_ID_1)).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
@@ -321,7 +323,7 @@ public class QuestionnaireResponseServiceTest {
         List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdBase()).collect(Collectors.toList());
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(ids)).thenReturn(List.of());
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses, pagination);
@@ -343,7 +345,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatus(statuses)).thenReturn(lookupResult);
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(List.of())).thenReturn(List.of());
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(new QuestionnaireResponseModel());
 
         // Act
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses, pagination);
@@ -394,7 +396,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(lookupResult);
 
         QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult)).thenReturn(model);
+        Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null)).thenReturn(model);
         Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
 
         Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);

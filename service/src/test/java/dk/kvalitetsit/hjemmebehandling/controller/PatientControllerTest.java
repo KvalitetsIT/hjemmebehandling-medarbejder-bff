@@ -93,7 +93,7 @@ public class PatientControllerTest {
   }
 
   @Test
-  public void getPatient_error_notExist() {
+  public void getPatient_error_notExist() throws ServiceException {
     // Arrange
     Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(null);
     // Act
@@ -103,7 +103,7 @@ public class PatientControllerTest {
   }
 
   @Test
-  public void getPatient_success_201() {
+  public void getPatient_success_201() throws ServiceException {
     // Arrange
     PatientModel patientModel = new PatientModel();
     Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(patientModel);
@@ -120,7 +120,7 @@ public class PatientControllerTest {
   }
 
   @Test
-  public void searchPatient() {
+  public void searchPatient() throws ServiceException {
     // Arrange
     PatientModel patientModel = new PatientModel();
     Mockito.when(patientService.searchPatients(Mockito.anyList())).thenReturn(List.of(patientModel));

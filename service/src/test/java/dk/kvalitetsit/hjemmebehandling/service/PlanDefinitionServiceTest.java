@@ -61,6 +61,8 @@ public class PlanDefinitionServiceTest {
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
+    private static final String ORGANISATION_ID_1 = "";
+
 
 
     @Test
@@ -337,8 +339,8 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
-        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
-
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult, ORGANISATION_ID_1)).thenReturn(existingCarePlanModel);
+        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         // Act
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
@@ -351,7 +353,7 @@ public class PlanDefinitionServiceTest {
     }
 
     @Test
-    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_with_same_questionnaire() throws AccessValidationException {
+    public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_with_same_questionnaire() throws AccessValidationException, ServiceException {
         // Arrange
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
@@ -373,8 +375,8 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
-        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
-
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult, ORGANISATION_ID_1)).thenReturn(existingCarePlanModel);
+        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         // Act
         try {
             subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
@@ -453,8 +455,8 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
-        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
-
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult, "")).thenReturn(existingCarePlanModel);
+        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
         // Act
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
@@ -507,8 +509,8 @@ public class PlanDefinitionServiceTest {
 
         FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
-        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult)).thenReturn(existingCarePlanModel);
-
+        Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult, "")).thenReturn(existingCarePlanModel);
+        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
         // Act
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
@@ -534,7 +536,7 @@ public class PlanDefinitionServiceTest {
      * @throws AccessValidationException
      */
     @Test
-    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_missingScheduledResponses() throws  AccessValidationException {
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_missingScheduledResponses() throws AccessValidationException, ServiceException {
         // Arrange
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1);
@@ -595,7 +597,7 @@ public class PlanDefinitionServiceTest {
      * @throws AccessValidationException
      */
     @Test
-    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_unhandledResponses() throws  AccessValidationException {
+    public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_unhandledResponses() throws AccessValidationException, ServiceException {
         // Arrange
         Instant before = Instant.now();
         Instant after = Instant.now();
@@ -697,7 +699,7 @@ public class PlanDefinitionServiceTest {
     }
 
     @Test
-    public void retirePlanDefinition_activeCarePlanReferences_throwsError() {
+    public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
         // Arrange
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition(PLANDEFINITION_ID_1, Enumerations.PublicationStatus.ACTIVE);

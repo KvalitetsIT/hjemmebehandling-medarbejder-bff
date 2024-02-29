@@ -4,6 +4,8 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.MeasurementTypeDto;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,8 +41,14 @@ public class ValueSetController extends BaseController {
   })
   @GetMapping(value = "/v1/measurementtype")
   public ResponseEntity<List<MeasurementTypeDto>> getMeasurementTypes() {
-    List<MeasurementTypeModel> measurementTypes = valueSetService.getMeasurementTypes();
+    try {
+      List<MeasurementTypeModel> measurementTypes = valueSetService.getMeasurementTypes();
+      return ResponseEntity.ok(measurementTypes.stream().map(dtoMapper::mapMeasurementTypeModel).collect(Collectors.toList()));
 
-    return ResponseEntity.ok(measurementTypes.stream().map(dtoMapper::mapMeasurementTypeModel).collect(Collectors.toList()));
+    } catch(ServiceException e) {
+      logger.error("Could not get measurement types", e);
+      throw toStatusCodeException(e);
+    }
+
   }
 }

@@ -65,7 +65,7 @@ public class PlanDefinitionService extends AccessValidatingService {
         }
     }
 
-    private void validateReferences(PlanDefinitionModel planDefinition) throws AccessValidationException {
+    private void validateReferences(PlanDefinitionModel planDefinition) throws AccessValidationException, ServiceException {
         // Validate questionnaires
         if(planDefinition.getQuestionnaires() != null && !planDefinition.getQuestionnaires().isEmpty()) {
             FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(planDefinition.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toList()));
@@ -142,8 +142,9 @@ public class PlanDefinitionService extends AccessValidatingService {
         List<String> newQuestionnaires = questionnaireIds.stream().filter(qId -> !currentQuestionnaires.contains(qId)).collect(Collectors.toList());
         if (!newQuestionnaires.isEmpty()) {
             FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
+            var orgId = fhirClient.getOrganizationId();
             boolean newQuestionnaireInActiveUse = carePlanResult.getCarePlans().stream()
-                .map(carePlan -> fhirMapper.mapCarePlan(carePlan, carePlanResult))
+                .map(carePlan -> fhirMapper.mapCarePlan(carePlan, carePlanResult, orgId))
                 .flatMap(carePlanModel -> carePlanModel.getQuestionnaires().stream().map(questionnaireWrapperModel -> questionnaireWrapperModel.getQuestionnaire().getId()))
                 .anyMatch(questionnaireId -> newQuestionnaires.contains(questionnaireId.toString()));
 
@@ -165,8 +166,9 @@ public class PlanDefinitionService extends AccessValidatingService {
         if (!removedQuestionnaireIds.isEmpty()) {
             // get careplans we are removing the questionnaire(s) to
             FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
+            var orgId = fhirClient.getOrganizationId();
             carePlanResult.getCarePlans().stream().forEach(carePlan -> {
-                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
+                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult, orgId);
                 carePlanModel.getQuestionnaires()
                         .removeIf(qw -> removedQuestionnaireIds.contains(qw.getQuestionnaire().getId().toString()));
 
@@ -183,8 +185,9 @@ public class PlanDefinitionService extends AccessValidatingService {
 
             // get careplans we are adding the questionnaire(s) to
             FhirLookupResult carePlanResult = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId);
-            carePlanResult.getCarePlans().stream().forEach(carePlan -> {
-                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult);
+            var orgId = fhirClient.getOrganizationId();
+            carePlanResult.getCarePlans().forEach(carePlan -> {
+                CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult, orgId);
 
                 // loop quesitonnaires and add
                 newQuestionnaireList.forEach(questionnaireModel -> {
@@ -295,8 +298,9 @@ public class PlanDefinitionService extends AccessValidatingService {
         }
 
         lookupResult.merge(fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId));
+        var orgId = fhirClient.getOrganizationId();
         return lookupResult.getCarePlans().stream()
-            .map(carePlan -> fhirMapper.mapCarePlan(carePlan, lookupResult))
+            .map(carePlan -> fhirMapper.mapCarePlan(carePlan, lookupResult, orgId))
             .collect(Collectors.toList());
     }
 
@@ -306,7 +310,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
     }
 
-    private boolean questionnaireHasUnexaminedResponses(String carePlanId, List<String> questionnaireIds) {
+    private boolean questionnaireHasUnexaminedResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException {
         return fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), carePlanId)
                 .getQuestionnaireResponses().stream()
                 .anyMatch(questionnaireResponse -> questionnaireIds.contains(questionnaireResponse.getQuestionnaire()));

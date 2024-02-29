@@ -75,28 +75,29 @@ public class PatientService extends AccessValidatingService {
         return List.of(p);
     }
 
-    public PatientModel getPatient(String cpr) {
+    public PatientModel getPatient(String cpr) throws ServiceException {
         // Look up the patient
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
         if(!patient.isPresent()) {
             return null;
         }
 
+        var orgId = fhirClient.getOrganizationId();
+
         // Map to the domain model
-        return fhirMapper.mapPatient(patient.get());
+        return fhirMapper.mapPatient(patient.get(), orgId);
     }
 
     boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
-        var patientIsInList = listToSearchForPatient
+        return listToSearchForPatient
                 .stream().
                 anyMatch(listP -> Objects.equals(
                         fhirMapper.extractCpr(listP),
                         fhirMapper.extractCpr(patientToSearchFor)
                 ));
-        return patientIsInList;
     }
 
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException {
 
         var patients = new ArrayList<Patient>();
 
@@ -111,32 +112,36 @@ public class PatientService extends AccessValidatingService {
             patients.addAll(patientsWithInactiveCareplan);
         }
 
+        var orgId = fhirClient.getOrganizationId();
+
         // Map the resources
         return patients
                 .stream()
                 .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
-                .map(p -> fhirMapper.mapPatient(p))
+                .map(p -> fhirMapper.mapPatient(p, orgId))
                 .collect(Collectors.toList());
     }
 
 
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException {
         List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
 
         return new PaginatedList<>(patients, pagination).getList();
     }
 
 
-    public List<PatientModel> searchPatients(List<String> searchStrings) {
+    public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.searchPatients(searchStrings, CarePlan.CarePlanStatus.ACTIVE);
         if(lookupResult.getPatients().isEmpty()) {
             return List.of();
         }
 
+        var organizationId = fhirClient.getOrganizationId();
+
         // Map the resources
         return lookupResult.getPatients()
             .stream()
-            .map(p -> fhirMapper.mapPatient(p))
+            .map(p -> fhirMapper.mapPatient(p, organizationId))
             .collect(Collectors.toList());
     }
 }
