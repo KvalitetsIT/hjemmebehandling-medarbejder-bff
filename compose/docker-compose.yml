@@ -50,7 +50,7 @@ services:
          condition: service_healthy
      environment:
        - init_test_data=true
-
+       - init_questionnaire_and_plandefinition_infektionsmedicinsk=true
    person-service:
      image: mockserver/mockserver
      command: -logLevel DEBUG -serverPort 1081
