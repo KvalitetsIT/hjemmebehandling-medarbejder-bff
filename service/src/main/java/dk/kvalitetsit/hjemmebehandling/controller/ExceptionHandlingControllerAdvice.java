@@ -47,7 +47,7 @@ public class ExceptionHandlingControllerAdvice {
 
     @ExceptionHandler(ServiceException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorDto internalServerErrorException(ServiceException exception, HttpServletRequest request) {
+    public ErrorDto ServiceErrorException(ServiceException exception, HttpServletRequest request) {
         return handleException(HttpStatus.FORBIDDEN, request, exception.getErrorDetails());
     }
 
