@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.ErrorDto;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,6 +42,7 @@ public class ExceptionHandlingControllerAdvice {
     public ErrorDto internalServerErrorException(InternalServerErrorException exception, HttpServletRequest request) {
         return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, exception.getErrorDetails());
     }
+
 
     private ErrorDto handleException(HttpStatus httpStatus, HttpServletRequest request, ErrorDetails errorDetails) {
         String path = request.getRequestURI();

@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 public abstract class BaseController {
     protected RuntimeException toStatusCodeException(Exception e) {
+
         if(e.getClass() == AccessValidationException.class) {
             return toStatusCodeException((AccessValidationException) e);
         }

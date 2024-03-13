@@ -33,7 +33,7 @@ public class UserContextInterceptor implements HandlerInterceptor {
 		String autHeader = request.getHeader("authorization");
 		if(autHeader!=null) {
 			String[] token = autHeader.split(" ");
-			if(token != null && token[0]!=null && BEARER.equals(token[0])) {
+			if(token[0] != null && BEARER.equals(token[0])) {
 				//Removes "Bearer"
 				jwt = JWT.decode(token[1]);
 				//We should verify bearer token

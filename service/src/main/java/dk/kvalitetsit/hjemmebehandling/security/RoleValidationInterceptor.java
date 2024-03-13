@@ -26,9 +26,13 @@ public class RoleValidationInterceptor implements HandlerInterceptor {
 		// Check if the user has any of the allowed roles 
 		String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
 
+		if ( userEntitlements == null ) throw new UnauthorizedException("The user is not having any entitlements");
+
 		for (String userEntitlement : userEntitlements) {
 			if (allowedRoles.contains(userEntitlement)) return true;
 		}
+
+
 		throw new UnauthorizedException("The user does not have the correct permissions");
 	}
 }
