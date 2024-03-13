@@ -40,6 +40,9 @@ public class UserContextInterceptor implements HandlerInterceptor {
 			}
 		}
 
+		if (jwt != null) System.out.println(jwt.toString());
+
+
         userContextProvider.setUserContext(contextHandler.mapTokenToUser(client,jwt));
 
         return true;

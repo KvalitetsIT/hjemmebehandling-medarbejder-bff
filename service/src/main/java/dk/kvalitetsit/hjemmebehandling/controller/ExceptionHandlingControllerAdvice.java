@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class ExceptionHandlingControllerAdvice {
+
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorDto badRequestException(BadRequestException exception, HttpServletRequest request) {
@@ -41,6 +42,13 @@ public class ExceptionHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorDto internalServerErrorException(InternalServerErrorException exception, HttpServletRequest request) {
         return handleException(HttpStatus.INTERNAL_SERVER_ERROR, request, exception.getErrorDetails());
+    }
+
+
+    @ExceptionHandler(ServiceException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorDto internalServerErrorException(ServiceException exception, HttpServletRequest request) {
+        return handleException(HttpStatus.FORBIDDEN, request, exception.getErrorDetails());
     }
 
 
