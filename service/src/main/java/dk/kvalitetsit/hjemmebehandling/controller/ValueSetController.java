@@ -4,7 +4,6 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.MeasurementTypeDto;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

@@ -35,15 +35,15 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 public class CarePlanService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
 
-    private DateProvider dateProvider;
+    private final DateProvider dateProvider;
 
-    private CustomUserClient customUserService;
+    private final CustomUserClient customUserService;
 
-    private DtoMapper dtoMapper;
+    private final DtoMapper dtoMapper;
 
     private UserContextProvider userContextProvider;
     @Value("${patientidp.api.url}")
@@ -241,7 +241,7 @@ public class CarePlanService extends AccessValidatingService {
         // Get the careplan
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult carePlanResult = fhirClient.lookupCarePlanById(qualifiedId);
-        if (!carePlanResult.getCarePlan(qualifiedId).isPresent()) {
+        if (carePlanResult.getCarePlan(qualifiedId).isEmpty()) {
             throw new ServiceException(String.format("Could not look up careplan by id %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
         }
         CarePlan carePlan = carePlanResult.getCarePlan(qualifiedId).get();
@@ -551,7 +551,7 @@ public class CarePlanService extends AccessValidatingService {
     private void refreshFrequencyTimestampForCarePlan(CarePlanModel carePlanModel) {
         var carePlanSatisfiedUntil = carePlanModel.getQuestionnaires()
                 .stream()
-                .map(qw -> qw.getSatisfiedUntil())
+                .map(QuestionnaireWrapperModel::getSatisfiedUntil)
                 .min(Comparator.naturalOrder())
                 .orElse(Instant.MAX);
         carePlanModel.setSatisfiedUntil(carePlanSatisfiedUntil);
@@ -560,7 +560,7 @@ public class CarePlanService extends AccessValidatingService {
     private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, Pagination pagination) {
         return responses
                 .stream()
-                .skip((pagination.getOffset() - 1) * pagination.getLimit())
+                .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
                 .limit(pagination.getLimit())
                 .collect(Collectors.toList());
     }

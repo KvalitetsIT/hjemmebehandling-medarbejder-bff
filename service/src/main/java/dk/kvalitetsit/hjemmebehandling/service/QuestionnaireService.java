@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
 
     public QuestionnaireService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
         super(accessValidator);
@@ -40,7 +40,7 @@ public class QuestionnaireService extends AccessValidatingService {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
 
         Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(questionnaireId);
-        if(!questionnaire.isPresent()) {
+        if(questionnaire.isEmpty()) {
             return Optional.empty();
         }
 
@@ -55,7 +55,7 @@ public class QuestionnaireService extends AccessValidatingService {
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
 
-        return lookupResult.getQuestionnaires().stream().map(q -> fhirMapper.mapQuestionnaire(q)).collect(Collectors.toList());
+        return lookupResult.getQuestionnaires().stream().map(fhirMapper::mapQuestionnaire).collect(Collectors.toList());
     }
 
     public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
@@ -84,7 +84,7 @@ public class QuestionnaireService extends AccessValidatingService {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
-        if(lookupResult.getQuestionnaires().size() != 1 || !lookupResult.getQuestionnaire(questionnaireId).isPresent()) {
+        if(lookupResult.getQuestionnaires().size() != 1 || lookupResult.getQuestionnaire(questionnaireId).isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
         Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId).get();

@@ -7,14 +7,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FhirLookupResult {
-    private Map<String, CarePlan> carePlansById;
-    private Map<String, Organization> organizationsById;
-    private Map<String, Patient> patientsById;
-    private Map<String, PlanDefinition> planDefinitionsById;
-    private Map<String, Questionnaire> questionnairesById;
-    private Map<String, QuestionnaireResponse> questionnaireResponsesById;
-    private Map<String, Practitioner> practitionersById;
-    private Map<String, ValueSet> valueSetsById;
+    private final Map<String, CarePlan> carePlansById;
+    private final Map<String, Organization> organizationsById;
+    private final Map<String, Patient> patientsById;
+    private final Map<String, PlanDefinition> planDefinitionsById;
+    private final Map<String, Questionnaire> questionnairesById;
+    private final Map<String, QuestionnaireResponse> questionnaireResponsesById;
+    private final Map<String, Practitioner> practitionersById;
+    private final Map<String, ValueSet> valueSetsById;
 
     private FhirLookupResult() {
         // Using LinkedHashMap preserves the insertion order (necessary for eg. returning sorted results).
@@ -157,7 +157,7 @@ public class FhirLookupResult {
     }
 
     private <T extends Resource> List<T> getResources(Map<String, T> resourcesById) {
-        return resourcesById.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(resourcesById.values());
     }
 
     private void addResource(Resource resource) {

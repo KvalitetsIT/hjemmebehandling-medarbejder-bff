@@ -640,7 +640,7 @@ public class FhirMapper {
 
         var lines = patient.getAddressFirstRep().getLine();
         if(lines != null && !lines.isEmpty()) {
-            contactDetails.setStreet(String.join(", ", lines.stream().map(l -> l.getValue()).collect(Collectors.toList())));
+            contactDetails.setStreet(lines.stream().map(PrimitiveType::getValue).collect(Collectors.joining(", ")));
         }
         contactDetails.setCity(patient.getAddressFirstRep().getCity());
         contactDetails.setPostalCode(patient.getAddressFirstRep().getPostalCode());
@@ -773,7 +773,7 @@ public class FhirMapper {
     private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {
         return item.stream()
             .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
-            .map(i -> i.getText())
+            .map(Questionnaire.QuestionnaireItemComponent::getText)
             .filter(Objects::nonNull)
             .findFirst()
             .orElse(null)
@@ -818,7 +818,7 @@ public class FhirMapper {
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
         return enableWhens
             .stream()
-            .map(ew -> mapEnableWhen(ew))
+            .map(this::mapEnableWhen)
             .collect(Collectors.toList());
     }
 
@@ -836,7 +836,7 @@ public class FhirMapper {
     private List<QuestionModel.EnableWhen> mapEnableWhenComponents(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
         return enableWhen
             .stream()
-            .map(ew -> mapEnableWhenComponent(ew))
+            .map(this::mapEnableWhenComponent)
             .collect(Collectors.toList());
     }
 
@@ -1179,7 +1179,7 @@ public class FhirMapper {
         if(planDefinitionModel.getQuestionnaires() != null) {
             planDefinition.setAction(planDefinitionModel.getQuestionnaires()
                 .stream()
-                .map(q -> buildPlanDefinitionAction(q))
+                .map(this::buildPlanDefinitionAction)
                 .collect(Collectors.toList()));
         }
 

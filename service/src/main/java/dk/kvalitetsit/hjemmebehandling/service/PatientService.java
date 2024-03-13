@@ -28,11 +28,11 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
-    private FhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    private FhirMapper fhirMapper;
+    private final FhirMapper fhirMapper;
     
-    private DtoMapper dtoMapper;
+    private final DtoMapper dtoMapper;
     
     private CustomUserClient customUserService;
 
@@ -78,7 +78,7 @@ public class PatientService extends AccessValidatingService {
     public PatientModel getPatient(String cpr) throws ServiceException {
         // Look up the patient
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(!patient.isPresent()) {
+        if(patient.isEmpty()) {
             return null;
         }
 

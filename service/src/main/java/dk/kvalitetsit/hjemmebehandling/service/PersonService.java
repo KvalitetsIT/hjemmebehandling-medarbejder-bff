@@ -23,7 +23,7 @@ public class PersonService {
 	@Value("${cpr.url}")
 	private String cprUrl;
     
-	private RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 	
 
     public PersonService(RestTemplate restTemplate) {

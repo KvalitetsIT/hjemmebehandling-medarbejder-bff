@@ -28,8 +28,8 @@ public enum ErrorDetails {
     REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES("Et eller flere af de fjernede spørgeskemaer har ubehandlede besvarelser.", 32),
     MISSING_SOR_CODE("En organisation kunne ikke tilkyttes SOR-koden", 33),
     INTERNAL_SERVER_ERROR("Der opstod en intern fejl i systemet.", 99);
-    private String errorMessage;
-    private int errorCode;
+    private final String errorMessage;
+    private final int errorCode;
     private String details;
 
     ErrorDetails(String errorMessage, int errorCode) {

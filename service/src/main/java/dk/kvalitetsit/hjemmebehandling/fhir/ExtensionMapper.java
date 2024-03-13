@@ -65,7 +65,7 @@ public class ExtensionMapper {
     }
 
     public static List<Extension> mapThresholds(List<ThresholdModel> thresholds) {
-        return thresholds.stream().map(t -> mapThreshold(t)).collect(Collectors.toList());
+        return thresholds.stream().map(ExtensionMapper::mapThreshold).collect(Collectors.toList());
     }
 
     public static Extension mapThreshold(ThresholdModel threshold) {
@@ -134,7 +134,7 @@ public class ExtensionMapper {
     }
 
     public static List<ThresholdModel> extractThresholds(List<Extension> extensions) {
-        return extensions.stream().map(e -> extractThreshold(e)).collect(Collectors.toList());
+        return extensions.stream().map(ExtensionMapper::extractThreshold).collect(Collectors.toList());
     }
 
     public static ThresholdModel extractThreshold(Extension extension) {

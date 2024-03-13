@@ -51,34 +51,31 @@ public class FhirClient {
 
 
     public FhirLookupResult lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) throws ServiceException {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var statusCriterion = PlanDefinition.STATUS.exactly().code(Enumerations.PublicationStatus.ACTIVE.toCode());
         var questionnaireCriterion = PlanDefinition.DEFINITION.hasId(questionnaireId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
 
         return lookupPlanDefinitionsByCriteria(criteria);
     }
 
 
     public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) throws ServiceException {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var plandefinitionCriterion = CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
 
         return lookupCarePlansByCriteria(criteria);
     }
 
     public FhirLookupResult lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) throws ServiceException {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(patientCriterion, organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(patientCriterion, organizationCriterion));
         if(onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
@@ -89,10 +86,9 @@ public class FhirClient {
 
     
     public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied) throws ServiceException {
-        var criteria = new ArrayList<ICriterion<?>>();
 
         var organizationCriterion = buildOrganizationCriterion();
-        criteria.addAll(List.of(organizationCriterion));
+        var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
         if(onlyUnSatisfied){
@@ -107,7 +103,7 @@ public class FhirClient {
 
         if(cpr.isPresent()){
             Optional<Patient> patient = lookupPatientByCpr(cpr.get());
-            if(!patient.isPresent()) {
+            if(patient.isEmpty()) {
                 return FhirLookupResult.fromResources();
             }
             String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
@@ -167,8 +163,7 @@ public class FhirClient {
     public FhirLookupResult getPatientsByStatus(CarePlan.CarePlanStatus status) throws ServiceException {
         var organizationCriterion = buildOrganizationCriterion();
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion));
-        return fhirLookupResult;
+        return lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion));
     }
 
     public FhirLookupResult lookupQuestionnaireResponseById(String questionnaireResponseId) {
@@ -397,7 +392,7 @@ public class FhirClient {
     private List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {
         return carePlans
                 .stream()
-                .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(ic -> ic.getValue()))
+                .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(PrimitiveType::getValue))
                 .collect(Collectors.toList());
     }
 
@@ -405,7 +400,7 @@ public class FhirClient {
         return questionnaireResponses
             .stream()
             .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
-            .filter(id -> id != null)
+            .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toList());
     }
@@ -432,7 +427,7 @@ public class FhirClient {
         var query = client
                 .search()
                 .forResource(resourceClass);
-        if(criteria != null && criteria.size() > 0) {
+        if(criteria != null && !criteria.isEmpty()) {
             query = query.where(criteria.get(0));
             for(int i = 1; i < criteria.size(); i++) {
                 query = query.and(criteria.get(i));
@@ -459,8 +454,8 @@ public class FhirClient {
             List<String> organizationIds = lookupResult.values()
                     .stream()
                     .map(r -> ExtensionMapper.tryExtractOrganizationId(r.getExtension()))
-                    .filter(id -> id.isPresent())
-                    .map(id -> id.get())
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -537,7 +532,7 @@ public class FhirClient {
             return;
         }
         if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
-            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present!", extendable.getId()));
+            throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present! - %S", extendable.getId()));
         }
 
         extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));

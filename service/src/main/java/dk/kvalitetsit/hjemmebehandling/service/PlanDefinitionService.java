@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 public class PlanDefinitionService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionService.class);
 
-    private FhirClient fhirClient;
-    private FhirMapper fhirMapper;
-    private DateProvider dateProvider;
+    private final FhirClient fhirClient;
+    private final FhirMapper fhirMapper;
+    private final DateProvider dateProvider;
 
     public PlanDefinitionService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DateProvider dateProvider) {
         super(accessValidator);

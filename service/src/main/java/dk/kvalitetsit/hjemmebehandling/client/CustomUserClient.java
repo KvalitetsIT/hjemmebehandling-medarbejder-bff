@@ -35,7 +35,7 @@ public class CustomUserClient {
     public Optional<CustomUserResponseDto> createUser(CustomUserRequestDto userCreateRequest) throws JsonMappingException, JsonProcessingException {
     	if(patientidpApiUrl==null || patientidpApiUrl.isEmpty()) {
     		logger.info("The custom url: patientidp.api.url i not set. User not created in customuser");
-    		return Optional.ofNullable(null);
+    		return Optional.empty();
     	}
     	// Init headers
     	HttpHeaders headers = new HttpHeaders();

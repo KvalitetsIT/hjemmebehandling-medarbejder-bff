@@ -15,9 +15,9 @@ public class UserContextInterceptor implements HandlerInterceptor {
 
 	private static final String BEARER = "Bearer";
 	
-	private IUserContextHandler contextHandler;
-	private UserContextProvider userContextProvider;
-	private FhirClient client;
+	private final IUserContextHandler contextHandler;
+	private final UserContextProvider userContextProvider;
+	private final FhirClient client;
 
     public UserContextInterceptor(FhirClient client, UserContextProvider userContextProvider, IUserContextHandler userContextHandler) {
     	this.client = client;
