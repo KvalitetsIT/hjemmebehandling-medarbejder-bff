@@ -110,7 +110,7 @@ The Web application uses the OpenApi specification to generate DTOs (Data Transf
 Openapi tools can be used to generate docs
 
 Install openapitools
-
+swagger
 ```shell
 mkdir -p ~/bin/openapitools
 curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > ~/bin/openapitools/openapi-generator-cli

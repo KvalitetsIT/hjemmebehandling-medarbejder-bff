@@ -4,21 +4,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<packaging>pom</packaging>
 
-	<repositories>
-		<repository>
-			<id>Central</id>
-			<url>https://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>github-public</id>
-			<url>https://public:&#103;hp_KMUGxuItDJgOKNjadg54AOQwl4CSLY4dK1ms@maven.pkg.github.com/kvalitetsit/*</url>
-		</repository>
-		<repository>
-			<id>github-public1</id>
-			<url>https://public:&#103;hp_KMUGxuItDJgOKNjadg54AOQwl4CSLY4dK1ms@maven.pkg.github.com/kvalitetsit/*</url>
-		</repository>
-	</repositories>
-
 	<modules>
 		<module>web</module>
 		<module>service</module>
@@ -29,7 +14,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.5.12</version>
+		<version>3.2.6</version>
 	</parent>
 	<groupId>dk.kvalitetsit.hjemmebehandling-medarbejder-bff</groupId>
 	<artifactId>hjemmebehandling-medarbejder-bff</artifactId>
@@ -38,10 +23,11 @@
 	<description>KITHUGS service</description>
 
 	<properties>
-		<java.version>11</java.version>
-		<testcontainers.version>1.15.1</testcontainers.version>
-		<spring-prometheus-app-info-version>1.0.3</spring-prometheus-app-info-version>
-        <hapi-fhir.version>5.5.1</hapi-fhir.version>
+		<java.version>21</java.version>
+		<testcontainers.version>1.20.4</testcontainers.version>
+		<spring-prometheus-app-info-version>2.0.3</spring-prometheus-app-info-version>
+        <hapi-fhir.version>7.4.5</hapi-fhir.version>
+		<springdoc.version>2.2.0</springdoc.version>
 	</properties>
 
 	<dependencyManagement>
@@ -83,7 +69,7 @@
 			<dependency>
 				<groupId>dk.kvalitetsit</groupId>
 				<artifactId>spring-request-id-logger</artifactId>
-				<version>1.0.1</version>
+				<version>2.0.1</version>
 			</dependency>
 
             <!-- hapi-fhir -->
@@ -93,6 +79,12 @@
                 <version>${hapi-fhir.version}</version>
             </dependency>
 
+			<dependency>
+				<groupId>jakarta.annotation</groupId>
+				<artifactId>jakarta.annotation-api</artifactId>
+				<version>3.0.0</version>
+			</dependency>
+
             <dependency>
                 <groupId>ca.uhn.hapi.fhir</groupId>
                 <artifactId>hapi-fhir-structures-r4</artifactId>
@@ -101,8 +93,8 @@
 
             <dependency>
                 <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-ui</artifactId>
-                <version>1.5.12</version>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version> ${springdoc.version}</version>
             </dependency>
 
 			<!-- Code coverage -->

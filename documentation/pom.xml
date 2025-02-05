@@ -57,9 +57,8 @@
 			<version>${commons-lang3-version}</version>
 		</dependency>
 		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>jsr250-api</artifactId>
-			<version>${javax-annotation-version}</version>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
 	</dependencies>
 	<build>
@@ -136,7 +135,7 @@
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>5.1.0</version>
+				<version>7.10.0</version>
 				<executions>
 					<execution>
 						<goals>
@@ -148,7 +147,10 @@
 							<configOptions>
 								<sourceFolder>src/generated-sources/java/main</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
+								<useSpringBoot3>true</useSpringBoot3>
+								<useJakartaEe>true</useJakartaEe>
 							</configOptions>
+
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
 						</configuration>
