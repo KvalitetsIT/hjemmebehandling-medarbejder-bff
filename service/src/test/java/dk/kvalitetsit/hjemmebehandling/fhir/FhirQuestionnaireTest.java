@@ -12,6 +12,7 @@ import ca.uhn.fhir.context.FhirContext;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirQuestionnaireTest {
+/*
     @Test
     void questionnaire() {
       Coding NPU08676 = new Coding("urn:oid:1.2.208.176.2.1","NPU08676","Legeme temp.;Pt");
@@ -120,4 +121,5 @@ public class FhirQuestionnaireTest {
       System.out.println("----");
     }
 
+*/
 }

@@ -69,7 +69,7 @@ Integration tests can run locally by running
 mvn clean install
 cd compose 
 docker-compose up --build
-mvn verify -Pintegration-test
+`mvn verify -Pintegration-test`
 ```
 
 ## Endpoints
