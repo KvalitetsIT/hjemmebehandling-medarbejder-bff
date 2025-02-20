@@ -1,4 +1,3 @@
-version: '3.9'
 services:
    medarbejder-bff:
      image: kvalitetsit/hjemmebehandling-medarbejder-bff:dev
@@ -7,35 +6,29 @@ services:
       - 5005:5005
      environment:
       - cpr_url=http://person-service:1081/Patient/
-
       - allowed_origins=http://localhost:3000
-
       - user.context.handler=MOCK
       - user.mock.context.organization.id=123456
-      #- user.mock.context.organization.id=453071000016001
-
       - usercontext_header_name=X-Test-Auth
-
       - userattributes_role_key=UserRoles
       - userattributes_org_key=organisation
-
       - userrole_admin_values=adminrole
       - userrole_user_values=userrole1,userrole2
       - userrole_monitor_values=monitorrole
       - userrole_provisioner_values=provisionerrole
-
       - JVM_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 
    hapi-server:
-     image: kvalitetsit/hjemmebehandling-hapi-fhir-server:b2ade7c4e2654c7936a9475ad9ca9fa8550268be
+     image: kvalitetsit/hjemmebehandling-hapi-fhir-server:a321e0eb5f8b3249ff1c76cc98f94fabf7494b69
      environment:
-       - spring.datasource.url=jdbc:mysql://mariadb:3306/hapi
+       - spring.datasource.url=jdbc:postgresql://postgres:5432/hapi
        - spring.datasource.username=hapi
        - spring.datasource.password=hapi
      ports:
        - 8082:8080
+       - 8083:8081
      depends_on:
-       - mariadb
+       - postgres
      healthcheck:
        test: [ "CMD", "curl", "-f", "http://localhost:8080/fhir/metadata" ]
        interval: 1m
@@ -51,6 +44,7 @@ services:
      environment:
        - init_test_data=true
        - init_questionnaire_and_plandefinition_infektionsmedicinsk=true
+
    person-service:
      image: mockserver/mockserver
      command: -logLevel DEBUG -serverPort 1081
@@ -71,10 +65,13 @@ services:
      volumes:
       - ./custom-login-service/initializerJson.json:/config/initializerJson.json
 
-   mariadb:
-     image: mariadb:10.7
+
+   postgres:
+     image: postgres:16-alpine
      environment:
-       - MARIADB_USER=hapi
-       - MARIADB_PASSWORD=hapi
-       - MARIADB_ROOT_PASSWORD=hapi
-       - MARIADB_DATABASE=hapi
+       - POSTGRES_USER=hapi
+       - POSTGRES_PASSWORD=hapi
+       - POSTGRES_ROOT_PASSWORD=hapi
+       - POSTGRES_DATABASE=hapi
+     ports:
+       - 5432:5432

@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.security;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;

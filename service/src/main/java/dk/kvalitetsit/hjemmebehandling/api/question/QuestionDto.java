@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.api.question;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import dk.kvalitetsit.hjemmebehandling.api.MeasurementTypeDto;
 import dk.kvalitetsit.hjemmebehandling.api.ThresholdDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
@@ -11,6 +12,7 @@ public class QuestionDto {
     private String linkId;
     private String text;
     private String abbreviation;
+
     private String helperText;
     private boolean required;
     private QuestionType questionType;
@@ -18,7 +20,10 @@ public class QuestionDto {
     private List<QuestionModel.EnableWhen> enableWhen;
     private List<ThresholdDto> thresholds;
     private MeasurementTypeDto measurementType;
+
+    @JsonBackReference
     private List<QuestionDto> subQuestions;
+
 
     private boolean deprecated;
 
@@ -117,4 +122,5 @@ public class QuestionDto {
     public void setSubQuestions(List<QuestionDto> subQuestions) {
         this.subQuestions = subQuestions;
     }
+
 }

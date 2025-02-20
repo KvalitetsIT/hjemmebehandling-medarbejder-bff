@@ -1,7 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 public class PatientDto {
