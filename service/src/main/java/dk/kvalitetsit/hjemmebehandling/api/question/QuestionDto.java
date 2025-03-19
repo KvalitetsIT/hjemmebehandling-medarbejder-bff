@@ -25,6 +25,9 @@ public class QuestionDto {
     @JsonManagedReference
     private List<QuestionDto> subQuestions;
 
+    @JsonBackReference
+    private QuestionDto parentQuestion;
+
     private boolean deprecated;
 
     public boolean isDeprecated() {
