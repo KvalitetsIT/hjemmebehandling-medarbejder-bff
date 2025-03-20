@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
+import java.util.List;
 import java.util.Optional;
 
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -8,6 +9,7 @@ import org.hl7.fhir.r4.model.Organization;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import org.openapitools.model.UserContext;
 
 public class DIASUserContextHandler implements IUserContextHandler {
 
@@ -41,8 +43,8 @@ public class DIASUserContextHandler implements IUserContextHandler {
         
         context.setUserId(jwt.getClaim(DIASUserContextHandler.REGIONS_ID) !=null ? jwt.getClaim(DIASUserContextHandler.REGIONS_ID).asString() : null );
         context.setEmail(jwt.getClaim(DIASUserContextHandler.EMAIL) !=null ? jwt.getClaim(DIASUserContextHandler.EMAIL).asString() : null );
-        context.setEntitlements(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS) !=null ? jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS).asArray(String.class) : null );
-        context.setAuthorizationIds(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS) !=null ? jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS).asArray(String.class) : null );
+        context.setEntitlements(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS) !=null ? List.of(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS).toString()) : null );
+        context.setAuthorizationIds(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS) !=null ? List.of(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS).toString()) : null );
 		
         
         

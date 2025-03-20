@@ -22,46 +22,27 @@ public abstract class BaseController {
     }
 
     private RuntimeException toStatusCodeException(ServiceException e) {
-        switch(e.getErrorKind()) {
-            case BAD_GATEWAY:
-            case BAD_REQUEST:
-                return fromErrorDetails(e.getErrorDetails());
-            case INTERNAL_SERVER_ERROR:
-            default:
-                return new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
-        }
+        return switch (e.getErrorKind()) {
+            case BAD_GATEWAY, BAD_REQUEST -> fromErrorDetails(e.getErrorDetails());
+            default -> new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
+        };
     }
 
     private RuntimeException fromErrorDetails(ErrorDetails e) {
-        switch(e) {
-            case CAREPLAN_EXISTS:
-            case CAREPLAN_ALREADY_FULFILLED:
-            case QUESTIONNAIRES_MISSING_FOR_CAREPLAN:
-            case UNSUPPORTED_SEARCH_PARAMETER_COMBINATION:
-            case PARAMETERS_INCOMPLETE:
-            case CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES:
-            case CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES:
-            case QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN:
-            case PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN:
-            case PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES:
-            case PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES:
-            case REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES:
-            case REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES:
-                throw new BadRequestException(e);
-
-            case CAREPLAN_DOES_NOT_EXIST:
-            case PATIENT_DOES_NOT_EXIST:
-            case QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST:
-            case QUESTIONNAIRE_DOES_NOT_EXIST:
-                throw new ResourceNotFoundException(e);
-            case ACCESS_VIOLATION:
-            case MISSING_SOR_CODE:
-                throw new ForbiddenException(e);
-            case CUSTOMLOGIN_UNKNOWN_ERROR:
-                throw new BadGatewayException(e);
-            case INTERNAL_SERVER_ERROR:
-            default:
-                return new InternalServerErrorException(e);
-        }
+        return switch (e) {
+            case CAREPLAN_EXISTS, CAREPLAN_ALREADY_FULFILLED, QUESTIONNAIRES_MISSING_FOR_CAREPLAN,
+                 UNSUPPORTED_SEARCH_PARAMETER_COMBINATION, PARAMETERS_INCOMPLETE,
+                 CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES, CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES,
+                 QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN,
+                 PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES,
+                 PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES,
+                 REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES,
+                 REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES -> throw new BadRequestException(e);
+            case CAREPLAN_DOES_NOT_EXIST, PATIENT_DOES_NOT_EXIST, QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST,
+                 QUESTIONNAIRE_DOES_NOT_EXIST -> throw new ResourceNotFoundException(e);
+            case ACCESS_VIOLATION, MISSING_SOR_CODE -> throw new ForbiddenException(e);
+            case CUSTOMLOGIN_UNKNOWN_ERROR -> throw new BadGatewayException(e);
+            default -> new InternalServerErrorException(e);
+        };
     }
 }

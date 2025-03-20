@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.openapitools.model.UserContext;
 
 public interface IUserContextHandler {
 

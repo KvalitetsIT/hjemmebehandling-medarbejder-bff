@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
@@ -169,6 +171,30 @@ public class DtoMapperTest {
         // Assert
         assertEquals(1, result.getQuestions().size());
         assertEquals(1, result.getQuestions().get(0).getEnableWhens().size());
+    }
+
+    @Test
+    public void mapQuestionDto_includeSubQuestions() throws JsonProcessingException {
+        // Arrange
+        QuestionDto questionDto = buildQuestionDto();
+
+        QuestionDto subQuestion1 = new QuestionDto();
+        subQuestion1.setText("SubQuestion1");
+
+        QuestionDto subQuestion2 = new QuestionDto();
+        subQuestion2.setText("SubQuestion2");
+
+        var subQuestions = List.of(subQuestion1, subQuestion2);
+
+
+        questionDto.setSubQuestions(subQuestions);
+        String json = new ObjectMapper().writeValueAsString(questionDto);
+
+        var expected = """
+                {"linkId":null,"text":"Hvordan har du det?","abbreviation":null,"helperText":null,"required":false,"questionType":null,"options":null,"enableWhen":null,"thresholds":null,"measurementType":null,"subQuestions":[{"linkId":null,"text":"SubQuestion1","abbreviation":null,"helperText":null,"required":false,"questionType":null,"options":null,"enableWhen":null,"thresholds":null,"measurementType":null,"subQuestions":null,"deprecated":false},{"linkId":null,"text":"SubQuestion2","abbreviation":null,"helperText":null,"required":false,"questionType":null,"options":null,"enableWhen":null,"thresholds":null,"measurementType":null,"subQuestions":null,"deprecated":false}],"deprecated":false}""";
+
+        assertEquals(expected, json);
+
     }
 
     @Test
