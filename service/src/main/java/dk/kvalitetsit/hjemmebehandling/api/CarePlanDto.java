@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.openapitools.model.PatientDto;
 
 import java.time.Instant;
 import java.time.Period;

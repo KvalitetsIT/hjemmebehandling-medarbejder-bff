@@ -17,6 +17,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.model.CreatePatientRequest;
+import org.openapitools.model.PatientDto;
+import org.openapitools.model.PatientListResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -52,7 +55,7 @@ public class PatientControllerTest {
     Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
     // Act
-    PatientListResponse result = subject.getPatientList();
+    PatientListResponse result = subject.getPatientList().getBody();
 
     // Assert
     //assertEquals(HttpStatus.CREATED, result.getStatusCode());
@@ -112,7 +115,7 @@ public class PatientControllerTest {
     Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
     // Act
-    PatientDto result = subject.getPatient(Mockito.anyString());
+    PatientDto result = subject.getPatient(Mockito.anyString()).getBody();
 
     // Assert
     //assertEquals(HttpStatus.CREATED, result.getStatusCode());
@@ -130,7 +133,7 @@ public class PatientControllerTest {
     Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
     // Act
-    PatientListResponse result = subject.searchPatients(Mockito.anyString());
+    PatientListResponse result = subject.searchPatients(Mockito.anyString()).getBody();
 
     // Assert
     //assertEquals(HttpStatus.CREATED, result.getStatusCode());

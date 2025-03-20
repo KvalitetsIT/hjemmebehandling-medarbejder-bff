@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import org.openapitools.model.ContactDetailsDto;
+
 public class PersonDto {
 	private String cpr;
     private String givenName;

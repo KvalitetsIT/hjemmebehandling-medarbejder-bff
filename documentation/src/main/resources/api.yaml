@@ -859,7 +859,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PatientDto'
     post:
@@ -1655,7 +1655,7 @@ paths:
         "200":
           description: Successful operation.
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:

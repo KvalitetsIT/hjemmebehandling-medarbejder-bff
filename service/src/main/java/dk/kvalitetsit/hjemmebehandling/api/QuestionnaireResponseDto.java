@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import org.openapitools.model.PatientDto;
 
 import java.time.Instant;
 import java.util.List;

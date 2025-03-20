@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.util.Optional;
-
 @RestController
 @Tag(name = "User", description = "API for retrieving information about users.")
 public class UserController extends BaseController implements UserApi {
