@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.openapitools.model.ContactDetailsDto;
 import org.openapitools.model.MeasurementTypeDto;
 import org.openapitools.model.PatientDto;
+import org.openapitools.model.PersonDto;
 
 import java.time.LocalTime;
 import java.util.List;

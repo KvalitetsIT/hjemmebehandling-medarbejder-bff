@@ -50,9 +50,7 @@ public class PatientController extends BaseController implements PatientApi {
 
     private PatientListResponse buildResponse(List<PatientModel> patients) {
         PatientListResponse response = new PatientListResponse();
-
         response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).collect(Collectors.toList()));
-
         return response;
     }
 
