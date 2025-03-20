@@ -13,6 +13,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
+import org.openapitools.model.MeasurementTypeDto;
 
 import java.time.LocalTime;
 import java.util.List;

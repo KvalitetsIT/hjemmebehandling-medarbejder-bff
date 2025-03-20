@@ -2,10 +2,10 @@ package dk.kvalitetsit.hjemmebehandling.api.question;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import dk.kvalitetsit.hjemmebehandling.api.MeasurementTypeDto;
 import dk.kvalitetsit.hjemmebehandling.api.ThresholdDto;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import org.openapitools.model.MeasurementTypeDto;
 
 import java.util.List;
 

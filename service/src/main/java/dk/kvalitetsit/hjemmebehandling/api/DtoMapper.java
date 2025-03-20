@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.openapitools.model.MeasurementTypeDto;
 import org.springframework.stereotype.Component;
 
 import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
