@@ -134,7 +134,14 @@
 				<artifactId>gson-fire</artifactId>
 				<version>1.8.3</version>
 			</dependency>
+
+			<dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>jackson-databind-nullable</artifactId>
+			<version>0.2.6</version>
+		</dependency>
 		</dependencies>
+
 
 	</dependencyManagement>
 
