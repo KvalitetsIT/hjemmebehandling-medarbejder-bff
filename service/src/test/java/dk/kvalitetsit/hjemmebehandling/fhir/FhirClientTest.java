@@ -9,7 +9,6 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
@@ -20,8 +19,7 @@ import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.openapitools.model.UserContext;
 
 import java.time.Instant;
 import java.util.List;
@@ -825,7 +823,7 @@ public class FhirClientTest {
     }
 
     private void setupUserContext(String sorCode) {
-        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext(sorCode));
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(new UserContext().orgId(sorCode));
     }
 
     private void setupOrganization(String sorCode, String organizationId) {

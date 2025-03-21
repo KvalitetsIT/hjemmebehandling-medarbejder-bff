@@ -10,6 +10,9 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.TimeType;
+import org.openapitools.model.PlanDefinitionDto;
+import org.openapitools.model.QuestionnaireFrequencyPairDto;
+import org.openapitools.model.UpdateCareplanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -247,7 +250,7 @@ public class CarePlanController extends BaseController {
 
             return ResponseEntity.ok(planDefinitions.stream()
                     .map(dtoMapper::mapPlanDefinitionModel)
-                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
+                    .sorted(Comparator.comparing(x -> x.getLastUpdated().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }
         catch(ServiceException e) {

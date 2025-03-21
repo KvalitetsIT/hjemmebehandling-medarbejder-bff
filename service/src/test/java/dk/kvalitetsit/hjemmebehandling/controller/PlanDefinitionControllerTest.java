@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.model.CreatePlanDefinitionRequest;
+import org.openapitools.model.PlanDefinitionDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -56,7 +58,6 @@ public class PlanDefinitionControllerTest {
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
 
         // Act
-
         ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
         // Assert
@@ -100,9 +101,9 @@ public class PlanDefinitionControllerTest {
         PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto2 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto3 = new PlanDefinitionDto();
-        planDefinitionDto1.setLastUpdated(Instant.now().minus(1, ChronoUnit.DAYS));
+        planDefinitionDto1.setLastUpdated(dtoMapper.mapInstant(Instant.now().minus(1, ChronoUnit.DAYS)));
         planDefinitionDto2.setLastUpdated(null);
-        planDefinitionDto3.setLastUpdated(Instant.now());
+        planDefinitionDto3.setLastUpdated(dtoMapper.mapInstant(Instant.now()));
 
         Mockito.when(planDefinitionService.getPlanDefinitions(Collections.emptyList())).thenReturn(List.of(planDefinitionModel1, planDefinitionModel2, planDefinitionModel3));
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel1)).thenReturn(planDefinitionDto1);

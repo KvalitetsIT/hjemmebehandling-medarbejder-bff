@@ -1,8 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
-
+import org.openapitools.model.UserContext;
 @Component
 @RequestScope
 public class UserContextProvider {

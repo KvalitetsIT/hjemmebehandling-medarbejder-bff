@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import org.openapitools.model.UserContext;
 
 import java.util.List;
 
@@ -24,8 +25,8 @@ public class MockContextHandler implements IUserContextHandler {
         context.setOrgId(orgId);
         context.setUserId("TesTes");
         context.setEmail("test@rm.dk");
-        context.setEntitlements(entitlements.toArray(new String[0]));
-        context.setAuthorizationIds(new String[]{"1234"} );
+        context.setEntitlements(entitlements);
+        context.setAuthorizationIds(List.of("1234") );
 
         return context;
 	}

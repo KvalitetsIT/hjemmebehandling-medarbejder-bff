@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
@@ -11,6 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
+import org.openapitools.model.*;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -143,7 +145,7 @@ public class DtoMapperTest {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
 
         QuestionModel questionModel = buildQuestionModel();
-        questionModel.setEnableWhens( List.of(buildEnableWhen()));
+        questionModel.setEnableWhens( List.of(new QuestionModel.EnableWhen()));
         questionnaireModel.setQuestions( List.of(questionModel) );
 
         // Act
@@ -160,7 +162,7 @@ public class DtoMapperTest {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
         QuestionDto questionDto = buildQuestionDto();
-        questionDto.setEnableWhen( List.of(buildEnableWhen()) );
+        questionDto.setEnableWhen( List.of(new EnableWhen()) );
         questionnaireDto.setQuestions( List.of(questionDto) );
 
         // Act
@@ -170,6 +172,7 @@ public class DtoMapperTest {
         assertEquals(1, result.getQuestions().size());
         assertEquals(1, result.getQuestions().get(0).getEnableWhens().size());
     }
+
 
     @Test
     public void mapFrequencyModel_allValuesAreNull_noErrors(){
@@ -214,7 +217,7 @@ public class DtoMapperTest {
         assertEquals(2, result.getQuestions().get(0).getThresholds().size());
         var firstThreshold = result.getQuestions().get(0).getThresholds().get(0);
         assertNotNull(firstThreshold);
-        assertEquals(ThresholdType.NORMAL,firstThreshold.getType());
+        assertEquals( ThresholdDto.TypeEnum.NORMAL,firstThreshold.getType());
         assertEquals(questionModel.getLinkId(),firstThreshold.getQuestionId());
         assertEquals(null,firstThreshold.getValueQuantityHigh());
         assertEquals(null,firstThreshold.getValueQuantityLow());
@@ -222,7 +225,7 @@ public class DtoMapperTest {
 
          var secondThreshold = result.getQuestions().get(0).getThresholds().get(1);
          assertNotNull(secondThreshold);
-         assertEquals(ThresholdType.NORMAL,secondThreshold.getType());
+         assertEquals( ThresholdDto.TypeEnum.NORMAL,secondThreshold.getType());
          assertEquals(questionModel.getLinkId(),secondThreshold.getQuestionId());
          assertEquals(2.0,secondThreshold.getValueQuantityLow());
          assertEquals(5.0,secondThreshold.getValueQuantityHigh());
@@ -302,7 +305,7 @@ public class DtoMapperTest {
     private FrequencyDto buildFrequencyDto() {
         FrequencyDto frequencyDto = new FrequencyDto();
 
-        frequencyDto.setWeekdays(List.of(Weekday.FRI));
+        frequencyDto.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.FRI));
         frequencyDto.setTimeOfDay("04:00");
 
         return frequencyDto;
@@ -395,11 +398,11 @@ public class DtoMapperTest {
         return questionModel;
     }
 
-    private QuestionModel.EnableWhen buildEnableWhen() {
-        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
 
-        return enableWhen;
-    }
+
+
+
+
 
     private QuestionAnswerPairModel buildQuestionAnswerPairModel() {
         QuestionAnswerPairModel questionAnswerPairModel = new QuestionAnswerPairModel(buildQuestionModel(), buildAnswerModel());

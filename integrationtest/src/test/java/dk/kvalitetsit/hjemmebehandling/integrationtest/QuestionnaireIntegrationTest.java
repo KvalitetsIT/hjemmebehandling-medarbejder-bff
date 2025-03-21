@@ -2,9 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
-import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.api.QuestionnaireApi;
 import org.openapitools.client.model.*;
 
@@ -30,7 +28,6 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void createQuestionnaire_success() throws Exception {
         // Arrange
-        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
         QuestionDto question1 = new QuestionDto();
         question1.setLinkId("1");
@@ -38,15 +35,14 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         question1.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
 
 
-
         QuestionDto question2 = new QuestionDto();
         question2.setLinkId("2");
         question2.setText("Sov du heller ikke godt i går?");
         question2.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
 
-        AnswerModel answer = new AnswerModel();
+        AnswerDto answer = new AnswerDto();
         answer.setLinkId(question1.getLinkId());
-        answer.setAnswerType(AnswerModel.AnswerTypeEnum.BOOLEAN);
+        answer.setAnswerType(AnswerDto.AnswerTypeEnum.BOOLEAN);
         answer.setValue(Boolean.FALSE.toString());
 
         EnableWhen enableWhen = new EnableWhen();
@@ -54,11 +50,14 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
         enableWhen.setOperator(EnableWhen.OperatorEnum.EQUAL);
         question2.addEnableWhenItem(enableWhen);
 
-        questionnaireDto.setQuestions( List.of(question1, question2) );
-        questionnaireDto.setStatus("DRAFT");
 
-        CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
+        QuestionnaireDto questionnaireDto = new QuestionnaireDto()
+                .questions(List.of(question1, question2))
+                .status("DRAFT");
+
+                CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         request.setQuestionnaire(questionnaireDto);
+
 
         // Act
         ApiResponse<Void> response = questionnaireApi.createQuestionnaireWithHttpInfo(request);

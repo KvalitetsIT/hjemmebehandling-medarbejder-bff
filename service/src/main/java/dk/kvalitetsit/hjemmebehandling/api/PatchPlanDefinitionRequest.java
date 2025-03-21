@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import org.openapitools.model.ThresholdDto;
 
 import java.util.List;
 

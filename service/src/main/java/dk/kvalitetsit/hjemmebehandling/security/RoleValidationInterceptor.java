@@ -24,7 +24,7 @@ public class RoleValidationInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws UnauthorizedException {
 		// Check if the user has any of the allowed roles 
-		String[] userEntitlements = userContextProvider.getUserContext().getEntitlements();
+		List<String> userEntitlements = userContextProvider.getUserContext().getEntitlements();
 
 		if ( userEntitlements == null ) throw new UnauthorizedException("The user is not having any entitlements");
 

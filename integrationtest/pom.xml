@@ -66,7 +66,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.10.0</version>
+                <version>7.12.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -83,6 +83,7 @@
                             </configOptions>
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
+<!--                            <openapiNormalizer>REF_AS_PARENT_IN_ALLOF=true</openapiNormalizer>-->
                         </configuration>
                     </execution>
                 </executions>

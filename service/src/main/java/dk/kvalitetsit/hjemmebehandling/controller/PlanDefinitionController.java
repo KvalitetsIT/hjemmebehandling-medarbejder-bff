@@ -20,6 +20,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.hl7.fhir.r4.model.ResourceType;
+import org.openapitools.model.CreatePlanDefinitionRequest;
+import org.openapitools.model.PlanDefinitionDto;
+import org.openapitools.model.ThresholdDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,7 +65,7 @@ public class PlanDefinitionController extends BaseController {
 
             return ResponseEntity.ok(planDefinitions.stream()
                     .map(dtoMapper::mapPlanDefinitionModel)
-                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
+                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(OffsetDateTime::compareTo).reversed()))
                     .collect(Collectors.toList()));
         }
         catch(ServiceException e) {

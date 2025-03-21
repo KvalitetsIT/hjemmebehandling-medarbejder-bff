@@ -1,7 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.context.UserContext;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -16,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.model.UserContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,7 +54,7 @@ public class AccessValidatorTest {
         // Arrange
         var resource = buildResource();
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId())).thenReturn(Optional.empty());
@@ -70,7 +70,7 @@ public class AccessValidatorTest {
         // Arrange
         var resource = buildResource();
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         var organization = buildOrganization(ORGANIZATION_ID_1);
@@ -87,7 +87,7 @@ public class AccessValidatorTest {
         // Arrange
         var resource = buildResource(ORGANIZATION_ID_2);
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         var organization = buildOrganization(ORGANIZATION_ID_1);
@@ -104,7 +104,7 @@ public class AccessValidatorTest {
         // Arrange
         var resource = buildResource(ORGANIZATION_ID_1);
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         var organization = buildOrganization(ORGANIZATION_ID_1);
@@ -122,7 +122,7 @@ public class AccessValidatorTest {
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_2);
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         var organization = buildOrganization(ORGANIZATION_ID_1);
@@ -138,7 +138,7 @@ public class AccessValidatorTest {
     public void whenGettingOrganisationGivenNoSorCodeThenReturnError() {
         var resource1 = buildResource(ORGANIZATION_ID_1);
 
-        var context = new UserContext("");
+        var context = new UserContext().orgId("");
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource1));
@@ -150,7 +150,7 @@ public class AccessValidatorTest {
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_1);
 
-        var context = new UserContext(SOR_CODE_1);
+        var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
 
         var organization = buildOrganization(ORGANIZATION_ID_1);
