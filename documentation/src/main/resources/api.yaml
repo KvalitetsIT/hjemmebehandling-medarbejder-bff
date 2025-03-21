@@ -1784,30 +1784,12 @@ components:
           format: int32
         errorText:
           type: string
-    AnswerModel:
-      type: object
-      properties:
-        linkId:
-          type: string
-        value:
-          type: string
-        answerType:
-          type: string
-          enum:
-            - INTEGER
-            - STRING
-            - BOOLEAN
-            - QUANTITY
-            - GROUP
-        subAnswers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnswerModel'
+
     EnableWhen:
       type: object
       properties:
         answer:
-          $ref: '#/components/schemas/AnswerModel'
+          $ref: '#/components/schemas/AnswerDto'
         operator:
           type: string
           enum:
@@ -1877,30 +1859,38 @@ components:
           $ref: '#/components/schemas/QuestionDto'
         deprecated:
           type: boolean
-    QuestionnaireDto:
-      required:
-        - id
+
+    BaseDto:
       type: object
       properties:
         id:
           type: string
           description: Id of the resource
-          example: CarePlan/10
-        title:
-          type: string
-        status:
-          type: string
-        questions:
-          type: array
-          items:
-            $ref: '#/components/schemas/QuestionDto'
-        callToAction:
-          $ref: '#/components/schemas/QuestionDto'
-        version:
-          type: string
-        lastUpdated:
-          type: string
-          format: date-time
+
+
+    QuestionnaireDto:
+      allOf:
+        - $ref: "#/components/schemas/BaseDto"
+        - type: object
+          properties:
+            title:
+              type: string
+            status:
+              type: string
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionDto'
+            callToAction:
+              $ref: '#/components/schemas/QuestionDto'
+            version:
+              type: string
+            lastUpdated:
+              type: string
+              format: date-time
+
+
+
     ThresholdDto:
       type: object
       properties:
@@ -1940,30 +1930,27 @@ components:
         timeOfDay:
           type: string
     PlanDefinitionDto:
-      required:
-        - id
-      type: object
-      properties:
-        id:
-          type: string
-          description: Id of the resource
-          example: CarePlan/10
-        name:
-          type: string
-        title:
-          type: string
-        status:
-          type: string
-        created:
-          type: string
-          format: date-time
-        lastUpdated:
-          type: string
-          format: date-time
-        questionnaires:
-          type: array
-          items:
-            $ref: '#/components/schemas/QuestionnaireWrapperDto'
+      allOf:
+        - $ref: "#/components/schemas/BaseDto"
+        - type: object
+          properties:
+            name:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+            created:
+              type: string
+              format: date-time
+            lastUpdated:
+              type: string
+              format: date-time
+            questionnaires:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionnaireWrapperDto'
+
     QuestionnaireWrapperDto:
       type: object
       properties:
@@ -2069,6 +2056,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnswerDto'
+
     QuestionAnswerPairDto:
       type: object
       properties:

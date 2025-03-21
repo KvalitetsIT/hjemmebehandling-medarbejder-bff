@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model.question;
 
-import dk.kvalitetsit.hjemmebehandling.api.question.Option;
+import dk.kvalitetsit.hjemmebehandling.model.Option;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;

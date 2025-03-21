@@ -1,11 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.CreateQuestionnaireRequest;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.QuestionnaireDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatchQuestionnaireRequest;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
@@ -22,13 +18,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.model.CreateQuestionnaireRequest;
+import org.openapitools.model.PatchQuestionnaireRequest;
+import org.openapitools.model.QuestionDto;
+import org.openapitools.model.QuestionnaireDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,7 +63,7 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
 
         // Act
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -77,9 +81,15 @@ public class QuestionnaireControllerTest {
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto3 = new QuestionnaireDto();
-        questionnaireDto1.setLastUpdated(java.sql.Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+
+
+        Function<Date, OffsetDateTime> convert = (Date date ) -> OffsetDateTime.ofInstant(date.toInstant(),  ZoneOffset.UTC);
+
+
+
+        questionnaireDto1.setLastUpdated(convert.apply(java.sql.Date.from(Instant.now().minus(1, ChronoUnit.DAYS))));
         questionnaireDto2.setLastUpdated(null);
-        questionnaireDto3.setLastUpdated(java.sql.Date.from(Instant.now()));
+        questionnaireDto3.setLastUpdated(convert.apply(java.sql.Date.from(Instant.now())));
 
         Mockito.when(questionnaireService.getQuestionnaires(Collections.emptyList())).thenReturn(List.of(questionnaireModel1, questionnaireModel2, questionnaireModel3));
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel1)).thenReturn(questionnaireDto1);
@@ -87,7 +97,7 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel3)).thenReturn(questionnaireDto3);
 
         // Act
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -103,7 +113,7 @@ public class QuestionnaireControllerTest {
         Mockito.when(questionnaireService.getQuestionnaires(Collections.emptyList())).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -215,7 +225,7 @@ public class QuestionnaireControllerTest {
 
     private QuestionDto buildQuestionDto() {
         QuestionDto questionDto = new QuestionDto();
-        questionDto.setQuestionType(QuestionType.BOOLEAN);
+        questionDto.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
 
         return questionDto;
     }

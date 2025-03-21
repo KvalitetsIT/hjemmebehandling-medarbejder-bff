@@ -1,10 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import org.openapitools.model.BaseDto;
 import org.openapitools.model.PatientDto;
+import org.openapitools.model.PlanDefinitionDto;
+import org.openapitools.model.QuestionnaireWrapperDto;
 
 import java.time.Instant;
-import java.time.Period;
 import java.util.List;
 
 public class CarePlanDto extends BaseDto {
