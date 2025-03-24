@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.model.Option;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.*;

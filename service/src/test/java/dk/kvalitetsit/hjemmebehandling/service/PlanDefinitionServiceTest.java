@@ -1,14 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import ca.uhn.fhir.rest.api.MethodOutcome;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.rest.gclient.DateClientParam;
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
@@ -30,12 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.Date;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 

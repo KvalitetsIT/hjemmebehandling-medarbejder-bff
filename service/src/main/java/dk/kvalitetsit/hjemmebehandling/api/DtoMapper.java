@@ -8,28 +8,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import dk.kvalitetsit.hjemmebehandling.constants.*;
-import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openapitools.model.*;
+
+import org.openapitools.model.Option;
 import org.springframework.stereotype.Component;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 
@@ -367,11 +356,11 @@ public class DtoMapper {
         };
     }
 
-    private QuestionnaireResponseDto.ExaminationStatusEnum mapExaminationStatusModel(ExaminationStatus examinationStatus) {
+    public ExaminationStatusDto mapExaminationStatusModel(ExaminationStatus examinationStatus) {
         return switch (examinationStatus) {
-            case NOT_EXAMINED -> QuestionnaireResponseDto.ExaminationStatusEnum.NOT_EXAMINED;
-            case UNDER_EXAMINATION -> QuestionnaireResponseDto.ExaminationStatusEnum.UNDER_EXAMINATION;
-            case EXAMINED -> QuestionnaireResponseDto.ExaminationStatusEnum.EXAMINED;
+            case NOT_EXAMINED -> ExaminationStatusDto.NOT_EXAMINED;
+            case UNDER_EXAMINATION ->ExaminationStatusDto.UNDER_EXAMINATION;
+            case EXAMINED -> ExaminationStatusDto.EXAMINED;
         };
     }
 
@@ -616,6 +605,22 @@ public class DtoMapper {
         measurementTypeDto.setDisplay(measurementTypeModel.getDisplay());
 
         return measurementTypeDto;
+    }
+
+    public ExaminationStatus mapExaminationStatusDto(ExaminationStatusDto examinationStatus) {
+        return switch (examinationStatus){
+            case NOT_EXAMINED -> ExaminationStatus.NOT_EXAMINED;
+            case UNDER_EXAMINATION -> ExaminationStatus.UNDER_EXAMINATION;
+            case EXAMINED -> ExaminationStatus.EXAMINED;
+        };
+    }
+
+    public PlanDefinitionStatus mapPlanDefinitionStatusDto(PatchPlanDefinitionRequest.StatusEnum status) {
+        return switch (status) {
+            case DRAFT -> PlanDefinitionStatus.DRAFT;
+            case ACTIVE -> PlanDefinitionStatus.ACTIVE;
+            case RETIRED -> PlanDefinitionStatus.RETIRED;
+        };
     }
 }
 

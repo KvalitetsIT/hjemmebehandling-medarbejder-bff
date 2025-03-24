@@ -1,9 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;

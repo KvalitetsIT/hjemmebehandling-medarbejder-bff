@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.hl7.fhir.r4.model.ResourceType;
 import org.openapitools.model.CreatePlanDefinitionRequest;
+import org.openapitools.model.PatchPlanDefinitionRequest;
 import org.openapitools.model.PlanDefinitionDto;
 import org.openapitools.model.ThresholdDto;
 import org.slf4j.Logger;
@@ -29,7 +30,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -107,8 +107,9 @@ public class PlanDefinitionController extends BaseController {
             String name = request.getName();
             List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
             List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
-            PlanDefinitionStatus status = request.getStatus();
-            planDefinitionService.updatePlanDefinition(id, name, status, questionnaireIds, thresholds);
+            PatchPlanDefinitionRequest.StatusEnum status = request.getStatus();
+
+            planDefinitionService.updatePlanDefinition(id, name, dtoMapper.mapPlanDefinitionStatusDto(status), questionnaireIds, thresholds);
         }
         catch(Exception e) {
             throw toStatusCodeException(e);

@@ -1,11 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PartialUpdateQuestionnaireResponseRequest;
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
@@ -13,6 +10,10 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.openapitools.api.QuestionnaireResponseApi;
+import org.openapitools.model.ExaminationStatusDto;
+import org.openapitools.model.PaginatedListQuestionnaireResponseDto;
+import org.openapitools.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.model.QuestionnaireResponseDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "QuestionnaireResponse", description = "API for manipulating and retrieving QuestionnaireResponses.")
-public class QuestionnaireResponseController extends BaseController {
+public class QuestionnaireResponseController extends BaseController implements QuestionnaireResponseApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
     private final QuestionnaireResponseService questionnaireResponseService;
@@ -37,18 +38,14 @@ public class QuestionnaireResponseController extends BaseController {
         this.dtoMapper = dtoMapper;
     }
 
-    @PostMapping(value = "/v1/questionnaireresponse")
-    public void createQuestionnaireResponse(QuestionnaireResponseDto questionnaireResponse) {
+
+    @Override
+    public ResponseEntity<Void> createQuestionnaireResponse(QuestionnaireResponseDto questionnaireResponse) {
         throw new UnsupportedOperationException();
     }
 
-    @GetMapping(value = "/v1/questionnaireresponse/{carePlanId}")
-    public ResponseEntity<PaginatedList<QuestionnaireResponseDto>> getQuestionnaireResponsesByCarePlanId(
-            @PathVariable("carePlanId") String carePlanId,
-            @RequestParam("questionnaireIds") List<String> questionnaireIds,
-            int pageNumber,
-            int pageSize
-    ) {
+    @Override
+    public ResponseEntity<PaginatedListQuestionnaireResponseDto> getQuestionnaireResponsesByCarePlanId(String carePlanId, List<String> questionnaireIds, Integer pageNumber, Integer pageSize) {
         if(carePlanId == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
@@ -65,7 +62,14 @@ public class QuestionnaireResponseController extends BaseController {
                     .map(dtoMapper::mapQuestionnaireResponseModel)
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(new PaginatedList<>(dtos, pagination));
+            var response = new PaginatedListQuestionnaireResponseDto();
+
+            response.setList(dtos);
+            response.setLimit(pagination.getLimit());
+            response.setOffset(pagination.getOffset());
+            response.setTotal(dtos.size());
+
+            return ResponseEntity.ok(response);
         }
         catch(AccessValidationException | ServiceException e) {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
@@ -73,18 +77,13 @@ public class QuestionnaireResponseController extends BaseController {
         }
     }
 
-    @GetMapping(value = "/v1/questionnaireresponse")
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(
-            @RequestParam("status") List<ExaminationStatus> statuses,
-            int pageNumber,
-            int pageSize
-    ) {
-        if(statuses == null || statuses.isEmpty()) {
+    @Override
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(List<ExaminationStatusDto> status, Integer pageNumber, Integer pageSize) {
+        if(status == null || status.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
-
         try {
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, new Pagination(pageNumber, pageSize));
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(status.stream().map(dtoMapper::mapExaminationStatusDto).toList(), new Pagination(pageNumber, pageSize));
             auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).collect(Collectors.toList()));
             return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).collect(Collectors.toList()));
         }
@@ -94,17 +93,15 @@ public class QuestionnaireResponseController extends BaseController {
         }
     }
 
-    @PatchMapping(value = "/v1/questionnaireresponse/{id}")
-    public ResponseEntity<Void> patchQuestionnaireResponse(
-            @PathVariable String id,
-            @RequestBody PartialUpdateQuestionnaireResponseRequest request
-    ) {
-        if(request.getExaminationStatus() == null) {
+
+    @Override
+    public ResponseEntity<Void> patchQuestionnaireResponse(String id, PartialUpdateQuestionnaireResponseRequest partialUpdateQuestionnaireResponseRequest) {
+        if(partialUpdateQuestionnaireResponseRequest.getExaminationStatus() == null) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
 
         try {
-            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, request.getExaminationStatus());
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, dtoMapper.mapExaminationStatusDto(partialUpdateQuestionnaireResponseRequest.getExaminationStatus()));
             auditLoggingService.log("PATCH /v1/questionnaireresponse/"+id, questionnaireResponse.getPatient());
         }
         catch(AccessValidationException | ServiceException e) {

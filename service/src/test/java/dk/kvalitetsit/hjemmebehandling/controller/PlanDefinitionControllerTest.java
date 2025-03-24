@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.CreatePlanDefinitionRequest;
+import org.openapitools.model.PatchPlanDefinitionRequest;
 import org.openapitools.model.PlanDefinitionDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

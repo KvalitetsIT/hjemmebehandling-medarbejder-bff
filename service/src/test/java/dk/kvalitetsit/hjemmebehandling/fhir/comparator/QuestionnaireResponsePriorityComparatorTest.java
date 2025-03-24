@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.fhir.comparator;
 
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;

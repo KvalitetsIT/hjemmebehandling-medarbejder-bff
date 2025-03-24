@@ -715,11 +715,8 @@ paths:
           schema:
             type: array
             items:
-              type: string
-              enum:
-                - NOT_EXAMINED
-                - UNDER_EXAMINATION
-                - EXAMINED
+              $ref: '#/components/schemas/examinationStatusDto'
+
         - name: pageNumber
           in: query
           required: true
@@ -766,7 +763,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
@@ -1305,7 +1302,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PaginatedListQuestionnaireResponseDto'
   /v1/questionnaire/{id}/used:
@@ -2087,11 +2084,7 @@ components:
           type: string
           format: date-time
         examinationStatus:
-          type: string
-          enum:
-            - NOT_EXAMINED
-            - UNDER_EXAMINATION
-            - EXAMINED
+          $ref: '#/components/schemas/examinationStatusDto'
         triagingCategory:
           type: string
           enum:
@@ -2102,6 +2095,13 @@ components:
           $ref: '#/components/schemas/PatientDto'
         planDefinitionTitle:
           type: string
+    examinationStatusDto:
+      type: string
+      enum:
+        - NOT_EXAMINED
+        - UNDER_EXAMINATION
+        - EXAMINED
+
     CreateQuestionnaireRequest:
       required:
         - questionnaire
@@ -2132,11 +2132,7 @@ components:
       type: object
       properties:
         examinationStatus:
-          type: string
-          enum:
-            - NOT_EXAMINED
-            - UNDER_EXAMINATION
-            - EXAMINED
+          $ref: '#/components/schemas/examinationStatusDto'
     PatchQuestionnaireRequest:
       type: object
       properties:
