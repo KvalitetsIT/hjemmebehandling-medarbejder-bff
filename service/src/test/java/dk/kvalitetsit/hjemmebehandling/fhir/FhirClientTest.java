@@ -163,7 +163,7 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        FhirLookupResult result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
 
         // Assert
         assertEquals(1, result.getCarePlans().size());
@@ -218,7 +218,7 @@ public class FhirClientTest {
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
         // Act
-        FhirLookupResult result = subject.lookupCarePlans(Optional.empty(),pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        FhirLookupResult result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
 
         // Assert
         assertEquals(0, result.getCarePlans().size());

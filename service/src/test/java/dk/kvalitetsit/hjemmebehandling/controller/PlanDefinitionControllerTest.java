@@ -59,7 +59,7 @@ public class PlanDefinitionControllerTest {
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(null);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -74,7 +74,7 @@ public class PlanDefinitionControllerTest {
         Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenReturn(List.of());
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(null);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -90,7 +90,7 @@ public class PlanDefinitionControllerTest {
 
         // Assert
 
-        assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions(Optional.empty()));
+        assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions(null));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class PlanDefinitionControllerTest {
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel3)).thenReturn(planDefinitionDto3);
 
         // Act
-        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
+        ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(null);
 
         // Assert
         assertEquals(HttpStatus.OK, result.getStatusCode());

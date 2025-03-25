@@ -454,17 +454,14 @@ paths:
       parameters:
         - name: cpr
           in: query
-          required: false
           schema:
             type: string
         - name: only_unsatisfied_schedules
           in: query
-          required: false
           schema:
             type: boolean
         - name: only_active_careplans
           in: query
-          required: false
           schema:
             type: boolean
         - name: page_number
@@ -472,13 +469,10 @@ paths:
           required: false
           schema:
             type: integer
-            format: int32
         - name: page_size
           in: query
-          required: false
           schema:
             type: integer
-            format: int32
       responses:
         "400":
           description: Bad Request
@@ -513,7 +507,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
@@ -1926,6 +1920,7 @@ components:
               - SUN
         timeOfDay:
           type: string
+
     PlanDefinitionDto:
       allOf:
         - $ref: "#/components/schemas/BaseDto"
@@ -1962,40 +1957,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ThresholdDto'
+
     CarePlanDto:
-      required:
-        - id
-      type: object
-      properties:
-        id:
-          type: string
-          description: Id of the resource
-          example: CarePlan/10
-        title:
-          type: string
-        status:
-          type: string
-        created:
-          type: string
-          format: date-time
-        startDate:
-          type: string
-          format: date-time
-        endDate:
-          type: string
-          format: date-time
-        patientDto:
-          $ref: '#/components/schemas/PatientDto'
-        questionnaires:
-          type: array
-          items:
-            $ref: '#/components/schemas/QuestionnaireWrapperDto'
-        planDefinitions:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlanDefinitionDto'
-        departmentName:
-          type: string
+      allOf:
+        - $ref: "#/components/schemas/BaseDto"
+        - type: object
+          properties:
+            title:
+              type: string
+            status:
+              type: string
+            created:
+              type: string
+              format: date-time
+            startDate:
+              type: string
+              format: date-time
+            endDate:
+              type: string
+              format: date-time
+            patientDto:
+              $ref: '#/components/schemas/PatientDto'
+            questionnaires:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionnaireWrapperDto'
+            planDefinitions:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlanDefinitionDto'
+            departmentName:
+              type: string
+
     ContactDetailsDto:
       type: object
       properties:

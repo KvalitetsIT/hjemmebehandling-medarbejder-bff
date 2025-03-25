@@ -7,11 +7,11 @@ import ca.uhn.fhir.rest.api.SortOrderEnum;
 import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.*;
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
@@ -49,7 +49,6 @@ public class FhirClient {
     }
 
 
-
     public FhirLookupResult lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) throws ServiceException {
 
         var statusCriterion = PlanDefinition.STATUS.exactly().code(Enumerations.PublicationStatus.ACTIVE.toCode());
@@ -76,7 +75,7 @@ public class FhirClient {
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
         var criteria = new ArrayList<ICriterion<?>>(List.of(patientCriterion, organizationCriterion));
-        if(onlyActiveCarePlans) {
+        if (onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
         }
@@ -84,32 +83,51 @@ public class FhirClient {
         return lookupCarePlansByCriteria(criteria);
     }
 
-    
-    public FhirLookupResult lookupCarePlans(Optional<String> cpr,Instant unsatisfiedToDate, boolean onlyActiveCarePlans,boolean onlyUnSatisfied) throws ServiceException {
+    public FhirLookupResult lookupCarePlans(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
 
         var organizationCriterion = buildOrganizationCriterion();
         var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
-        if(onlyUnSatisfied){
+        if (onlyUnSatisfied) {
             var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(unsatisfiedToDate));
             criteria.add(satisfiedUntilCriterion);
         }
 
-        if(onlyActiveCarePlans) {
+        if (onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
         }
 
-        if(cpr.isPresent()){
-            Optional<Patient> patient = lookupPatientByCpr(cpr.get());
-            if(patient.isEmpty()) {
-                return FhirLookupResult.fromResources();
-            }
-            String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
-            var patientCriterion = CarePlan.PATIENT.hasId(patientId);
-            criteria.add(patientCriterion);
+        var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
+
+        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec));
+    }
+
+    public FhirLookupResult lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+
+        var organizationCriterion = buildOrganizationCriterion();
+        var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
+
+        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
+        if (onlyUnSatisfied) {
+            var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(unsatisfiedToDate));
+            criteria.add(satisfiedUntilCriterion);
         }
+
+        if (onlyActiveCarePlans) {
+            var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
+            criteria.add(statusCriterion);
+        }
+
+        Optional<Patient> patient = lookupPatientByCpr(cpr);
+        if (patient.isEmpty()) {
+            return FhirLookupResult.fromResources();
+        }
+        String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
+        var patientCriterion = CarePlan.PATIENT.hasId(patientId);
+        criteria.add(patientCriterion);
+
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
 
@@ -123,14 +141,15 @@ public class FhirClient {
     }
 
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) throws ServiceException {
-        if(sorCode == null || sorCode.isBlank() || sorCode.isEmpty()) throw new ServiceException("The SOR-code was not specified", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE);
+        if (sorCode == null || sorCode.isBlank() || sorCode.isEmpty())
+            throw new ServiceException("The SOR-code was not specified", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE);
         var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode);
 
         var lookupResult = lookupOrganizationsByCriteria(List.of(sorCodeCriterion));
-        if(lookupResult.getOrganizations().isEmpty()) {
+        if (lookupResult.getOrganizations().isEmpty()) {
             return Optional.empty();
         }
-        if(lookupResult.getOrganizations().size() > 1) {
+        if (lookupResult.getOrganizations().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of %s!", Organization.class));
         }
         return Optional.of(lookupResult.getOrganizations().get(0));
@@ -178,13 +197,13 @@ public class FhirClient {
         return lookupQuestionnaireResponseByCriteria(List.of(questionnaireCriterion, basedOnCriterion));
     }
 
-    public List<Questionnaire> lookupVersionsOfQuestionnaireById(List<String> ids){
+    public List<Questionnaire> lookupVersionsOfQuestionnaireById(List<String> ids) {
 
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         List<Questionnaire> resources = new LinkedList<>();
 
-        ids.forEach( id -> {
+        ids.forEach(id -> {
             Bundle bundle = client.history().onInstance(new IdType("Questionnaire", id)).returnBundle(Bundle.class).execute();
             bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
         });
@@ -224,7 +243,7 @@ public class FhirClient {
         addOrganizationTag(bundle);
 
         var id = saveInTransaction(bundle, ResourceType.CarePlan);
-        if(id.isEmpty()) {
+        if (id.isEmpty()) {
             throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
         }
         return id.get();
@@ -261,7 +280,7 @@ public class FhirClient {
         var criterias = new ArrayList<ICriterion<?>>();
         criterias.add(organizationCriterion);
 
-        if(!statusesToInclude.isEmpty()){
+        if (!statusesToInclude.isEmpty()) {
             Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
             var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToIncludeToLowered);
             criterias.add(statusCriteron);
@@ -274,7 +293,7 @@ public class FhirClient {
         var organizationCriterion = buildOrganizationCriterion();
         criterias.add(organizationCriterion);
 
-        if(!statusesToInclude.isEmpty()){
+        if (!statusesToInclude.isEmpty()) {
             Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
             var statusCriteron = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
             criterias.add(statusCriteron);
@@ -313,7 +332,7 @@ public class FhirClient {
 
         // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
-        if(carePlanResult.getCarePlans().isEmpty()) {
+        if (carePlanResult.getCarePlans().isEmpty()) {
             return carePlanResult;
         }
 
@@ -336,10 +355,10 @@ public class FhirClient {
     private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) {
         var lookupResult = lookupByCriteria(Patient.class, criterion);
 
-        if(lookupResult.getPatients().isEmpty()) {
+        if (lookupResult.getPatients().isEmpty()) {
             return Optional.empty();
         }
-        if(lookupResult.getPatients().size() > 1) {
+        if (lookupResult.getPatients().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
         }
         return Optional.of(lookupResult.getPatients().get(0));
@@ -355,7 +374,7 @@ public class FhirClient {
 
         // We also need the planDefinitions, which are found by following the chain QuestionnaireResponse.based-on -> CarePlan.instantiates-canonical.
         // This requires a separate lookup.
-        if(questionnaireResponseResult.getQuestionnaireResponses().isEmpty()) {
+        if (questionnaireResponseResult.getQuestionnaireResponses().isEmpty()) {
             return questionnaireResponseResult;
         }
 
@@ -398,15 +417,15 @@ public class FhirClient {
 
     private List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
         return questionnaireResponses
-            .stream()
-            .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
-            .filter(Objects::nonNull)
-            .distinct()
-            .collect(Collectors.toList());
+                .stream()
+                .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
-        if(detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
+        if (detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
             throw new IllegalStateException("Expected InstantiatesCanonical to be present, and to contain exactly one value!");
         }
         return detail.getInstantiatesCanonical().get(0).getValue();
@@ -427,30 +446,30 @@ public class FhirClient {
         var query = client
                 .search()
                 .forResource(resourceClass);
-        if(criteria != null && !criteria.isEmpty()) {
+        if (criteria != null && !criteria.isEmpty()) {
             query = query.where(criteria.get(0));
-            for(int i = 1; i < criteria.size(); i++) {
+            for (int i = 1; i < criteria.size(); i++) {
                 query = query.and(criteria.get(i));
             }
         }
-        if(includes != null) {
-            for(var include : includes) {
+        if (includes != null) {
+            for (var include : includes) {
                 query = query.include(include);
             }
         }
-        if(sortSpec.isPresent()) {
+        if (sortSpec.isPresent()) {
             query = query.sort(sortSpec.get());
         }
-        if(offset.isPresent()) {
+        if (offset.isPresent()) {
             query = query.offset(offset.get());
         }
-        if(count.isPresent()) {
+        if (count.isPresent()) {
             query = query.count(count.get());
         }
 
         Bundle bundle = (Bundle) query.execute();
         FhirLookupResult lookupResult = FhirLookupResult.fromBundle(bundle);
-        if(withOrganizations) {
+        if (withOrganizations) {
             List<String> organizationIds = lookupResult.values()
                     .stream()
                     .map(r -> ExtensionMapper.tryExtractOrganizationId(r.getExtension()))
@@ -476,7 +495,7 @@ public class FhirClient {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
         MethodOutcome outcome = client.create().resource(resource).execute();
-        if(!outcome.getCreated()) {
+        if (!outcome.getCreated()) {
             throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
         }
         return outcome.getId().toUnqualifiedVersionless().getIdPart();
@@ -490,15 +509,15 @@ public class FhirClient {
 
         // Look for an entry with status 201 to retrieve the location-header.
         var id = "";
-        for(var responseEntry : responseBundle.getEntry()) {
+        for (var responseEntry : responseBundle.getEntry()) {
             var status = responseEntry.getResponse().getStatus();
             var location = responseEntry.getResponse().getLocation();
-            if(status.startsWith("201") && location.startsWith(resourceType.toString())) {
+            if (status.startsWith("201") && location.startsWith(resourceType.toString())) {
                 id = location.replaceFirst("/_history.*$", "");
             }
         }
 
-        if(id.isEmpty()) {
+        if (id.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(id);
@@ -510,28 +529,27 @@ public class FhirClient {
     }
 
     private void addOrganizationTag(Resource resource) throws ServiceException {
-        if(resource.getResourceType() == ResourceType.Bundle) {
+        if (resource.getResourceType() == ResourceType.Bundle) {
             addOrganizationTag((Bundle) resource);
         }
-        if(resource instanceof DomainResource) {
+        if (resource instanceof DomainResource) {
             addOrganizationTag((DomainResource) resource);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException(String.format("Trying to add organization tag to resource %s, but the resource was of incorrect type %s!", resource.getId(), resource.getResourceType()));
         }
     }
 
     private void addOrganizationTag(Bundle bundle) throws ServiceException {
-        for(var entry : bundle.getEntry()) {
+        for (var entry : bundle.getEntry()) {
             addOrganizationTag(entry.getResource());
         }
     }
 
     private void addOrganizationTag(DomainResource extendable) throws ServiceException {
-        if(excludeFromOrganizationTagging(extendable)) {
+        if (excludeFromOrganizationTagging(extendable)) {
             return;
         }
-        if(extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
+        if (extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
             throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present! - %S", extendable.getId()));
         }
 
@@ -556,7 +574,7 @@ public class FhirClient {
 
     public Organization getCurrentUsersOrganization() throws ServiceException {
         var context = userContextProvider.getUserContext();
-        if(context == null) {
+        if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
         }
         return lookupOrganizationBySorCode(context.getOrgId()).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.getOrgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
@@ -576,8 +594,7 @@ public class FhirClient {
 
         if (practitioner.isPresent()) {
             return practitioner.get();
-        }
-        else {
+        } else {
             Practitioner p = new Practitioner();
             p.addIdentifier().setSystem(Systems.SOR).setValue(orgId);
             p.addIdentifier().setSystem(Systems.USER_ID).setValue(userId);
@@ -603,10 +620,10 @@ public class FhirClient {
     private Optional<Practitioner> lookupPractitioner(List<ICriterion<?>> criterions) {
         var lookupResult = lookupByCriteria(Practitioner.class, criterions);
 
-        if(lookupResult.getPractitioners().isEmpty()) {
+        if (lookupResult.getPractitioners().isEmpty()) {
             return Optional.empty();
         }
-        if(lookupResult.getPractitioners().size() > 1) {
+        if (lookupResult.getPractitioners().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Practitioner.class));
         }
         return Optional.of(lookupResult.getPractitioners().get(0));

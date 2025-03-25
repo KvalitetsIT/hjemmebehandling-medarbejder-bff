@@ -33,10 +33,10 @@ public class DtoMapper {
         mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
         carePlanModel.setTitle(carePlanDto.getTitle());
         Optional.ofNullable(carePlanDto.getStatus()).ifPresent(status -> carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, status)));
-        carePlanModel.setCreated(carePlanDto.getCreated());
-        carePlanModel.setStartDate(carePlanDto.getStartDate());
-        carePlanModel.setEndDate(carePlanDto.getEndDate());
-        carePlanModel.setPatient(mapPatientDto(carePlanDto.getPatientDto()));
+        carePlanModel.setCreated( Optional.ofNullable(carePlanDto.getCreated()).map(OffsetDateTime::toInstant).orElse(null));
+        carePlanModel.setStartDate(Optional.ofNullable(carePlanDto.getStartDate()).map(OffsetDateTime::toInstant).orElse(null));
+        carePlanModel.setEndDate(Optional.ofNullable(carePlanDto.getEndDate()).map(OffsetDateTime::toInstant).orElse(null));
+        carePlanModel.setPatient(Optional.ofNullable(carePlanDto.getPatientDto()).map(this::mapPatientDto).orElse(null));
         carePlanModel.setQuestionnaires(List.of());
         Optional.ofNullable(carePlanDto.getQuestionnaires()).ifPresent(questionnaires -> carePlanModel.setQuestionnaires(carePlanDto.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperDto).collect(Collectors.toList())));
         carePlanModel.setPlanDefinitions(List.of());
@@ -50,9 +50,9 @@ public class DtoMapper {
         carePlanDto.setId(carePlan.getId().toString());
         carePlanDto.setTitle(carePlan.getTitle());
         carePlanDto.setStatus(carePlan.getStatus().toString());
-        carePlanDto.setCreated(carePlan.getCreated());
-        carePlanDto.setStartDate(carePlan.getStartDate());
-        carePlanDto.setEndDate(carePlan.getEndDate());
+        carePlanDto.setCreated(carePlan.getCreated() != null ? mapInstant(carePlan.getCreated()) : null );
+        carePlanDto.setStartDate(carePlan.getStartDate() != null ? mapInstant(carePlan.getStartDate()): null);
+        carePlanDto.setEndDate(carePlan.getEndDate() != null ? mapInstant(carePlan.getEndDate()) : null);
         carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperModel).collect(Collectors.toList()));
         carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(this::mapPlanDefinitionModel).collect(Collectors.toList()));
