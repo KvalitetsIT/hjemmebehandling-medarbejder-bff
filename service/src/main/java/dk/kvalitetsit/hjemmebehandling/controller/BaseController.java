@@ -8,16 +8,16 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 public abstract class BaseController {
     protected RuntimeException toStatusCodeException(Exception e) {
 
-        if(e.getClass() == AccessValidationException.class) {
-            return toStatusCodeException((AccessValidationException) e);
+        if (e.getClass() == AccessValidationException.class) {
+            return toStatusCodeException();
         }
-        if(e.getClass() == ServiceException.class) {
+        if (e.getClass() == ServiceException.class) {
             return toStatusCodeException((ServiceException) e);
         }
         throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
     }
 
-    private RuntimeException toStatusCodeException(AccessValidationException e) {
+    private RuntimeException toStatusCodeException() {
         return new ForbiddenException(ErrorDetails.ACCESS_VIOLATION);
     }
 

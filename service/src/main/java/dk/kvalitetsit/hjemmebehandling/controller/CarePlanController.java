@@ -13,7 +13,6 @@ import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.openapitools.api.CarePlanApi;
@@ -32,7 +31,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
 public class CarePlanController extends BaseController implements CarePlanApi {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
@@ -56,7 +54,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             CarePlanModel carePlan = carePlanService.completeCarePlan(id);
             auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.getPatient());
         } catch (ServiceException e) {
-            logger.error(String.format("completeCarePlan(%s) error:", id), e);
+            logger.error("completeCarePlan({}) error:", id, e);
             throw toStatusCodeException(e);
         }
 
@@ -70,7 +68,8 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             // force time for deadline to organization configured default.
             if (request.getCarePlan().getQuestionnaires() != null) {
                 TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
-                request.getCarePlan().getQuestionnaires().forEach(q -> q.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+                // todo: 'Optional.get()' without 'isPresent()' check
+                request.getCarePlan().getQuestionnaires().forEach(q -> q.getFrequency().get().setTimeOfDay(Optional.of(defaultDeadlineTime.getValue())));
             }
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
@@ -102,17 +101,17 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(List<String> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<String>> statusesToInclude) {
         try {
-            if (statusesToInclude != null && statusesToInclude.isEmpty()) {
+            if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.orElse(List.of()));
 
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude);
-
-            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).collect(Collectors.toList()));
+            // todo: 'Optional.get()' without 'isPresent()' check
+            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());
         } catch (ServiceException e) {
             logger.error("Could not look up plandefinitions", e);
             throw toStatusCodeException(e);
@@ -123,10 +122,10 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
         try {
             List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
-            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).collect(Collectors.toList());
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).toList();
             return ResponseEntity.ok(ids);
         } catch (ServiceException e) {
-            logger.error(String.format("Unresolved questionnaires could not be fetched due to:  %s", e));
+            logger.error("Unresolved questionnaires could not be fetched due to:  %s", e);
             throw toStatusCodeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -165,20 +164,29 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         return ResponseEntity.ok().build();
     }
 
-
     @Override
-    public ResponseEntity<List<CarePlanDto>> searchCarePlans(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCareplans, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCareplans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
         try {
             List<CarePlanModel> carePlans;
 
-            if (pageNumber != null && pageSize != null) {
-                Pagination pagination = new Pagination(pageNumber, pageSize);
-                carePlans = carePlanService.getCarePlansWithFilters(cpr, Optional.ofNullable(onlyActiveCareplans).orElse(false), Optional.ofNullable(onlyUnsatisfiedSchedules).orElse(false), pagination);
+            if (pageNumber.isPresent() && pageSize.isPresent()) {
+                Pagination pagination = new Pagination(pageNumber.get(), pageSize.get());
+
+                if (cpr.isPresent()) {
+                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
+                } else {
+                    carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
+                }
+
             } else {
-                carePlans = carePlanService.getCarePlansWithFilters(cpr, Optional.ofNullable(onlyActiveCareplans).orElse(false), Optional.ofNullable(onlyUnsatisfiedSchedules).orElse(false));
+                if (cpr.isPresent()) {
+                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
+                } else {
+                    carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
+                }
             }
-            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
-            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).collect(Collectors.toList()));
+            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).toList());
+            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).toList());
         } catch (ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
             throw toStatusCodeException(e);
@@ -190,35 +198,32 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         throw new UnsupportedOperationException();
     }
 
-
-    private enum SearchType {
-        CPR, UNSATISFIED_CAREPLANS, ACTIVE
-    }
-
-
-
     private List<String> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
-        return questionnaireFrequencyPairs.stream().map(pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire)).collect(Collectors.toList());
+        // todo: 'Optional.get()' without 'isPresent()' check
+        return questionnaireFrequencyPairs.stream().map(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire)).toList();
     }
 
     private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
         // force time for deadline to organization configured default.
         TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
-        questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+        // todo: 'Optional.get()' without 'isPresent()' check
+        questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().get().setTimeOfDay(Optional.of(defaultDeadlineTime.getValue())));
 
-        return questionnaireFrequencyPairs.stream().collect(Collectors.toMap(pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire), pair -> dtoMapper.mapFrequencyDto(pair.getFrequency())));
+        // todo: 'Optional.get()' without 'isPresent()' check
+        return questionnaireFrequencyPairs.stream().collect(Collectors.toMap(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire), pair -> dtoMapper.mapFrequencyDto(pair.getFrequency().get())));
     }
 
     private PatientDetails getPatientDetails(UpdateCareplanRequest request) {
         PatientDetails patientDetails = new PatientDetails();
 
-        patientDetails.setPatientPrimaryPhone(request.getPatientPrimaryPhone());
-        patientDetails.setPatientSecondaryPhone(request.getPatientSecondaryPhone());
-        patientDetails.setPrimaryRelativeName(request.getPrimaryRelativeName());
-        patientDetails.setPrimaryRelativeAffiliation(request.getPrimaryRelativeAffiliation());
-        patientDetails.setPrimaryRelativePrimaryPhone(request.getPrimaryRelativePrimaryPhone());
-        patientDetails.setPrimaryRelativeSecondaryPhone(request.getPrimaryRelativeSecondaryPhone());
+        request.getPatientPrimaryPhone().ifPresent(patientDetails::setPatientPrimaryPhone);
+        request.getPatientSecondaryPhone().ifPresent(patientDetails::setPatientSecondaryPhone);
+        request.getPrimaryRelativeName().ifPresent(patientDetails::setPrimaryRelativeName);
+        request.getPrimaryRelativeAffiliation().ifPresent(patientDetails::setPrimaryRelativeAffiliation);
+        request.getPrimaryRelativePrimaryPhone().ifPresent(patientDetails::setPrimaryRelativePrimaryPhone);
+        request.getPrimaryRelativeSecondaryPhone().ifPresent(patientDetails::setPrimaryRelativeSecondaryPhone);
 
         return patientDetails;
     }
+
 }

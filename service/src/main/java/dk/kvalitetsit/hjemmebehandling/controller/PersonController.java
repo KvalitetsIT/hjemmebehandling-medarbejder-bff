@@ -1,6 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.openapitools.api.PersonApi;
 import org.openapitools.model.PersonDto;
@@ -9,15 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.service.PersonService;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 
 @RestController
-@Tag(name = "Person", description = "API for manipulating and retrieving information about persons.")
 public class PersonController extends BaseController implements PersonApi {
     private static final Logger logger = LoggerFactory.getLogger(PersonController.class);
 
@@ -38,7 +35,7 @@ public class PersonController extends BaseController implements PersonApi {
             PersonModel personModel = personService.getPerson(cpr);
             auditLoggingService.log("GET /v1/person", personModel);
             return ResponseEntity.ok(dtoMapper.mapPersonModel(personModel));
-        } catch(ServiceException | JsonProcessingException e) {
+        } catch (ServiceException | JsonProcessingException e) {
             logger.error("Error fetching person", e);
             throw toStatusCodeException(e);
         }

@@ -1,9 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -12,11 +15,15 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.QuestionnaireResponse;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class QuestionnaireResponseService extends AccessValidatingService {
@@ -36,16 +43,16 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         this.priorityComparator = priorityComparator;
     }
 
-    public PaginatedList<QuestionnaireResponseModel> getQuestionnaireResponsesWithTotal(String carePlanId, List<String> questionnaireIds , Pagination pagination) throws ServiceException, AccessValidationException {
-        return new PaginatedList<>(this.getQuestionnaireResponses(carePlanId, questionnaireIds ), pagination);
+    public PaginatedList<QuestionnaireResponseModel> getQuestionnaireResponsesWithTotal(String carePlanId, List<String> questionnaireIds, Pagination pagination) throws ServiceException, AccessValidationException {
+        return new PaginatedList<>(this.getQuestionnaireResponses(carePlanId, questionnaireIds), pagination);
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds ) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
         List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
 
-        if(responses.isEmpty()) return List.of();
+        if (responses.isEmpty()) return List.of();
 
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
         validateAccess(responses);
@@ -58,13 +65,13 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         return responses
                 .stream()
                 .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds, Pagination pagination) throws ServiceException, AccessValidationException {
 
-        if(pagination != null) {
+        if (pagination != null) {
             // TODO: the pagination is supposed to be done during the fhir request. otherwise, a lot of entrees may be requested which may not be relevant
             // Perform paging if required.
             return pageResponses(this.getQuestionnaireResponses(carePlanId, questionnaireIds), pagination);
@@ -85,10 +92,10 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
         validateAccess(responses);
 
-        if(responses.isEmpty()) return List.of();
+        if (responses.isEmpty()) return List.of();
 
         // below is supposed to return a list of ids in the following format: "questionnaire-infektionsmedicinsk-1"
-        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdPart()).collect(Collectors.toList());
+        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdPart()).toList();
 
         List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
 
@@ -109,22 +116,21 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         return responses
                 .stream()
                 .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException, AccessValidationException {
-            var responses = getQuestionnaireResponsesByStatus(statuses);
+        var responses = getQuestionnaireResponsesByStatus(statuses);
 
-            // Perform paging if required.
-            if(pagination == null) {
-                return responses;
-            }
-            return pageResponses(responses, pagination);
+        // Perform paging if required.
+        if (pagination == null) {
+            return responses;
+        }
+        return pageResponses(responses, pagination);
 
 
     }
-
 
 
     public QuestionnaireResponseModel updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
@@ -164,20 +170,21 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         return groupedResponses.values()
                 .stream()
                 .map(this::extractMaximalPriorityResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<QuestionnaireResponse> sortResponses(List<QuestionnaireResponse> responses) {
         return responses
                 .stream()
                 .sorted(priorityComparator)
-                .collect(Collectors.toList());
+                .toList();
     }
+
     private List<QuestionnaireResponse> sortResponsesByDate(List<QuestionnaireResponse> responses) {
         return responses
                 .stream()
-                .sorted( (a,b) -> b.getAuthored().compareTo(a.getAuthored()) )
-                .collect(Collectors.toList());
+                .sorted((a, b) -> b.getAuthored().compareTo(a.getAuthored()))
+                .toList();
     }
 
     private List<QuestionnaireResponseModel> pageResponses(List<QuestionnaireResponseModel> responses, Pagination pagination) {
@@ -185,14 +192,14 @@ public class QuestionnaireResponseService extends AccessValidatingService {
                 .stream()
                 .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
                 .limit(pagination.getLimit())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private QuestionnaireResponse extractMaximalPriorityResponse(List<QuestionnaireResponse> responses) {
         var response = responses
                 .stream()
                 .min(priorityComparator); // priorityComperator is ordering elements from high to low, so extract the first element (eg. highest priority)
-        if(response.isEmpty()) {
+        if (response.isEmpty()) {
             throw new IllegalStateException("Could not extract QuestionnaireResponse of maximal priority - the list was empty!");
         }
         return response.get();

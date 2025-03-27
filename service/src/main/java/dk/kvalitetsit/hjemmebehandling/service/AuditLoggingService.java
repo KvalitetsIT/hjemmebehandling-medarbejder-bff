@@ -1,7 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
 import dk.kvalitetsit.hjemmebehandling.model.audit.AuditModel;
 import dk.kvalitetsit.hjemmebehandling.service.audit.DiasAuditLogger;
 import org.slf4j.Logger;
@@ -12,48 +13,50 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class AuditLoggingService {
-  private static final Logger logger = LoggerFactory.getLogger(AuditLoggingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuditLoggingService.class);
 
-  @Autowired
-  private UserContextProvider userContextProvider;
+    @Autowired
+    private UserContextProvider userContextProvider;
 
-  @Autowired
-  private DiasAuditLogger diasAuditLogger;
+    @Autowired
+    private DiasAuditLogger diasAuditLogger;
 
-  private void auditLog(String message, Map<String, String> citizenCprToFullNameMap) {
-    String employeeRegionsId = userContextProvider.getUserContext().getUserId();
-    String employeeFullName = userContextProvider.getUserContext().getFullName();
+    private void auditLog(String message, Map<String, String> citizenCprToFullNameMap) {
+        // TODO: Handle 'Optional.get()' without 'isPresent()' check below
+        String employeeRegionsId = userContextProvider.getUserContext().getUserId().get();
+        String employeeFullName = userContextProvider.getUserContext().getFullName().get();
 
-    for (String citizenCpr: citizenCprToFullNameMap.keySet()) {
-      String citizenFullName = citizenCprToFullNameMap.get(citizenCpr);
-      AuditModel event = new AuditModel(employeeRegionsId, employeeFullName, citizenCpr, citizenFullName, message);
+        for (String citizenCpr : citizenCprToFullNameMap.keySet()) {
+            String citizenFullName = citizenCprToFullNameMap.get(citizenCpr);
+            AuditModel event = new AuditModel(employeeRegionsId, employeeFullName, citizenCpr, citizenFullName, message);
 
-      diasAuditLogger.postAuditLog(event);
+            diasAuditLogger.postAuditLog(event);
+        }
     }
-  }
 
-  public void log(String message, PatientModel patient) {
-    log(message, List.of(patient));
-  }
-  public void log(String message, List<PatientModel> patients) {
-    Map<String, String> result = patients.stream()
-        .collect(Collectors.toMap(
-            PatientModel::getCpr,
-            u -> u.getGivenName() + " " + u.getFamilyName(),
-            (existing, replacement) -> existing))
+    public void log(String message, PatientModel patient) {
+        log(message, List.of(patient));
+    }
+
+    public void log(String message, List<PatientModel> patients) {
+        Map<String, String> result = patients.stream()
+                .collect(Collectors.toMap(
+                        PatientModel::getCpr,
+                        u -> u.getGivenName() + " " + u.getFamilyName(),
+                        (existing, replacement) -> existing));
+
+        auditLog(message, result);
+    }
+
+    public void log(String message, PersonModel person) {
+        auditLog(message, Stream.of(person)
+                .collect(Collectors.toMap(
+                        p -> p.getIdentifier().getId(),
+                        p -> String.join(" ", p.getName().getGiven()) + " " + p.getName().getFamily())))
         ;
-
-    auditLog(message, result);
-  }
-
-  public void log(String message, PersonModel person) {
-    auditLog(message, List.of(person).stream()
-        .collect(Collectors.toMap(
-            p -> p.getIdentifier().getId(),
-            p -> String.join(" ", p.getName().getGiven()) + " " + p.getName().getFamily())))
-        ;
-  }
+    }
 }

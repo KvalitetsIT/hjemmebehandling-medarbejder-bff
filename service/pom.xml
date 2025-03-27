@@ -21,7 +21,6 @@
         <dependency>
             <groupId>dk.kvalitetsit.hjemmebehandling-medarbejder-bff</groupId>
             <artifactId>documentation</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -39,17 +38,17 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        
-         <dependency>
+
+        <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>3.8.3</version>
-         </dependency>
-         <dependency>
+        </dependency>
+        <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
             <version>0.9.0</version>
-         </dependency>
+        </dependency>
 
         <!-- Actuator so it possible to get metrics -->
         <dependency>

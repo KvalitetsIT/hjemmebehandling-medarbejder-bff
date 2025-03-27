@@ -188,16 +188,15 @@ public class CarePlanService extends AccessValidatingService {
         }
         var orgId = fhirClient.getOrganizationId();
         // Map and sort the resources
-        List<CarePlanModel> careplans = lookupResult.getCarePlans().stream()
+
+        return lookupResult.getCarePlans().stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult, orgId))
                 .sorted((careplan1, careplan2) -> {
                     String name1 = String.join(" ", careplan1.getPatient().getGivenName(), careplan1.getPatient().getFamilyName());
                     String name2 = String.join(" ", careplan2.getPatient().getGivenName(), careplan2.getPatient().getFamilyName());
                     return name1.compareTo(name2);
                 })
-                .collect(Collectors.toList());
-
-        return careplans;
+                .toList();
     }
 
     public List<CarePlanModel> getCarePlansWithFilters(String cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
@@ -208,19 +207,19 @@ public class CarePlanService extends AccessValidatingService {
         }
         var orgId = fhirClient.getOrganizationId();
         // Map and sort the resources
-        List<CarePlanModel> careplans = lookupResult.getCarePlans().stream()
+
+        return lookupResult.getCarePlans().stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult, orgId))
                 .sorted((careplan1, careplan2) -> {
                     String name1 = String.join(" ", careplan1.getPatient().getGivenName(), careplan1.getPatient().getFamilyName());
                     String name2 = String.join(" ", careplan2.getPatient().getGivenName(), careplan2.getPatient().getFamilyName());
                     return name1.compareTo(name2);
                 })
-                .collect(Collectors.toList());
-
-        return careplans;
+                .toList();
     }
-    public List<CarePlanModel> getCarePlansWithFilters( boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
-        return pageResponses(getCarePlansWithFilters( onlyActiveCarePlans, onlyUnSatisfied), pagination);
+
+    public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
+        return pageResponses(getCarePlansWithFilters(onlyActiveCarePlans, onlyUnSatisfied), pagination);
     }
 
     public List<CarePlanModel> getCarePlansWithFilters(String cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
@@ -302,7 +301,7 @@ public class CarePlanService extends AccessValidatingService {
         String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
         FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
 
-        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || !careplanResult.getCarePlan(qualifiedId).isPresent();
+        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
 
         if (emptyResult) {
             throw new ServiceException(
@@ -318,7 +317,7 @@ public class CarePlanService extends AccessValidatingService {
         validateAccess(carePlan);
 
         // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
-        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinition(pd, planDefinitionResult)).collect(Collectors.toList());
+        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult)).toList();
         if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
                 "Not every questionnaireId could be found in the provided plan definitions.",
                 ErrorKind.BAD_REQUEST,
@@ -385,12 +384,12 @@ public class CarePlanService extends AccessValidatingService {
                 .flatMap(carePlanActivityComponent -> carePlanActivityComponent.getDetail().getInstantiatesCanonical().stream())
                 .map(PrimitiveType::getValue)
                 .filter(currentQuestionnaireId -> !questionnaireIds.contains(currentQuestionnaireId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean questionnaireHasExceededDeadline(CarePlan carePlan, List<String> questionnaireIds) {
         return carePlan.getActivity().stream()
-                .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().get(0).getValue()))
+                .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().getFirst().getValue()))
                 .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
     }
 
@@ -412,7 +411,7 @@ public class CarePlanService extends AccessValidatingService {
 
         List<QuestionnaireWrapperModel> updatedQuestionnaires = planDefinitions.stream()
                 .flatMap(pd -> pd.getQuestionnaires().stream())
-                .collect(Collectors.toList());
+                .toList();
         carePlanModel.setQuestionnaires(buildQuestionnaireWrapperModels(carePlanModel, updatedQuestionnaires, updatedFrequencies));
         refreshFrequencyTimestampForCarePlan(carePlanModel);
     }
@@ -502,13 +501,13 @@ public class CarePlanService extends AccessValidatingService {
     private void validateReferences(CarePlanModel carePlanModel) throws AccessValidationException, ServiceException {
         // Validate questionnaires
         if (carePlanModel.getQuestionnaires() != null && !carePlanModel.getQuestionnaires().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(carePlanModel.getQuestionnaires().stream().map(qw -> qw.getQuestionnaire().getId().toString()).toList());
             validateAccess(lookupResult.getQuestionnaires());
         }
 
         // Validate planDefinitions
         if (carePlanModel.getPlanDefinitions() != null && !carePlanModel.getPlanDefinitions().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitionsById(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).collect(Collectors.toList()));
+            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitionsById(carePlanModel.getPlanDefinitions().stream().map(pd -> pd.getId().toString()).toList());
             validateAccess(lookupResult.getPlanDefinitions());
         }
     }
@@ -567,7 +566,7 @@ public class CarePlanService extends AccessValidatingService {
                 .stream()
                 .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
                 .limit(pagination.getLimit())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<QuestionnaireModel> getUnresolvedQuestionnaires(String carePlanId) throws AccessValidationException, ServiceException {
@@ -592,7 +591,7 @@ public class CarePlanService extends AccessValidatingService {
                 .filter(questionnaire -> {
                     String id = questionnaire.getId().toString();
                     return idsOfUnresolvedQuestionnaires.contains(id) || idsOfQuestionnairesContainingAlarm.contains(id);
-                }).collect(Collectors.toList());
+                }).toList();
     }
 
     private List<String> getIdsOfQuestionnairesContainingAlarm(CarePlanModel carePlanModel, CarePlan carePlan) {
@@ -601,14 +600,14 @@ public class CarePlanService extends AccessValidatingService {
                 .map(QuestionnaireWrapperModel::getQuestionnaire)
                 .filter(questionnaire -> questionnaireHasExceededDeadline(carePlan, List.of(questionnaire.getId().getId())))
                 .map(questionnaire -> questionnaire.getId().getId())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> getIdsOfUnresolvedQuestionnaires(String carePlanId) throws ServiceException {
         List<QuestionnaireResponse> responses = fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId).getQuestionnaireResponses();
         return responses.stream()
                 .map(QuestionnaireResponse::getQuestionnaire)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

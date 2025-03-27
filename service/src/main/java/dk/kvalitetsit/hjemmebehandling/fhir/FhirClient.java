@@ -15,22 +15,20 @@ import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
-
+    private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
     private final FhirContext context;
     private final String endpoint;
     private final UserContextProvider userContextProvider;
-
-    private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
 
     public FhirClient(FhirContext context, String endpoint, UserContextProvider userContextProvider) {
         this.context = context;
@@ -85,27 +83,15 @@ public class FhirClient {
 
     public FhirLookupResult lookupCarePlans(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
 
-        var organizationCriterion = buildOrganizationCriterion();
-        var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
-
-        // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
-        if (onlyUnSatisfied) {
-            var satisfiedUntilCriterion = new DateClientParam(SearchParameters.CAREPLAN_SATISFIED_UNTIL).before().millis(Date.from(unsatisfiedToDate));
-            criteria.add(satisfiedUntilCriterion);
-        }
-
-        if (onlyActiveCarePlans) {
-            var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
-            criteria.add(statusCriterion);
-        }
+        var criteria = createCriteria(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied);
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
 
         return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec));
     }
 
-    public FhirLookupResult lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-
+    @NotNull
+    private ArrayList<ICriterion<?>> createCriteria(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
         var organizationCriterion = buildOrganizationCriterion();
         var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
@@ -119,6 +105,12 @@ public class FhirClient {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
         }
+        return criteria;
+    }
+
+    public FhirLookupResult lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+
+        var criteria = createCriteria(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied);
 
         Optional<Patient> patient = lookupPatientByCpr(cpr);
         if (patient.isEmpty()) {
@@ -127,7 +119,6 @@ public class FhirClient {
         String patientId = patient.get().getIdElement().toUnqualifiedVersionless().toString();
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         criteria.add(patientCriterion);
-
 
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
 
@@ -152,7 +143,7 @@ public class FhirClient {
         if (lookupResult.getOrganizations().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of %s!", Organization.class));
         }
-        return Optional.of(lookupResult.getOrganizations().get(0));
+        return Optional.of(lookupResult.getOrganizations().getFirst());
     }
 
     public Optional<Patient> lookupPatientById(String patientId) {
@@ -281,7 +272,7 @@ public class FhirClient {
         criterias.add(organizationCriterion);
 
         if (!statusesToInclude.isEmpty()) {
-            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
+            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).toList(); //status should be to lowered
             var statusCriteron = PlanDefinition.STATUS.exactly().codes(statusesToIncludeToLowered);
             criterias.add(statusCriteron);
         }
@@ -294,7 +285,7 @@ public class FhirClient {
         criterias.add(organizationCriterion);
 
         if (!statusesToInclude.isEmpty()) {
-            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).collect(Collectors.toList()); //status should be to lowered
+            Collection<String> statusesToIncludeToLowered = statusesToInclude.stream().map(String::toLowerCase).toList(); //status should be to lowered
             var statusCriteron = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
             criterias.add(statusCriteron);
         }
@@ -361,7 +352,7 @@ public class FhirClient {
         if (lookupResult.getPatients().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
         }
-        return Optional.of(lookupResult.getPatients().get(0));
+        return Optional.of(lookupResult.getPatients().getFirst());
     }
 
     private FhirLookupResult lookupPlanDefinitionsByCriteria(List<ICriterion<?>> criteria) {
@@ -398,21 +389,21 @@ public class FhirClient {
         return carePlans
                 .stream()
                 .flatMap(cp -> cp.getActivity().stream().map(a -> getQuestionnaireId(a.getDetail())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> getQuestionnaireIdsFromPlanDefinition(List<PlanDefinition> planDefinitions) {
         return planDefinitions
                 .stream()
                 .flatMap(pd -> pd.getAction().stream().map(a -> a.getDefinitionCanonicalType().getValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {
         return carePlans
                 .stream()
                 .flatMap(cp -> cp.getInstantiatesCanonical().stream().map(PrimitiveType::getValue))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
@@ -421,14 +412,14 @@ public class FhirClient {
                 .map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension()))
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
         if (detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
             throw new IllegalStateException("Expected InstantiatesCanonical to be present, and to contain exactly one value!");
         }
-        return detail.getInstantiatesCanonical().get(0).getValue();
+        return detail.getInstantiatesCanonical().getFirst().getValue();
     }
 
     private <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) {
@@ -447,7 +438,7 @@ public class FhirClient {
                 .search()
                 .forResource(resourceClass);
         if (criteria != null && !criteria.isEmpty()) {
-            query = query.where(criteria.get(0));
+            query = query.where(criteria.getFirst());
             for (int i = 1; i < criteria.size(); i++) {
                 query = query.and(criteria.get(i));
             }
@@ -476,7 +467,7 @@ public class FhirClient {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             lookupResult = lookupResult.merge(lookupOrganizations(organizationIds));
         }
@@ -577,15 +568,14 @@ public class FhirClient {
         if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
         }
-        return lookupOrganizationBySorCode(context.getOrgId()).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.getOrgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
-
-
+        // TODO: Handle 'Optional.get()' without 'isPresent()' check below
+        return lookupOrganizationBySorCode(context.getOrgId().get()).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.getOrgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
     }
 
     public Practitioner getOrCreateUserAsPractitioner() throws ServiceException {
-
-        String orgId = userContextProvider.getUserContext().getOrgId();
-        String userId = userContextProvider.getUserContext().getUserId();
+        // TODO: Handle 'Optional.get()' without 'isPresent()' check below
+        String orgId = userContextProvider.getUserContext().getOrgId().get();
+        String userId = userContextProvider.getUserContext().getUserId().get();
 
         ICriterion<TokenClientParam> sorIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.SOR, orgId);
         ICriterion<TokenClientParam> userIdIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.USER_ID, userId);
@@ -598,8 +588,10 @@ public class FhirClient {
             Practitioner p = new Practitioner();
             p.addIdentifier().setSystem(Systems.SOR).setValue(orgId);
             p.addIdentifier().setSystem(Systems.USER_ID).setValue(userId);
-            p.getNameFirstRep().addGiven(userContextProvider.getUserContext().getFirstName());
-            p.getNameFirstRep().setFamily(userContextProvider.getUserContext().getLastName());
+
+            // TODO: Handle 'Optional.get()' without 'isPresent()' check below
+            p.getNameFirstRep().addGiven(userContextProvider.getUserContext().getFirstName().get());
+            p.getNameFirstRep().setFamily(userContextProvider.getUserContext().getLastName().get());
 
             String practitionerId = save(p);
             return lookupPractitionerById(practitionerId).get();
@@ -626,7 +618,7 @@ public class FhirClient {
         if (lookupResult.getPractitioners().size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Practitioner.class));
         }
-        return Optional.of(lookupResult.getPractitioners().get(0));
+        return Optional.of(lookupResult.getPractitioners().getFirst());
     }
 
     public FhirLookupResult lookupPractitioners(Collection<String> practitionerIds) {

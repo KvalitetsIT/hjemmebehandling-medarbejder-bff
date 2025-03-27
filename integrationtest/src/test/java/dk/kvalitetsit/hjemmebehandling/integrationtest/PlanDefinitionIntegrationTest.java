@@ -2,12 +2,14 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.PlanDefinitionApi;
-import org.openapitools.client.model.*;
+import org.openapitools.client.model.CreatePlanDefinitionRequest;
+import org.openapitools.client.model.PlanDefinitionDto;
+import org.openapitools.client.model.QuestionnaireDto;
+import org.openapitools.client.model.QuestionnaireWrapperDto;
 
-import java.util.*;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +19,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     public void setup() {
+
         subject = new PlanDefinitionApi();
 
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
@@ -24,13 +27,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void getPlanDefinitions_success() throws Exception {
-        // Arrange
-
-        // Act
-
         ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo(List.of());
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
@@ -55,7 +52,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
 
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest()
-            .planDefinition(planDefinitionDto);
+                .planDefinition(planDefinitionDto);
 
         // Act
         ApiResponse<Void> response = subject.createPlanDefinitionWithHttpInfo(request);
@@ -64,7 +61,6 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
     }
-
 
 
 }

@@ -39,31 +39,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -87,31 +87,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -136,31 +136,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -181,31 +181,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Error during creation of Questionnaire.
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "201":
@@ -229,31 +229,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -275,37 +275,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
@@ -324,31 +324,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -369,31 +369,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Error during creation of PlanDefinition.
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "201":
@@ -417,31 +417,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -477,31 +477,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -526,31 +526,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -571,31 +571,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Error during creation of CarePlan.
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "201":
@@ -624,31 +624,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -668,31 +668,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -727,31 +727,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -776,31 +776,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -820,31 +820,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -867,31 +867,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -917,31 +917,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -964,28 +964,28 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: CarePlan not found.
-          content: {}
+          content: { }
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1014,31 +1014,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1064,31 +1064,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1111,28 +1111,28 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: CarePlan not found.
-          content: {}
+          content: { }
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1161,31 +1161,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1199,37 +1199,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/UserContext'
   /v1/questionnaireresponse/{carePlanId}:
@@ -1266,31 +1266,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1317,37 +1317,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: boolean
   /v1/plandefinition/{id}/used:
@@ -1368,37 +1368,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: boolean
   /v1/person:
@@ -1416,37 +1416,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PersonDto'
   /v1/patients:
@@ -1481,37 +1481,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PatientListResponse'
   /v1/patientlist:
@@ -1523,37 +1523,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PatientListResponse'
   /v1/patient/search:
@@ -1571,37 +1571,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/PatientListResponse'
   /v1/measurementtype:
@@ -1616,31 +1616,31 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
@@ -1666,37 +1666,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
@@ -1718,37 +1718,37 @@ paths:
         "400":
           description: Bad Request
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "502":
           description: Bad Gateway
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "403":
           description: Forbidden
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "404":
           description: Not Found
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "500":
           description: Internal Server Error
           content:
-            '*/*':
+            'application/json':
               schema:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
           content:
-            '*/*':
+            'application/json':
               schema:
                 type: array
                 items:
@@ -2128,6 +2128,11 @@ components:
           $ref: '#/components/schemas/examinationStatusDto'
     PatchQuestionnaireRequest:
       type: object
+      required:
+        - title
+        - description
+        - status
+        - callToAction
       properties:
         title:
           type: string
@@ -2143,6 +2148,9 @@ components:
           $ref: '#/components/schemas/QuestionDto'
     PatchPlanDefinitionRequest:
       type: object
+      required:
+        - name
+        - status
       properties:
         name:
           type: string

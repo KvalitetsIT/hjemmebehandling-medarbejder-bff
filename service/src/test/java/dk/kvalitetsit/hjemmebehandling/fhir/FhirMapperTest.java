@@ -43,7 +43,6 @@ public class FhirMapperTest {
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
 
 
-
     private QuestionModel buildCallToAction(QuestionModel questionModel) {
         QuestionModel callToAction = buildCallToAction();
 
@@ -76,8 +75,8 @@ public class FhirMapperTest {
         npu19748.setCode("NPU19748").setDisplay("C-reaktivt protein [CRP];P");
 
         vs.getCompose().getIncludeFirstRep()
-            .setSystem("urn:oid:1.2.208.176.2.1")
-            .setConcept(List.of(npu08676, npu19748));
+                .setSystem("urn:oid:1.2.208.176.2.1")
+                .setConcept(List.of(npu08676, npu19748));
 
         return vs;
     }
@@ -93,8 +92,8 @@ public class FhirMapperTest {
     private Coding buildMeasurementCode(String system, String code, String display) {
         Coding coding = new Coding();
         coding.setSystem(system)
-            .setCode(code)
-            .setDisplay(display);
+                .setCode(code)
+                .setDisplay(display);
 
         return coding;
     }
@@ -235,6 +234,7 @@ public class FhirMapperTest {
     private PlanDefinition buildPlanDefinition(String planDefinitionId, String questionnaireId) {
         return buildPlanDefinition(planDefinitionId, "title", questionnaireId);
     }
+
     private PlanDefinition buildPlanDefinition(String planDefinitionId, String title, String questionnaireId) {
         PlanDefinition planDefinition = new PlanDefinition();
 
@@ -354,7 +354,7 @@ public class FhirMapperTest {
     }
 
     private QuestionModel buildQuestionModel(QuestionType type, String text) {
-        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?",null);
+        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", null);
     }
 
     private QuestionModel buildQuestionModel(QuestionType type, String text, String abbreviation) {

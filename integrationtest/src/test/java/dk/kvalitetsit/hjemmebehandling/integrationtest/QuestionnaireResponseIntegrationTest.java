@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.QuestionnaireResponseApi;
+import org.openapitools.client.model.ExaminationStatusDto;
 import org.openapitools.client.model.PaginatedListQuestionnaireResponseDto;
 import org.openapitools.client.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.client.model.QuestionnaireResponseDto;
@@ -29,7 +30,7 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         // Act
-        ApiResponse<PaginatedListQuestionnaireResponseDto> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1,1);
+        ApiResponse<PaginatedListQuestionnaireResponseDto> response = subject.getQuestionnaireResponsesByCarePlanIdWithHttpInfo(carePlanId, questionnaireIds, 1, 1);
 
 
         assertEquals(3, response.getData().getTotal());
@@ -40,7 +41,7 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
     @Test
     public void getQuestionnaireResponsesByStatus_success() throws Exception {
         // Arrange
-        List<String> statuses = List.of("NOT_EXAMINED");
+        List<ExaminationStatusDto> statuses = List.of(ExaminationStatusDto.NOT_EXAMINED);
         int pageNumber = 1;
         int pageSize = 10;
 
@@ -56,7 +57,7 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         // Arrange
         String id = "questionnaireresponse-2";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-        request.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.UNDER_EXAMINATION);
+        request.setExaminationStatus(ExaminationStatusDto.UNDER_EXAMINATION);
 
         // Act
         ApiResponse<Void> response = subject.patchQuestionnaireResponseWithHttpInfo(id, request);
@@ -70,10 +71,10 @@ public class QuestionnaireResponseIntegrationTest extends AbstractIntegrationTes
         // Arrange
         String id = "questionnaireresponse-3";
         PartialUpdateQuestionnaireResponseRequest firstRequest = new PartialUpdateQuestionnaireResponseRequest();
-        firstRequest.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.UNDER_EXAMINATION);
+        firstRequest.setExaminationStatus(ExaminationStatusDto.UNDER_EXAMINATION);
 
         PartialUpdateQuestionnaireResponseRequest secondRequest = new PartialUpdateQuestionnaireResponseRequest();
-        secondRequest.setExaminationStatus(PartialUpdateQuestionnaireResponseRequest.ExaminationStatusEnum.EXAMINED);
+        secondRequest.setExaminationStatus(ExaminationStatusDto.EXAMINED);
 
         // Act / Assert
         ApiResponse<Void> firstResponse = subject.patchQuestionnaireResponseWithHttpInfo(id, firstRequest);

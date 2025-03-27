@@ -1,10 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.openapitools.api.PatientApi;
 import org.openapitools.model.CreatePatientRequest;
@@ -15,19 +20,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
-@Tag(name = "Patient", description = "API for manipulating and retrieving patients.")
 public class PatientController extends BaseController implements PatientApi {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
@@ -50,7 +46,7 @@ public class PatientController extends BaseController implements PatientApi {
 
     private PatientListResponse buildResponse(List<PatientModel> patients) {
         PatientListResponse response = new PatientListResponse();
-        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).collect(Collectors.toList()));
+        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).toList());
         return response;
     }
 
@@ -58,7 +54,8 @@ public class PatientController extends BaseController implements PatientApi {
     public ResponseEntity<Void> createPatient(CreatePatientRequest createPatientRequest) {
 //         Create the patient
         try {
-            PatientModel patient = dtoMapper.mapPatientDto(createPatientRequest.getPatient());
+            // todo: handle 'Optional.get()' without 'isPresent()' check below
+            PatientModel patient = dtoMapper.mapPatientDto(createPatientRequest.getPatient().get());
             patientService.createPatient(patient);
             auditLoggingService.log("POST /v1/patient", patient);
 

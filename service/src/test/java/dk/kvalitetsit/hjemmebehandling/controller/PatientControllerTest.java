@@ -1,15 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import dk.kvalitetsit.hjemmebehandling.api.*;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,124 +17,121 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.CreatePatientRequest;
 import org.openapitools.model.PatientDto;
 import org.openapitools.model.PatientListResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class PatientControllerTest {
-  @InjectMocks
-  private PatientController subject;
+    @InjectMocks
+    private PatientController subject;
 
-  @Mock
-  private PatientService patientService;
-  @Mock
-  private AuditLoggingService auditLoggingService;
-  @Mock
-  private DtoMapper dtoMapper;
-  @Mock
-  private CustomUserClient customUserClient;
+    @Mock
+    private PatientService patientService;
+    @Mock
+    private AuditLoggingService auditLoggingService;
+    @Mock
+    private DtoMapper dtoMapper;
+    @Mock
+    private CustomUserClient customUserClient;
 
 
-  @Test
-  public void getPatientList_success_201() {
-    // Arrange
-    CreatePatientRequest request = new CreatePatientRequest();
-    request.setPatient(new PatientDto());
+    @Test
+    public void getPatientList_success_201() {
 
-    PatientModel patientModel = new PatientModel();
-    Mockito.when(patientService.getPatients(Mockito.anyString())).thenReturn(List.of(patientModel));
+        CreatePatientRequest request = new CreatePatientRequest();
+        request.setPatient(Optional.of(new PatientDto()));
 
-    PatientDto patientDto = new PatientDto();
-    Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+        PatientModel patientModel = new PatientModel();
+        Mockito.when(patientService.getPatients(Mockito.anyString())).thenReturn(List.of(patientModel));
 
-    // Act
-    PatientListResponse result = subject.getPatientList().getBody();
+        PatientDto patientDto = new PatientDto();
+        Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
-    // Assert
-    //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-    assertEquals(1, result.getPatients().size());
-    assertEquals(patientDto, result.getPatients().get(0));
-  }
 
-  @Test
-  public void createPatient_success_201() {
-    // Arrange
-    CreatePatientRequest request = new CreatePatientRequest();
-    request.setPatient(new PatientDto());
+        PatientListResponse result = subject.getPatientList().getBody();
 
-    Mockito.when(dtoMapper.mapPatientDto(request.getPatient())).thenReturn(new PatientModel());
 
-    // Act
-    subject.createPatient(request);
+        //assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals(1, result.getPatients().size());
+        assertEquals(patientDto, result.getPatients().get(0));
+    }
 
-    // Assert
-    //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-  }
+    @Test
+    public void createPatient_success_201() {
 
-  @Test
-  public void createPatient_error() throws Exception {
-    // Arrange
-    CreatePatientRequest request = new CreatePatientRequest();
-    request.setPatient(new PatientDto());
+        CreatePatientRequest request = new CreatePatientRequest();
+        request.setPatient(Optional.of(new PatientDto()));
 
-    PatientModel patientModel = new PatientModel();
-    Mockito.when(dtoMapper.mapPatientDto(request.getPatient())).thenReturn(patientModel);
+        Mockito.when(dtoMapper.mapPatientDto(request.getPatient().get())).thenReturn(new PatientModel());
 
-    Mockito.doThrow(ServiceException.class).when(patientService).createPatient(patientModel);
 
-    // Act
+        subject.createPatient(request);
 
-    // Assert
-    assertThrows(InternalServerErrorException.class, () -> subject.createPatient(request));
-  }
 
-  @Test
-  public void getPatient_error_notExist() throws ServiceException {
-    // Arrange
-    Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(null);
-    // Act
+        //assertEquals(HttpStatus.CREATED, result.getStatusCode());
+    }
 
-    // Assert
-    Exception e = assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(Mockito.anyString()));
-  }
+    @Test
+    public void createPatient_error() throws Exception {
 
-  @Test
-  public void getPatient_success_201() throws ServiceException {
-    // Arrange
-    PatientModel patientModel = new PatientModel();
-    Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(patientModel);
+        CreatePatientRequest request = new CreatePatientRequest();
+        request.setPatient(Optional.of(new PatientDto()));
 
-    PatientDto patientDto = new PatientDto();
-    Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+        PatientModel patientModel = new PatientModel();
+        Mockito.when(dtoMapper.mapPatientDto(request.getPatient().get())).thenReturn(patientModel);
 
-    // Act
-    PatientDto result = subject.getPatient(Mockito.anyString()).getBody();
+        Mockito.doThrow(ServiceException.class).when(patientService).createPatient(patientModel);
 
-    // Assert
-    //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-    assertEquals(patientDto, result);
-  }
 
-  @Test
-  public void searchPatient() throws ServiceException {
-    // Arrange
-    PatientModel patientModel = new PatientModel();
-    Mockito.when(patientService.searchPatients(Mockito.anyList())).thenReturn(List.of(patientModel));
-    //Mockito.doReturn(List.of(patientModel)).when(patientService).searchPatients(List.of(Mockito.anyString()));
+        assertThrows(InternalServerErrorException.class, () -> subject.createPatient(request));
+    }
 
-    PatientDto patientDto = new PatientDto();
-    Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+    @Test
+    public void getPatient_error_notExist() throws ServiceException {
 
-    // Act
-    PatientListResponse result = subject.searchPatients(Mockito.anyString()).getBody();
+        Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(null);
 
-    // Assert
-    //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-    assertEquals(1, result.getPatients().size());
-    assertEquals(patientDto, result.getPatients().get(0));
-  }
+
+        Exception e = assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(Mockito.anyString()));
+    }
+
+    @Test
+    public void getPatient_success_201() throws ServiceException {
+
+        PatientModel patientModel = new PatientModel();
+        Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(patientModel);
+
+        PatientDto patientDto = new PatientDto();
+        Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+
+
+        PatientDto result = subject.getPatient(Mockito.anyString()).getBody();
+
+
+        //assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals(patientDto, result);
+    }
+
+    @Test
+    public void searchPatient() throws ServiceException {
+
+        PatientModel patientModel = new PatientModel();
+        Mockito.when(patientService.searchPatients(Mockito.anyList())).thenReturn(List.of(patientModel));
+        //Mockito.doReturn(List.of(patientModel)).when(patientService).searchPatients(List.of(Mockito.anyString()));
+
+        PatientDto patientDto = new PatientDto();
+        Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
+
+
+        PatientListResponse result = subject.searchPatients(Mockito.anyString()).getBody();
+
+
+        //assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals(1, result.getPatients().size());
+        assertEquals(patientDto, result.getPatients().get(0));
+    }
 }

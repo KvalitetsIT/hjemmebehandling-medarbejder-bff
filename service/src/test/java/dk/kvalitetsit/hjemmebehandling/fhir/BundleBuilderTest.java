@@ -2,15 +2,13 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.rest.gclient.IQuery;
-import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BundleBuilderTest {
-    private BundleBuilder subject = new BundleBuilder();
+    private final BundleBuilder subject = new BundleBuilder();
 
     private static final String CAREPLAN_ID = "careplan-1";
     private static final String PATIENT_ID = "patient-1";
@@ -21,7 +19,7 @@ public class BundleBuilderTest {
         IGenericClient client = fhirContext.newRestfulGenericClient("http://localhost:7070/fhir");
         Bundle result = client.search().forResource(Questionnaire.class).where(Questionnaire.RES_ID.exactly().codes("66")).returnBundle(Bundle.class).execute();
 
-         Questionnaire questionnaire = (Questionnaire) result.getEntryFirstRep().getResource();
+        Questionnaire questionnaire = (Questionnaire) result.getEntryFirstRep().getResource();
 
         Questionnaire.QuestionnaireItemComponent item = questionnaire.addItem();
         item.setLinkId(IdType.newRandomUuid().getValueAsString());
@@ -52,38 +50,37 @@ public class BundleBuilderTest {
         pul.setType(Questionnaire.QuestionnaireItemType.QUANTITY);
 
 
-
-
 //        Questionnaire questionnaire = new Questionnaire();
 //        questionnaire.setId("questionnaire-infektionsmedicinsk-2");
 //        questionnaire.addExtension(ExtensionMapper.mapOrganizationId("Organization/organization-infektionsmedicinsk"));
 //        questionnaire.setTitle("Infektionsmedicinsk spørgeskema");
 
-        System.out.println( FhirContext.forR4().newXmlParser().setPrettyPrint(true).encodeResourceToString(questionnaire) );
+        System.out.println(FhirContext.forR4().newXmlParser().setPrettyPrint(true).encodeResourceToString(questionnaire));
     }
+
     @Test
     public void buildCreateCarePlanBundle_mapsArgumentsToEntries() {
-        // Arrange
+
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
 
-        // Act
+
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
 
-        // Assert
+
         assertEquals(2, result.getEntry().size());
     }
 
     @Test
     public void buildCreateCarePlanBundle_updatesSubjectReference() {
-        // Arrange
+
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
 
-        // Act
+
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
 
-        // Assert
+
         assertEquals(patient, result.getEntry().get(1).getResource());
         assertEquals(carePlan.getSubject().getReference(), result.getEntry().get(1).getFullUrl());
     }

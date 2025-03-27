@@ -32,7 +32,7 @@
 //import static org.junit.jupiter.api.Assertions.*;
 //
 //@ExtendWith(MockitoExtension.class)
-////@RestClientTest
+/// /@RestClientTest
 //public class CustomUserServiceTest {
 //  @InjectMocks
 //  private CustomUserClient subject;
@@ -61,14 +61,14 @@
 //
 //  @Test
 //  public void createUser_patientidpApiUrl_isNull() throws Exception {
-//    // Arrange
+//    
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", null);
 //    CustomUserRequestDto dto = new CustomUserRequestDto();
 //
-//    // Act
+//    
 //    Optional<CustomUserResponseDto> user = subject.createUser(new CustomUserRequestDto());
 //
-//    // Assert
+//    
 //    assertEquals(1, listAppender.list.size());
 //    assertThat(listAppender.list.get(0).getMessage(), StringContains.containsString("patientidp.api.url is not set"));
 //    assertTrue(user.isEmpty());
@@ -76,7 +76,7 @@
 //
 //  @Test
 //  public void createUser_success() throws Exception {
-//    // Arrange
+//    
 //    final String apiUrl = "http://foo";
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", apiUrl);
 //
@@ -88,24 +88,24 @@
 //        Mockito.eq(CustomUserResponseDto.class)))
 //        .thenReturn(dto);
 //
-//    // Act
+//    
 //    Optional<CustomUserResponseDto> user = subject.createUser(new CustomUserRequestDto());
 //
-//    // Assert
+//    
 //    assertTrue(user.isPresent());
 //    assertEquals(dto, user.get());
 //  }
 //
 //  @Test
 //  public void resetPassword_patientidpApiUrl_isNull() throws Exception {
-//    // Arrange
+//    
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", "");
 //    CustomUserRequestDto dto = new CustomUserRequestDto();
 //
-//    // Act
+//    
 //    Optional<PatientModel> patient = subject.resetPassword(new CustomUserRequestDto());
 //
-//    // Assert
+//    
 //    assertEquals(1, listAppender.list.size());
 //    assertThat(listAppender.list.get(0).getMessage(), StringContains.containsString("patientidpApiUrl is null. Cannot reset password"));
 //    assertTrue(patient.isEmpty());
@@ -113,16 +113,16 @@
 //
 //  @Test
 //  public void resetPassword_patient_notFound() throws Exception {
-//    // Arrange
+//    
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", "http://foo");
 //
 //    CustomUserRequestDto mock = Mockito.mock(CustomUserRequestDto.class);
 //    Mockito.when(mock.getAttributes()).thenReturn(new CustomUserRequestAttributesDto());
 //
-//    // Act
+//    
 //    Optional<PatientModel> patient = subject.resetPassword(mock);
 //
-//    // Assert
+//    
 //    assertEquals(1, listAppender.list.size());
 //    assertThat(listAppender.list.get(0).getMessage(), StringContains.containsString("resetPassword: Can not find patient"));
 //    assertTrue(patient.isEmpty());
@@ -130,7 +130,7 @@
 //
 //  @Test
 //  public void resetPassword_customUserLogin_isNull() throws Exception {
-//    // Arrange
+//    
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", "http://foo");
 //
 //    CustomUserRequestDto requestDto = Mockito.mock(CustomUserRequestDto.class);
@@ -144,10 +144,10 @@
 //
 //    Mockito.when(fhirMapper.mapPatient(Mockito.any(Patient.class))).thenReturn(patientModelMock);
 //
-//    // Act
+//    
 //    Optional<PatientModel> patient = subject.resetPassword(requestDto);
 //
-//    // Assert
+//    
 //    assertEquals(1, listAppender.list.size());
 //    assertThat(listAppender.list.get(0).getMessage(), StringContains.containsString("No custom user login set on patient"));
 //    assertTrue(patient.isPresent());
@@ -155,7 +155,7 @@
 //
 //  @Test
 //  public void resetPassword_customUserLogin_isEmpty() throws Exception {
-//    // Arrange
+//    
 //    ReflectionTestUtils.setField(subject,"patientidpApiUrl", "http://foo");
 //
 //    CustomUserRequestDto requestDto = Mockito.mock(CustomUserRequestDto.class);
@@ -169,10 +169,10 @@
 //
 //    Mockito.when(fhirMapper.mapPatient(Mockito.any(Patient.class))).thenReturn(patientModelMock);
 //
-//    // Act
+//    
 //    Optional<PatientModel> patient = subject.resetPassword(requestDto);
 //
-//    // Assert
+//    
 //    assertEquals(1, listAppender.list.size());
 //    assertThat(listAppender.list.get(0).getMessage(), StringContains.containsString("No custom user login set on patient"));
 //    assertTrue(patient.isPresent());
@@ -180,7 +180,7 @@
 //
 //  @Test
 //  public void resetPassword_success() throws Exception {
-//    // Arrange
+//    
 //    final String apiUrl = "http://foo";
 //    final String customUserLoginId = "customUserId";
 //    final String resetUrl = apiUrl + "/" + customUserLoginId + "/reset-password";
@@ -197,10 +197,10 @@
 //
 //    Mockito.when(fhirMapper.mapPatient(Mockito.any(Patient.class))).thenReturn(patientModelMock);
 //
-//    // Act
+//    
 //    Optional<PatientModel> patient = subject.resetPassword(requestDto);
 //
-//    // Assert
+//    
 //    assertTrue(patient.isPresent());
 //
 //    Mockito.verify(restTemplate, Mockito.times(1)).put(

@@ -7,6 +7,7 @@ import org.openapitools.client.api.QuestionnaireApi;
 import org.openapitools.client.model.*;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,7 +56,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
                 .questions(List.of(question1, question2))
                 .status("DRAFT");
 
-                CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
+        CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         request.setQuestionnaire(questionnaireDto);
 
 
@@ -76,14 +77,14 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setTitle("Ny forbedret titel");
-        request.status(questionnaire.getStatus());
-        request.setDescription(request.getDescription());
+        request.status(Objects.requireNonNull(questionnaire.getStatus()));
+        request.setDescription("ny forbedret description");
         request.setQuestions(questionnaire.getQuestions());
-        request.setCallToAction(questionnaire.getCallToAction());
+        request.setCallToAction(Objects.requireNonNull(questionnaire.getCallToAction()));
 
 
         // Act
-        ApiResponse response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
+        ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
 
         // Assert
         assertEquals(200, response.getStatusCode());

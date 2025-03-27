@@ -1,19 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.CarePlanApi;
 import org.openapitools.client.model.*;
 
 import java.util.List;
+import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CarePlanIntegrationTest extends AbstractIntegrationTest {
@@ -33,7 +29,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setPatientDto(new PatientDto());
-        carePlanDto.getPatientDto().setCpr("0908060609");
+        Objects.requireNonNull(carePlanDto.getPatientDto()).setCpr("0908060609");
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
