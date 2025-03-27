@@ -22,46 +22,8 @@ public class FrequencyEnumeratorTest {
     private static final Instant FRIDAY_AFTERNOON = Instant.parse("2021-11-26T13:00:00.000Z");
     private static final Instant SATURDAY_AFTERNOON = Instant.parse("2021-11-27T13:00:00.000Z");
     private static final Instant TUESDAY_AFTERNOON = Instant.parse("2021-11-30T13:00:00.000Z");
-
-
-    @Test
-    public void check_winter_and_daylight_saving_time_returns_same_next_hour() {
-        ZoneId zoneId = ZoneId.of("Europe/Copenhagen");
-        ZoneRules zoneRules = zoneId.getRules();
-        ZoneOffsetTransition zoneOffsetTransition = zoneRules.nextTransition(Instant.now());
-
-        Instant winterTime, daylightSavingTime;
-        if (zoneRules.isDaylightSavings(Instant.now())) {
-            daylightSavingTime = Instant.now();
-            winterTime = zoneOffsetTransition.getInstant();
-        } else {
-            winterTime = Instant.now();
-            daylightSavingTime = zoneOffsetTransition.getInstant();
-        }
-
-        FrequencyModel fm = buildFrequency(List.of(Weekday.FRI), LocalTime.parse("14:00"));
-        FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(fm);
-
-        Instant winterTimeNext = frequencyEnumerator.getSatisfiedUntilForInitialization(winterTime);
-
-        Instant daylightSavingTimeNext = frequencyEnumerator.getSatisfiedUntilForInitialization(daylightSavingTime);
-
-        assertTrue(zoneRules.isDaylightSavings(daylightSavingTime));
-        assertFalse(zoneRules.isDaylightSavings(winterTime));
-
-        assertNotEquals(winterTime.atZone(ZoneOffset.UTC).getHour(), daylightSavingTime.atZone(ZoneOffset.UTC).getHour());
-
-        // TODO: FIX "assert" below. It periodically fails
-        //assertNotEquals(winterTimeNext.atZone(ZoneOffset.UTC).getHour(), daylightSavingTimeNext.atZone(ZoneOffset.UTC).getHour());
-        assertEquals(winterTimeNext.atZone(zoneId).getHour(), daylightSavingTimeNext.atZone(zoneId).getHour());
-        assertEquals(fm.getTimeOfDay().getHour(), winterTimeNext.atZone(zoneId).getHour());
-
-    }
-
-
     private static final LocalTime elevenOClock = LocalTime.of(11, 0);
     private static final LocalTime fourteenOClock = LocalTime.of(14, 0);
-
     private static final FrequencyModel allWeekAt11 = buildFrequency(List.of(Weekday.MON, Weekday.TUE, Weekday.WED, Weekday.THU, Weekday.FRI, Weekday.SAT, Weekday.SUN), elevenOClock);
     private static final FrequencyModel tuesdayAndFridayAt14 = buildFrequency(List.of(Weekday.TUE, Weekday.FRI), fourteenOClock);
     private static final FrequencyModel FridayAt14 = buildFrequency(List.of(Weekday.FRI), fourteenOClock);
@@ -119,18 +81,6 @@ public class FrequencyEnumeratorTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource // arguments comes from a method that is name the same as the test
-    public void givenFrequencyTimeToCalculateAndExpectedResult_Initialization_ShouldResultInExpectedTime(FrequencyModel frequencyModel, Instant timeOfRecalculate, Instant timeCalculatedResult) {
-
-        FrequencyEnumerator subject = new FrequencyEnumerator(frequencyModel);
-
-        Instant result = subject.getSatisfiedUntilForInitialization(timeOfRecalculate);
-
-
-        assertEquals(timeCalculatedResult, result);
-    }
-
     private static Stream<Arguments> givenFrequencyTimeToCalculateAndExpectedResult_AlarmRemoval_ShouldResultInExpectedTime() {
         return Stream.of(
                 // Instant is in UTC
@@ -184,18 +134,6 @@ public class FrequencyEnumeratorTest {
         );
     }
 
-    @ParameterizedTest
-    @MethodSource // arguments comes from a method that is name the same as the test
-    public void givenFrequencyTimeToCalculateAndExpectedResult_AlarmRemoval_ShouldResultInExpectedTime(FrequencyModel frequencyModel, Instant timeOfRecalculate, Instant timeCalculatedResult) {
-
-        FrequencyEnumerator subject = new FrequencyEnumerator(frequencyModel);
-
-        Instant result = subject.getSatisfiedUntilForAlarmRemoval(timeOfRecalculate);
-
-
-        assertEquals(timeCalculatedResult, result);
-    }
-
     private static Stream<Arguments> givenFrequencyTimeToCalculateAndExpectedResult_FrequencyChange_ShouldResultInExpectedTime() {
         return Stream.of(
                 // Instant is in UTC
@@ -247,6 +185,73 @@ public class FrequencyEnumeratorTest {
         );
     }
 
+    private static FrequencyModel buildFrequency(List<Weekday> weekdays, LocalTime timeOfDay) {
+        FrequencyModel frequencyModel = new FrequencyModel();
+
+        frequencyModel.setWeekdays(weekdays);
+        frequencyModel.setTimeOfDay(timeOfDay);
+
+        return frequencyModel;
+    }
+
+    @Test
+    public void check_winter_and_daylight_saving_time_returns_same_next_hour() {
+        ZoneId zoneId = ZoneId.of("Europe/Copenhagen");
+        ZoneRules zoneRules = zoneId.getRules();
+        ZoneOffsetTransition zoneOffsetTransition = zoneRules.nextTransition(Instant.now());
+
+        Instant winterTime, daylightSavingTime;
+        if (zoneRules.isDaylightSavings(Instant.now())) {
+            daylightSavingTime = Instant.now();
+            winterTime = zoneOffsetTransition.getInstant();
+        } else {
+            winterTime = Instant.now();
+            daylightSavingTime = zoneOffsetTransition.getInstant();
+        }
+
+        FrequencyModel fm = buildFrequency(List.of(Weekday.FRI), LocalTime.parse("14:00"));
+        FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(fm);
+
+        Instant winterTimeNext = frequencyEnumerator.getSatisfiedUntilForInitialization(winterTime);
+
+        Instant daylightSavingTimeNext = frequencyEnumerator.getSatisfiedUntilForInitialization(daylightSavingTime);
+
+        assertTrue(zoneRules.isDaylightSavings(daylightSavingTime));
+        assertFalse(zoneRules.isDaylightSavings(winterTime));
+
+        assertNotEquals(winterTime.atZone(ZoneOffset.UTC).getHour(), daylightSavingTime.atZone(ZoneOffset.UTC).getHour());
+
+        // TODO: FIX "assert" below. It periodically fails
+        //assertNotEquals(winterTimeNext.atZone(ZoneOffset.UTC).getHour(), daylightSavingTimeNext.atZone(ZoneOffset.UTC).getHour());
+        assertEquals(winterTimeNext.atZone(zoneId).getHour(), daylightSavingTimeNext.atZone(zoneId).getHour());
+        assertEquals(fm.getTimeOfDay().getHour(), winterTimeNext.atZone(zoneId).getHour());
+
+    }
+
+    @ParameterizedTest
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void givenFrequencyTimeToCalculateAndExpectedResult_Initialization_ShouldResultInExpectedTime(FrequencyModel frequencyModel, Instant timeOfRecalculate, Instant timeCalculatedResult) {
+
+        FrequencyEnumerator subject = new FrequencyEnumerator(frequencyModel);
+
+        Instant result = subject.getSatisfiedUntilForInitialization(timeOfRecalculate);
+
+
+        assertEquals(timeCalculatedResult, result);
+    }
+
+    @ParameterizedTest
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void givenFrequencyTimeToCalculateAndExpectedResult_AlarmRemoval_ShouldResultInExpectedTime(FrequencyModel frequencyModel, Instant timeOfRecalculate, Instant timeCalculatedResult) {
+
+        FrequencyEnumerator subject = new FrequencyEnumerator(frequencyModel);
+
+        Instant result = subject.getSatisfiedUntilForAlarmRemoval(timeOfRecalculate);
+
+
+        assertEquals(timeCalculatedResult, result);
+    }
+
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
     public void givenFrequencyTimeToCalculateAndExpectedResult_FrequencyChange_ShouldResultInExpectedTime(FrequencyModel frequencyModel, Instant timeOfRecalculate, Instant timeCalculatedResult) {
@@ -275,15 +280,5 @@ public class FrequencyEnumeratorTest {
         assertEquals(Instant.MAX, result1);
         assertEquals(Instant.MAX, result2);
         assertEquals(Instant.MAX, result3);
-    }
-
-
-    private static FrequencyModel buildFrequency(List<Weekday> weekdays, LocalTime timeOfDay) {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        frequencyModel.setWeekdays(weekdays);
-        frequencyModel.setTimeOfDay(timeOfDay);
-
-        return frequencyModel;
     }
 }

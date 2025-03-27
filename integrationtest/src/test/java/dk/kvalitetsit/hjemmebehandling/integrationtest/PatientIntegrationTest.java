@@ -14,21 +14,14 @@ public class PatientIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     public void setup() {
         subject = new PatientApi();
-
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
     }
 
     @Test
     public void getPatient_success() throws Exception {
-        // Arrange
         String cpr = "0101010101";
-
-        // Act
         ApiResponse<PatientDto> response = subject.getPatientWithHttpInfo(cpr);
-
         System.out.println("Response code: " + response.getStatusCode());
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 }

@@ -28,65 +28,52 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void createQuestionnaire_success() throws Exception {
-        // Arrange
+        QuestionDto question1 = new QuestionDto()
+                .linkId("1")
+                .text("Har du sovet godt? (æøå)")
+                .questionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
 
-        QuestionDto question1 = new QuestionDto();
-        question1.setLinkId("1");
-        question1.setText("Har du sovet godt? (æøå)");
-        question1.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
+        QuestionDto question2 = new QuestionDto()
+                .linkId("2")
+                .text("Sov du heller ikke godt i går?")
+                .questionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
 
-
-        QuestionDto question2 = new QuestionDto();
-        question2.setLinkId("2");
-        question2.setText("Sov du heller ikke godt i går?");
-        question2.setQuestionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
-
-        AnswerDto answer = new AnswerDto();
-        answer.setLinkId(question1.getLinkId());
-        answer.setAnswerType(AnswerDto.AnswerTypeEnum.BOOLEAN);
-        answer.setValue(Boolean.FALSE.toString());
-
-        EnableWhen enableWhen = new EnableWhen();
-        enableWhen.setAnswer(answer);
-        enableWhen.setOperator(EnableWhen.OperatorEnum.EQUAL);
-        question2.addEnableWhenItem(enableWhen);
-
+        question2.addEnableWhenItem(new EnableWhen()
+                .answer(new AnswerDto()
+                        .linkId(question1.getLinkId())
+                        .answerType(AnswerDto.AnswerTypeEnum.BOOLEAN)
+                        .value(Boolean.FALSE.toString())
+                ).operator(EnableWhen.OperatorEnum.EQUAL));
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto()
                 .questions(List.of(question1, question2))
                 .status("DRAFT");
 
-        CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
-        request.setQuestionnaire(questionnaireDto);
+        CreateQuestionnaireRequest request = new CreateQuestionnaireRequest()
+                .questionnaire(questionnaireDto);
 
-
-        // Act
         ApiResponse<Void> response = questionnaireApi.createQuestionnaireWithHttpInfo(request);
 
-        // Assert
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
     }
 
     @Test
     public void patchQuestionnaire_success() throws Exception {
-        // Arrange
         String id = "questionnaire-1";
-        QuestionnaireDto questionnaire = questionnaireApi.getQuestionnaireById(id);
-        questionnaire.setTitle("Ny forbedret titel");
 
-        PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
-        request.setTitle("Ny forbedret titel");
-        request.status(Objects.requireNonNull(questionnaire.getStatus()));
-        request.setDescription("ny forbedret description");
-        request.setQuestions(questionnaire.getQuestions());
-        request.setCallToAction(Objects.requireNonNull(questionnaire.getCallToAction()));
+        QuestionnaireDto questionnaire = questionnaireApi.getQuestionnaireById(id)
+                .title("Ny forbedret titel");
 
+        PatchQuestionnaireRequest request = new PatchQuestionnaireRequest()
+                .title("Ny forbedret titel")
+                .status(Objects.requireNonNull(questionnaire.getStatus()))
+                .description("ny forbedret description")
+                .questions(questionnaire.getQuestions())
+                .callToAction(Objects.requireNonNull(questionnaire.getCallToAction()));
 
-        // Act
         ApiResponse<Void> response = questionnaireApi.patchQuestionnaireWithHttpInfo(id, request);
 
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 }

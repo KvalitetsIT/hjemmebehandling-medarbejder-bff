@@ -19,9 +19,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     public void setup() {
-
         subject = new PlanDefinitionApi();
-
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
     }
 
@@ -33,31 +31,21 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void createPlanDefinition_success() throws Exception {
-        // Arrange
-//        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
 
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto()
+                .status("ACTIVE")
+                .questionnaires(List.of(new QuestionnaireWrapperDto()
+                        .questionnaire(questionnaireDto)));
 
-        QuestionnaireWrapperDto wrapper = new QuestionnaireWrapperDto();
-        wrapper.setQuestionnaire(questionnaireDto);
-//        wrapper.setFrequency(frequencyDto);
-
-
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
         planDefinitionDto.setId("PlanDefinition/plandefinition-1");
-        planDefinitionDto.setStatus("ACTIVE");
-        planDefinitionDto.setQuestionnaires(List.of(wrapper));
-
 
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest()
                 .planDefinition(planDefinitionDto);
 
-        // Act
         ApiResponse<Void> response = subject.createPlanDefinitionWithHttpInfo(request);
 
-        // Assert
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
     }

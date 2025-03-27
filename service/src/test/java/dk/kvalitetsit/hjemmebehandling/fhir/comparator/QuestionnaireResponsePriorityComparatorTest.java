@@ -15,9 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QuestionnaireResponsePriorityComparatorTest {
-    private QuestionnaireResponsePriorityComparator subject;
-
     private static final Instant AUTHORED = Instant.parse("2021-11-09T00:00:00Z");
+    private QuestionnaireResponsePriorityComparator subject;
 
     @BeforeEach
     public void setup() {

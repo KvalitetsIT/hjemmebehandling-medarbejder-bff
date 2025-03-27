@@ -19,6 +19,7 @@ import org.openapitools.model.PatientDto;
 import org.openapitools.model.PatientListResponse;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,13 +52,11 @@ public class PatientControllerTest {
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
-
         PatientListResponse result = subject.getPatientList().getBody();
 
-
         //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(1, result.getPatients().size());
-        assertEquals(patientDto, result.getPatients().get(0));
+        assertEquals(1, Objects.requireNonNull(result).getPatients().size());
+        assertEquals(patientDto, result.getPatients().getFirst());
     }
 
     @Test
@@ -131,7 +130,7 @@ public class PatientControllerTest {
 
 
         //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(1, result.getPatients().size());
-        assertEquals(patientDto, result.getPatients().get(0));
+        assertEquals(1, Objects.requireNonNull(result).getPatients().size());
+        assertEquals(patientDto, result.getPatients().getFirst());
     }
 }

@@ -92,6 +92,7 @@ public class QuestionnaireServiceTest {
         Questionnaire questionnaire = new Questionnaire();
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
+
         Mockito.when(fhirClient.lookupQuestionnairesByStatus(Collections.emptyList())).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
@@ -104,11 +105,8 @@ public class QuestionnaireServiceTest {
     @Test
     public void createQuestionnaire_success() throws Exception {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-
         Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
-
         String result = subject.createQuestionnaire(questionnaireModel);
-
         assertEquals("1", result);
     }
 

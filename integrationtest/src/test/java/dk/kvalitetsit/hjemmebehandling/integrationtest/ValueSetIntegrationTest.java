@@ -16,18 +16,12 @@ public class ValueSetIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     public void setup() {
         subject = new ValueSetApi();
-
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
     }
 
     @Test
     public void getMeasurementTypes_success() throws Exception {
-        // Arrange
-
-        // Act
         ApiResponse<List<MeasurementTypeDto>> response = subject.getMeasurementTypesWithHttpInfo();
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 }

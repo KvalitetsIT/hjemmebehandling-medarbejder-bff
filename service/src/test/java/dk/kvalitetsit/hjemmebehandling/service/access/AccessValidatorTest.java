@@ -38,14 +38,12 @@ public class AccessValidatorTest {
     @Test
     public void validateAccess_contextNotInitialized() {
         var resource = buildResource();
-
         assertThrows(IllegalStateException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_unknownOrganization() throws ServiceException {
         var resource = buildResource();
-
         var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.empty());
@@ -64,73 +62,51 @@ public class AccessValidatorTest {
 
     @Test
     public void validateAccess_wrongOrganization_accessViolation() throws ServiceException {
-
         var resource = buildResource(ORGANIZATION_ID_2);
-
         var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-
         var organization = buildOrganization();
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
-
-
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_correctOrganization_success() throws ServiceException {
-
         var resource = buildResource(ORGANIZATION_ID_1);
-
         var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-
         var organization = buildOrganization();
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
-
-
         assertDoesNotThrow(() -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_conjunction_failure() throws ServiceException {
-
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_2);
-
         var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-
         var organization = buildOrganization();
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
-
-
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
     @Test
     public void whenGettingOrganisationGivenNoSorCodeThenReturnError() {
         var resource1 = buildResource(ORGANIZATION_ID_1);
-
         var context = new UserContext().orgId("");
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource1));
     }
 
     @Test
     public void validateAccess_conjunction_success() throws ServiceException {
-
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_1);
-
         var context = new UserContext().orgId(SOR_CODE_1);
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-
         var organization = buildOrganization();
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
-
-
         assertDoesNotThrow(() -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
@@ -140,7 +116,6 @@ public class AccessValidatorTest {
 
     private DomainResource buildResource(String organizationId) {
         var resource = new CarePlan();
-
         if (organizationId != null) {
             resource.addExtension(Systems.ORGANIZATION, new Reference(organizationId));
         }
@@ -149,9 +124,7 @@ public class AccessValidatorTest {
 
     private Organization buildOrganization() {
         var organization = new Organization();
-
         organization.setId(AccessValidatorTest.ORGANIZATION_ID_1);
-
         return organization;
     }
 }

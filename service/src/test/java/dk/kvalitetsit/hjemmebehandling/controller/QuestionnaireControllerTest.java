@@ -29,10 +29,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +50,6 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaire_questionnairesPresent_200() throws Exception {
-
         QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
         QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
@@ -63,19 +59,16 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel1)).thenReturn(questionnaireDto1);
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
 
-
         ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(2, result.getBody().size());
+        assertEquals(2, Objects.requireNonNull(result.getBody()).size());
         assertTrue(result.getBody().contains(questionnaireDto1));
         assertTrue(result.getBody().contains(questionnaireDto2));
     }
 
     @Test
     public void getQuestionnaires_sorting() throws ServiceException {
-
         QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
         QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
         QuestionnaireModel questionnaireModel3 = new QuestionnaireModel();
@@ -94,12 +87,10 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel3)).thenReturn(questionnaireDto3);
 
-
         ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(3, result.getBody().size());
+        assertEquals(3, Objects.requireNonNull(result.getBody()).size());
         assertEquals(questionnaireDto3, result.getBody().get(0));
         assertEquals(questionnaireDto1, result.getBody().get(1));
         assertEquals(questionnaireDto2, result.getBody().get(2));
@@ -107,20 +98,16 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaire_questionnairesMissing_200() throws Exception {
-
         Mockito.when(questionnaireService.getQuestionnaires(List.of())).thenReturn(List.of());
-
 
         ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertTrue(result.getBody().isEmpty());
+        assertTrue(Objects.requireNonNull(result.getBody()).isEmpty());
     }
 
     @Test
     public void createQuestionnaire_success_201() {
-
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         var questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
@@ -128,16 +115,13 @@ public class QuestionnaireControllerTest {
 
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(new QuestionnaireModel());
 
-
         ResponseEntity<Void> result = subject.createQuestionnaire(request);
-
 
         assertEquals(HttpStatus.CREATED, result.getStatusCode());
     }
 
     @Test
     public void createQuestionnaire_success_setsLocationHeader() throws Exception {
-
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest();
         var questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
@@ -150,9 +134,7 @@ public class QuestionnaireControllerTest {
         String location = "http://localhost:8080/api/v1/questionnaire/questionnaire-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("questionnaire-1")).thenReturn(URI.create(location));
 
-
         ResponseEntity<Void> result = subject.createQuestionnaire(request);
-
 
         assertNotNull(result.getHeaders().get("Location"));
         assertEquals(location, result.getHeaders().get("Location").get(0));
@@ -160,42 +142,34 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void patchQuestionnaire_success_() throws Exception {
-
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(List.of(buildQuestionDto()));
 
-
         ResponseEntity<Void> result = subject.patchQuestionnaire("questionnaire-1", request);
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
     public void patchQuestionnaire_nullQuestions_throwsBadRequestException() throws Exception {
-
         String id = "questionnaire-1";
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(null);
-
 
         assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
     }
 
     @Test
     public void patchQuestionnaire_emptyQuestions_throwsBadRequestException() throws Exception {
-
         String id = "questionnaire-1";
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(List.of());
-
 
         assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
     }
 
     @Test
     public void patchQuestionnaire_accessViolation() throws Exception {
-
         String id = "questionnaire-1";
         String qualifyId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
@@ -208,15 +182,11 @@ public class QuestionnaireControllerTest {
 
         Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(qualifyId, null, null, null, List.of(questionModel), null);
 
-
         assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id, request));
     }
 
 
     private QuestionDto buildQuestionDto() {
-        QuestionDto questionDto = new QuestionDto();
-        questionDto.setQuestionType(Optional.of(QuestionDto.QuestionTypeEnum.BOOLEAN));
-
-        return questionDto;
+        return new QuestionDto().questionType(QuestionDto.QuestionTypeEnum.BOOLEAN);
     }
 }

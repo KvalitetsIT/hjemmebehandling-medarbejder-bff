@@ -8,10 +8,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BundleBuilderTest {
-    private final BundleBuilder subject = new BundleBuilder();
-
     private static final String CAREPLAN_ID = "careplan-1";
     private static final String PATIENT_ID = "patient-1";
+    private final BundleBuilder subject = new BundleBuilder();
 
     //@Test
     public void skhTest() {

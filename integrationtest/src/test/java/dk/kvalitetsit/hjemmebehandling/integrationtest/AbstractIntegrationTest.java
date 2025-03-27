@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 import org.junit.jupiter.api.BeforeAll;
 
 public abstract class AbstractIntegrationTest {
-    private static String host = "localhost";
     private static final String exposedServicePort = "8080";
+    private static String host = "localhost";
 
     @BeforeAll
     public static void setupEnvironment() throws Exception {

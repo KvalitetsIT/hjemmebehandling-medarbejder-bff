@@ -21,14 +21,7 @@ import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirMapperTest {
-    @InjectMocks
-    private FhirMapper subject;
-
-    @Mock
-    private DateProvider dateProvider;
-
     private static final String CPR_1 = "0101010101";
-
     private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
     private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
@@ -39,9 +32,11 @@ public class FhirMapperTest {
     private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
     private static final String QUESTIONNAIRERESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
     private static final String PRACTITIONER_ID_1 = "Practitioner/practitioner-1";
-
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
-
+    @InjectMocks
+    private FhirMapper subject;
+    @Mock
+    private DateProvider dateProvider;
 
     private QuestionModel buildCallToAction(QuestionModel questionModel) {
         QuestionModel callToAction = buildCallToAction();

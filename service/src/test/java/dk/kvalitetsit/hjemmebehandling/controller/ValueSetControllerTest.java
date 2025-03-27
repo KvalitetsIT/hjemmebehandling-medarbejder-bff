@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,35 +32,31 @@ public class ValueSetControllerTest {
 
     @Test
     public void getMeasurementTypes_measurementTypesPresent_200() throws Exception {
+        MeasurementTypeDto measurementTypeDto1 = new MeasurementTypeDto()
+                .code("code")
+                .display("display")
+                .system("system");
+
+        MeasurementTypeDto measurementTypeDto2 = new MeasurementTypeDto()
+                .code("code")
+                .display("display")
+                .system("system");
 
         MeasurementTypeModel measurementTypeModel1 = new MeasurementTypeModel();
-        MeasurementTypeModel measurementTypeModel2 = new MeasurementTypeModel();
-        MeasurementTypeDto measurementTypeDto1 = new MeasurementTypeDto();
-        MeasurementTypeDto measurementTypeDto2 = new MeasurementTypeDto();
-
         measurementTypeModel1.setCode("code");
         measurementTypeModel1.setDisplay("display");
         measurementTypeModel1.setSystem("system");
 
+        MeasurementTypeModel measurementTypeModel2 = new MeasurementTypeModel();
         measurementTypeModel2.setCode("code");
         measurementTypeModel2.setDisplay("display");
         measurementTypeModel2.setSystem("system");
-
-        measurementTypeDto1.setCode(Optional.of("code"));
-        measurementTypeDto1.setDisplay(Optional.of("display"));
-        measurementTypeDto1.setSystem(Optional.of("system"));
-
-        measurementTypeDto2.setCode(Optional.of("code"));
-        measurementTypeDto2.setDisplay(Optional.of("display"));
-        measurementTypeDto2.setSystem(Optional.of("system"));
 
         Mockito.when(valueSetService.getMeasurementTypes()).thenReturn(List.of(measurementTypeModel1, measurementTypeModel2));
         Mockito.when(dtoMapper.mapMeasurementTypeModel(measurementTypeModel1)).thenReturn(measurementTypeDto1);
         Mockito.when(dtoMapper.mapMeasurementTypeModel(measurementTypeModel2)).thenReturn(measurementTypeDto2);
 
-
         ResponseEntity<List<MeasurementTypeDto>> result = subject.getMeasurementTypes();
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, result.getBody().size());
@@ -70,14 +66,11 @@ public class ValueSetControllerTest {
 
     @Test
     public void getMeasurementTypes_measurementTypesMissing_200() throws Exception {
-
         Mockito.when(valueSetService.getMeasurementTypes()).thenReturn(List.of());
-
 
         ResponseEntity<List<MeasurementTypeDto>> result = subject.getMeasurementTypes();
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertTrue(result.getBody().isEmpty());
+        assertTrue(Objects.requireNonNull(result.getBody()).isEmpty());
     }
 }

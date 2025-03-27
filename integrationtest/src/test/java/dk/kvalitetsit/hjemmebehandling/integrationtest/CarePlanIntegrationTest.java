@@ -25,7 +25,7 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Order(1)
     public void createCarePlan_success() throws Exception {
-        // Arrange
+
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setPatientDto(new PatientDto());
@@ -51,10 +51,10 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .carePlan(carePlanDto);
 
-        // Act
+
         ApiResponse<Void> response = subject.createCarePlanWithHttpInfo(request);
 
-        // Assert
+
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
     }
@@ -62,24 +62,20 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Order(2)
     public void createAndGetCarePlan_success() throws Exception {
-        // Arrange
         String cpr = "4444444444";
-
-        CarePlanDto carePlanDto = new CarePlanDto();
-
-        carePlanDto.setPatientDto(new PatientDto());
-        carePlanDto.getPatientDto().setCpr(cpr);
+        CarePlanDto carePlanDto = new CarePlanDto()
+                .patientDto(new PatientDto().cpr(cpr));
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
 
-        FrequencyDto frequencyDto = new FrequencyDto();
-        frequencyDto.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE, FrequencyDto.WeekdaysEnum.FRI));
-        frequencyDto.setTimeOfDay("04:00");
+        FrequencyDto frequencyDto = new FrequencyDto()
+                .weekdays(List.of(FrequencyDto.WeekdaysEnum.TUE, FrequencyDto.WeekdaysEnum.FRI))
+                .timeOfDay("04:00");
 
-        QuestionnaireWrapperDto wrapper = new QuestionnaireWrapperDto();
-        wrapper.setQuestionnaire(questionnaireDto);
-        wrapper.setFrequency(frequencyDto);
+        var wrapper = new QuestionnaireWrapperDto()
+                .questionnaire(questionnaireDto)
+                .frequency(frequencyDto);
 
         carePlanDto.setQuestionnaires(List.of(wrapper));
 
@@ -90,16 +86,12 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest()
                 .carePlan(carePlanDto);
 
-        // Act
         ApiResponse<Void> createResponse = subject.createCarePlanWithHttpInfo(request);
 
-        //Thread.sleep(200);
-
-        String id = createResponse.getHeaders().get("Location").get(0);
+        String id = createResponse.getHeaders().get("Location").getFirst();
         id = id.substring(id.lastIndexOf('/') + 1);
         ApiResponse<CarePlanDto> getResponse = subject.getCarePlanByIdWithHttpInfo(id);
 
-        // Assert
         assertEquals(201, createResponse.getStatusCode());
         assertTrue(createResponse.getHeaders().containsKey("location"));
 
@@ -110,119 +102,86 @@ public class CarePlanIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Order(3)
     public void getCarePlan_success() throws Exception {
-        // Arrange
         String carePlanId = "careplan-1";
-
-        // Act
         ApiResponse<CarePlanDto> response = subject.getCarePlanByIdWithHttpInfo(carePlanId);
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     @Order(4)
     public void getCarePlansByCpr_success() throws Exception {
-        // Arrange
         String cpr = "0101010101";
         boolean onlyActiveCarePlans = false;
-
-        // Act
         ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(cpr, null, onlyActiveCarePlans, 1, 10);
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     @Order(5)
     public void getCarePlansWithUnsatisfiedSchedules_success() throws Exception {
-        // Arrange
+
         boolean onlyUnsatisfiedSchedules = true;
         boolean onlyActiveCarePlans = true;
         int pageNumber = 1;
         int pageSize = 10;
 
-        // Act
         ApiResponse<List<CarePlanDto>> response = subject.searchCarePlansWithHttpInfo(null, onlyUnsatisfiedSchedules, onlyActiveCarePlans, pageNumber, pageSize);
 
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     @Order(6)
     public void patchCarePlan_success() throws Exception {
-        // Arrange
+
         String id = "careplan-2";
-        UpdateCareplanRequest request = new UpdateCareplanRequest();
+        UpdateCareplanRequest request = new UpdateCareplanRequest()
+                .addPlanDefinitionIdsItem("PlanDefinition/plandefinition-1")
+                .patientPrimaryPhone("11223344")
+                .patientSecondaryPhone("55667788")
+                .primaryRelativeName("Sauron")
+                .primaryRelativeAffiliation("Fjende")
+                .primaryRelativePrimaryPhone("65412365")
+                .primaryRelativeSecondaryPhone("77777777")
+                .addQuestionnairesItem(
+                        new QuestionnaireFrequencyPairDto()
+                                .id("Questionnaire/questionnaire-1")
+                                .frequency(new FrequencyDto()
+                                        .weekdays(List.of(FrequencyDto.WeekdaysEnum.TUE))
+                                        .timeOfDay("11:00")))
+                .addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
+                        .id("Questionnaire/questionnaire-2")
+                        .frequency(new FrequencyDto()
+                                .weekdays(List.of(FrequencyDto.WeekdaysEnum.WED))
+                                .timeOfDay("11:00")));
 
-        request.addPlanDefinitionIdsItem("PlanDefinition/plandefinition-1");
-
-        FrequencyDto frequencyDto1 = new FrequencyDto();
-        frequencyDto1.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.TUE));
-        frequencyDto1.setTimeOfDay("11:00");
-        request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
-                .id("Questionnaire/questionnaire-1")
-                .frequency(frequencyDto1));
-
-        FrequencyDto frequencyDto2 = new FrequencyDto();
-        frequencyDto2.setWeekdays(List.of(FrequencyDto.WeekdaysEnum.WED));
-        frequencyDto2.setTimeOfDay("11:00");
-        request.addQuestionnairesItem(new QuestionnaireFrequencyPairDto()
-                .id("Questionnaire/questionnaire-2")
-                .frequency(frequencyDto2));
-
-        request.setPatientPrimaryPhone("11223344");
-        request.setPatientSecondaryPhone("55667788");
-        request.setPrimaryRelativeName("Sauron");
-        request.setPrimaryRelativeAffiliation("Fjende");
-
-        request.setPrimaryRelativePrimaryPhone("65412365");
-        request.setPrimaryRelativeSecondaryPhone("77777777");
-
-
-        // Act
         ApiResponse<Void> response = subject.patchCarePlanWithHttpInfo(id, request);
 
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     @Order(7)
     public void resolveAlarm_success() throws Exception {
-        // Arrange
         String id = "careplan-1";
         String questionnaireId1 = "questionnaire-1";
-
-        // Act
         ApiResponse<Void> response1 = subject.resolveAlarmWithHttpInfo(id, questionnaireId1);
-
-        // Assert
         assertEquals(200, response1.getStatusCode());
     }
 
     @Test
     @Order(8)
     public void completeCarePlan_success() throws Exception {
-        // Arrange
         String id = "careplan-2";
-
-        // Act
         ApiResponse<Void> response = subject.completeCarePlanWithHttpInfo(id);
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     @Order(9)
     public void completeCarePlan_twice_success() throws Exception {
-        // Arrange
         String id = "careplan-2";
 
-        // Act / Assert
         ApiResponse<Void> firstResponse = subject.completeCarePlanWithHttpInfo(id);
         assertEquals(200, firstResponse.getStatusCode());
 

@@ -29,19 +29,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirClientTest {
-    private FhirClient subject;
-
-    @Mock
-    private FhirContext context;
-
-    private final String endpoint = "http://foo";
-
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private IGenericClient client;
-
-    @Mock
-    private UserContextProvider userContextProvider;
-
     private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
     private static final String ORGANIZATION_ID_2 = "Organization/organization-2";
     private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
@@ -49,6 +36,14 @@ public class FhirClientTest {
     private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
+    private final String endpoint = "http://foo";
+    private FhirClient subject;
+    @Mock
+    private FhirContext context;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private IGenericClient client;
+    @Mock
+    private UserContextProvider userContextProvider;
 
     @BeforeEach
     public void setup() {

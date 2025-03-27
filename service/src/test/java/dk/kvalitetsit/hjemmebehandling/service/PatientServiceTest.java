@@ -76,7 +76,6 @@ public class PatientServiceTest {
 
     @Test
     public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCareplan() throws ServiceException {
-
         CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1);
         carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2);
@@ -90,19 +89,16 @@ public class PatientServiceTest {
         Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
         Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED)).thenReturn(inactiveLookup);
 
-
         var pagedetails = new Pagination(1, 10);
         var includeActive = false;
         var includeCompleted = true;
         List<PatientModel> result = subject.getPatients(includeActive, includeCompleted, pagedetails);
-
 
         assertEquals(0, result.size());
     }
 
     @Test
     public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() throws ServiceException {
-
         CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1);
         carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
         CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2);
@@ -120,7 +116,6 @@ public class PatientServiceTest {
         var includeActive = false;
         var includeCompleted = true;
         List<PatientModel> result = subject.getPatients(includeActive, includeCompleted, pagedetails);
-
 
         assertEquals(1, result.size());
     }
@@ -156,12 +151,10 @@ public class PatientServiceTest {
         Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-
         var pagedetails = new Pagination(page, pageSize);
         var includeActive = true;
         var includeCompleted = false;
         List<PatientModel> result = subject.getPatients(includeActive, includeCompleted, pagedetails);
-
 
         assertEquals(namesInExpectedOrder.size(), result.size());
         for (var i = 0; i < namesInExpectedOrder.size(); i++) {
@@ -171,25 +164,20 @@ public class PatientServiceTest {
 
     @Test
     public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() throws ServiceException {
-
         CarePlan carePlan1 = buildCarePlan(CAREPLAN_ID_1);
         carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
-        CarePlan carePlan2 = buildCarePlan(CAREPLAN_ID_2);
         carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
 
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
         FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
-        FhirLookupResult inactiveLookup = FhirLookupResult.fromResources(carePlan2, patient);
 
         Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
-
 
         var pagination = new Pagination(1, 10);
         var includeActive = true;
         var includeCompleted = false;
         List<PatientModel> result = subject.getPatients(includeActive, includeCompleted, pagination);
-
 
         assertEquals(1, result.size());
     }
@@ -199,9 +187,7 @@ public class PatientServiceTest {
     public void searchPatients_emptyResult() throws ServiceException {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
         Mockito.when(fhirClient.searchPatients(List.of(CPR_1), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
-
         List<PatientModel> result = subject.searchPatients(List.of(CPR_1));
-
         assertTrue(result.isEmpty());
     }
 
@@ -233,23 +219,18 @@ public class PatientServiceTest {
 
     private CarePlan buildCarePlan(String carePlanId) {
         CarePlan carePlan = new CarePlan();
-
         carePlan.setId(carePlanId);
         carePlan.setSubject(new Reference(PatientServiceTest.PATIENT_ID_1));
-
         return carePlan;
     }
 
     private Patient buildPatient(String patientId, String cpr) {
         Patient patient = new Patient();
-
         patient.setId(patientId);
-
         var identifier = new Identifier();
         identifier.setSystem(Systems.CPR);
         identifier.setValue(cpr);
         patient.setIdentifier(List.of(identifier));
-
         return patient;
     }
 }

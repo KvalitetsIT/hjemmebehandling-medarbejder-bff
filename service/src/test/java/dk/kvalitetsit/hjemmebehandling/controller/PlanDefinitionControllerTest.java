@@ -27,6 +27,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +48,6 @@ public class PlanDefinitionControllerTest {
 
     @Test
     public void getPlanDefinitions_planDefinitionsPresent_200() throws Exception {
-
         PlanDefinitionModel planDefinitionModel1 = new PlanDefinitionModel();
         PlanDefinitionModel planDefinitionModel2 = new PlanDefinitionModel();
         PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
@@ -57,35 +57,27 @@ public class PlanDefinitionControllerTest {
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel1)).thenReturn(planDefinitionDto1);
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
 
-
         ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(2, result.getBody().size());
+        assertEquals(2, Objects.requireNonNull(result.getBody()).size());
         assertTrue(result.getBody().contains(planDefinitionDto1));
         assertTrue(result.getBody().contains(planDefinitionDto2));
     }
 
     @Test
     public void getPlanDefinitions_planDefinitionsMissing_200() throws Exception {
-
         Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenReturn(List.of());
-
 
         ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertTrue(result.getBody().isEmpty());
+        assertTrue(Objects.requireNonNull(result.getBody()).isEmpty());
     }
 
     @Test
     public void getPlanDefinitions_failureToFetch_500() throws Exception {
-
         Mockito.when(planDefinitionService.getPlanDefinitions(List.of())).thenThrow(new ServiceException("Error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
-
-
         assertThrows(InternalServerErrorException.class, () -> subject.getPlanDefinitions(Optional.empty()));
     }
 
@@ -97,7 +89,6 @@ public class PlanDefinitionControllerTest {
 
     @Test
     public void getPlandefinitions_sorting() throws ServiceException {
-
         PlanDefinitionModel planDefinitionModel1 = new PlanDefinitionModel();
         PlanDefinitionModel planDefinitionModel2 = new PlanDefinitionModel();
         PlanDefinitionModel planDefinitionModel3 = new PlanDefinitionModel();
@@ -113,12 +104,10 @@ public class PlanDefinitionControllerTest {
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel2)).thenReturn(planDefinitionDto2);
         Mockito.when(dtoMapper.mapPlanDefinitionModel(planDefinitionModel3)).thenReturn(planDefinitionDto3);
 
-
         ResponseEntity<List<PlanDefinitionDto>> result = subject.getPlanDefinitions(Optional.empty());
 
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(3, result.getBody().size());
+        assertEquals(3, Objects.requireNonNull(result.getBody()).size());
         assertEquals(planDefinitionDto3, result.getBody().get(0));
         assertEquals(planDefinitionDto1, result.getBody().get(1));
         assertEquals(planDefinitionDto2, result.getBody().get(2));
@@ -126,15 +115,12 @@ public class PlanDefinitionControllerTest {
 
     @Test
     public void createPlanDefinition_success_201() {
-
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(new PlanDefinitionModel());
 
-
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
-
 
         assertEquals(HttpStatus.CREATED, result.getStatusCode());
     }
@@ -152,17 +138,14 @@ public class PlanDefinitionControllerTest {
         String location = "http://localhost:8080/api/v1/plandefinition/plandefinition-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("plandefinition-1")).thenReturn(URI.create(location));
 
-
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 
-
         assertNotNull(result.getHeaders().get("Location"));
-        assertEquals(location, result.getHeaders().get("Location").get(0));
+        assertEquals(location, Objects.requireNonNull(result.getHeaders().get("Location")).getFirst());
     }
 
     @Test
     public void createPlanDefinition_accessViolation_403() throws Exception {
-
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
@@ -171,28 +154,21 @@ public class PlanDefinitionControllerTest {
 
         Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenThrow(AccessValidationException.class);
 
-
         assertThrows(ForbiddenException.class, () -> subject.createPlanDefinition(request));
     }
 
     @Test
     public void updatePlanDefinition_throwsUnsupportedOperationException() {
-
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-
 
         assertThrows(UnsupportedOperationException.class, () -> subject.updatePlanDefinition(planDefinitionDto));
     }
 
     @Test
     public void patchPlanDefinition_success() throws Exception {
-
         PatchPlanDefinitionRequest request = new PatchPlanDefinitionRequest();
-        //Mockito.when(planDefinitionService.updatePlanDefinition("plandefinition-1", Mockito.anyString(), Mockito.anyList(), Mockito.anyList())).thenReturn(new PlanDefinitionModel());
-
 
         ResponseEntity<Void> result = subject.patchPlanDefinition("plandefinition-1", request);
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }

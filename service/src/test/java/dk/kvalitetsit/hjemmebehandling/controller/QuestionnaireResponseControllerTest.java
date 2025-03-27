@@ -47,27 +47,22 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByCpr_cprParameterMissing_400() {
-
         String carePlanId = null;
         List<String> questionnaireIds = List.of("questionnaire-1");
-
 
         assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_questionnaireIdsParameterMissing_400() {
-
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = null;
-
 
         assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_responsesPresent_200() throws Exception {
-
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
@@ -81,9 +76,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
 
-
         ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5);
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, result.getBody().getList().size());
@@ -93,15 +86,12 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByCpr_responsesMissing_200() throws Exception {
-
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of());
 
-
         ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5);
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(result.getBody().getList().isEmpty());
@@ -109,43 +99,35 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByCpr_accessViolation_403() throws Exception {
-
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
         Pagination pagination = new Pagination(1, 5);
         Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(AccessValidationException.class);
 
-
         assertThrows(ForbiddenException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_failureToFetch_500() throws Exception {
-
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
-
         Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
-
 
         assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByStatus_parameterMissing_400() {
-
         List<ExaminationStatusDto> statuses = null;
         Pagination pagination = null;
-
 
         assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByStatus(statuses, 1, 10));
     }
 
     @Test
     public void getQuestionnaireResponsesByStatus_responsesPresent_200() throws Exception {
-
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
         List<ExaminationStatusDto> statusesdto = List.of(ExaminationStatusDto.NOT_EXAMINED);
 
@@ -161,9 +143,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.NOT_EXAMINED)).thenReturn(ExaminationStatus.NOT_EXAMINED);
 
-
         ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statusesdto, pagination.getOffset(), pagination.getLimit());
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, result.getBody().size());
@@ -173,16 +153,13 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByStatus_responsesMissing_200() throws Exception {
-
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION);
         Pagination pagination = new Pagination(1, 10);
 
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenReturn(List.of());
 
-
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(List.of(ExaminationStatusDto.UNDER_EXAMINATION), pagination.getOffset(), pagination.getLimit());
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(result.getBody().isEmpty());
@@ -190,7 +167,6 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByStatus_failureToFetch_500() throws Exception {
-
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED);
         List<ExaminationStatusDto> statusesDtos = List.of(ExaminationStatusDto.UNDER_EXAMINATION, ExaminationStatusDto.EXAMINED);
 
@@ -200,64 +176,51 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.EXAMINED)).thenReturn(ExaminationStatus.EXAMINED);
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
-
         assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByStatus(statusesDtos, pagination.getOffset(), pagination.getLimit()));
     }
 
     @Test
     public void patchQuestionnaireResponse_malformedRequest_400() {
-
         String id = "questionnaireresponse-1";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-
 
         assertThrows(BadRequestException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test
     public void patchQuestionnaireResponse_accessViolation_403() throws Exception {
-
         String id = "questionnaireresponse-1";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
-
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION);
-
 
         assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test
     public void patchQuestionnaireResponse_failureToUpdate_500() throws Exception {
-
         String id = "questionnaireresponse-1";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
-
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(questionnaireResponseService).updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION);
-
 
         assertThrows(InternalServerErrorException.class, () -> subject.patchQuestionnaireResponse(id, request));
     }
 
     @Test
     public void patchQuestionnaireResponse_success_200() throws Exception {
-
         String id = "questionnaireresponse-1";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
-
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.when(questionnaireResponseService.updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION)).thenReturn(new QuestionnaireResponseModel());
 
-
         ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
-
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }
