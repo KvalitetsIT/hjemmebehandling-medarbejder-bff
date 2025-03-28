@@ -1,8 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;

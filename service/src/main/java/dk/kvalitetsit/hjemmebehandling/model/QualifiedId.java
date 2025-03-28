@@ -4,14 +4,13 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class QualifiedId {
     private String id;
     private ResourceType qualifier;
 
     public QualifiedId(String id, ResourceType qualifier) {
-        if(!FhirUtils.isPlainId(id)) {
+        if (!FhirUtils.isPlainId(id)) {
             throw new IllegalArgumentException(String.format("Provided id was not a plain id: %s!", id));
         }
 
@@ -21,11 +20,11 @@ public class QualifiedId {
 
     public QualifiedId(String qualifiedId) {
         var parts = qualifiedId.split("/");
-        if(parts.length != 2) {
+        if (parts.length != 2) {
             throw new IllegalArgumentException(String.format("Cannot unqualify id: %s! Illegal format", id));
         }
         ResourceType qualifier = Enum.valueOf(ResourceType.class, parts[0]);
-        if(!FhirUtils.isPlainId(parts[1])) {
+        if (!FhirUtils.isPlainId(parts[1])) {
             throw new IllegalArgumentException(String.format("Cannot unqualify id: %s! Illegal id", id));
         }
         String id = parts[1];

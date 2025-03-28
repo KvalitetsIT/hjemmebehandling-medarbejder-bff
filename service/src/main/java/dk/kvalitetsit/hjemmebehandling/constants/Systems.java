@@ -29,5 +29,5 @@ public class Systems {
     public static final String QUESTION_ABBREVIATION = "http://hjemmebehandling.rm.dk/question-abbreviation";
 
     public static final String ANSWER_OPTION_COMMENT = "http://hjemmebehandling.rm.dk/answer-option-comment";
-    public static final String THRESHOLD_VALUE_OPTION = "http://hjemmebehandling.rm.dk/threshold-value-option";;
+    public static final String THRESHOLD_VALUE_OPTION = "http://hjemmebehandling.rm.dk/threshold-value-option";
 }

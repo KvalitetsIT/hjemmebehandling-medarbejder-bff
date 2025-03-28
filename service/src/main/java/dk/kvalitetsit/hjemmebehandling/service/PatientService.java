@@ -1,10 +1,19 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CarePlan;
@@ -12,18 +21,7 @@ import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import java.util.*;
 
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
@@ -31,9 +29,9 @@ public class PatientService extends AccessValidatingService {
     private final FhirClient fhirClient;
 
     private final FhirMapper fhirMapper;
-    
+
     private final DtoMapper dtoMapper;
-    
+
     private CustomUserClient customUserService;
 
     public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DtoMapper dtoMapper) {
@@ -46,14 +44,13 @@ public class PatientService extends AccessValidatingService {
 
     public void createPatient(PatientModel patientModel) throws ServiceException {
         try {
-        	Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
-        	if(customUserResponseDto.isPresent()) {
-        		String customerUserLinkId = customUserResponseDto.get().getId();
-        		patientModel.setCustomUserId(customerUserLinkId);
-        	}
-        	fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
-        }
-        catch(Exception e) {
+            Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
+            if (customUserResponseDto.isPresent()) {
+                String customerUserLinkId = customUserResponseDto.get().getId();
+                patientModel.setCustomUserId(customerUserLinkId);
+            }
+            fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
+        } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
@@ -78,7 +75,7 @@ public class PatientService extends AccessValidatingService {
     public PatientModel getPatient(String cpr) throws ServiceException {
         // Look up the patient
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(patient.isEmpty()) {
+        if (patient.isEmpty()) {
             return null;
         }
 
@@ -88,7 +85,7 @@ public class PatientService extends AccessValidatingService {
         return fhirMapper.mapPatient(patient.get(), orgId);
     }
 
-    boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
+    boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient) {
         return listToSearchForPatient
                 .stream().
                 anyMatch(listP -> Objects.equals(
@@ -103,12 +100,12 @@ public class PatientService extends AccessValidatingService {
 
         var patientsWithActiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE).getPatients();
 
-        if(includeActive)
+        if (includeActive)
             patients.addAll(patientsWithActiveCareplan);
 
-        if(includeCompleted){
+        if (includeCompleted) {
             var patientsWithInactiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED).getPatients();
-            patientsWithInactiveCareplan.removeIf( potentialPatient -> patientIsInList(potentialPatient,patientsWithActiveCareplan) );
+            patientsWithInactiveCareplan.removeIf(potentialPatient -> patientIsInList(potentialPatient, patientsWithActiveCareplan));
             patients.addAll(patientsWithInactiveCareplan);
         }
 
@@ -117,9 +114,9 @@ public class PatientService extends AccessValidatingService {
         // Map the resources
         return patients
                 .stream()
-                .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
+                .sorted(Comparator.comparing(a -> a.getName().getFirst().getGivenAsSingleString()))
                 .map(p -> fhirMapper.mapPatient(p, orgId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -132,7 +129,7 @@ public class PatientService extends AccessValidatingService {
 
     public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {
         FhirLookupResult lookupResult = fhirClient.searchPatients(searchStrings, CarePlan.CarePlanStatus.ACTIVE);
-        if(lookupResult.getPatients().isEmpty()) {
+        if (lookupResult.getPatients().isEmpty()) {
             return List.of();
         }
 
@@ -140,8 +137,8 @@ public class PatientService extends AccessValidatingService {
 
         // Map the resources
         return lookupResult.getPatients()
-            .stream()
-            .map(p -> fhirMapper.mapPatient(p, organizationId))
-            .collect(Collectors.toList());
+                .stream()
+                .map(p -> fhirMapper.mapPatient(p, organizationId))
+                .toList();
     }
 }

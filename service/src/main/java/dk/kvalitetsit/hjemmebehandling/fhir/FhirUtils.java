@@ -8,10 +8,10 @@ public class FhirUtils {
     private static final Pattern plainIdPattern = Pattern.compile("^[a-z0-9\\-]+$");
 
     public static String qualifyId(String id, ResourceType qualifier) {
-        if(isQualifiedId(id, qualifier)) {
+        if (isQualifiedId(id, qualifier)) {
             return id;
         }
-        if(!isPlainId(id)) {
+        if (!isPlainId(id)) {
             throw new IllegalArgumentException(String.format("Cannot qualify id: %s", id));
         }
         return qualifier + "/" + id;

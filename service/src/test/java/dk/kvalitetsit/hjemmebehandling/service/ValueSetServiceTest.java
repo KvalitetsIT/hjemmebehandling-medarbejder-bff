@@ -29,21 +29,15 @@ public class ValueSetServiceTest {
 
     @Test
     public void getPlanDefinitions_sucecss() throws Exception {
-        // Arrange
         ValueSet valueSet = new ValueSet();
         MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
-
-
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(valueSet);
-
         Mockito.when(fhirClient.lookupValueSet()).thenReturn(lookupResult);
         Mockito.when(fhirMapper.extractMeasurementTypes(valueSet)).thenReturn(List.of(measurementTypeModel));
 
-        // Act
         List<MeasurementTypeModel> result = subject.getMeasurementTypes();
 
-        // Assert
         assertEquals(1, result.size());
-        assertEquals(measurementTypeModel, result.get(0));
+        assertEquals(measurementTypeModel, result.getFirst());
     }
 }

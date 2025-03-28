@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.api.question;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 public class Option {
     private String option;
