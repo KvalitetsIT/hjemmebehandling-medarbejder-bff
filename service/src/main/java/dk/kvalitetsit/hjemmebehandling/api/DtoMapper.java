@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.api;
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
@@ -386,12 +386,12 @@ public class DtoMapper {
     }
 
     private AnswerModel mapAnswerDto(@Valid AnswerDto answer) {
-        var result = new AnswerModel();
-        answer.getAnswerType().map(this::mapAnswerTypeDto).ifPresent(result::setAnswerType);
-        answer.getValue().ifPresent(result::setValue);
-        answer.getLinkId().ifPresent(result::setLinkId);
-        result.setSubAnswers(answer.getSubAnswers().stream().map(this::mapAnswerDto).toList());
-        return result;
+        return new AnswerModel(
+                answer.getLinkId().orElse(null),
+                answer.getValue().orElse(null),
+                answer.getAnswerType().map(this::mapAnswerTypeDto).orElse(null),
+                answer.getSubAnswers().stream().map(this::mapAnswerDto).toList()
+        );
     }
 
     private AnswerType mapAnswerTypeDto(AnswerDto.AnswerTypeEnum answerType) {
@@ -485,12 +485,12 @@ public class DtoMapper {
 
     private AnswerDto mapAnswerModel(AnswerModel answerModel) {
         AnswerDto answerDto = new AnswerDto();
-        answerDto.setLinkId(Optional.ofNullable(answerModel.getLinkId()));
-        answerDto.setValue(Optional.ofNullable(answerModel.getValue()));
-        answerDto.setAnswerType(Optional.ofNullable(answerModel.getAnswerType()).map(this::mapAnswerTypeModel));
+        answerDto.setLinkId(Optional.ofNullable(answerModel.linkId()));
+        answerDto.setValue(Optional.ofNullable(answerModel.value()));
+        answerDto.setAnswerType(Optional.ofNullable(answerModel.answerType()).map(this::mapAnswerTypeModel));
 
-        if (answerModel.getAnswerType() == AnswerType.GROUP) {
-            Optional.ofNullable(answerModel.getSubAnswers()).map(x -> x.stream().map(this::mapAnswerModel).toList()).ifPresent(answerDto::setSubAnswers);
+        if (answerModel.answerType() == AnswerType.GROUP) {
+            Optional.ofNullable(answerModel.subAnswers()).map(x -> x.stream().map(this::mapAnswerModel).toList()).ifPresent(answerDto::setSubAnswers);
         }
 
         return answerDto;

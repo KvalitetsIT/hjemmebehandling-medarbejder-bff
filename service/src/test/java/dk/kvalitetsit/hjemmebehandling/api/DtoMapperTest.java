@@ -4,8 +4,8 @@ import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
@@ -211,12 +211,7 @@ public class DtoMapperTest {
 
 
     private AnswerModel buildAnswerModel() {
-        AnswerModel answerModel = new AnswerModel();
-
-        answerModel.setAnswerType(AnswerType.STRING);
-        answerModel.setValue("foo");
-
-        return answerModel;
+        return new AnswerModel(null, "foo", AnswerType.STRING, null);
     }
 
     private CarePlanDto buildCarePlanDto() {

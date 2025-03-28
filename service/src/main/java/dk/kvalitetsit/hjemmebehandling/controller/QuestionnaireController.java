@@ -7,7 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundExce
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;

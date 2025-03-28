@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service.audit;
 
-import dk.kvalitetsit.hjemmebehandling.model.audit.AuditModel;
+import dk.kvalitetsit.hjemmebehandling.model.AuditModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

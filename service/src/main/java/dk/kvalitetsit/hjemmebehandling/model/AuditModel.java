@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.model.audit;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 public class AuditModel {
     private Employee employee;

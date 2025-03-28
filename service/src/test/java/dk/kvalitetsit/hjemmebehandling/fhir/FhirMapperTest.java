@@ -2,8 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -41,10 +41,7 @@ public class FhirMapperTest {
     private QuestionModel buildCallToAction(QuestionModel questionModel) {
         QuestionModel callToAction = buildCallToAction();
 
-        AnswerModel answer = new AnswerModel();
-        answer.setLinkId(questionModel.getLinkId());
-        answer.setAnswerType(AnswerType.BOOLEAN);
-        answer.setValue(Boolean.TRUE.toString());
+        AnswerModel answer = new AnswerModel(questionModel.getLinkId(), Boolean.TRUE.toString(), AnswerType.BOOLEAN, null);
 
         QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
         enableWhen.setAnswer(answer);
@@ -55,9 +52,7 @@ public class FhirMapperTest {
     }
 
     private QuestionModel buildCallToAction() {
-        QuestionModel callToAction = buildQuestionModel(QuestionType.DISPLAY, "call to action text");
-
-        return callToAction;
+        return buildQuestionModel(QuestionType.DISPLAY, "call to action text");
     }
 
     private ValueSet buildMeasurementTypesValueSet() {
@@ -77,20 +72,17 @@ public class FhirMapperTest {
     }
 
     private Coding buildTemperatureCode() {
-        return buildMeasurementCode("urn:oid:1.2.208.176.2.1", "NPU08676", "Legeme temp.;Pt");
+        return buildMeasurementCode("NPU08676", "Legeme temp.;Pt");
     }
 
     private Coding buildCrpCode() {
-        return buildMeasurementCode("urn:oid:1.2.208.176.2.1", "NPU19748", "C-reaktivt protein [CRP];P");
+        return buildMeasurementCode("NPU19748", "C-reaktivt protein [CRP];P");
     }
 
-    private Coding buildMeasurementCode(String system, String code, String display) {
-        Coding coding = new Coding();
-        coding.setSystem(system)
+    private Coding buildMeasurementCode(String code, String display) {
+        return new Coding().setSystem("urn:oid:1.2.208.176.2.1")
                 .setCode(code)
                 .setDisplay(display);
-
-        return coding;
     }
 
     private Practitioner buildPractitioner(String practitionerId) {
@@ -111,7 +103,7 @@ public class FhirMapperTest {
         carePlan.setId(careplanId);
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
         carePlan.setSubject(new Reference(patientId));
-        planDefinitionIds.forEach(planDefinitionId -> carePlan.addInstantiatesCanonical(planDefinitionId));
+        planDefinitionIds.forEach(carePlan::addInstantiatesCanonical);
         carePlan.setPeriod(new Period());
         carePlan.setCreated(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
@@ -328,9 +320,7 @@ public class FhirMapperTest {
         model.setQuestionAnswerPairs(new ArrayList<>());
 
         QuestionModel question = new QuestionModel();
-        AnswerModel answer = new AnswerModel();
-        answer.setAnswerType(AnswerType.INTEGER);
-        answer.setValue("2");
+        AnswerModel answer = new AnswerModel(null, "2", AnswerType.INTEGER, null);
 
         model.getQuestionAnswerPairs().add(new QuestionAnswerPairModel(question, answer));
 

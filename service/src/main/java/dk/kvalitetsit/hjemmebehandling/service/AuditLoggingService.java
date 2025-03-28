@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.model.audit.AuditModel;
+import dk.kvalitetsit.hjemmebehandling.model.AuditModel;
 import dk.kvalitetsit.hjemmebehandling.service.audit.DiasAuditLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

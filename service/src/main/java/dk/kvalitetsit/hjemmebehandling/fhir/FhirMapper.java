@@ -2,8 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
@@ -809,7 +809,7 @@ public class FhirMapper {
         Questionnaire.QuestionnaireItemEnableWhenComponent enableWhenComponent = new Questionnaire.QuestionnaireItemEnableWhenComponent();
 
         enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
-        enableWhenComponent.setQuestion(enableWhen.getAnswer().getLinkId());
+        enableWhenComponent.setQuestion(enableWhen.getAnswer().linkId());
         enableWhenComponent.setAnswer(getValue(enableWhen.getAnswer()));
         enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
 
@@ -833,31 +833,14 @@ public class FhirMapper {
     }
 
     private AnswerModel mapAnswer(String question, Type answer) {
-        AnswerModel answerModel = new AnswerModel();
-        answerModel.setLinkId(question);
-
-        switch (answer) {
-            case StringType stringType -> {
-                answerModel.setAnswerType(AnswerType.STRING);
-                answerModel.setValue(stringType.asStringValue());
-            }
-            case BooleanType booleanType -> {
-                answerModel.setAnswerType(AnswerType.BOOLEAN);
-                answerModel.setValue(booleanType.asStringValue());
-            }
-            case Quantity quantity -> {
-                answerModel.setAnswerType(AnswerType.QUANTITY);
-                answerModel.setValue(quantity.getValueElement().asStringValue());
-            }
-            case IntegerType integerType -> {
-                answerModel.setAnswerType(AnswerType.INTEGER);
-                answerModel.setValue(integerType.asStringValue());
-            }
+        return switch (answer) {
+            case StringType stringType -> new AnswerModel(question, stringType.asStringValue(), AnswerType.STRING, null );
+            case BooleanType booleanType -> new AnswerModel(question, booleanType.asStringValue(), AnswerType.BOOLEAN, null );
+            case Quantity quantity -> new AnswerModel(question, quantity.getValueElement().asStringValue(), AnswerType.QUANTITY, null );
+            case IntegerType integerType -> new AnswerModel(question, integerType.asStringValue(), AnswerType.INTEGER, null );
             case null, default ->
                     throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
-        }
-
-        return answerModel;
+        };
     }
 
     private Questionnaire.QuestionnaireItemOperator mapEnableWhenOperator(EnableWhenOperator operator) {
@@ -927,32 +910,35 @@ public class FhirMapper {
     }
 
     private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
-        AnswerModel answer = new AnswerModel();
-        answer.setLinkId(item.getLinkId());
+        String linkId = item.getLinkId();
+        String value = null;
+        AnswerType answerType;
+        List<AnswerModel> subAnswers = List.of();
 
         boolean emptyAnswer = item.getAnswer().isEmpty();
         boolean hasSubAnswers = !item.getItem().isEmpty();
-        if (emptyAnswer && hasSubAnswers) {
-            // group answer with sub-answers
-            answer.setAnswerType(AnswerType.GROUP);
-            answer.setSubAnswers(item.getItem().stream().map(this::getAnswer).toList());
-        } else {
 
+        if (emptyAnswer && hasSubAnswers) {
+            // Group answer with sub-answers
+            answerType = AnswerType.GROUP;
+            subAnswers = item.getItem().stream().map(this::getAnswer).toList();
+        } else {
             var answerItem = extractAnswerItem(item);
 
             if (answerItem.hasValueStringType()) {
-                answer.setValue(answerItem.getValue().primitiveValue());
+                value = answerItem.getValue().primitiveValue();
             } else if (answerItem.hasValueIntegerType()) {
-                answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+                value = String.valueOf(answerItem.getValueIntegerType().primitiveValue());
             } else if (answerItem.hasValueQuantity()) {
-                answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
+                value = answerItem.getValueQuantity().getValueElement().primitiveValue();
             } else if (answerItem.hasValueBooleanType()) {
-                answer.setValue(answerItem.getValueBooleanType().primitiveValue());
+                value = String.valueOf(answerItem.getValueBooleanType().primitiveValue());
             }
-            answer.setAnswerType(getAnswerType(answerItem));
+
+            answerType = getAnswerType(answerItem);
         }
 
-        return answer;
+        return new AnswerModel(linkId, value, answerType, subAnswers);
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent extractAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
@@ -968,39 +954,31 @@ public class FhirMapper {
     }
 
     private AnswerType getAnswerType(Type answerType) {
-        if (answerType instanceof StringType) {
-            return AnswerType.STRING;
-        }
-        if (answerType instanceof BooleanType) {
-            return AnswerType.BOOLEAN;
-        } else if (answerType instanceof Quantity) {
-            return AnswerType.QUANTITY;
-        } else if (answerType instanceof IntegerType) {
-            return AnswerType.INTEGER;
-        } else {
-            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
-        }
+        return switch (answerType) {
+            case StringType stringType -> AnswerType.STRING;
+            case BooleanType booleanType -> AnswerType.BOOLEAN;
+            case Quantity quantity -> AnswerType.QUANTITY;
+            case IntegerType integerType -> AnswerType.INTEGER;
+            case null, default ->
+                    throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
+        };
     }
 
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
         CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
         Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
         Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
-
         return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil);
     }
 
     private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
-
         activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil));
-
         return activity;
     }
 
     private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
-
         detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
         detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
         detail.addExtension(activitySatisfiedUntil);
@@ -1011,47 +989,32 @@ public class FhirMapper {
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
         var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
-
-        item.setLinkId(answer.getLinkId());
+        item.setLinkId(answer.linkId());
         item.getAnswer().add(getAnswerItem(answer));
 
-        if (answer.getAnswerType() == AnswerType.GROUP && answer.getSubAnswers() != null) {
-            item.setItem(answer.getSubAnswers().stream().map(this::getQuestionnaireResponseItem).toList());
+        if (answer.answerType() == AnswerType.GROUP && answer.subAnswers() != null) {
+            item.setItem(answer.subAnswers().stream().map(this::getQuestionnaireResponseItem).toList());
         }
-
         return item;
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(AnswerModel answer) {
         var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
-
         answerItem.setValue(getValue(answer));
-
         return answerItem;
     }
 
     private Type getValue(AnswerModel answer) {
-        Type value = null;
-        switch (answer.getAnswerType()) {
-            case INTEGER:
-                value = new IntegerType(answer.getValue());
-                break;
-            case STRING:
-                value = new StringType(answer.getValue());
-                break;
-            case QUANTITY:
-                value = new Quantity(Double.parseDouble(answer.getValue()));
-                break;
-            case BOOLEAN:
-                value = new BooleanType(answer.getValue());
-                break;
-            case GROUP:
-                // return default = null
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
+        if (answer == null || answer.value() == null) {
+            return null;
         }
-        return value;
+        return switch (answer.answerType()) {
+            case INTEGER -> new IntegerType(answer.value());
+            case STRING -> new StringType(answer.value());
+            case QUANTITY -> new Quantity(Double.parseDouble(answer.value()));
+            case BOOLEAN -> new BooleanType(answer.value());
+            case GROUP -> null; // GROUP type doesn't have a value
+        };
     }
 
     private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {

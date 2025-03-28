@@ -1,8 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-
 public class QuestionAnswerPairModel {
     private QuestionModel question;
     private AnswerModel answer;
