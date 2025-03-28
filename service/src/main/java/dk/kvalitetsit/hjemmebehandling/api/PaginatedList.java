@@ -4,7 +4,6 @@ import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PaginatedList<T> {
 
@@ -23,12 +22,12 @@ public class PaginatedList<T> {
         this.limit = pagination.getLimit();
     }
 
-    private List<T> paginate(List<T> original, Pagination pagination){
+    private List<T> paginate(List<T> original, Pagination pagination) {
         return original
                 .stream()
                 .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
                 .limit(pagination.getLimit())
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -45,6 +44,6 @@ public class PaginatedList<T> {
     }
 
     public ArrayList<T> getList() {
-        return  new ArrayList<>(this.paginate(original, this.pagination));
+        return new ArrayList<>(this.paginate(original, this.pagination));
     }
 }

@@ -10,16 +10,13 @@ import java.util.Comparator;
 public class QuestionnaireResponsePriorityComparator implements Comparator<QuestionnaireResponse> {
     /**
      * Define an ordering on QuestionnaireResponses. The ordering is defined by TriagingCategory and ExaminationStatus (extensions) and submission date.
-     * @param first
-     * @param second
-     * @return
      */
     @Override
     public int compare(QuestionnaireResponse first, QuestionnaireResponse second) {
         // Compare by TriagingCategory
-        var firstTriagingCategory = ExtensionMapper.extractTriagingCategoory(first.getExtension());
-        var secondTriagingCategory = ExtensionMapper.extractTriagingCategoory(second.getExtension());
-        if(firstTriagingCategory != secondTriagingCategory) {
+        var firstTriagingCategory = ExtensionMapper.extractTriagingCategory(first.getExtension());
+        var secondTriagingCategory = ExtensionMapper.extractTriagingCategory(second.getExtension());
+        if (firstTriagingCategory != secondTriagingCategory) {
             // The response with the most severe category is prioritized.
             return firstTriagingCategory.getPriority() - secondTriagingCategory.getPriority();
         }
@@ -27,13 +24,13 @@ public class QuestionnaireResponsePriorityComparator implements Comparator<Quest
         // Compare by ExaminationStatus
         var firstExaminationStatus = ExtensionMapper.extractExaminationStatus(first.getExtension());
         var secondExaminationStatus = ExtensionMapper.extractExaminationStatus(second.getExtension());
-        if(firstExaminationStatus != secondExaminationStatus) {
+        if (firstExaminationStatus != secondExaminationStatus) {
             // Responses that are under examination are prioritized.
             return firstExaminationStatus.getPriority() - secondExaminationStatus.getPriority();
         }
 
         // Compare by submission date
-        if(!first.getAuthored().equals(second.getAuthored())) {
+        if (!first.getAuthored().equals(second.getAuthored())) {
             return first.getAuthored().compareTo(second.getAuthored());
         }
 

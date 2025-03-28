@@ -43,7 +43,7 @@ public class FhirLookupResult {
     public static FhirLookupResult fromResources(Resource... resources) {
         FhirLookupResult result = new FhirLookupResult();
 
-        for(Resource resource : resources) {
+        for (Resource resource : resources) {
             result.addResource(resource);
         }
 
@@ -111,25 +111,25 @@ public class FhirLookupResult {
     }
 
     public FhirLookupResult merge(FhirLookupResult result) {
-        for(CarePlan carePlan : result.carePlansById.values()) {
+        for (CarePlan carePlan : result.carePlansById.values()) {
             addResource(carePlan);
         }
-        for(Organization organization : result.organizationsById.values()) {
+        for (Organization organization : result.organizationsById.values()) {
             addResource(organization);
         }
-        for(Patient patient : result.patientsById.values()) {
+        for (Patient patient : result.patientsById.values()) {
             addResource(patient);
         }
-        for(PlanDefinition planDefinition : result.planDefinitionsById.values()) {
+        for (PlanDefinition planDefinition : result.planDefinitionsById.values()) {
             addResource(planDefinition);
         }
-        for(Questionnaire questionnaire: result.questionnairesById.values()) {
+        for (Questionnaire questionnaire : result.questionnairesById.values()) {
             addResource(questionnaire);
         }
-        for(QuestionnaireResponse questionnaireResponse: result.questionnaireResponsesById.values()) {
+        for (QuestionnaireResponse questionnaireResponse : result.questionnaireResponsesById.values()) {
             addResource(questionnaireResponse);
         }
-        for(Practitioner practitioner: result.practitionersById.values()) {
+        for (Practitioner practitioner : result.practitionersById.values()) {
             addResource(practitioner);
         }
 
@@ -150,7 +150,7 @@ public class FhirLookupResult {
     }
 
     private <T extends Resource> Optional<T> getResource(String resourceId, Map<String, T> resourcesById) {
-        if(!resourcesById.containsKey(resourceId)) {
+        if (!resourcesById.containsKey(resourceId)) {
             return Optional.empty();
         }
         return Optional.of(resourcesById.get(resourceId));
@@ -162,7 +162,7 @@ public class FhirLookupResult {
 
     private void addResource(Resource resource) {
         String resourceId = resource.getIdElement().toUnqualifiedVersionless().getValue();
-        switch(resource.getResourceType()) {
+        switch (resource.getResourceType()) {
             case CarePlan:
                 carePlansById.put(resourceId, (CarePlan) resource);
                 break;

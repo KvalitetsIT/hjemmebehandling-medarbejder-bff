@@ -10,29 +10,29 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 public class DiasAuditLogger {
-  private static final Logger logger = LoggerFactory.getLogger(DiasAuditLogger.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiasAuditLogger.class);
 
-  private final boolean enabled;
+    private final boolean enabled;
 
-  @Autowired
-  public WebClient client;
+    @Autowired
+    public WebClient client;
 
-  public DiasAuditLogger(boolean enabled) {
-    this.enabled = enabled;
-  }
-
-  @Async
-  public void postAuditLog(AuditModel event) {
-    if (enabled) {
-      logger.debug("Calling DIAS_AUDIT");
-
-      client.post()
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(Mono.just(event), AuditModel.class)
-          .retrieve()
-          .bodyToMono(Void.class)
-          .doOnError(error -> logger.error("Error calling DIAS audit log service {}. Audit content was {}", error.getMessage(), event))
-          .block();
+    public DiasAuditLogger(boolean enabled) {
+        this.enabled = enabled;
     }
-  }
+
+    @Async
+    public void postAuditLog(AuditModel event) {
+        if (enabled) {
+            logger.debug("Calling DIAS_AUDIT");
+
+            client.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Mono.just(event), AuditModel.class)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .doOnError(error -> logger.error("Error calling DIAS audit log service {}. Audit content was {}", error.getMessage(), event))
+                    .block();
+        }
+    }
 }

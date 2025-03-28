@@ -2,12 +2,14 @@ package dk.kvalitetsit.hjemmebehandling.integrationtest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openapitools.client.ApiException;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.PlanDefinitionApi;
-import org.openapitools.client.model.*;
+import org.openapitools.client.model.CreatePlanDefinitionRequest;
+import org.openapitools.client.model.PlanDefinitionDto;
+import org.openapitools.client.model.QuestionnaireDto;
+import org.openapitools.client.model.QuestionnaireWrapperDto;
 
-import java.util.*;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,53 +20,35 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     public void setup() {
         subject = new PlanDefinitionApi();
-
         subject.getApiClient().setBasePath(enhanceBasePath(subject.getApiClient().getBasePath()));
     }
 
     @Test
     public void getPlanDefinitions_success() throws Exception {
-        // Arrange
-
-        // Act
-
         ApiResponse<List<PlanDefinitionDto>> response = subject.getPlanDefinitionsWithHttpInfo(List.of());
-
-        // Assert
         assertEquals(200, response.getStatusCode());
     }
 
     @Test
     public void createPlanDefinition_success() throws Exception {
-        // Arrange
-//        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId("Questionnaire/questionnaire-1");
 
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto()
+                .status("ACTIVE")
+                .questionnaires(List.of(new QuestionnaireWrapperDto()
+                        .questionnaire(questionnaireDto)));
 
-        QuestionnaireWrapperDto wrapper = new QuestionnaireWrapperDto();
-        wrapper.setQuestionnaire(questionnaireDto);
-//        wrapper.setFrequency(frequencyDto);
-
-
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
         planDefinitionDto.setId("PlanDefinition/plandefinition-1");
-        planDefinitionDto.setStatus("ACTIVE");
-        planDefinitionDto.setQuestionnaires(List.of(wrapper));
-
 
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest()
-            .planDefinition(planDefinitionDto);
+                .planDefinition(planDefinitionDto);
 
-        // Act
         ApiResponse<Void> response = subject.createPlanDefinitionWithHttpInfo(request);
 
-        // Assert
         assertEquals(201, response.getStatusCode());
         assertTrue(response.getHeaders().containsKey("location"));
     }
-
 
 
 }

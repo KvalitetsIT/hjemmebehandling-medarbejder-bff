@@ -13,6 +13,10 @@ public class PatientModel {
     private String customUserId;
     private String customUserName;
 
+    public PatientModel() {
+        this.primaryContactModel = new PrimaryContactModel();
+    }
+
     @Override
     public String toString() {
         return "PatientModel{" +
@@ -26,10 +30,6 @@ public class PatientModel {
                 ", customUserId='" + customUserId + '\'' +
                 ", customUserName='" + customUserName + '\'' +
                 '}';
-    }
-
-    public PatientModel() {
-        this.primaryContactModel = new PrimaryContactModel();
     }
 
     public QualifiedId getId() {
@@ -81,21 +81,21 @@ public class PatientModel {
         this.additionalRelativeContactDetails = additionalRelativeContactDetails;
     }
 
-	public String getCustomUserId() {
-		return customUserId;
-	}
+    public String getCustomUserId() {
+        return customUserId;
+    }
 
-	public void setCustomUserId(String customUserId) {
-		this.customUserId = customUserId;
-	}
+    public void setCustomUserId(String customUserId) {
+        this.customUserId = customUserId;
+    }
 
-	public String getCustomUserName() {
-		return customUserName;
-	}
+    public String getCustomUserName() {
+        return customUserName;
+    }
 
-	public void setCustomUserName(String customUserName) {
-		this.customUserName = customUserName;
-	}
+    public void setCustomUserName(String customUserName) {
+        this.customUserName = customUserName;
+    }
 
     public PrimaryContactModel getPrimaryContact() {
         return primaryContactModel;

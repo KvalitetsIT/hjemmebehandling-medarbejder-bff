@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.types;
 import java.util.Objects;
 
 public class Pagination {
-    private int offset;
-    private int limit;
+    private final int offset;
+    private final int limit;
 
     public Pagination(int offset, int limit) {
         this.offset = offset;
