@@ -193,14 +193,16 @@ public class ExtensionMapperTest {
     @Test
     public void mapThreshold_boolean() {
 
-        ThresholdModel threshold = new ThresholdModel();
-        threshold.setQuestionnaireItemLinkId("foo");
-        threshold.setType(ThresholdType.NORMAL);
-        threshold.setValueBoolean(true);
-
+        ThresholdModel threshold = new ThresholdModel(
+                "foo",
+                ThresholdType.NORMAL,
+                null,
+                null,
+                true,
+                null
+        );
 
         Extension result = ExtensionMapper.mapThreshold(threshold);
-
 
         assertEquals("foo", result.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID));
         assertEquals(ThresholdType.NORMAL.toString(), result.getExtensionString(Systems.THRESHOLD_TYPE));
@@ -209,16 +211,16 @@ public class ExtensionMapperTest {
 
     @Test
     public void mapThreshold_range() {
-
-        ThresholdModel threshold = new ThresholdModel();
-        threshold.setQuestionnaireItemLinkId("bar");
-        threshold.setType(ThresholdType.ABNORMAL);
-        threshold.setValueQuantityLow(2.0);
-        threshold.setValueQuantityHigh(4.0);
-
+        ThresholdModel threshold = new ThresholdModel(
+                "bar",
+                ThresholdType.ABNORMAL,
+                2.0,
+                4.0,
+                null,
+                null
+        );
 
         Extension result = ExtensionMapper.mapThreshold(threshold);
-
 
         assertEquals("bar", result.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID));
         assertEquals(ThresholdType.ABNORMAL.toString(), result.getExtensionString(Systems.THRESHOLD_TYPE));
@@ -238,9 +240,9 @@ public class ExtensionMapperTest {
         ThresholdModel result = ExtensionMapper.extractThreshold(extension);
 
 
-        assertEquals("foo", result.getQuestionnaireItemLinkId());
-        assertEquals(ThresholdType.NORMAL, result.getType());
-        assertTrue(result.getValueBoolean());
+        assertEquals("foo", result.questionnaireItemLinkId());
+        assertEquals(ThresholdType.NORMAL, result.type());
+        assertTrue(result.valueBoolean());
     }
 
     @Test
@@ -258,9 +260,9 @@ public class ExtensionMapperTest {
         ThresholdModel result = ExtensionMapper.extractThreshold(extension);
 
 
-        assertEquals("bar", result.getQuestionnaireItemLinkId());
-        assertEquals(ThresholdType.ABNORMAL, result.getType());
-        assertEquals(2.0, result.getValueQuantityLow());
-        assertEquals(4.0, result.getValueQuantityHigh());
+        assertEquals("bar", result.questionnaireItemLinkId());
+        assertEquals(ThresholdType.ABNORMAL, result.type());
+        assertEquals(2.0, result.valueQuantityLow());
+        assertEquals(4.0, result.valueQuantityHigh());
     }
 }

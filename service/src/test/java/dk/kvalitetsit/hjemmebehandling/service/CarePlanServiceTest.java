@@ -246,7 +246,7 @@ public class CarePlanServiceTest {
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(List.of(PLANDEFINITION_ID_1))).thenReturn(lookupResult);
 
-        var questionnaireThreshold = new ThresholdModel();
+        var questionnaireThreshold = new ThresholdModel(null, null, null, null, null, null);
         buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, questionnaireThreshold);
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
@@ -589,7 +589,8 @@ public class CarePlanServiceTest {
         PatientDetails patientDetails = buildPatientDetails();
         PatientModel patientModel = buildPatientModel();
         Questionnaire questionnaire = new Questionnaire();
-        var threshold = new ThresholdModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
+
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
         Patient patient = buildPatient(PATIENT_ID_1, CPR_1);
 
@@ -637,7 +638,7 @@ public class CarePlanServiceTest {
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
-        var threshold = new ThresholdModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
@@ -681,7 +682,7 @@ public class CarePlanServiceTest {
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
-        var threshold = new ThresholdModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
@@ -739,7 +740,9 @@ public class CarePlanServiceTest {
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
-        var threshold = new ThresholdModel();
+
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
+
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
@@ -787,7 +790,7 @@ public class CarePlanServiceTest {
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
-        var threshold = new ThresholdModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, threshold);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 
@@ -821,7 +824,7 @@ public class CarePlanServiceTest {
         FhirLookupResult planDefinitionResult = FhirLookupResult.fromResource(planDefinition);
         Mockito.when(fhirClient.lookupPlanDefinitionsById(planDefinitionIds)).thenReturn(planDefinitionResult);
 
-        var threshold = new ThresholdModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_2, threshold);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, planDefinitionResult)).thenReturn(planDefinitionModel);
 

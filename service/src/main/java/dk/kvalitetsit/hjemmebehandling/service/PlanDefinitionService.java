@@ -242,19 +242,19 @@ public class PlanDefinitionService extends AccessValidatingService {
         // update thresholds
         if (thresholds != null && !thresholds.isEmpty()) {
             // if no questionnaires is beeing updated, the threshold may be present already, remove it if it exists
-            Set<String> linkIdUpdates = thresholds.stream().map(ThresholdModel::getQuestionnaireItemLinkId).collect(Collectors.toSet());
+            Set<String> linkIdUpdates = thresholds.stream().map(ThresholdModel::questionnaireItemLinkId).collect(Collectors.toSet());
             planDefinitionModel.getQuestionnaires().forEach(qw -> {
-                qw.getThresholds().removeIf(t -> linkIdUpdates.contains(t.getQuestionnaireItemLinkId()));
+                qw.getThresholds().removeIf(t -> linkIdUpdates.contains(t.questionnaireItemLinkId()));
             });
 
             // add updated thresholds
             for (ThresholdModel thresholdModel : thresholds) {
                 // add the new threshold to the correct quesionnaire containing the question (by linkId)
                 Optional<QuestionnaireWrapperModel> questionnaireWrapperModel = planDefinitionModel.getQuestionnaires().stream().filter(qw -> qw.getQuestionnaire().getQuestions().stream().anyMatch(q -> {
-                    boolean directMatch = q.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId());
+                    boolean directMatch = q.getLinkId().equals(thresholdModel.questionnaireItemLinkId());
                     boolean subQuesitonMatch = false;
                     if (q.getQuestionType() == QuestionType.GROUP) {
-                        subQuesitonMatch = q.getSubQuestions().stream().anyMatch(sq -> sq.getLinkId().equals(thresholdModel.getQuestionnaireItemLinkId()));
+                        subQuesitonMatch = q.getSubQuestions().stream().anyMatch(sq -> sq.getLinkId().equals(thresholdModel.questionnaireItemLinkId()));
                     }
                     return directMatch || subQuesitonMatch;
                 })).findFirst();

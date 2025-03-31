@@ -4,8 +4,6 @@ import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
@@ -191,22 +189,25 @@ public class DtoMapperTest {
     }
 
     private ThresholdModel buildBooleanThresholdModel(String questionLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setQuestionnaireItemLinkId(questionLinkId);
-        thresholdModel.setValueBoolean(Boolean.TRUE);
 
-        return thresholdModel;
+        return new ThresholdModel(
+                questionLinkId,
+                ThresholdType.NORMAL,
+                null,
+                null,
+                Boolean.TRUE,
+                null
+        );
     }
 
     private ThresholdModel buildNumberThresholdModel(String questionLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setQuestionnaireItemLinkId(questionLinkId);
-        thresholdModel.setValueQuantityLow(2.0);
-        thresholdModel.setValueQuantityHigh(5.0);
-
-        return thresholdModel;
+        return new ThresholdModel(
+                questionLinkId,
+                ThresholdType.NORMAL,
+                2.0,
+                5.0,
+                null,
+                null);
     }
 
 

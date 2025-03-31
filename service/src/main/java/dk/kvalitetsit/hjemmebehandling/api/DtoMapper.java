@@ -3,8 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.api;
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
@@ -188,14 +186,14 @@ public class DtoMapper {
     }
 
     public ThresholdModel mapThresholdDto(ThresholdDto thresholdDto) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdDto.getQuestionId().ifPresent(thresholdModel::setQuestionnaireItemLinkId);
-        thresholdDto.getValueBoolean().ifPresent(thresholdModel::setValueBoolean);
-        thresholdDto.getValueQuantityLow().ifPresent(thresholdModel::setValueQuantityLow);
-        thresholdDto.getValueQuantityHigh().ifPresent(thresholdModel::setValueQuantityHigh);
-        thresholdDto.getValueOption().ifPresent(thresholdModel::setValueOption);
-        thresholdDto.getType().map(this::mapThresholdTypeDto).ifPresent(thresholdModel::setType);
-        return thresholdModel;
+        return new ThresholdModel(
+                thresholdDto.getQuestionId().orElse(null),
+                thresholdDto.getType().map(this::mapThresholdTypeDto).orElse(null),
+                thresholdDto.getValueQuantityLow().orElse(null),
+                thresholdDto.getValueQuantityHigh().orElse(null),
+                thresholdDto.getValueBoolean().orElse(null),
+                thresholdDto.getValueOption().orElse(null)
+        );
     }
 
     private ThresholdType mapThresholdTypeDto(ThresholdDto.TypeEnum type) {
@@ -208,12 +206,12 @@ public class DtoMapper {
 
     public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
         ThresholdDto thresholdDto = new ThresholdDto();
-        thresholdDto.setQuestionId(Optional.ofNullable(thresholdModel.getQuestionnaireItemLinkId()));
-        thresholdDto.setValueBoolean(Optional.ofNullable(thresholdModel.getValueBoolean()));
-        thresholdDto.setValueQuantityLow(Optional.ofNullable(thresholdModel.getValueQuantityLow()));
-        thresholdDto.setValueQuantityHigh(Optional.ofNullable(thresholdModel.getValueQuantityHigh()));
-        thresholdDto.setValueOption(Optional.ofNullable(thresholdModel.getValueOption()));
-        thresholdDto.setType(Optional.ofNullable(thresholdModel.getType()).map(this::mapThresholdTypeModel));
+        thresholdDto.setQuestionId(Optional.ofNullable(thresholdModel.questionnaireItemLinkId()));
+        thresholdDto.setValueBoolean(Optional.ofNullable(thresholdModel.valueBoolean()));
+        thresholdDto.setValueQuantityLow(Optional.ofNullable(thresholdModel.valueQuantityLow()));
+        thresholdDto.setValueQuantityHigh(Optional.ofNullable(thresholdModel.valueQuantityHigh()));
+        thresholdDto.setValueOption(Optional.ofNullable(thresholdModel.valueOption()));
+        thresholdDto.setType(Optional.ofNullable(thresholdModel.type()).map(this::mapThresholdTypeModel));
         return thresholdDto;
     }
 

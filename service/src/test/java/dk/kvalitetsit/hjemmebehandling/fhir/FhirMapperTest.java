@@ -235,17 +235,11 @@ public class FhirMapperTest {
         action.setDefinition(new CanonicalType(questionnaireId));
         action.getTimingTiming().getRepeat().addDayOfWeek(Timing.DayOfWeek.MON).addTimeOfDay("11:00");
 
-        ThresholdModel booleanThreshold = new ThresholdModel();
-        booleanThreshold.setQuestionnaireItemLinkId("1");
-        booleanThreshold.setType(ThresholdType.NORMAL);
-        booleanThreshold.setValueBoolean(true);
+        ThresholdModel booleanThreshold = new ThresholdModel("1", ThresholdType.NORMAL, null, null, true, null);
+
         action.addExtension(ExtensionMapper.mapThreshold(booleanThreshold));
 
-        ThresholdModel numberedThreshold = new ThresholdModel();
-        numberedThreshold.setQuestionnaireItemLinkId("1");
-        numberedThreshold.setType(ThresholdType.NORMAL);
-        numberedThreshold.setValueQuantityHigh(5.0);
-        numberedThreshold.setValueQuantityLow(2.0);
+        ThresholdModel numberedThreshold = new ThresholdModel("1", ThresholdType.NORMAL, 5.0, 2.0, null, null);
         action.addExtension(ExtensionMapper.mapThreshold(numberedThreshold));
 
         planDefinition.addAction(action);

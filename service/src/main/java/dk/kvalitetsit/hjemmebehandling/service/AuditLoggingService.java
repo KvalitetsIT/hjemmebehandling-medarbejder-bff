@@ -1,9 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.model.AuditModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.model.AuditModel;
 import dk.kvalitetsit.hjemmebehandling.service.audit.DiasAuditLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,15 @@ public class AuditLoggingService {
 
     private void auditLog(String message, Map<String, String> citizenCprToFullNameMap) {
         // TODO: Handle 'Optional.get()' without 'isPresent()' check below
-        String employeeRegionsId = userContextProvider.getUserContext().getUserId().get();
-        String employeeFullName = userContextProvider.getUserContext().getFullName().get();
+
+        var employee = new AuditModel.Employee(userContextProvider.getUserContext().getUserId().get(), userContextProvider.getUserContext().getFullName().get());
 
         for (String citizenCpr : citizenCprToFullNameMap.keySet()) {
             String citizenFullName = citizenCprToFullNameMap.get(citizenCpr);
-            AuditModel event = new AuditModel(employeeRegionsId, employeeFullName, citizenCpr, citizenFullName, message);
+
+            var citizen = new AuditModel.Citizen(citizenCpr, citizenFullName);
+
+            AuditModel event = new AuditModel(employee, citizen, message);
 
             diasAuditLogger.postAuditLog(event);
         }

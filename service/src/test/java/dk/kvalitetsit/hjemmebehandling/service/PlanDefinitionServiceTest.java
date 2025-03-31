@@ -7,7 +7,6 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -151,7 +150,7 @@ public class PlanDefinitionServiceTest {
 
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
         assertEquals(2, planDefinitionModel.getQuestionnaires().getFirst().getThresholds().size());
-        assertTrue(planDefinitionModel.getQuestionnaires().getFirst().getThresholds().stream().anyMatch(t -> t.getQuestionnaireItemLinkId().equals(thresholdModel.getQuestionnaireItemLinkId())));
+        assertTrue(planDefinitionModel.getQuestionnaires().getFirst().getThresholds().stream().anyMatch(t -> t.questionnaireItemLinkId().equals(thresholdModel.questionnaireItemLinkId())));
 
     }
 
@@ -223,19 +222,19 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
-        ThresholdModel newThresholdModel = buildThresholdModel(temperatureQuestion.getLinkId());
-        newThresholdModel.setValueQuantityLow(thresholdModel.getValueQuantityLow() - 1);
+        ThresholdModel newThresholdModel = buildThresholdModel(temperatureQuestion.getLinkId(), thresholdModel.valueQuantityLow() - 1);
+
 
         subject.updatePlanDefinition(id, null, null, List.of(), List.of(newThresholdModel));
 
         assertEquals(1, planDefinitionModel.getQuestionnaires().size());
         assertEquals(2, planDefinitionModel.getQuestionnaires().getFirst().getThresholds().size());
 
-        Optional<ThresholdModel> updatedThreshold = planDefinitionModel.getQuestionnaires().getFirst().getThresholds().stream().filter(t -> t.getQuestionnaireItemLinkId().equals(temperatureQuestion.getLinkId())).findFirst();
+        Optional<ThresholdModel> updatedThreshold = planDefinitionModel.getQuestionnaires().getFirst().getThresholds().stream().filter(t -> t.questionnaireItemLinkId().equals(temperatureQuestion.getLinkId())).findFirst();
         assertTrue(updatedThreshold.isPresent());
 
-        assertNotEquals(thresholdModel.getValueQuantityLow(), newThresholdModel.getValueQuantityLow());
-        assertEquals(newThresholdModel.getValueQuantityLow(), updatedThreshold.get().getValueQuantityLow());
+        assertNotEquals(thresholdModel.valueQuantityLow(), newThresholdModel.valueQuantityLow());
+        assertEquals(newThresholdModel.valueQuantityLow(), updatedThreshold.get().valueQuantityLow());
     }
 
     @Test
@@ -645,13 +644,25 @@ public class PlanDefinitionServiceTest {
         questionModel.setThresholds(List.of(thresholdModel));
         return questionnaireModel;
     }
-
+    private ThresholdModel buildThresholdModel(String questionnaireLinkId, Double valueQuantityLow) {
+        return new ThresholdModel(
+                questionnaireLinkId,
+                ThresholdType.NORMAL,
+                valueQuantityLow,
+                null,
+                Boolean.TRUE,
+                null
+        );
+    }
     private ThresholdModel buildThresholdModel(String questionnaireLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setQuestionnaireItemLinkId(questionnaireLinkId);
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setValueBoolean(Boolean.TRUE);
-        return thresholdModel;
+        return new ThresholdModel(
+                questionnaireLinkId,
+                ThresholdType.NORMAL,
+                null,
+                null,
+                Boolean.TRUE,
+                null
+        );
     }
 
     private QuestionModel buildMeasurementQuestionModel() {
@@ -663,12 +674,14 @@ public class PlanDefinitionServiceTest {
     }
 
     private ThresholdModel buildMeasurementThresholdModel(String questionnaireLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setQuestionnaireItemLinkId(questionnaireLinkId);
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setValueQuantityLow(Double.valueOf("36.5"));
-        thresholdModel.setValueQuantityHigh(Double.valueOf("37.5"));
-        return thresholdModel;
+        return new ThresholdModel(
+                questionnaireLinkId,
+                ThresholdType.NORMAL,
+                Double.valueOf("36.5"),
+                Double.valueOf("37.5"),
+                null,
+                null
+        );
     }
 
     private PlanDefinition buildPlanDefinition() {

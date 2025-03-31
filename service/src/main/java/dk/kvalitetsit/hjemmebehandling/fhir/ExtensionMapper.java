@@ -59,20 +59,23 @@ public class ExtensionMapper {
     }
 
     public static Extension mapThreshold(ThresholdModel threshold) {
-        Extension linkIdExtension = buildStringExtension(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID, threshold.getQuestionnaireItemLinkId());
-        Extension thresholdTypeExtension = buildStringExtension(Systems.THRESHOLD_TYPE, threshold.getType().toString());
+        Extension linkIdExtension = buildStringExtension(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID, threshold.questionnaireItemLinkId());
+        Extension thresholdTypeExtension = buildStringExtension(Systems.THRESHOLD_TYPE, threshold.type().toString());
         Extension thresholdValueExtension = null;
-        if (threshold.getValueBoolean() != null) {
-            thresholdValueExtension = buildBooleanExtension(threshold.getValueBoolean());
-        } else if (threshold.getValueOption() != null) {
-            thresholdValueExtension = buildStringExtension(Systems.THRESHOLD_VALUE_OPTION, threshold.getValueOption());
-        } else if (threshold.getValueQuantityLow() != null || threshold.getValueQuantityHigh() != null) {
-            thresholdValueExtension = buildRangeExtension(threshold.getValueQuantityLow(), threshold.getValueQuantityHigh());
+
+        if (threshold.valueBoolean() != null) {
+            thresholdValueExtension = buildBooleanExtension(threshold.valueBoolean());
+        } else if (threshold.valueOption() != null) {
+            thresholdValueExtension = buildStringExtension(Systems.THRESHOLD_VALUE_OPTION, threshold.valueOption());
+        } else if (threshold.valueQuantityLow() != null || threshold.valueQuantityHigh() != null) {
+            thresholdValueExtension = buildRangeExtension(threshold.valueQuantityLow(), threshold.valueQuantityHigh());
         }
-        if (thresholdValueExtension != null)
-            return buildCompositeExtension(List.of(linkIdExtension, thresholdTypeExtension, thresholdValueExtension));
-        return buildCompositeExtension(List.of(linkIdExtension, thresholdTypeExtension));
+
+        return Optional.ofNullable(thresholdValueExtension)
+                .map(x -> buildCompositeExtension(List.of(linkIdExtension, thresholdTypeExtension, x)))
+                .orElse(buildCompositeExtension(List.of(linkIdExtension, thresholdTypeExtension)));
     }
+
 
     public static Extension mapAnswerOptionComment(String comment) {
         return buildStringExtension(Systems.ANSWER_OPTION_COMMENT, comment);
@@ -127,32 +130,35 @@ public class ExtensionMapper {
     }
 
     public static ThresholdModel extractThreshold(Extension extension) {
-        ThresholdModel thresholdModel = new ThresholdModel();
+        String questionnaireItemLinkId = extension.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID);
+        ThresholdType type = Enum.valueOf(ThresholdType.class, extension.getExtensionString(Systems.THRESHOLD_TYPE));
 
-        thresholdModel.setQuestionnaireItemLinkId(extension.getExtensionString(Systems.THRESHOLD_QUESTIONNAIRE_ITEM_LINKID));
-        thresholdModel.setType(Enum.valueOf(ThresholdType.class, extension.getExtensionString(Systems.THRESHOLD_TYPE)));
+        Double valueQuantityLow = null;
+        Double valueQuantityHigh = null;
+        Boolean valueBoolean = null;
+        String valueOption = null;
+
         if (extension.hasExtension(Systems.THRESHOLD_VALUE_BOOLEAN)) {
-            BooleanType valueBoolean = (BooleanType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_BOOLEAN).getValue();
-            thresholdModel.setValueBoolean(valueBoolean.booleanValue());
+            BooleanType valueBooleanType = (BooleanType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_BOOLEAN).getValue();
+            valueBoolean = valueBooleanType.booleanValue();
         }
 
         if (extension.hasExtension(Systems.THRESHOLD_VALUE_OPTION)) {
-            StringType valueOption = (StringType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_OPTION).getValue();
-            thresholdModel.setValueOption(valueOption.getValue());
+            StringType valueOptionType = (StringType) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_OPTION).getValue();
+            valueOption = valueOptionType.getValue();
         }
-
 
         if (extension.hasExtension(Systems.THRESHOLD_VALUE_RANGE)) {
             Range valueRange = (Range) extension.getExtensionByUrl(Systems.THRESHOLD_VALUE_RANGE).getValue();
             if (valueRange.hasLow()) {
-                thresholdModel.setValueQuantityLow(valueRange.getLow().getValue().doubleValue());
+                valueQuantityLow = valueRange.getLow().getValue().doubleValue();
             }
             if (valueRange.hasHigh()) {
-                thresholdModel.setValueQuantityHigh(valueRange.getHigh().getValue().doubleValue());
+                valueQuantityHigh = valueRange.getHigh().getValue().doubleValue();
             }
         }
 
-        return thresholdModel;
+        return new ThresholdModel(questionnaireItemLinkId, type, valueQuantityLow, valueQuantityHigh, valueBoolean, valueOption);
     }
 
     public static TriagingCategory extractTriagingCategory(List<Extension> extensions) {
