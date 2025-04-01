@@ -1,33 +1,35 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
-public class PractitionerModel {
-    private QualifiedId id;
-    private String givenName;
-    private String familyName;
-
-
-    public QualifiedId getId() {
-        return id;
+public record PractitionerModel(
+        QualifiedId id,
+        String givenName,
+        String familyName
+) {
+    public static PractitionerModel.Builder builder() {
+        return new Builder();
     }
 
-    public void setId(QualifiedId id) {
-        this.id = id;
-    }
+    public static class Builder {
+        private QualifiedId id;
+        private String givenName;
+        private String familyName;
 
-    public String getGivenName() {
-        return givenName;
-    }
+        public void setId(QualifiedId id) {
+            this.id = id;
+        }
 
-    public void setGivenName(String givenName) {
-        this.givenName = givenName;
-    }
+        public void givenName(String givenName) {
+            this.givenName = givenName;
+        }
 
-    public String getFamilyName() {
-        return familyName;
-    }
+        public void familyName(String familyName) {
+            this.familyName = familyName;
+        }
 
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
+        public PractitionerModel build() {
+            return new PractitionerModel(this.id, this.givenName, this.familyName);
+        }
+
     }
 }

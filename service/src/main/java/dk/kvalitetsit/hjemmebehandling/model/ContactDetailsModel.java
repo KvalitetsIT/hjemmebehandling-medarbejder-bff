@@ -1,70 +1,57 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class ContactDetailsModel {
-    private String street;
-    private String postalCode;
-    private String country;
-    private String city;
-    private String primaryPhone;
-    private String secondaryPhone;
-
-    @Override
-    public String toString() {
-        return "ContactDetailsModel{" +
-                "street='" + street + '\'' +
-                ", postalCode='" + postalCode + '\'' +
-                ", country='" + country + '\'' +
-                ", city='" + city + '\'' +
-                ", primaryPhone='" + primaryPhone + '\'' +
-                ", secondaryPhone='" + secondaryPhone + '\'' +
-                '}';
+public record ContactDetailsModel(
+        String street,
+        String postalCode,
+        String country,
+        String city,
+        String primaryPhone,
+        String secondaryPhone
+) {
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public String getStreet() {
-        return street;
-    }
+    public static class Builder {
+        private String street;
+        private String postalCode;
+        private String country;
+        private String city;
+        private String primaryPhone;
+        private String secondaryPhone;
 
-    public void setStreet(String street) {
-        this.street = street;
-    }
+        public Builder street(String street) {
+            this.street = street;
+            return this;
+        }
 
-    public String getPostalCode() {
-        return postalCode;
-    }
+        public Builder postalCode(String postalCode) {
+            this.postalCode = postalCode;
+            return this;
+        }
 
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
+        public Builder country(String country) {
+            this.country = country;
+            return this;
+        }
 
-    public String getCountry() {
-        return country;
-    }
+        public Builder city(String city) {
+            this.city = city;
+            return this;
+        }
 
-    public void setCountry(String country) {
-        this.country = country;
-    }
+        public Builder primaryPhone(String primaryPhone) {
+            this.primaryPhone = primaryPhone;
+            return this;
+        }
 
-    public String getCity() {
-        return city;
-    }
+        public Builder secondaryPhone(String secondaryPhone) {
+            this.secondaryPhone = secondaryPhone;
+            return this;
+        }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getPrimaryPhone() {
-        return primaryPhone;
-    }
-
-    public void setPrimaryPhone(String primaryPhone) {
-        this.primaryPhone = primaryPhone;
-    }
-
-    public String getSecondaryPhone() {
-        return secondaryPhone;
-    }
-
-    public void setSecondaryPhone(String secondaryPhone) {
-        this.secondaryPhone = secondaryPhone;
+        public ContactDetailsModel build() {
+            return new ContactDetailsModel(street, postalCode, country, city, primaryPhone, secondaryPhone);
+        }
     }
 }

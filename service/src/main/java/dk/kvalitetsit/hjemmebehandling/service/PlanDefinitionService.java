@@ -230,7 +230,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 QuestionnaireWrapperModel wrapper = new QuestionnaireWrapperModel();
                 wrapper.setQuestionnaire(questionnaire);
 
-                List<ThresholdModel> questionnaireThresholds = new ArrayList<>(questionnaire.getQuestions().stream().filter(questionModel -> Objects.nonNull(questionModel.getThresholds())).flatMap(q -> q.getThresholds().stream()).toList());
+                List<ThresholdModel> questionnaireThresholds = new ArrayList<>(questionnaire.getQuestions().stream().filter( questionModel -> Objects.nonNull(questionModel.thresholds())).flatMap(q -> q.thresholds().stream()).toList());
 
                 wrapper.setThresholds(questionnaireThresholds);
 
@@ -251,10 +251,10 @@ public class PlanDefinitionService extends AccessValidatingService {
             for (ThresholdModel thresholdModel : thresholds) {
                 // add the new threshold to the correct quesionnaire containing the question (by linkId)
                 Optional<QuestionnaireWrapperModel> questionnaireWrapperModel = planDefinitionModel.getQuestionnaires().stream().filter(qw -> qw.getQuestionnaire().getQuestions().stream().anyMatch(q -> {
-                    boolean directMatch = q.getLinkId().equals(thresholdModel.questionnaireItemLinkId());
+                    boolean directMatch = q.linkId().equals(thresholdModel.questionnaireItemLinkId());
                     boolean subQuesitonMatch = false;
-                    if (q.getQuestionType() == QuestionType.GROUP) {
-                        subQuesitonMatch = q.getSubQuestions().stream().anyMatch(sq -> sq.getLinkId().equals(thresholdModel.questionnaireItemLinkId()));
+                    if (q.questionType() == QuestionType.GROUP) {
+                        subQuesitonMatch = q.subQuestions().stream().anyMatch(sq -> sq.linkId().equals(thresholdModel.questionnaireItemLinkId()));
                     }
                     return directMatch || subQuesitonMatch;
                 })).findFirst();

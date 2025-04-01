@@ -52,7 +52,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<Void> completeCarePlan(String id) {
         try {
             CarePlanModel carePlan = carePlanService.completeCarePlan(id);
-            auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.getPatient());
+            auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.patient());
         } catch (ServiceException e) {
             logger.error("completeCarePlan({}) error:", id, e);
             throw toStatusCodeException(e);
@@ -74,7 +74,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
             carePlanId = carePlanService.createCarePlan(carePlan);
-            auditLoggingService.log("POST /v1/careplan", carePlan.getPatient());
+            auditLoggingService.log("POST /v1/careplan", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Error creating CarePlan", e);
             throw toStatusCodeException(e);
@@ -92,7 +92,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             if (carePlan.isEmpty()) {
                 throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
             }
-            auditLoggingService.log("GET /v1/careplan/" + id, carePlan.get().getPatient());
+            auditLoggingService.log("GET /v1/careplan/" + id, carePlan.get().patient());
             return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
@@ -122,7 +122,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
         try {
             List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
-            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).toList();
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().id()).toList();
             return ResponseEntity.ok(ids);
         } catch (ServiceException e) {
             logger.error("Unresolved questionnaires could not be fetched due to:  %s", e);
@@ -144,7 +144,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
 
-            auditLoggingService.log("PATCH /v1/careplan/" + id, carePlanModel.getPatient());
+            auditLoggingService.log("PATCH /v1/careplan/" + id, carePlanModel.patient());
         } catch (AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
@@ -155,7 +155,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<Void> resolveAlarm(String id, String questionnaireId) {
         try {
             CarePlanModel carePlan = carePlanService.resolveAlarm(id, questionnaireId);
-            auditLoggingService.log("PUT /v1/careplan/" + id + "/resolve-alarm", carePlan.getPatient());
+            auditLoggingService.log("PUT /v1/careplan/" + id + "/resolve-alarm", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
             logger.error(String.format("resolveAlarm(%s, %s) error:", id, questionnaireId), e);
             throw toStatusCodeException(e);

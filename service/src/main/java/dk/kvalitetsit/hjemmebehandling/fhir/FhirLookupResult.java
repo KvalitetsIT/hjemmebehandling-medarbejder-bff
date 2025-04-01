@@ -66,7 +66,7 @@ public class FhirLookupResult {
         return getResources(organizationsById);
     }
 
-    public Optional<Patient> getPatient(String patientId) {
+    public Optional<Patient> patient(String patientId) {
         return getResource(patientId, patientsById);
     }
 

@@ -91,8 +91,8 @@ public class QuestionnaireResponseController extends BaseController implements Q
     @Override
     public ResponseEntity<Void> patchQuestionnaireResponse(String id, PartialUpdateQuestionnaireResponseRequest partialUpdateQuestionnaireResponseRequest) {
         try {
-            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, dtoMapper.mapExaminationStatusDto(partialUpdateQuestionnaireResponseRequest.getExaminationStatus().orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE))));
-            auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.getPatient());
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, dtoMapper.mapExaminationStatusDto(partialUpdateQuestionnaireResponseRequest.examinationStatus().orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE))));
+            auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.patient());
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
             throw toStatusCodeException(e);

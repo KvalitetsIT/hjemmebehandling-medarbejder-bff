@@ -25,33 +25,33 @@ public class FhirMapper {
 
         mapBaseAttributesToFhir(carePlan, carePlanModel);
 
-        carePlan.setTitle(carePlanModel.getTitle());
-        carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.getStatus().toString()));
-        carePlan.setCreated(Date.from(carePlanModel.getCreated()));
-        if (carePlanModel.getStartDate() != null) {
+        carePlan.setTitle(carePlanModel.title());
+        carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.status().toString()));
+        carePlan.setCreated(Date.from(carePlanModel.created()));
+        if (carePlanModel.startDate() != null) {
             carePlan.setPeriod(new Period());
-            carePlan.getPeriod().setStart(Date.from(carePlanModel.getStartDate()));
+            carePlan.getPeriod().setStart(Date.from(carePlanModel.startDate()));
         }
-        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.satisfiedUntil()));
 
         // Set the subject
-        if (carePlanModel.getPatient().getId() != null) {
-            carePlan.setSubject(new Reference(carePlanModel.getPatient().getId().toString()));
+        if (carePlanModel.patient().id() != null) {
+            carePlan.setSubject(new Reference(carePlanModel.patient().id().toString()));
         }
 
         // Map questionnaires to activities
-        if (carePlanModel.getQuestionnaires() != null) {
-            carePlan.setActivity(carePlanModel.getQuestionnaires()
+        if (carePlanModel.questionnaires() != null) {
+            carePlan.setActivity(carePlanModel.questionnaires()
                     .stream()
                     .map(this::buildCarePlanActivity)
                     .toList());
         }
 
-        if (carePlanModel.getPlanDefinitions() != null) {
+        if (carePlanModel.planDefinitions() != null) {
             // Add references to planDefinitions
-            carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
+            carePlan.setInstantiatesCanonical(carePlanModel.planDefinitions()
                     .stream()
-                    .map(pd -> new CanonicalType(pd.getId().toString()))
+                    .map(pd -> new CanonicalType(pd.id().toString()))
                     .toList());
         }
 
@@ -587,9 +587,9 @@ public class FhirMapper {
     private Address buildAddress(ContactDetailsModel contactDetailsModel) {
         var address = new Address();
 
-        address.addLine(contactDetailsModel.getStreet());
-        address.setPostalCode(contactDetailsModel.getPostalCode());
-        address.setCity(contactDetailsModel.getCity());
+        address.addLine(contactDetailsModel.street());
+        address.setPostalCode(contactDetailsModel.postalCode());
+        address.setCity(contactDetailsModel.city());
 
         return address;
     }

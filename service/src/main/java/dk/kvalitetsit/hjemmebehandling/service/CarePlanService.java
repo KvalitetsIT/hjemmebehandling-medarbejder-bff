@@ -74,12 +74,12 @@ public class CarePlanService extends AccessValidatingService {
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         // Try to look up the patient in the careplan
-        String cpr = carePlan.getPatient().getCpr();
+        String cpr = carePlan.patient().getCpr();
         var patient = fhirClient.lookupPatientByCpr(cpr);
 
         // Set organisation id
-        if (carePlan.getPatient() != null && carePlan.getPatient().getPrimaryContact() != null)
-            carePlan.getPatient().getPrimaryContact().setOrganisation(fhirClient.getOrganizationId());
+        if (carePlan.patient() != null && carePlan.patient().primaryContact() != null)
+            carePlan.patient().primaryContact().setOrganisation(fhirClient.getOrganizationId());
 
 
         // TODO: More validations should be performed - possibly?
@@ -93,9 +93,9 @@ public class CarePlanService extends AccessValidatingService {
                 throw new ServiceException(String.format("Could not create careplan for cpr %s: Another active careplan already exists!", cpr), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS);
             }
 
-            var newPatient = fhirMapper.mapPatientModel(carePlan.getPatient());
+            var newPatient = fhirMapper.mapPatientModel(carePlan.patient());
 
-            if (carePlan.getPatient().getPrimaryContact() != null) {
+            if (carePlan.patient().primaryContact() != null) {
                 newPatient.getContactFirstRep().setOrganization(new Reference(fhirClient.getOrganizationId()));
 
                 var oldContacts = patient.get().getContact();
@@ -127,9 +127,9 @@ public class CarePlanService extends AccessValidatingService {
                 return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan));
             }
             // create customLoginUser if the patient do not exist. Done if an apiurl is set.
-            if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) createCustomLogin(carePlan.getPatient());
+            if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) createCustomLogin(carePlan.patient());
 
-            var newPatient = carePlan.getPatient();
+            var newPatient = carePlan.patient();
 
             // create patient and careplan
             return fhirClient.saveCarePlan(fhirMapper.mapCarePlanModel(carePlan), fhirMapper.mapPatientModel(newPatient));
@@ -192,8 +192,8 @@ public class CarePlanService extends AccessValidatingService {
         return lookupResult.getCarePlans().stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult, orgId))
                 .sorted((careplan1, careplan2) -> {
-                    String name1 = String.join(" ", careplan1.getPatient().getGivenName(), careplan1.getPatient().getFamilyName());
-                    String name2 = String.join(" ", careplan2.getPatient().getGivenName(), careplan2.getPatient().getFamilyName());
+                    String name1 = String.join(" ", careplan1.patient().getGivenName(), careplan1.patient().getFamilyName());
+                    String name2 = String.join(" ", careplan2.patient().getGivenName(), careplan2.patient().getFamilyName());
                     return name1.compareTo(name2);
                 })
                 .toList();
@@ -211,8 +211,8 @@ public class CarePlanService extends AccessValidatingService {
         return lookupResult.getCarePlans().stream()
                 .map(cp -> fhirMapper.mapCarePlan(cp, lookupResult, orgId))
                 .sorted((careplan1, careplan2) -> {
-                    String name1 = String.join(" ", careplan1.getPatient().getGivenName(), careplan1.getPatient().getFamilyName());
-                    String name2 = String.join(" ", careplan2.getPatient().getGivenName(), careplan2.getPatient().getFamilyName());
+                    String name1 = String.join(" ", careplan1.patient().getGivenName(), careplan1.patient().getFamilyName());
+                    String name2 = String.join(" ", careplan2.patient().getGivenName(), careplan2.patient().getFamilyName());
                     return name1.compareTo(name2);
                 })
                 .toList();
@@ -355,15 +355,15 @@ public class CarePlanService extends AccessValidatingService {
         updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);
 
         // Update patient
-        String patientId = carePlanModel.getPatient().getId().toString();
+        String patientId = carePlanModel.patient().getId().toString();
 
 
-        var oldPatient = careplanResult.getPatient(carePlanModel.getPatient().getId().toString());
+        var oldPatient = careplanResult.patient(carePlanModel.patient().getId().toString());
 
 
         PatientModel patientModel = fhirMapper.mapPatient(oldPatient.orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId))), orgId);
 
-        patientModel.getPrimaryContact().setOrganisation(fhirClient.getOrganizationId());
+        patientModel.primaryContact().setOrganisation(fhirClient.getOrganizationId());
 
         updatePatientModel(patientModel, patientDetails);
 
@@ -445,8 +445,8 @@ public class CarePlanService extends AccessValidatingService {
                     // if current satisfied-until > new, this means that the patient has already answered today
                     // and in this case we want to keep this as 'SatisfiedUntil'
                     if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
-                        String questionnaireId = currentQuestionnaire.get().getQuestionnaire().getId().getId();
-                        FhirLookupResult lookupQuestionnaireResponses = fhirClient.lookupQuestionnaireResponses(carePlan.getId().getId(), List.of(questionnaireId));
+                        String questionnaireId = currentQuestionnaire.get().getQuestionnaire().getId().id();
+                        FhirLookupResult lookupQuestionnaireResponses = fhirClient.lookupQuestionnaireResponses(carePlan.getId().id(), List.of(questionnaireId));
 
                         ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
 
@@ -480,20 +480,20 @@ public class CarePlanService extends AccessValidatingService {
 
     private void updatePatientModel(PatientModel patientModel, PatientDetails patientDetails) {
 
-        var primaryContact = patientModel.getPrimaryContact();
+        var primaryContact = patientModel.primaryContact();
 
-        patientModel.getContactDetails().setPrimaryPhone(patientDetails.getPatientPrimaryPhone());
-        patientModel.getContactDetails().setSecondaryPhone(patientDetails.getPatientSecondaryPhone());
+        patientModel.contactDetails().setPrimaryPhone(patientDetails.getPatientPrimaryPhone());
+        patientModel.contactDetails().setSecondaryPhone(patientDetails.getPatientSecondaryPhone());
 
         primaryContact.setName(patientDetails.getPrimaryRelativeName());
         primaryContact.setAffiliation(patientDetails.getPrimaryRelativeAffiliation());
 
         if (patientDetails.getPrimaryRelativePrimaryPhone() != null || patientDetails.getPrimaryRelativeSecondaryPhone() != null) {
-            if (primaryContact.getContactDetails() == null) {
+            if (primaryContact.contactDetails() == null) {
                 primaryContact.setContactDetails(new ContactDetailsModel());
             }
-            primaryContact.getContactDetails().setPrimaryPhone(patientDetails.getPrimaryRelativePrimaryPhone());
-            primaryContact.getContactDetails().setSecondaryPhone(patientDetails.getPrimaryRelativeSecondaryPhone());
+            primaryContact.contactDetails().setPrimaryPhone(patientDetails.getPrimaryRelativePrimaryPhone());
+            primaryContact.contactDetails().setSecondaryPhone(patientDetails.getPrimaryRelativeSecondaryPhone());
         }
     }
 
@@ -598,8 +598,8 @@ public class CarePlanService extends AccessValidatingService {
         return carePlanModel.getQuestionnaires()
                 .stream()
                 .map(QuestionnaireWrapperModel::getQuestionnaire)
-                .filter(questionnaire -> questionnaireHasExceededDeadline(carePlan, List.of(questionnaire.getId().getId())))
-                .map(questionnaire -> questionnaire.getId().getId())
+                .filter(questionnaire -> questionnaireHasExceededDeadline(carePlan, List.of(questionnaire.getId().id())))
+                .map(questionnaire -> questionnaire.getId().id())
                 .toList();
     }
 

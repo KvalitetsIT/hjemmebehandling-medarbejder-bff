@@ -92,7 +92,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     @Override
     public ResponseEntity<Void> patchPlanDefinition(String id, PatchPlanDefinitionRequest request) {
         try {
-            String name = request.getName();
+            String name = request.name();
             List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
             List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
 

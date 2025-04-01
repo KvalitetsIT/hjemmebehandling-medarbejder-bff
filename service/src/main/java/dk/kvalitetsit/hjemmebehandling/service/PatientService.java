@@ -72,7 +72,7 @@ public class PatientService extends AccessValidatingService {
         return List.of(p);
     }
 
-    public PatientModel getPatient(String cpr) throws ServiceException {
+    public PatientModel patient(String cpr) throws ServiceException {
         // Look up the patient
         Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
         if (patient.isEmpty()) {
@@ -114,7 +114,7 @@ public class PatientService extends AccessValidatingService {
         // Map the resources
         return patients
                 .stream()
-                .sorted(Comparator.comparing(a -> a.getName().getFirst().getGivenAsSingleString()))
+                .sorted(Comparator.comparing(a -> a.name().getFirst().getGivenAsSingleString()))
                 .map(p -> fhirMapper.mapPatient(p, orgId))
                 .toList();
     }

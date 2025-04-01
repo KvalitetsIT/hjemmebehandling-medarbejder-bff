@@ -7,8 +7,8 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -58,25 +58,57 @@ public class QuestionnaireService extends AccessValidatingService {
 
     public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
-        initializeAttributesForNewQuestionnaire(questionnaire);
-
-        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaire));
+        var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
+        var mappedQuestionnaire = fhirMapper.mapQuestionnaireModel(initializedQuestionnaire);
+        return fhirClient.saveQuestionnaire(mappedQuestionnaire);
     }
 
-    private void initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
-        // Ensure that no id is present on the careplan - the FHIR server will generate that for us.
-        questionnaire.setId(null);
+    private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
+        // Ensure that no id is present on the questionnaire - the FHIR server will generate that for us.
 
-        //questionnaire.setStatus(QuestionnaireStatus.DRAFT);
+        var updatedQuestions = Optional.ofNullable(questionnaire.questions()).map(questions -> questions
+                .stream()
+                .map(q -> q.linkId() == null ?
+                        new QuestionModel(
+                                IdType.newRandomUuid().getValueAsString(),
+                                q.text(),
+                                q.abbreviation(),
+                                q.helperText(),
+                                q.required(),
+                                q.questionType(),
+                                q.measurementType(),
+                                q.options(),
+                                q.enableWhens(),
+                                q.thresholds(),
+                                q.subQuestions(),
+                                q.deprecated()
+                        ) : q
+                ).toList()).orElse(null);
 
-        // add unique id to question(s) and call-to-action.
-        if (questionnaire.getQuestions() != null) {
-            questionnaire.getQuestions().stream().filter(q -> q.getLinkId() == null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
-        }
-        if (questionnaire.getCallToAction() != null) {
-            questionnaire.getCallToAction().setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
-        }
+        var callToAction = questionnaire.callToAction();
+
+        return QuestionnaireModel.builder()
+                .id(null)
+                .questions(updatedQuestions)
+                .callToAction(callToAction != null && callToAction.linkId() == null ?
+                        new QuestionModel(
+                                Systems.CALL_TO_ACTION_LINK_ID,
+                                callToAction.text(),
+                                callToAction.abbreviation(),
+                                callToAction.helperText(),
+                                callToAction.required(),
+                                callToAction.questionType(),
+                                callToAction.measurementType(),
+                                callToAction.options(),
+                                callToAction.enableWhens(),
+                                callToAction.thresholds(),
+                                callToAction.subQuestions(),
+                                callToAction.deprecated()
+                        ) : null)
+                .build();
+
     }
+
 
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException, AccessValidationException {
 
@@ -94,25 +126,48 @@ public class QuestionnaireService extends AccessValidatingService {
         validateStatusChangeIsLegal(questionnaire, updatedStatus);
 
         // Update questionnaire
-        QuestionnaireModel questionnaireModel = fhirMapper.mapQuestionnaire(questionnaire);
-        updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
+        var questionnaireModel = fhirMapper.mapQuestionnaire(questionnaire);
+        var updateQuestionnaireModel = updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(questionnaireModel));
+        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
     }
 
-    private void updateQuestionnaireModel(QuestionnaireModel questionnaireModel, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) {
-        // make sure all question(s) and call-to-action has a unique id
-        updatedQuestions.stream().filter(q -> q.getLinkId() == null).forEach(q -> q.setLinkId(IdType.newRandomUuid().getValueAsString()));
-        if (updatedCallToAction.getLinkId() == null) {
-            updatedCallToAction.setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
-        }
+    private QuestionnaireModel updateQuestionnaireModel(
+            QuestionnaireModel questionnaireModel,
+            String updatedTitle,
+            String updatedDescription,
+            String updatedStatus,
+            List<QuestionModel> updatedQuestions,
+            QuestionModel updatedCallToAction
+    ) {
+        // Ensure all questions have a unique ID
+        List<QuestionModel> processedQuestions = updatedQuestions.stream()
+                .map(q -> q.linkId() == null
+                                ? new QuestionModel(
+                                IdType.newRandomUuid().getValueAsString(), q.text(), q.abbreviation(), q.helperText(),
+                                q.required(), q.questionType(), q.measurementType(), q.options(),
+                                q.enableWhens(), q.thresholds(), q.subQuestions(), q.deprecated()
+                        ) : q
+                ).toList();
 
-        questionnaireModel.setTitle(updatedTitle);
-        questionnaireModel.setDescription(updatedDescription);
-        questionnaireModel.setStatus(QuestionnaireStatus.valueOf(updatedStatus));
-        questionnaireModel.setQuestions(updatedQuestions);
-        questionnaireModel.setCallToAction(updatedCallToAction);
+        // Ensure call-to-action has a unique ID
+        QuestionModel processedCallToAction = updatedCallToAction.linkId() == null
+                ? new QuestionModel(
+                Systems.CALL_TO_ACTION_LINK_ID, updatedCallToAction.text(), updatedCallToAction.abbreviation(),
+                updatedCallToAction.helperText(), updatedCallToAction.required(), updatedCallToAction.questionType(),
+                updatedCallToAction.measurementType(), updatedCallToAction.options(), updatedCallToAction.enableWhens(),
+                updatedCallToAction.thresholds(), updatedCallToAction.subQuestions(), updatedCallToAction.deprecated()
+        ) : updatedCallToAction;
+
+
+        return QuestionnaireModel.from(questionnaireModel)
+                .title(updatedTitle)
+                .description(updatedDescription)
+                .status(QuestionnaireStatus.valueOf(updatedStatus))
+                .questions(processedQuestions)
+                .callToAction(processedCallToAction)
+                .build();
     }
 
     private void validateStatusChangeIsLegal(Questionnaire questionnaire, String updatedStatus) throws ServiceException {

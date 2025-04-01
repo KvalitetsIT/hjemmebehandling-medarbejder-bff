@@ -178,7 +178,7 @@ public class QuestionnaireControllerTest {
         request.setQuestions(List.of(questionDto));
 
         QuestionModel questionModel = new QuestionModel();
-        Mockito.when(dtoMapper.mapQuestionDto(questionDto)).thenReturn(questionModel);
+        Mockito.when(dtoMapper.mapQuestion(questionDto)).thenReturn(questionModel);
 
         Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(qualifyId, null, null, null, List.of(questionModel), null);
 

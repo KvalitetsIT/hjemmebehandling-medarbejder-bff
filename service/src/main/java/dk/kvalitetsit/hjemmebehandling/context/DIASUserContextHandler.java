@@ -37,7 +37,7 @@ public class DIASUserContextHandler implements IUserContextHandler {
             String sorid = jwt.getClaim(DIASUserContextHandler.SOR_ID).asString();
             context.setOrgId(Optional.ofNullable(sorid));
             Optional<Organization> organization = client.lookupOrganizationBySorCode(sorid);
-            organization.ifPresent(value -> context.setOrgName(Optional.ofNullable(value.getName())));
+            organization.ifPresent(value -> context.setOrgName(Optional.ofNullable(value.name())));
         }
 
         context.setUserId(Optional.of(jwt.getClaim(DIASUserContextHandler.REGIONS_ID)).map(Claim::asString));

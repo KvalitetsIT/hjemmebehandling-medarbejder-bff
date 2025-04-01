@@ -1,58 +1,43 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PrimaryContactModel {
-
-    private ContactDetailsModel contactDetails;
-    private String name;
-    /**
-     * How the primary contact relates to the patient. It may be mother, brother, friend etc.
-     */
-    private String affiliation;
-
-    /**
-     * The id of the organisation which this primary contacts is associated
-     */
-    private String organisation;
-
-    @Override
-    public String toString() {
-        return "PrimaryContactMdeol{" +
-                "contactDetails=" + contactDetails +
-                ", name='" + name + '\'' +
-                ", affiliation='" + affiliation + '\'' +
-                ", organisation='" + organisation + '\'' +
-                '}';
+public record PrimaryContactModel(
+        ContactDetailsModel contactDetails,
+        String name,
+        String affiliation,
+        String organisation
+) {
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public String getOrganisation() {
-        return organisation;
-    }
+    public static class Builder {
+        private ContactDetailsModel contactDetails;
+        private String name;
+        private String affiliation;
+        private String organisation;
 
-    public void setOrganisation(String organisation) {
-        this.organisation = organisation;
-    }
+        public Builder contactDetails(ContactDetailsModel contactDetails) {
+            this.contactDetails = contactDetails;
+            return this;
+        }
 
-    public String getAffiliation() {
-        return affiliation;
-    }
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
 
-    public void setAffiliation(String affiliation) {
-        this.affiliation = affiliation;
-    }
+        public Builder affiliation(String affiliation) {
+            this.affiliation = affiliation;
+            return this;
+        }
 
-    public String getName() {
-        return name;
-    }
+        public Builder organisation(String organisation) {
+            this.organisation = organisation;
+            return this;
+        }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public ContactDetailsModel getContactDetails() {
-        return contactDetails;
-    }
-
-    public void setContactDetails(ContactDetailsModel contactDetails) {
-        this.contactDetails = contactDetails;
+        public PrimaryContactModel build() {
+            return new PrimaryContactModel(contactDetails, name, affiliation, organisation);
+        }
     }
 }

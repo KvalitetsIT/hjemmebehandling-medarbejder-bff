@@ -3,137 +3,119 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class QuestionModel {
-    private String linkId;
-    private String text;
-    private String abbreviation;
-    private String helperText;
-    private boolean required;
-    private QuestionType questionType;
-    private MeasurementTypeModel measurementType;
-    private List<Option> options;
-    private List<EnableWhen> enableWhens;
-    private List<ThresholdModel> thresholds;
+public record QuestionModel(
+        String linkId,
+        String text,
+        String abbreviation,
+        String helperText,
+        boolean required,
+        QuestionType questionType,
+        MeasurementTypeModel measurementType,
+        List<Option> options,
+        List<EnableWhen> enableWhens,
+        List<ThresholdModel> thresholds,
+        List<QuestionModel> subQuestions,
+        boolean deprecated
+) {
 
-    private List<QuestionModel> subQuestions;
-    private boolean deprecated;
-
-    public boolean isDeprecated() {
-        return deprecated;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public void setDeprecated(boolean deprecated) {
-        this.deprecated = deprecated;
-    }
+    public static class Builder {
+        private String linkId;
+        private String text;
+        private String abbreviation;
+        private String helperText;
+        private boolean required;
+        private QuestionType questionType;
+        private MeasurementTypeModel measurementType;
+        private List<Option> options = new ArrayList<>();
+        private List<EnableWhen> enableWhens = new ArrayList<>();
+        private List<ThresholdModel> thresholds = new ArrayList<>();
+        private List<QuestionModel> subQuestions = new ArrayList<>();
+        private boolean deprecated;
 
-    public String getLinkId() {
-        return linkId;
-    }
-
-    public void setLinkId(String linkId) {
-        this.linkId = linkId;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public String getAbbreviation() {
-        return abbreviation;
-    }
-
-    public void setAbbreviation(String abbreviation) {
-        this.abbreviation = abbreviation;
-    }
-
-    public String getHelperText() {
-        return helperText;
-    }
-
-    public void setHelperText(String helperText) {
-        this.helperText = helperText;
-    }
-
-    public boolean isRequired() {
-        return required;
-    }
-
-    public void setRequired(boolean required) {
-        this.required = required;
-    }
-
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public void setQuestionType(QuestionType questionType) {
-        this.questionType = questionType;
-    }
-
-    public MeasurementTypeModel getMeasurementType() {
-        return measurementType;
-    }
-
-    public void setMeasurementType(MeasurementTypeModel measurementType) {
-        this.measurementType = measurementType;
-    }
-
-    public List<Option> getOptions() {
-        return options;
-    }
-
-    public void setOptions(List<Option> options) {
-        this.options = options;
-    }
-
-    public List<EnableWhen> getEnableWhens() {
-        return enableWhens;
-    }
-
-    public void setEnableWhens(List<EnableWhen> enableWhens) {
-        this.enableWhens = enableWhens;
-    }
-
-    public List<ThresholdModel> getThresholds() {
-        return thresholds;
-    }
-
-    public void setThresholds(List<ThresholdModel> thresholds) {
-        this.thresholds = thresholds;
-    }
-
-    public List<QuestionModel> getSubQuestions() {
-        return subQuestions;
-    }
-
-    public void setSubQuestions(List<QuestionModel> subQuestions) {
-        this.subQuestions = subQuestions;
-    }
-
-    public static class EnableWhen {
-        private AnswerModel answer; // contains linkId for another question and desired answer[type,value]
-        private EnableWhenOperator operator;
-
-        public AnswerModel getAnswer() {
-            return answer;
+        public Builder linkId(String linkId) {
+            this.linkId = linkId;
+            return this;
         }
 
-        public void setAnswer(AnswerModel answer) {
-            this.answer = answer;
+        public Builder text(String text) {
+            this.text = text;
+            return this;
         }
 
-        public EnableWhenOperator getOperator() {
-            return operator;
+        public Builder abbreviation(String abbreviation) {
+            this.abbreviation = abbreviation;
+            return this;
         }
 
-        public void setOperator(EnableWhenOperator operator) {
-            this.operator = operator;
+        public Builder helperText(String helperText) {
+            this.helperText = helperText;
+            return this;
+        }
+
+        public Builder required(boolean required) {
+            this.required = required;
+            return this;
+        }
+
+        public Builder questionType(QuestionType questionType) {
+            this.questionType = questionType;
+            return this;
+        }
+
+        public Builder measurementType(MeasurementTypeModel measurementType) {
+            this.measurementType = measurementType;
+            return this;
+        }
+
+        public Builder options(List<Option> options) {
+            this.options = options != null ? new ArrayList<>(options) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder enableWhens(List<EnableWhen> enableWhens) {
+            this.enableWhens = enableWhens != null ? new ArrayList<>(enableWhens) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder thresholds(List<ThresholdModel> thresholds) {
+            this.thresholds = thresholds != null ? new ArrayList<>(thresholds) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder subQuestions(List<QuestionModel> subQuestions) {
+            this.subQuestions = subQuestions != null ? new ArrayList<>(subQuestions) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder deprecated(boolean deprecated) {
+            this.deprecated = deprecated;
+            return this;
+        }
+
+        public QuestionModel build() {
+            return new QuestionModel(
+                    linkId, text, abbreviation, helperText, required, questionType, measurementType,
+                    options, enableWhens, thresholds, subQuestions, deprecated
+            );
         }
     }
+
+    public QuestionModel asDeprecated() {
+        return new QuestionModel(
+                linkId, text, abbreviation, helperText, required, questionType, measurementType,
+                options, enableWhens, thresholds, subQuestions, true // Mark as deprecated
+        );
+    }
+
+    public record EnableWhen(
+            AnswerModel answer,
+            EnableWhenOperator operator
+    ) { }
 }

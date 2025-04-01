@@ -2,8 +2,6 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -39,16 +37,15 @@ public class FhirMapperTest {
     private DateProvider dateProvider;
 
     private QuestionModel buildCallToAction(QuestionModel questionModel) {
-        QuestionModel callToAction = buildCallToAction();
+        AnswerModel answer = new AnswerModel(questionModel.linkId(), Boolean.TRUE.toString(), AnswerType.BOOLEAN, null);
 
-        AnswerModel answer = new AnswerModel(questionModel.getLinkId(), Boolean.TRUE.toString(), AnswerType.BOOLEAN, null);
+        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen(answer, EnableWhenOperator.EQUAL);
 
-        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
-        enableWhen.setAnswer(answer);
-        enableWhen.setOperator(EnableWhenOperator.EQUAL);
+        return buildCallToAction(List.of(enableWhen));
+    }
 
-        callToAction.setEnableWhens(List.of(enableWhen));
-        return callToAction;
+    private QuestionModel buildCallToAction(List<QuestionModel.EnableWhen> enableWhens) {
+        return buildQuestionModel(QuestionType.DISPLAY, "call to action text");
     }
 
     private QuestionModel buildCallToAction() {
@@ -124,34 +121,22 @@ public class FhirMapperTest {
     }
 
     private CarePlanModel buildCarePlanModel() {
-        CarePlanModel carePlanModel = new CarePlanModel();
-
-        carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
-        carePlanModel.setStatus(CarePlanStatus.ACTIVE);
-        carePlanModel.setCreated(Instant.parse("2021-12-07T10:11:12.124Z"));
-        carePlanModel.setPatient(buildPatientModel());
-        carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
-        carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
-        carePlanModel.setSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z"));
-
-        return carePlanModel;
+        return CarePlanModel.builder()
+                .id(new QualifiedId(CAREPLAN_ID_1))
+                .status(CarePlanStatus.ACTIVE)
+                .created(Instant.parse("2021-12-07T10:11:12.124Z"))
+                .patient(buildPatientModel())
+                .questionnaires(List.of(buildQuestionnaireWrapperModel()))
+                .planDefinitions(List.of(buildPlanDefinitionModel()))
+                .satisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")).build();
     }
 
     private ContactDetailsModel buildContactDetailsModel() {
-        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
-
-        contactDetailsModel.setStreet("Fiskergade");
-
-        return contactDetailsModel;
+        return ContactDetailsModel.builder().street("Fiskergade").build();
     }
 
     private FrequencyModel buildFrequencyModel() {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        frequencyModel.setWeekdays(List.of(Weekday.FRI));
-        frequencyModel.setTimeOfDay(LocalTime.parse("05:00"));
-
-        return frequencyModel;
+        return new FrequencyModel(List.of(Weekday.FRI), LocalTime.parse("05:00"));
     }
 
     private Organization buildOrganization(String organizationId) {
@@ -207,15 +192,13 @@ public class FhirMapperTest {
     }
 
     private PatientModel buildPatientModel() {
-        PatientModel patientModel = new PatientModel();
-
-        patientModel.setId(new QualifiedId(PATIENT_ID_1));
-        patientModel.setCpr("0101010101");
-        patientModel.setContactDetails(buildContactDetailsModel());
-        patientModel.getPrimaryContact().setContactDetails(buildContactDetailsModel());
-        patientModel.setAdditionalRelativeContactDetails(List.of(buildContactDetailsModel()));
-
-        return patientModel;
+        return PatientModel.builder()
+                .id(new QualifiedId(PATIENT_ID_1))
+                .cpr("0101010101")
+                .contactDetails(buildContactDetailsModel())
+                .primaryContact(PrimaryContactModel.builder().contactDetails(buildContactDetailsModel()).build())
+                .additionalRelativeContactDetails(List.of(buildContactDetailsModel()))
+                .build();
     }
 
     private PlanDefinition buildPlanDefinition(String planDefinitionId, String questionnaireId) {
@@ -248,12 +231,10 @@ public class FhirMapperTest {
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
-
-        planDefinitionModel.setId(new QualifiedId(PLANDEFINITION_ID_1));
-        planDefinitionModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
-
-        return planDefinitionModel;
+        return PlanDefinitionModel.builder()
+                .id(new QualifiedId(PLANDEFINITION_ID_1))
+                .questionnaires(List.of(buildQuestionnaireWrapperModel()))
+                .build();
     }
 
     private Questionnaire.QuestionnaireItemComponent buildQuestionItem(String linkId, Questionnaire.QuestionnaireItemType itemType) {
@@ -301,48 +282,51 @@ public class FhirMapperTest {
 
 
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
-        QuestionnaireResponseModel model = new QuestionnaireResponseModel();
-
-        model.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
-        model.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
-        model.setCarePlanId(new QualifiedId(CAREPLAN_ID_1));
-        model.setAuthorId(new QualifiedId(PATIENT_ID_1));
-        model.setSourceId(new QualifiedId(PATIENT_ID_1));
-
-        model.setAnswered(Instant.parse("2021-11-03T00:00:00Z"));
-
-        model.setQuestionAnswerPairs(new ArrayList<>());
-
-        QuestionModel question = new QuestionModel();
+        QuestionModel question = buildQuestionModel();
         AnswerModel answer = new AnswerModel(null, "2", AnswerType.INTEGER, null);
-
-        model.getQuestionAnswerPairs().add(new QuestionAnswerPairModel(question, answer));
-
-        model.setExaminationStatus(ExaminationStatus.NOT_EXAMINED);
-        model.setTriagingCategory(TriagingCategory.GREEN);
-
-        PatientModel patientModel = new PatientModel();
-        patientModel.setId(new QualifiedId(PATIENT_ID_1));
-        model.setPatient(patientModel);
-
-        return model;
+        return QuestionnaireResponseModel.builder()
+                .id(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1))
+                .questionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .carePlanId(new QualifiedId(CAREPLAN_ID_1))
+                .authorId(new QualifiedId(PATIENT_ID_1))
+                .sourceId(new QualifiedId(PATIENT_ID_1))
+                .answered(Instant.parse("2021-11-03T00:00:00Z"))
+                .questionAnswerPairs(new ArrayList<>())
+                .patient(PatientModel.builder().id(new QualifiedId(PATIENT_ID_1)).build())
+                .examinationStatus(ExaminationStatus.NOT_EXAMINED)
+                .triagingCategory(TriagingCategory.GREEN)
+                .questionAnswerPairs(List.of(new QuestionAnswerPairModel(question, answer)))
+                .build();
     }
 
     private QuestionModel buildQuestionModel() {
-        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", "dagsform");
+        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", "dagsform", null);
+    }
+
+    private QuestionModel buildQuestionModel(QuestionType type, String text, List<QuestionModel.EnableWhen> enableWhens) {
+        return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", null, enableWhens);
     }
 
     private QuestionModel buildQuestionModel(QuestionType type, String text) {
         return buildQuestionModel(QuestionType.BOOLEAN, "Hvordan har du det?", null);
     }
 
-    private QuestionModel buildQuestionModel(QuestionType type, String text, String abbreviation) {
-        QuestionModel questionModel = new QuestionModel();
-        questionModel.setText(text);
-        questionModel.setAbbreviation(abbreviation);
-        questionModel.setQuestionType(type);
 
-        return questionModel;
+    private QuestionModel buildQuestionModel(QuestionType type, String text, String abbreviation, List<QuestionModel.EnableWhen> enableWhens) {
+        return new QuestionModel(
+                null,
+                text,
+                abbreviation,
+                null,
+                false,
+                type,
+                null,
+                null,
+                enableWhens,
+                null,
+                null,
+                false
+        );
     }
 
     private Questionnaire buildQuestionnaire(String questionnaireId) {
@@ -361,23 +345,18 @@ public class FhirMapperTest {
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
-
-        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
-        questionnaireModel.setStatus(QuestionnaireStatus.ACTIVE);
-        questionnaireModel.setQuestions(List.of(buildQuestionModel()));
-
-        return questionnaireModel;
+        return QuestionnaireModel.builder()
+                .id(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .status(QuestionnaireStatus.ACTIVE)
+                .questions(List.of(buildQuestionModel())).build();
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel() {
-        QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
-
-        questionnaireWrapperModel.setQuestionnaire(buildQuestionnaireModel());
-        questionnaireWrapperModel.setFrequency(buildFrequencyModel());
-        questionnaireWrapperModel.setSatisfiedUntil(Instant.parse("2021-12-08T10:11:12.124Z"));
-
-        return questionnaireWrapperModel;
+        return QuestionnaireWrapperModel.builder()
+                .questionnaire(buildQuestionnaireModel())
+                .frequency(buildFrequencyModel())
+                .satisfiedUntil(Instant.parse("2021-12-08T10:11:12.124Z"))
+                .build();
     }
 
     private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patiientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {

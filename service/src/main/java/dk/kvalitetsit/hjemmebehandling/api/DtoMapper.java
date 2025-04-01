@@ -23,13 +23,12 @@ import java.util.Optional;
 @Component
 public class DtoMapper {
     private Option mapOptionModel(dk.kvalitetsit.hjemmebehandling.model.Option o) {
-        return new Option().option(o.getOption()).comment(o.getComment());
+        return new Option().option(o.option()).comment(o.comment());
     }
 
     public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
         CarePlanModel carePlanModel = new CarePlanModel();
         mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
-
         carePlanDto.getTitle().ifPresent(carePlanModel::setTitle);
         carePlanDto.getStatus().ifPresent(status -> carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, status)));
         carePlanDto.getCreated().map(OffsetDateTime::toInstant).ifPresent(carePlanModel::setCreated);
@@ -52,7 +51,7 @@ public class DtoMapper {
         carePlanDto.setStartDate(Optional.ofNullable(carePlan.getStartDate()).map(this::mapInstant));
         carePlanDto.setEndDate(Optional.ofNullable(carePlan.getEndDate()).map(this::mapInstant));
         carePlanDto.setEndDate(Optional.ofNullable(carePlan.getEndDate()).map(this::mapInstant));
-        carePlanDto.setPatientDto(Optional.ofNullable(carePlan.getPatient()).map(this::mapPatientModel));
+        carePlanDto.setPatientDto(Optional.ofNullable(carePlan.patient()).map(this::mapPatientModel));
         carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperModel).toList());
         carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(this::mapPlanDefinitionModel).toList());
         carePlanDto.setDepartmentName(Optional.ofNullable(carePlan.getDepartmentName()));
@@ -65,8 +64,8 @@ public class DtoMapper {
 
         contactDetails.getCountry().ifPresent(contactDetailsModel::setCountry);
         contactDetails.getCity().ifPresent(contactDetailsModel::setCity);
-        contactDetails.getPrimaryPhone().ifPresent(contactDetailsModel::setPrimaryPhone);
-        contactDetails.getSecondaryPhone().ifPresent(contactDetailsModel::setSecondaryPhone);
+        contactDetails.primaryPhone().ifPresent(contactDetailsModel::setPrimaryPhone);
+        contactDetails.secondaryPhone().ifPresent(contactDetailsModel::setSecondaryPhone);
         contactDetails.getPostalCode().ifPresent(contactDetailsModel::setPostalCode);
         contactDetails.getStreet().ifPresent(contactDetailsModel::setStreet);
 
@@ -78,8 +77,8 @@ public class DtoMapper {
 
         contactDetailsDto.setCountry(Optional.ofNullable(contactDetails.getCountry()));
         contactDetailsDto.setCity(Optional.ofNullable(contactDetails.getCity()));
-        contactDetailsDto.setPrimaryPhone(Optional.ofNullable(contactDetails.getPrimaryPhone()));
-        contactDetailsDto.setSecondaryPhone(Optional.ofNullable(contactDetails.getSecondaryPhone()));
+        contactDetailsDto.setPrimaryPhone(Optional.ofNullable(contactDetails.primaryPhone()));
+        contactDetailsDto.setSecondaryPhone(Optional.ofNullable(contactDetails.secondaryPhone()));
         contactDetailsDto.setPostalCode(Optional.ofNullable(contactDetails.getPostalCode()));
         contactDetailsDto.setStreet(Optional.ofNullable(contactDetails.getStreet()));
 
@@ -140,9 +139,9 @@ public class DtoMapper {
         patient.getFamilyName().ifPresent(patientModel::setFamilyName);
         patient.getGivenName().ifPresent(patientModel::setGivenName);
         patient.getPatientContactDetails().map(this::mapContactDetailsDto).ifPresent(patientModel::setContactDetails);
-        patient.getPrimaryRelativeName().ifPresent(x -> patientModel.getPrimaryContact().setName(x));
-        patient.getPrimaryRelativeAffiliation().ifPresent(x -> patientModel.getPrimaryContact().setAffiliation(x));
-        patient.getPrimaryRelativeContactDetails().map(this::mapContactDetailsDto).ifPresent(x -> patientModel.getPrimaryContact().setContactDetails(x));
+        patient.getPrimaryRelativeName().ifPresent(x -> patientModel.primaryContact().setName(x));
+        patient.getPrimaryRelativeAffiliation().ifPresent(x -> patientModel.primaryContact().setAffiliation(x));
+        patient.getPrimaryRelativeContactDetails().map(this::mapContactDetailsDto).ifPresent(x -> patientModel.primaryContact().setContactDetails(x));
         Optional.ofNullable(patient.getAdditionalRelativeContactDetails()).ifPresent(x -> patientModel.setAdditionalRelativeContactDetails(x.stream().map(this::mapContactDetailsDto).toList()));
 
         return patientModel;
@@ -154,10 +153,10 @@ public class DtoMapper {
         patientDto.setFamilyName(Optional.ofNullable(patient.getFamilyName()));
         patientDto.setGivenName(Optional.ofNullable(patient.getGivenName()));
         patientDto.setCustomUserName(Optional.ofNullable(patient.getCustomUserName()));
-        Optional.ofNullable(patient.getContactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPatientContactDetails(Optional.of(x)));
-        patientDto.setPrimaryRelativeName(Optional.ofNullable(patient.getPrimaryContact().getName()));
-        patientDto.setPrimaryRelativeAffiliation(Optional.ofNullable(patient.getPrimaryContact().getAffiliation()));
-        Optional.ofNullable(patient.getPrimaryContact().getContactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPrimaryRelativeContactDetails(Optional.of(x)));
+        Optional.ofNullable(patient.contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPatientContactDetails(Optional.of(x)));
+        patientDto.setPrimaryRelativeName(Optional.ofNullable(patient.primaryContact().name()));
+        patientDto.setPrimaryRelativeAffiliation(Optional.ofNullable(patient.primaryContact().getAffiliation()));
+        Optional.ofNullable(patient.primaryContact().contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPrimaryRelativeContactDetails(Optional.of(x)));
         Optional.ofNullable(patient.getAdditionalRelativeContactDetails()).map(x -> x.stream().map(this::mapContactDetailsModel).toList()).ifPresent(patientDto::setAdditionalRelativeContactDetails);
         return patientDto;
     }
@@ -165,7 +164,7 @@ public class DtoMapper {
     public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
         mapBaseAttributesToModel(planDefinitionModel, planDefinitionDto, ResourceType.PlanDefinition);
-        planDefinitionDto.getName().ifPresent(planDefinitionModel::setName);
+        planDefinitionDto.name().ifPresent(planDefinitionModel::setName);
         planDefinitionDto.getTitle().ifPresent(planDefinitionModel::setTitle);
         planDefinitionDto.getStatus().map(x -> Enum.valueOf(PlanDefinitionStatus.class, x)).ifPresent(planDefinitionModel::setStatus);
         planDefinitionDto.getCreated().map(OffsetDateTime::toInstant).ifPresent(planDefinitionModel::setCreated);
@@ -175,8 +174,8 @@ public class DtoMapper {
 
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-        planDefinitionDto.setId(Optional.ofNullable(planDefinitionModel.getId().toString()));
-        planDefinitionDto.setName(Optional.ofNullable(planDefinitionModel.getName()));
+        planDefinitionDto.setId(Optional.ofNullable(planDefinitionModel.getId()).map(Object::toString));
+        planDefinitionDto.setName(Optional.ofNullable(planDefinitionModel.name()));
         planDefinitionDto.setTitle(Optional.ofNullable(planDefinitionModel.getTitle()));
         planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.getStatus().toString()));
         planDefinitionDto.setCreated(Optional.ofNullable(planDefinitionModel.getCreated()).map(this::mapInstant));
@@ -226,8 +225,8 @@ public class DtoMapper {
     public PersonDto mapPersonModel(PersonModel person) {
         PersonDto personDto = new PersonDto();
         personDto.setCpr(Optional.ofNullable(person.getIdentifier().getId()));
-        personDto.setFamilyName(Optional.ofNullable(person.getName().getFamily()));
-        personDto.setGivenName(Optional.of(String.join(" ", person.getName().getGiven())));
+        personDto.setFamilyName(Optional.ofNullable(person.name().getFamily()));
+        personDto.setGivenName(Optional.of(String.join(" ", person.name().getGiven())));
         personDto.setBirthDate(Optional.ofNullable(person.getBirthDate()));
         personDto.setDeceasedBoolean(Optional.of(person.isDeceasedBoolean()));
         personDto.setGender(Optional.ofNullable(person.getGender()));
@@ -244,20 +243,20 @@ public class DtoMapper {
         mapBaseAttributesToModel(questionnaireModel, questionnaireDto, ResourceType.Questionnaire);
         questionnaireDto.getTitle().ifPresent(questionnaireModel::setTitle);
         questionnaireDto.getStatus().ifPresent(status -> questionnaireModel.setStatus(QuestionnaireStatus.valueOf(status)));
-        questionnaireDto.getCallToAction().map(this::mapQuestionDto).ifPresent(questionnaireModel::setCallToAction);
-        Optional.ofNullable(questionnaireDto.getQuestions()).ifPresent((questions) -> questionnaireModel.setQuestions(questions.stream().map(this::mapQuestionDto).toList()));
+        questionnaireDto.getCallToAction().map(this::mapQuestion).ifPresent(questionnaireModel::setCallToAction);
+        Optional.ofNullable(questionnaireDto.getQuestions()).ifPresent((questions) -> questionnaireModel.setQuestions(questions.stream().map(this::mapQuestion).toList()));
         return questionnaireModel;
     }
 
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
-        questionnaireDto.setId(Optional.ofNullable(questionnaireModel.getId().toString()));
+        questionnaireDto.setId(Optional.ofNullable(questionnaireModel.getId()).map(Object::toString));
         questionnaireDto.setTitle(Optional.ofNullable(questionnaireModel.getTitle()));
         questionnaireDto.setStatus(Optional.ofNullable(questionnaireModel.getStatus().toString()));
         questionnaireDto.setVersion(Optional.ofNullable(questionnaireModel.getVersion()));
         questionnaireDto.setLastUpdated(Optional.ofNullable(questionnaireModel.getLastUpdated()).map(this::mapDate));
-        Optional.ofNullable(questionnaireModel.getQuestions()).map(x -> x.stream().map(this::mapQuestionModel).toList()).ifPresent(questionnaireDto::setQuestions);
-        questionnaireDto.setCallToAction(Optional.ofNullable(questionnaireModel.getCallToAction()).map(this::mapQuestionModel));
+        Optional.ofNullable(questionnaireModel.getQuestions()).map(x -> x.stream().map(this::mapQuestion).toList()).ifPresent(questionnaireDto::setQuestions);
+        questionnaireDto.setCallToAction(Optional.ofNullable(questionnaireModel.getCallToAction()).map(this::mapQuestion));
         return questionnaireDto;
     }
 
@@ -291,14 +290,14 @@ public class DtoMapper {
     public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
         questionnaireResponseDto.setId(questionnaireResponseModel.getId().toString());
-        questionnaireResponseDto.setQuestionnaireId(Optional.ofNullable(questionnaireResponseModel.getQuestionnaireId().toString()));
-        questionnaireResponseDto.setCarePlanId(Optional.ofNullable(questionnaireResponseModel.getCarePlanId().toString()));
+        questionnaireResponseDto.setQuestionnaireId(Optional.ofNullable(questionnaireResponseModel.getQuestionnaireId()).map(Object::toString));
+        questionnaireResponseDto.setCarePlanId(Optional.ofNullable(questionnaireResponseModel.getCarePlanId()).map(Object::toString));
         questionnaireResponseDto.setQuestionnaireName(Optional.ofNullable(questionnaireResponseModel.getQuestionnaireName()));
         questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(this::mapQuestionAnswerPairModel).toList());
         questionnaireResponseDto.setAnswered(Optional.ofNullable(questionnaireResponseModel.getAnswered()).map(this::mapInstant));
-        questionnaireResponseDto.setExaminationStatus(Optional.ofNullable(questionnaireResponseModel.getExaminationStatus()).map(this::mapExaminationStatusModel));
-        questionnaireResponseDto.setTriagingCategory(Optional.ofNullable(questionnaireResponseModel.getTriagingCategory()).map(this::mapTriagingCategoryModel));
-        questionnaireResponseDto.setPatient(Optional.ofNullable(questionnaireResponseModel.getPatient()).map(this::mapPatientModel));
+        questionnaireResponseDto.setExaminationStatus(Optional.ofNullable(questionnaireResponseModel.examinationStatus()).map(this::mapExaminationStatusModel));
+        questionnaireResponseDto.setTriagingCategory(Optional.ofNullable(questionnaireResponseModel.triagingCategory()).map(this::mapTriagingCategoryModel));
+        questionnaireResponseDto.setPatient(Optional.ofNullable(questionnaireResponseModel.patient()).map(this::mapPatientModel));
         questionnaireResponseDto.setPlanDefinitionTitle(Optional.ofNullable(questionnaireResponseModel.getPlanDefinitionTitle()));
         return questionnaireResponseDto;
     }
@@ -336,26 +335,13 @@ public class DtoMapper {
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
         QuestionAnswerPairDto questionAnswerPairDto = new QuestionAnswerPairDto();
-        questionAnswerPairDto.setQuestion(Optional.ofNullable(questionAnswerPairModel.getQuestion()).map(this::mapQuestionModel));
+        questionAnswerPairDto.setQuestion(Optional.ofNullable(questionAnswerPairModel.getQuestion()).map(this::mapQuestion));
         questionAnswerPairDto.setAnswer(Optional.of(questionAnswerPairModel.getAnswer()).map(this::mapAnswerModel));
         return questionAnswerPairDto;
     }
 
-    public QuestionModel mapQuestionDto(QuestionDto questionDto) {
-        QuestionModel questionModel = new QuestionModel();
-        questionDto.getLinkId().ifPresent(questionModel::setLinkId);
-        questionDto.getText().ifPresent(questionModel::setText);
-        questionDto.getAbbreviation().ifPresent(questionModel::setAbbreviation);
-        questionDto.getRequired().ifPresent(questionModel::setRequired);
-        questionModel.setOptions(questionDto.getOptions().stream().map(this::mapOptionDto).toList());
-        questionDto.getQuestionType().map(this::mapQuestionTypeDto).ifPresent(questionModel::setQuestionType);
-        questionModel.setEnableWhens(questionDto.getEnableWhen().stream().map(this::mapEnableWhenDto).toList());
-        questionDto.getHelperText().ifPresent(questionModel::setHelperText);
-        questionDto.getMeasurementType().map(this::mapMeasurementTypeDto).ifPresent(questionModel::setMeasurementType);
-        questionModel.setThresholds(questionDto.getThresholds().stream().map(this::mapThresholdDto).toList());
-        questionModel.setSubQuestions(questionDto.getSubQuestions().stream().map(this::mapQuestionDto).toList());
-        return questionModel;
-    }
+
+
 
     private QuestionType mapQuestionTypeDto(QuestionDto.QuestionTypeEnum questionType) {
         return switch (questionType) {
@@ -370,17 +356,17 @@ public class DtoMapper {
     }
 
     private dk.kvalitetsit.hjemmebehandling.model.Option mapOptionDto(@Valid Option option) {
-        var model = new dk.kvalitetsit.hjemmebehandling.model.Option();
-        option.getComment().ifPresent(model::setComment);
-        option.getOption().ifPresent(model::setOption);
-        return model;
+        return new dk.kvalitetsit.hjemmebehandling.model.Option(
+                option.getComment().orElse(null),
+                option.getOption().orElse(null)
+        );
     }
 
     private QuestionModel.EnableWhen mapEnableWhenDto(@Valid EnableWhen enableWhen) {
-        var result = new QuestionModel.EnableWhen();
-        enableWhen.getAnswer().map(this::mapAnswerDto).ifPresent(result::setAnswer);
-        enableWhen.getOperator().map(this::mapEnableWhenOperatorModel).ifPresent(result::setOperator);
-        return result;
+        return new QuestionModel.EnableWhen(
+                enableWhen.getAnswer().map(this::mapAnswerDto).orElse(null),
+                enableWhen.getOperator().map(this::mapEnableWhenOperatorModel).orElse(null)
+        );
     }
 
     private AnswerModel mapAnswerDto(@Valid AnswerDto answer) {
@@ -422,30 +408,49 @@ public class DtoMapper {
     }
 
 
-    private QuestionDto mapQuestionModel(QuestionModel questionModel) {
+    private QuestionDto mapQuestion(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
-        questionDto.setDeprecated(Optional.of(questionModel.isDeprecated()));
-        questionDto.setLinkId(Optional.ofNullable(questionModel.getLinkId()));
-        questionDto.setText(Optional.ofNullable(questionModel.getText()));
-        questionDto.setAbbreviation(Optional.ofNullable(questionModel.getAbbreviation()));
-        questionDto.setRequired(Optional.of(questionModel.isRequired()));
-        questionDto.setOptions(questionModel.getOptions() != null ? questionModel.getOptions().stream().map(this::mapOptionModel).toList() : null);
-        questionDto.setQuestionType(Optional.ofNullable(questionModel.getQuestionType()).map(this::mapQuestionTypeModel));
-        questionDto.setEnableWhen(questionModel.getEnableWhens() != null ? questionModel.getEnableWhens().stream().map(this::mapEnableWhenModel).toList() : null);
-        questionDto.setHelperText(Optional.ofNullable(questionModel.getHelperText()));
-        questionDto.setMeasurementType(Optional.ofNullable(questionModel.getMeasurementType()).map(this::mapMeasurementTypeModel));
-        Optional.ofNullable(questionModel.getThresholds()).ifPresent(x -> questionDto.setThresholds(x.stream().map(this::mapThresholdModel).toList()));
+        questionDto.setDeprecated(Optional.of(questionModel.deprecated()));
+        questionDto.setLinkId(Optional.ofNullable(questionModel.linkId()));
+        questionDto.setText(Optional.ofNullable(questionModel.text()));
+        questionDto.setAbbreviation(Optional.ofNullable(questionModel.abbreviation()));
+        questionDto.setRequired(Optional.of(questionModel.required()));
+        questionDto.setOptions(questionModel.options() != null ? questionModel.options().stream().map(this::mapOptionModel).toList() : null);
+        questionDto.setQuestionType(Optional.ofNullable(questionModel.questionType()).map(this::mapQuestionTypeModel));
+        questionDto.setEnableWhen(questionModel.enableWhens() != null ? questionModel.enableWhens().stream().map(this::mapEnableWhenModel).toList() : null);
+        questionDto.setHelperText(Optional.ofNullable(questionModel.helperText()));
+        questionDto.setMeasurementType(Optional.ofNullable(questionModel.measurementType()).map(this::mapMeasurementTypeModel));
+        Optional.ofNullable(questionModel.thresholds())
+                .ifPresent(x -> questionDto.setThresholds(x.stream().map(this::mapThresholdModel).toList()));
 
-        if (questionModel.getQuestionType() == QuestionType.GROUP && questionModel.getSubQuestions() != null) {
-            questionDto.setSubQuestions(questionModel.getSubQuestions().stream().map(this::mapQuestionModel).toList());
+        if (questionModel.questionType() == QuestionType.GROUP && questionModel.subQuestions() != null) {
+            questionDto.setSubQuestions(questionModel.subQuestions().stream().map(this::mapQuestion).toList());
         }
+
         return questionDto;
+    }
+
+    public QuestionModel mapQuestion(QuestionDto questionDto) {
+        return new QuestionModel(
+                questionDto.getLinkId().orElse(null),
+                questionDto.getText().orElse(null),
+                questionDto.getAbbreviation().orElse(null),
+                questionDto.getHelperText().orElse(null),
+                questionDto.getRequired().orElse(false),
+                questionDto.getQuestionType().map(this::mapQuestionTypeDto).orElse(null),
+                questionDto.getMeasurementType().map(this::mapMeasurementTypeDto).orElse(null),
+                questionDto.getOptions().stream().map(this::mapOptionDto).toList(),
+                questionDto.getEnableWhen().stream().map(this::mapEnableWhenDto).toList(),
+                questionDto.getThresholds().stream().map(this::mapThresholdDto).toList(),
+                questionDto.getSubQuestions().stream().map(this::mapQuestion).toList(),
+                questionDto.getDeprecated().orElse(null)
+        );
     }
 
     private EnableWhen mapEnableWhenModel(QuestionModel.EnableWhen enableWhen) {
         return new EnableWhen()
-                .answer(Optional.ofNullable(enableWhen.getAnswer()).map(this::mapAnswerModel).orElse(null))
-                .operator(Optional.ofNullable(enableWhen.getOperator()).map(this::mapOperatorModel).orElse(null));
+                .answer(Optional.ofNullable(enableWhen.answer()).map(this::mapAnswerModel).orElse(null))
+                .operator(Optional.ofNullable(enableWhen.operator()).map(this::mapOperatorModel).orElse(null));
     }
 
     private EnableWhen.OperatorEnum mapOperatorModel(EnableWhenOperator operator) {

@@ -63,7 +63,7 @@ public class PatientServiceTest {
 
         var orgId = "";
 
-        PatientModel patientModel = new PatientModel();
+        PatientModel patientModel = PatientModel.builder().build();
         Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientModel);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
@@ -141,8 +141,7 @@ public class PatientServiceTest {
             patient.setName(List.of(patientName));
             inactiveLookup.merge(FhirLookupResult.fromResources(patient));
 
-            PatientModel patientmodel = new PatientModel();
-            patientmodel.setGivenName(name);
+            PatientModel patientmodel = PatientModel.builder().givenName(name).build();
 
             var orgId = "";
             Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientmodel);
@@ -158,7 +157,7 @@ public class PatientServiceTest {
 
         assertEquals(namesInExpectedOrder.size(), result.size());
         for (var i = 0; i < namesInExpectedOrder.size(); i++) {
-            assertEquals(namesInExpectedOrder.get(i), result.get(i).getGivenName());
+            assertEquals(namesInExpectedOrder.get(i), result.get(i).givenName());
         }
     }
 
@@ -207,7 +206,7 @@ public class PatientServiceTest {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, carePlan2, carePlan3, patient);
         Mockito.when(fhirClient.searchPatients(new ArrayList<>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
 
-        PatientModel patientModel = new PatientModel();
+        PatientModel patientModel = PatientModel.builder().build();
         Mockito.when(fhirMapper.mapPatient(patient, "")).thenReturn(patientModel);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 

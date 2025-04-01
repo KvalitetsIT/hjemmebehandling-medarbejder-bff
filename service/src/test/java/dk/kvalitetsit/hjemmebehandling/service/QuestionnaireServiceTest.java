@@ -5,8 +5,8 @@ import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -68,7 +68,7 @@ public class QuestionnaireServiceTest {
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
@@ -90,7 +90,7 @@ public class QuestionnaireServiceTest {
     @Test
     public void getQuestionnaires_success() throws Exception {
         Questionnaire questionnaire = new Questionnaire();
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
 
         Mockito.when(fhirClient.lookupQuestionnairesByStatus(Collections.emptyList())).thenReturn(lookupResult);
@@ -114,20 +114,21 @@ public class QuestionnaireServiceTest {
     public void createQuestionnaire_questionLinkId_isSetToRandomUuid_ifNull() throws Exception {
         String linkId = "This should be ignored by the system as it contains a value";
         String nullLinkId = null; // this should trigger the system to set new random uuid with prefix 'urn:uuid'";
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        questionnaireModel.setQuestions(List.of(buildQuestionModel(linkId), buildQuestionModel(nullLinkId)));
-        questionnaireModel.setCallToAction(buildQuestionModel(nullLinkId));
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder()
+                .questions(List.of(buildQuestionModel(linkId), buildQuestionModel(nullLinkId)))
+                .callToAction(buildQuestionModel(nullLinkId))
+                .build();
         Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
 
         String result = subject.createQuestionnaire(questionnaireModel);
 
         assertEquals("1", result);
-        assertEquals(2, questionnaireModel.getQuestions().size());
-        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().equals(linkId)));
-        assertTrue(questionnaireModel.getQuestions().stream().anyMatch(q -> q.getLinkId().startsWith("urn:uuid")));
-        assertTrue(questionnaireModel.getQuestions().stream().noneMatch(q -> q.getLinkId().equals(nullLinkId)));
-        assertNotNull(questionnaireModel.getCallToAction());
-        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.getCallToAction().getLinkId());
+        assertEquals(2, questionnaireModel.questions().size());
+        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().equals(linkId)));
+        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().startsWith("urn:uuid")));
+        assertTrue(questionnaireModel.questions().stream().noneMatch(q -> q.linkId().equals(nullLinkId)));
+        assertNotNull(questionnaireModel.callToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.callToAction().linkId());
     }
 
     @Test
@@ -135,24 +136,24 @@ public class QuestionnaireServiceTest {
         String newTitle = "new title";
         String newDescription = "new description";
         String newStatus = "ACTIVE";
-        List<QuestionModel> newQuestions = List.of(new QuestionModel());
-        QuestionModel newCallToAction = new QuestionModel();
+        List<QuestionModel> newQuestions = List.of(buildQuestionModel());
+        QuestionModel newCallToAction = buildQuestionModel();
 
         Questionnaire questionnaire = buildQuestionnaire();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
 
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, newTitle, newDescription, newStatus, newQuestions, newCallToAction);
 
-        assertEquals(newTitle, questionnaireModel.getTitle());
-        assertEquals(newDescription, questionnaireModel.getDescription());
-        assertEquals(newStatus, questionnaireModel.getStatus().toString());
-        assertEquals(newQuestions.size(), questionnaireModel.getQuestions().size());
-        assertEquals(newQuestions.getFirst(), questionnaireModel.getQuestions().getFirst());
-        assertEquals(newCallToAction, questionnaireModel.getCallToAction());
+        assertEquals(newTitle, questionnaireModel.title());
+        assertEquals(newDescription, questionnaireModel.description());
+        assertEquals(newStatus, questionnaireModel.status().toString());
+        assertEquals(newQuestions.size(), questionnaireModel.questions().size());
+        assertEquals(newQuestions.getFirst(), questionnaireModel.questions().getFirst());
+        assertEquals(newCallToAction, questionnaireModel.callToAction());
     }
 
     @Test
@@ -164,16 +165,16 @@ public class QuestionnaireServiceTest {
         Questionnaire questionnaire = buildQuestionnaire();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToAction);
 
-        assertEquals(1, questionnaireModel.getQuestions().size());
-        assertNotNull(questionnaireModel.getQuestions().getFirst().getLinkId());
-        assertTrue(questionnaireModel.getQuestions().getFirst().getLinkId().startsWith("urn:uuid"));
-        assertNotNull(questionnaireModel.getCallToAction());
-        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.getCallToAction().getLinkId());
+        assertEquals(1, questionnaireModel.questions().size());
+        assertNotNull(questionnaireModel.questions().getFirst().linkId());
+        assertTrue(questionnaireModel.questions().getFirst().linkId().startsWith("urn:uuid"));
+        assertNotNull(questionnaireModel.callToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.callToAction().linkId());
     }
 
     @Test
@@ -242,12 +243,18 @@ public class QuestionnaireServiceTest {
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {
-        return new QuestionnaireModel();
+        return QuestionnaireModel.builder().build();
     }
 
     private QuestionModel buildQuestionModel(String linkId) {
-        QuestionModel questionModel = new QuestionModel();
-        questionModel.setLinkId(linkId);
-        return questionModel;
+        var builder = QuestionModel.builder();
+        builder.linkId(linkId);
+        return builder.build();
     }
+
+    private QuestionModel buildQuestionModel() {
+        var builder = QuestionModel.builder();
+        return builder.build();
+    }
+
 }

@@ -116,9 +116,9 @@ public class QuestionnaireController extends BaseController implements Questionn
         try {
             String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
-            List<QuestionModel> questions = collectionToStream(patchQuestionnaireRequest.getQuestions()).map(dtoMapper::mapQuestionDto).toList();
+            List<QuestionModel> questions = collectionToStream(patchQuestionnaireRequest.getQuestions()).map(dtoMapper::mapQuestion).toList();
 
-            QuestionModel callToAction = dtoMapper.mapQuestionDto(patchQuestionnaireRequest.getCallToAction());
+            QuestionModel callToAction = dtoMapper.mapQuestion(patchQuestionnaireRequest.getCallToAction());
 
             questionnaireService.updateQuestionnaire(questionnaireId, patchQuestionnaireRequest.getTitle(), patchQuestionnaireRequest.getDescription(), patchQuestionnaireRequest.getStatus(), questions, callToAction);
             return ResponseEntity.ok().build();

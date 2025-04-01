@@ -1,42 +1,43 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PersonAddressModel {
-
-    private String line;
-    private String city;
-    private String postalCode;
-    private String country;
-
-    public String getLine() {
-        return line;
+public record PersonAddressModel(
+        String line,
+        String city,
+        String postalCode,
+        String country
+) {
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public void setLine(String line) {
-        this.line = line;
-    }
+    public static class Builder {
+        private String line;
+        private String city;
+        private String postalCode;
+        private String country;
 
-    public String getCity() {
-        return city;
-    }
+        public Builder line(String line) {
+            this.line = line;
+            return this;
+        }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
+        public Builder city(String city) {
+            this.city = city;
+            return this;
+        }
 
-    public String getPostalCode() {
-        return postalCode;
-    }
+        public Builder postalCode(String postalCode) {
+            this.postalCode = postalCode;
+            return this;
+        }
 
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
+        public Builder country(String country) {
+            this.country = country;
+            return this;
+        }
 
-    public String getCountry() {
-        return country;
+        public PersonAddressModel build() {
+            return new PersonAddressModel(line, city, postalCode, country);
+        }
     }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
 }

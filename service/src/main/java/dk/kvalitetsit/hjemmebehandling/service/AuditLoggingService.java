@@ -59,7 +59,7 @@ public class AuditLoggingService {
         auditLog(message, Stream.of(person)
                 .collect(Collectors.toMap(
                         p -> p.getIdentifier().getId(),
-                        p -> String.join(" ", p.getName().getGiven()) + " " + p.getName().getFamily())))
+                        p -> String.join(" ", p.name().getGiven()) + " " + p.name().getFamily())))
         ;
     }
 }
