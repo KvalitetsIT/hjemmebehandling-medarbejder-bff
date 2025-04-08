@@ -8,6 +8,7 @@ import java.util.List;
 
 public record QuestionnaireModel(
         QualifiedId id,
+        String organizationId,
         String title,
         String description,
         QuestionnaireStatus status,
@@ -15,10 +16,11 @@ public record QuestionnaireModel(
         QuestionModel callToAction,
         String version,
         Date lastUpdated
-) {
+) implements BaseModel {
+
     public QuestionnaireModel {
         // Ensure lists are never null
-        questions = questions != null ? List.copyOf(questions) : List.of();
+        questions = questions != null ? questions : List.of();
     }
 
     public static Builder from(QuestionnaireModel questionnaire) {
@@ -38,6 +40,11 @@ public record QuestionnaireModel(
         return new Builder();
     }
 
+    @Override
+    public String organizationId() {
+        return this.organizationId;
+    }
+
     public static class Builder {
         private QualifiedId id;
         private String title;
@@ -47,6 +54,12 @@ public record QuestionnaireModel(
         private QuestionModel callToAction;
         private String version;
         private Date lastUpdated;
+
+        public void organizationId(String organizationId) {
+            this.organizationId = organizationId;
+        }
+
+        private String organizationId;
 
         public Builder(QualifiedId id, String title, String description, QuestionnaireStatus status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
             this.id = id;
@@ -104,7 +117,7 @@ public record QuestionnaireModel(
         }
 
         public QuestionnaireModel build() {
-            return new QuestionnaireModel(id, title, description, status, questions, callToAction, version, lastUpdated);
+            return new QuestionnaireModel(id, organizationId, title, description, status, questions, callToAction, version, lastUpdated);
         }
     }
 }

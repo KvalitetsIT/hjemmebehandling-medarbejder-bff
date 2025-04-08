@@ -55,7 +55,7 @@ public class PatientController extends BaseController implements PatientApi {
 //         Create the patient
         try {
             // todo: handle 'Optional.get()' without 'isPresent()' check below
-            PatientModel patient = dtoMapper.mapPatientDto(createPatientRequest.patient().get());
+            PatientModel patient = createPatientRequest.getPatient().map(dtoMapper::mapPatientDto).get();
             patientService.createPatient(patient);
             auditLoggingService.log("POST /v1/patient", patient);
 
@@ -67,7 +67,7 @@ public class PatientController extends BaseController implements PatientApi {
     }
 
     @Override
-    public ResponseEntity<PatientDto> patient(String cpr) {
+    public ResponseEntity<PatientDto> getPatient(String cpr) {
         logger.info("Getting patient ...");
 
         String clinicalIdentifier = getClinicalIdentifier();
@@ -84,6 +84,8 @@ public class PatientController extends BaseController implements PatientApi {
             throw toStatusCodeException(e);
         }
     }
+
+
 
     @Override
     public ResponseEntity<org.openapitools.model.PatientListResponse> getPatientList() {
@@ -119,7 +121,7 @@ public class PatientController extends BaseController implements PatientApi {
         logger.info("reset password for patient");
         try {
             PatientModel patientModel = patientService.patient(cpr);
-            customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
+            customUserClient.resetPassword(cpr, patientModel.customUserName());
         } catch (ServiceException e) {
             throw toStatusCodeException(e);
         } catch (JsonProcessingException e) {

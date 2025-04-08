@@ -43,7 +43,7 @@ public class ExtensionMapper {
     }
 
     public static Extension mapExaminationAuthor(PractitionerModel practitioner) {
-        return buildStringExtension(Systems.EXAMINATION_AUTHOR, practitioner.getId().toString());
+        return buildStringExtension(Systems.EXAMINATION_AUTHOR, practitioner.id().toString());
     }
 
     public static Extension mapOrganizationId(String organizationId) {

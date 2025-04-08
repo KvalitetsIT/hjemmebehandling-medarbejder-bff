@@ -44,6 +44,23 @@ public record CarePlanModel(
         private String departmentName;
         private Instant satisfiedUntil;
 
+        public static Builder from(CarePlanModel model) {
+            return new Builder()
+                    .id(model.id)
+                    .organizationId(model.organizationId)
+                    .title(model.title)
+                    .status(model.status)
+                    .created(model.created)
+                    .startDate(model.startDate)
+                    .endDate(model.endDate)
+                    .patient(model.patient)
+                    .questionnaires(model.questionnaires)
+                    .planDefinitions(model.planDefinitions)
+                    .departmentName(model.departmentName)
+                    .satisfiedUntil(model.satisfiedUntil);
+
+        }
+
         public Builder id(QualifiedId id) {
             this.id = id;
             return this;

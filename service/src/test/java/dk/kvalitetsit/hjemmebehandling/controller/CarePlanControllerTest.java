@@ -70,7 +70,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(new CarePlanModel());
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(CarePlanModel.builder().build());
 
         ResponseEntity<Void> result = subject.createCarePlan(request);
 
@@ -96,7 +96,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenReturn("careplan-1");
 
@@ -114,7 +114,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
 
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(AccessValidationException.class);
@@ -127,7 +127,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS));
 
@@ -139,7 +139,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
@@ -151,7 +151,7 @@ public class CarePlanControllerTest {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
         Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenThrow(new ServiceException("error", ErrorKind.BAD_GATEWAY, ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR));
 
@@ -162,7 +162,7 @@ public class CarePlanControllerTest {
     public void getCarePlanById_carePlanPresent_200() throws Exception {
         String carePlanId = "careplan-1";
 
-        CarePlanModel carePlanModel = new CarePlanModel();
+        CarePlanModel carePlanModel = CarePlanModel.builder().build();
         CarePlanDto carePlanDto = new CarePlanDto();
         Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.of(carePlanModel));
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlanDto);
@@ -206,7 +206,7 @@ public class CarePlanControllerTest {
         String questionnaireId = "questionnaire-1";
 
         //Mockito.doNothing().when(carePlanService).resolveAlarm(carePlanId);
-        Mockito.when(carePlanService.resolveAlarm(carePlanId, questionnaireId)).thenReturn(new CarePlanModel());
+        Mockito.when(carePlanService.resolveAlarm(carePlanId, questionnaireId)).thenReturn(CarePlanModel.builder().build());
 
         ResponseEntity<Void> result = subject.resolveAlarm(carePlanId, questionnaireId);
 
@@ -266,8 +266,8 @@ public class CarePlanControllerTest {
         boolean onlyActiveCarePlans = true;
 
         Pagination pagination = new Pagination(1, 10);
-        CarePlanModel carePlanModel1 = new CarePlanModel();
-        CarePlanModel carePlanModel2 = new CarePlanModel();
+        CarePlanModel carePlanModel1 = CarePlanModel.builder().build();
+        CarePlanModel carePlanModel2 = CarePlanModel.builder().build();
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
@@ -290,8 +290,8 @@ public class CarePlanControllerTest {
 
         Pagination pagination = new Pagination(1, 10);
 
-        CarePlanModel carePlanModel1 = new CarePlanModel();
-        CarePlanModel carePlanModel2 = new CarePlanModel();
+        CarePlanModel carePlanModel1 = CarePlanModel.builder().build();
+        CarePlanModel carePlanModel2 = CarePlanModel.builder().build();
         CarePlanDto carePlanDto1 = new CarePlanDto();
         CarePlanDto carePlanDto2 = new CarePlanDto();
 
@@ -325,7 +325,6 @@ public class CarePlanControllerTest {
 
     @Test
     public void searchCarePlans_failureToFetch_500() throws Exception {
-
         String cpr = "0101010101";
         Boolean onlyUnsatisfiedSchedules = null;
         boolean onlyActiveCarePlans = true;

@@ -128,8 +128,6 @@ public class QuestionnaireResponseService extends AccessValidatingService {
             return responses;
         }
         return pageResponses(responses, pagination);
-
-
     }
 
 
@@ -145,15 +143,16 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         var orgId = fhirClient.getOrganizationId();
 
-        // Update the Questionnaireresponse
-        QuestionnaireResponseModel mappedResponse = fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult, orgId);
-        mappedResponse.setExaminationStatus(examinationStatus);
-
         Practitioner user = fhirClient.getOrCreateUserAsPractitioner();
-        mappedResponse.setExaminationAuthor(fhirMapper.mapPractitioner(user));
+
+        QuestionnaireResponseModel mappedResponse = QuestionnaireResponseModel.Builder
+                .from(fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult, orgId))
+                .examinationStatus(examinationStatus)
+                .examinationAuthor(fhirMapper.mapPractitioner(user))
+                .build();
 
         // Save the updated QuestionnaireResponse
-        fhirClient.updateQuestionnaireResponse(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
+        fhirClient.update(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
         return mappedResponse;
     }
 

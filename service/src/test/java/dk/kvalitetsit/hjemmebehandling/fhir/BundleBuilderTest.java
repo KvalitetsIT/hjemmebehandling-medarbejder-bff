@@ -48,37 +48,23 @@ public class BundleBuilderTest {
         pul.getCodeFirstRep().setCode("NPU21692").setDisplay("Puls;Hjerte");
         pul.setType(Questionnaire.QuestionnaireItemType.QUANTITY);
 
-
-//        Questionnaire questionnaire = new Questionnaire();
-//        questionnaire.setId("questionnaire-infektionsmedicinsk-2");
-//        questionnaire.addExtension(ExtensionMapper.mapOrganizationId("Organization/organization-infektionsmedicinsk"));
-//        questionnaire.setTitle("Infektionsmedicinsk spørgeskema");
-
         System.out.println(FhirContext.forR4().newXmlParser().setPrettyPrint(true).encodeResourceToString(questionnaire));
     }
 
     @Test
     public void buildCreateCarePlanBundle_mapsArgumentsToEntries() {
-
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
-
-
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
-
-
         assertEquals(2, result.getEntry().size());
     }
 
     @Test
     public void buildCreateCarePlanBundle_updatesSubjectReference() {
-
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
         Patient patient = buildPatient(PATIENT_ID);
 
-
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
-
 
         assertEquals(patient, result.getEntry().get(1).getResource());
         assertEquals(carePlan.getSubject().getReference(), result.getEntry().get(1).getFullUrl());
@@ -86,18 +72,14 @@ public class BundleBuilderTest {
 
     private CarePlan buildCarePlan(String carePlanId, String patientId) {
         CarePlan carePlan = new CarePlan();
-
         carePlan.setId(carePlanId);
         carePlan.setSubject(new Reference(patientId));
-
         return carePlan;
     }
 
     private Patient buildPatient(String patientId) {
         Patient patient = new Patient();
-
         patient.setId(patientId);
-
         return patient;
     }
 }

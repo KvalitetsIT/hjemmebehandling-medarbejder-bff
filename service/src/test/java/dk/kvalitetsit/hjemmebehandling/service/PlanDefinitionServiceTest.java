@@ -351,17 +351,18 @@ public class PlanDefinitionServiceTest {
         String id = "plandefinition-1";
         PlanDefinition planDefinition = buildPlanDefinition();
         Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
-        QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
-        QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
+
+
+        var questionnaires = List.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1), buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2));
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder()
-                .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
+                .questionnaires(questionnaires)
                 .build();
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire1));
-        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaireWrapperModel1.questionnaire());
+        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire1)).thenReturn(questionnaires.getFirst().questionnaire());
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
         Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());

@@ -477,7 +477,7 @@ public class CarePlanServiceTest {
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.questionnaires().get(1).satisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.satisfiedUntil());
 
-        Mockito.verify(fhirClient).updateCarePlan(carePlan);
+        Mockito.verify(fhirClient).update(carePlan);
     }
 
     @Test
@@ -551,7 +551,7 @@ public class CarePlanServiceTest {
         Mockito.doNothing().when(accessValidator).validateAccess(List.of(planDefinition));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
 
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies,patientDetails));
     }
 
     @Test
@@ -573,7 +573,7 @@ public class CarePlanServiceTest {
         Mockito.doNothing().when(accessValidator).validateAccess(List.of());
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
 
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails));
     }
 
     @Test
@@ -656,7 +656,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails);
 
         assertEquals(patientDetails.patientPrimaryPhone(), patientModel.contactDetails().primaryPhone());
         assertEquals(patientDetails.patientSecondaryPhone(), patientModel.contactDetails().secondaryPhone());
@@ -717,7 +717,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies,patientDetails);
 
         //assertTrue(nextNextSatisfiedUntilTime.isBefore(POINT_IN_TIME));
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.questionnaires().getFirst().satisfiedUntil());
@@ -769,7 +769,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails);
 
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.questionnaires().getFirst().satisfiedUntil());
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.satisfiedUntil());
@@ -976,9 +976,11 @@ public class CarePlanServiceTest {
         contact.setRelationship(affiliation);
         contact.setOrganization(buildReference());
 
-        patient.setContact(new ArrayList<Patient.ContactComponent>(List.of(contact)));
+        patient.setContact(new ArrayList<>(List.of(contact)));
         return patient;
     }
+
+
 
     private Reference buildReference() {
         var reference = new Reference();
@@ -989,7 +991,7 @@ public class CarePlanServiceTest {
     private Patient buildPatient(String patientId, String cpr, String givenName, String familyName) {
         Patient patient = buildPatient(patientId, cpr);
 
-        patient.nameFirstRep()
+        patient.getNameFirstRep()
                 .setGiven(List.of(new StringType(givenName)))
                 .setFamily(familyName);
 

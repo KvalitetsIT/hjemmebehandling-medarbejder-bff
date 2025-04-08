@@ -37,42 +37,35 @@ public class FhirClient {
     }
 
     public FhirLookupResult lookupActiveCarePlansWithQuestionnaire(String questionnaireId) throws ServiceException {
-
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var questionnaireCriterion = CarePlan.INSTANTIATES_CANONICAL.hasChainedProperty(PlanDefinition.DEFINITION.hasId(questionnaireId));
         var organizationCriterion = buildOrganizationCriterion();
         var criteria = new ArrayList<>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
-
         return lookupCarePlansByCriteria(criteria);
     }
 
 
     public FhirLookupResult lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) throws ServiceException {
-
         var statusCriterion = PlanDefinition.STATUS.exactly().code(Enumerations.PublicationStatus.ACTIVE.toCode());
         var questionnaireCriterion = PlanDefinition.DEFINITION.hasId(questionnaireId);
         var organizationCriterion = buildOrganizationCriterion();
-        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
-
+        var criteria = new ArrayList<>(List.of(statusCriterion, questionnaireCriterion, organizationCriterion));
         return lookupPlanDefinitionsByCriteria(criteria);
     }
 
 
     public FhirLookupResult lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) throws ServiceException {
-
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var plandefinitionCriterion = CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId);
         var organizationCriterion = buildOrganizationCriterion();
-        var criteria = new ArrayList<ICriterion<?>>(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
-
+        var criteria = new ArrayList<>(List.of(statusCriterion, plandefinitionCriterion, organizationCriterion));
         return lookupCarePlansByCriteria(criteria);
     }
 
     public FhirLookupResult lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) throws ServiceException {
-
         var patientCriterion = CarePlan.PATIENT.hasId(patientId);
         var organizationCriterion = buildOrganizationCriterion();
-        var criteria = new ArrayList<ICriterion<?>>(List.of(patientCriterion, organizationCriterion));
+        var criteria = new ArrayList<>(List.of(patientCriterion, organizationCriterion));
         if (onlyActiveCarePlans) {
             var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
             criteria.add(statusCriterion);
@@ -240,9 +233,6 @@ public class FhirClient {
         return id.get();
     }
 
-    public String savePatient(Patient patient) throws ServiceException {
-        return save(patient);
-    }
 
     public String saveQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) throws ServiceException {
         return save(questionnaireResponse);
@@ -299,18 +289,9 @@ public class FhirClient {
         return lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
     }
 
-    public void updateCarePlan(CarePlan carePlan) {
-        update(carePlan);
-    }
-
     public void updateCarePlan(CarePlan carePlan, Patient patient) {
         var bundle = new BundleBuilder().buildUpdateCarePlanBundle(carePlan, patient);
-
         saveInTransaction(bundle, ResourceType.CarePlan);
-    }
-
-    public void updateQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
-        update(questionnaireResponse);
     }
 
     private FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
@@ -480,7 +461,7 @@ public class FhirClient {
         return lookupOrganizationsByCriteria(List.of(idCriterion));
     }
 
-    private <T extends Resource> String save(Resource resource) throws ServiceException {
+    public <T extends Resource> String save(Resource resource) throws ServiceException {
         addOrganizationTag(resource);
 
         IGenericClient client = context.newRestfulGenericClient(endpoint);
@@ -514,7 +495,7 @@ public class FhirClient {
         return Optional.of(id);
     }
 
-    private <T extends Resource> void update(Resource resource) {
+    public  <T extends Resource> void update(Resource resource) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
         client.update().resource(resource).execute();
     }
@@ -558,9 +539,7 @@ public class FhirClient {
 
     public String getOrganizationId() throws ServiceException {
         Organization organization = getCurrentUsersOrganization();
-
         return organization.getIdElement().toUnqualifiedVersionless().getValue();
-
     }
 
     public Organization getCurrentUsersOrganization() throws ServiceException {
@@ -568,8 +547,9 @@ public class FhirClient {
         if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
         }
-        // TODO: Handle 'Optional.get()' without 'isPresent()' check below
-        return lookupOrganizationBySorCode(context.getOrgId().get()).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.getOrgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+
+        var orgId = context.getOrgId().orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.getOrgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        return lookupOrganizationBySorCode(orgId).orElseThrow();
     }
 
     public Practitioner getOrCreateUserAsPractitioner() throws ServiceException {
@@ -631,25 +611,5 @@ public class FhirClient {
         var organizationCriterion = buildOrganizationCriterion();
 
         return lookupByCriteria(ValueSet.class, List.of(organizationCriterion));
-    }
-
-    public String saveQuestionnaire(Questionnaire questionnaire) throws ServiceException {
-        return save(questionnaire);
-    }
-
-    public void updateQuestionnaire(Questionnaire questionnaire) {
-        update(questionnaire);
-    }
-
-    public String savePlanDefinition(PlanDefinition planDefinition) throws ServiceException {
-        return save(planDefinition);
-    }
-
-    public void updatePlanDefinition(PlanDefinition planDefinition) {
-        update(planDefinition);
-    }
-
-    public void updatePatient(Patient patient) {
-        update(patient);
     }
 }

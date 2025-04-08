@@ -66,8 +66,8 @@ public class QuestionnaireResponseControllerTest {
         String carePlanId = "careplan-1";
         List<String> questionnaireIds = List.of("questionnaire-1");
 
-        QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
-        QuestionnaireResponseModel responseModel2 = new QuestionnaireResponseModel();
+        QuestionnaireResponseModel responseModel1 = QuestionnaireResponseModel.builder().build();
+        QuestionnaireResponseModel responseModel2 = QuestionnaireResponseModel.builder().build();
         QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
         QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
 
@@ -133,8 +133,8 @@ public class QuestionnaireResponseControllerTest {
 
         Pagination pagination = new Pagination(1, 10);
 
-        QuestionnaireResponseModel responseModel1 = new QuestionnaireResponseModel();
-        QuestionnaireResponseModel responseModel2 = new QuestionnaireResponseModel();
+        QuestionnaireResponseModel responseModel1 = QuestionnaireResponseModel.builder().build();
+        QuestionnaireResponseModel responseModel2 = QuestionnaireResponseModel.builder().build();
         QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
         QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
 
@@ -218,7 +218,7 @@ public class QuestionnaireResponseControllerTest {
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        Mockito.when(questionnaireResponseService.updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION)).thenReturn(new QuestionnaireResponseModel());
+        Mockito.when(questionnaireResponseService.updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION)).thenReturn( QuestionnaireResponseModel.builder().build());
 
         ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
 

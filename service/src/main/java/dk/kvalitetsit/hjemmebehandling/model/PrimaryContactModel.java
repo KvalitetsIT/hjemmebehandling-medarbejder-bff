@@ -16,6 +16,14 @@ public record PrimaryContactModel(
         private String affiliation;
         private String organisation;
 
+        public static Builder from(PrimaryContactModel model) {
+            return new Builder()
+                    .contactDetails(model.contactDetails)
+                    .name(model.name)
+                    .affiliation(model.affiliation)
+                    .organisation(model.organisation);
+        }
+
         public Builder contactDetails(ContactDetailsModel contactDetails) {
             this.contactDetails = contactDetails;
             return this;

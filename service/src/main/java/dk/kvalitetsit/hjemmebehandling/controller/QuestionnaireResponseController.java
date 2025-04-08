@@ -54,7 +54,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
 
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
 
-            auditLoggingService.log("GET /v1/questionnaireresponse/" + carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).toList());
+            auditLoggingService.log("GET /v1/questionnaireresponse/" + carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
 
             var dtos = questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList();
 
@@ -79,7 +79,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
         }
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(status.stream().map(dtoMapper::mapExaminationStatusDto).toList(), new Pagination(pageNumber, pageSize));
-            auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).toList());
+            auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
             return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList());
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not look up questionnaire responses by status", e);
@@ -91,12 +91,19 @@ public class QuestionnaireResponseController extends BaseController implements Q
     @Override
     public ResponseEntity<Void> patchQuestionnaireResponse(String id, PartialUpdateQuestionnaireResponseRequest partialUpdateQuestionnaireResponseRequest) {
         try {
-            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, dtoMapper.mapExaminationStatusDto(partialUpdateQuestionnaireResponseRequest.examinationStatus().orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE))));
+            var examinationStatus = partialUpdateQuestionnaireResponseRequest
+                    .getExaminationStatus()
+                    .map(dtoMapper::mapExaminationStatusDto)
+                    .orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE));
+
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, examinationStatus);
             auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.patient());
+
+            return ResponseEntity.ok().build();
+
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
             throw toStatusCodeException(e);
         }
-        return ResponseEntity.ok().build();
     }
 }

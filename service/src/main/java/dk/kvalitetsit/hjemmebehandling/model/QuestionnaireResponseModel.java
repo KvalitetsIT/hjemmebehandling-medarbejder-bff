@@ -7,6 +7,7 @@ import java.util.List;
 
 public record QuestionnaireResponseModel(
         QualifiedId id,
+        String organizationId,
         QualifiedId questionnaireId,
         QualifiedId carePlanId,
         QualifiedId authorId,
@@ -26,10 +27,13 @@ public record QuestionnaireResponseModel(
         return new Builder();
     }
 
+    @Override
+    public String organizationId() {
+        return organizationId;
+    }
+
     public static class Builder {
         private QualifiedId id;
-
-
         private QualifiedId questionnaireId;
         private QualifiedId carePlanId;
         private QualifiedId authorId;
@@ -42,6 +46,12 @@ public record QuestionnaireResponseModel(
         private TriagingCategory triagingCategory;
         private PatientModel patient;
         private String planDefinitionTitle;
+        private String organizationId;
+
+        public Builder organizationId(String organizationId) {
+            this.organizationId = organizationId;
+            return this;
+        }
 
         public Builder questionnaireId(QualifiedId questionnaireId) {
             this.questionnaireId = questionnaireId;
@@ -108,9 +118,29 @@ public record QuestionnaireResponseModel(
             return this;
         }
 
+        public static Builder from(QuestionnaireResponseModel source) {
+            return new Builder()
+                    .answered(source.answered)
+                    .authorId(source.authorId)
+                    .id(source.id)
+                    .carePlanId(source.carePlanId)
+                    .sourceId(source.sourceId)
+                    .triagingCategory(source.triagingCategory)
+                    .examinationAuthor(source.examinationAuthor)
+                    .organizationId(source.organizationId())
+                    .planDefinitionTitle(source.planDefinitionTitle())
+                    .questionnaireId(source.questionnaireId)
+                    .questionnaireName(source.questionnaireName())
+                    .examinationStatus(source.examinationStatus)
+                    .questionAnswerPairs(source.questionAnswerPairs)
+                    .authorId(source.authorId)
+                    .patient(source.patient);
+        }
+
         public QuestionnaireResponseModel build() {
             return new QuestionnaireResponseModel(
                     id,
+                    organizationId,
                     questionnaireId,
                     carePlanId,
                     authorId,
@@ -127,15 +157,5 @@ public record QuestionnaireResponseModel(
         }
 
 
-    }
-
-    @Override
-    public QualifiedId id() {
-        return null;
-    }
-
-    @Override
-    public String organizationId() {
-        return "";
     }
 }

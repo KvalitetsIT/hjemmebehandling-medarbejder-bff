@@ -20,7 +20,39 @@ public class BundleBuilder {
         return buildBundle(carePlanEntry, patientEntry);
     }
 
+    /* Todo: Below might be a valid refactor
     public Bundle buildUpdateCarePlanBundle(CarePlan carePlan, Patient patient) {
+
+        // Build the CarePlan entry.
+        var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.PUT);
+
+        // Build the Patient entry.
+        var patientEntry = buildPatientEntry(patient, Bundle.HTTPVerb.PUT);
+
+        // Build a transaction bundle.
+        return buildBundle(carePlanEntry, patientEntry);
+    }
+
+    private Bundle buildBundle(Bundle.BundleEntryComponent... entries) {
+        var bundle = new Bundle();
+
+        bundle.setType(Bundle.BundleType.TRANSACTION);
+        for (var entry : entries) {
+            bundle.addEntry(entry);
+        }
+
+        return bundle;
+    }
+
+    private Bundle.BundleEntryComponent buildEntry(Resource resource, Bundle.HTTPVerb method) {
+        return buildEntry(resource, resource.getResourceType().name()+"/"+ resource.getResourceType().getPath()+"-entry", method);
+    }
+
+
+
+    */
+    public Bundle buildUpdateCarePlanBundle(CarePlan carePlan, Patient patient) {
+
         // Build the CarePlan entry.
         var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.PUT);
 

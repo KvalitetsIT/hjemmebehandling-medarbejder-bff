@@ -27,16 +27,12 @@ public class AuditLoggingService {
 
     private void auditLog(String message, Map<String, String> citizenCprToFullNameMap) {
         // TODO: Handle 'Optional.get()' without 'isPresent()' check below
-
         var employee = new AuditModel.Employee(userContextProvider.getUserContext().getUserId().get(), userContextProvider.getUserContext().getFullName().get());
 
         for (String citizenCpr : citizenCprToFullNameMap.keySet()) {
             String citizenFullName = citizenCprToFullNameMap.get(citizenCpr);
-
             var citizen = new AuditModel.Citizen(citizenCpr, citizenFullName);
-
             AuditModel event = new AuditModel(employee, citizen, message);
-
             diasAuditLogger.postAuditLog(event);
         }
     }
@@ -48,8 +44,8 @@ public class AuditLoggingService {
     public void log(String message, List<PatientModel> patients) {
         Map<String, String> result = patients.stream()
                 .collect(Collectors.toMap(
-                        PatientModel::getCpr,
-                        u -> u.getGivenName() + " " + u.getFamilyName(),
+                        PatientModel::cpr,
+                        u -> u.givenName() + " " + u.familyName(),
                         (existing, replacement) -> existing));
 
         auditLog(message, result);
@@ -58,8 +54,7 @@ public class AuditLoggingService {
     public void log(String message, PersonModel person) {
         auditLog(message, Stream.of(person)
                 .collect(Collectors.toMap(
-                        p -> p.getIdentifier().getId(),
-                        p -> String.join(" ", p.name().getGiven()) + " " + p.name().getFamily())))
-        ;
+                        p -> p.identifier().id(),
+                        p -> String.join(" ", p.name().given()) + " " + p.name().family())));
     }
 }

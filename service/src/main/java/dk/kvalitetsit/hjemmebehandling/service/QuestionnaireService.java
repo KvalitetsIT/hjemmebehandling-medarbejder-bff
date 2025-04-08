@@ -60,7 +60,7 @@ public class QuestionnaireService extends AccessValidatingService {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
         var mappedQuestionnaire = fhirMapper.mapQuestionnaireModel(initializedQuestionnaire);
-        return fhirClient.saveQuestionnaire(mappedQuestionnaire);
+        return fhirClient.save(mappedQuestionnaire);
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -130,7 +130,7 @@ public class QuestionnaireService extends AccessValidatingService {
         var updateQuestionnaireModel = updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
+        fhirClient.update(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
     }
 
     private QuestionnaireModel updateQuestionnaireModel(
@@ -197,7 +197,7 @@ public class QuestionnaireService extends AccessValidatingService {
         }
 
         Questionnaire retiredQuestionnaire = questionnaire.get().setStatus(Enumerations.PublicationStatus.RETIRED);
-        fhirClient.updateQuestionnaire(retiredQuestionnaire);
+        fhirClient.update(retiredQuestionnaire);
     }
 
 

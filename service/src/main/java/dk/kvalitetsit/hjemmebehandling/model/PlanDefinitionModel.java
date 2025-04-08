@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.util.List;
 
 public record PlanDefinitionModel(
+        QualifiedId id,
+        String organizationId,
         String name,
         String title,
         PlanDefinitionStatus status,
@@ -14,8 +16,23 @@ public record PlanDefinitionModel(
 
 ) implements BaseModel {
 
+    public PlanDefinitionModel {
+        // Ensure lists are never null
+        questionnaires = questionnaires != null ? questionnaires : List.of();
+    }
+
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public QualifiedId id() {
+        return id;
+    }
+
+    @Override
+    public String organizationId() {
+        return organizationId;
     }
 
     public static class Builder {
@@ -27,6 +44,19 @@ public record PlanDefinitionModel(
         private Instant created;
         private Instant lastUpdated;
         private List<QuestionnaireWrapperModel> questionnaires;
+        private String organizationId;
+
+        public static Builder from(PlanDefinitionModel model) {
+            return new Builder()
+                    .name(model.name)
+                    .title(model.title)
+                    .status(model.status)
+                    .created(model.created)
+                    .lastUpdated(model.lastUpdated)
+                    .questionnaires(model.questionnaires)
+                    .id(model.id)
+                    .organizationId(model.organizationId);
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -64,19 +94,15 @@ public record PlanDefinitionModel(
             return this;
         }
 
-        public PlanDefinitionModel build() {
-            return new PlanDefinitionModel(name, title, status, created, lastUpdated, questionnaires);
+        public Builder organizationId(String organizationId) {
+            this.organizationId = organizationId;
+            return this;
         }
+
+        public PlanDefinitionModel build() {
+            return new PlanDefinitionModel(id, organizationId, name, title, status, created, lastUpdated, questionnaires);
+        }
+
     }
 
-
-    @Override
-    public QualifiedId id() {
-        return null;
-    }
-
-    @Override
-    public String organizationId() {
-        return "";
-    }
 }

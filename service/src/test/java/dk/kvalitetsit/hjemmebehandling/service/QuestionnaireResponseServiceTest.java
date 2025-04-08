@@ -340,7 +340,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null)).thenReturn(model);
         Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
 
-        Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
+        Mockito.doNothing().when(fhirClient).update(response);
 
         subject.updateExaminationStatus(id, status);
 

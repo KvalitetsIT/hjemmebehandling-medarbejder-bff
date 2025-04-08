@@ -44,12 +44,13 @@ public class PatientService extends AccessValidatingService {
 
     public void createPatient(PatientModel patientModel) throws ServiceException {
         try {
-            Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
-            if (customUserResponseDto.isPresent()) {
-                String customerUserLinkId = customUserResponseDto.get().getId();
-                patientModel.setCustomUserId(customerUserLinkId);
-            }
-            fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
+            var customerUserLinkId = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel)).map(CustomUserResponseDto::getId).orElseThrow();
+            var modifiedPatient = PatientModel.Builder
+                    .from(patientModel)
+                    .customUserId(customerUserLinkId)
+                    .build();
+
+            fhirClient.save(fhirMapper.mapPatientModel(modifiedPatient));
         } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
@@ -61,13 +62,11 @@ public class PatientService extends AccessValidatingService {
 
         Bundle bundle = (Bundle) client.search().forResource("Patient").prettyPrint().execute();
 
-//        org.hl7.fhir.r4.model.Patient patient = new org.hl7.fhir.r4.model.Patient();
-
-        PatientModel p = new PatientModel();
-
-        p.setCpr("0101010101");
-        p.setFamilyName("Ærtegærde Ømø Ååstrup");
-        p.setGivenName("Torgot");
+        PatientModel p = PatientModel.builder()
+                .cpr("0101010101")
+                .familyName("Ærtegærde Ømø Ååstrup")
+                .givenName("Torgot")
+                .build();
 
         return List.of(p);
     }
@@ -114,7 +113,7 @@ public class PatientService extends AccessValidatingService {
         // Map the resources
         return patients
                 .stream()
-                .sorted(Comparator.comparing(a -> a.name().getFirst().getGivenAsSingleString()))
+                .sorted(Comparator.comparing(a -> a.getName().getFirst().getGivenAsSingleString()))
                 .map(p -> fhirMapper.mapPatient(p, orgId))
                 .toList();
     }

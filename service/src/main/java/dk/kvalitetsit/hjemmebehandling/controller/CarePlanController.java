@@ -73,7 +73,9 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             }
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
+
             carePlanId = carePlanService.createCarePlan(carePlan);
+
             auditLoggingService.log("POST /v1/careplan", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Error creating CarePlan", e);
@@ -122,7 +124,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
         try {
             List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
-            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().id()).toList();
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.id().id()).toList();
             return ResponseEntity.ok(ids);
         } catch (ServiceException e) {
             logger.error("Unresolved questionnaires could not be fetched due to:  %s", e);
@@ -185,7 +187,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
                     carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
                 }
             }
-            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).toList());
+            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::patient).toList());
             return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).toList());
         } catch (ServiceException e) {
             logger.error("Could not look up careplans by cpr", e);
@@ -214,15 +216,14 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     }
 
     private PatientDetails getPatientDetails(UpdateCareplanRequest request) {
-        PatientDetails patientDetails = new PatientDetails();
-
-        request.getPatientPrimaryPhone().ifPresent(patientDetails::setPatientPrimaryPhone);
-        request.getPatientSecondaryPhone().ifPresent(patientDetails::setPatientSecondaryPhone);
-        request.getPrimaryRelativeName().ifPresent(patientDetails::setPrimaryRelativeName);
-        request.getPrimaryRelativeAffiliation().ifPresent(patientDetails::setPrimaryRelativeAffiliation);
-        request.getPrimaryRelativePrimaryPhone().ifPresent(patientDetails::setPrimaryRelativePrimaryPhone);
-        request.getPrimaryRelativeSecondaryPhone().ifPresent(patientDetails::setPrimaryRelativeSecondaryPhone);
-
+        PatientDetails patientDetails = new PatientDetails(
+                request.getPatientPrimaryPhone().orElse(null),
+                request.getPatientSecondaryPhone().orElse(null),
+                request.getPrimaryRelativeName().orElse(null),
+                request.getPrimaryRelativeAffiliation().orElse(null),
+                request.getPrimaryRelativePrimaryPhone().orElse(null),
+                request.getPrimaryRelativeSecondaryPhone().orElse(null)
+        );
         return patientDetails;
     }
 

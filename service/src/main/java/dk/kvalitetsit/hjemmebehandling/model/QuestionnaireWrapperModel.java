@@ -9,6 +9,11 @@ public record QuestionnaireWrapperModel(
         Instant satisfiedUntil,
         List<ThresholdModel> thresholds
 ) {
+    public QuestionnaireWrapperModel {
+        // Ensure lists are never null
+        thresholds = thresholds != null ? thresholds : List.of();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -18,6 +23,14 @@ public record QuestionnaireWrapperModel(
         private FrequencyModel frequency;
         private Instant satisfiedUntil;
         private List<ThresholdModel> thresholds;
+
+        public static Builder from(QuestionnaireWrapperModel source) {
+            return new Builder()
+                    .frequency(source.frequency)
+                    .questionnaire(source.questionnaire)
+                    .satisfiedUntil(source.satisfiedUntil)
+                    .thresholds(source.thresholds);
+        }
 
         public Builder questionnaire(QuestionnaireModel questionnaire) {
             this.questionnaire = questionnaire;

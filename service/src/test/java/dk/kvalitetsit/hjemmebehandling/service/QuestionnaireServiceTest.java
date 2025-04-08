@@ -105,7 +105,7 @@ public class QuestionnaireServiceTest {
     @Test
     public void createQuestionnaire_success() throws Exception {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
+        Mockito.when(fhirClient.save(any())).thenReturn("1");
         String result = subject.createQuestionnaire(questionnaireModel);
         assertEquals("1", result);
     }
@@ -118,7 +118,7 @@ public class QuestionnaireServiceTest {
                 .questions(List.of(buildQuestionModel(linkId), buildQuestionModel(nullLinkId)))
                 .callToAction(buildQuestionModel(nullLinkId))
                 .build();
-        Mockito.when(fhirClient.saveQuestionnaire(any())).thenReturn("1");
+        Mockito.when(fhirClient.save(any())).thenReturn("1");
 
         String result = subject.createQuestionnaire(questionnaireModel);
 

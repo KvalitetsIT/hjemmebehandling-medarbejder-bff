@@ -25,6 +25,23 @@ public record QuestionModel(
         return new Builder();
     }
 
+    public QuestionModel asDeprecated() {
+        return new QuestionModel(
+                linkId,
+                text,
+                abbreviation,
+                helperText,
+                required,
+                questionType,
+                measurementType,
+                options,
+                enableWhens,
+                thresholds,
+                subQuestions,
+                true // Mark as deprecated
+        );
+    }
+
     public static class Builder {
         private String linkId;
         private String text;
@@ -38,6 +55,22 @@ public record QuestionModel(
         private List<ThresholdModel> thresholds = new ArrayList<>();
         private List<QuestionModel> subQuestions = new ArrayList<>();
         private boolean deprecated;
+
+        public static Builder from(QuestionModel question) {
+            return new Builder()
+                    .abbreviation(question.abbreviation)
+                    .deprecated(question.deprecated)
+                    .questionType(question.questionType)
+                    .enableWhens(question.enableWhens)
+                    .helperText(question.helperText)
+                    .linkId(question.linkId)
+                    .thresholds(question.thresholds)
+                    .measurementType(question.measurementType)
+                    .options(question.options)
+                    .required(question.required)
+                    .text(question.text)
+                    .subQuestions(question.subQuestions);
+        }
 
         public Builder linkId(String linkId) {
             this.linkId = linkId;
@@ -107,15 +140,9 @@ public record QuestionModel(
         }
     }
 
-    public QuestionModel asDeprecated() {
-        return new QuestionModel(
-                linkId, text, abbreviation, helperText, required, questionType, measurementType,
-                options, enableWhens, thresholds, subQuestions, true // Mark as deprecated
-        );
-    }
-
     public record EnableWhen(
             AnswerModel answer,
             EnableWhenOperator operator
-    ) { }
+    ) {
+    }
 }

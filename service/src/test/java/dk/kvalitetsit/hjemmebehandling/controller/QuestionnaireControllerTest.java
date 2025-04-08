@@ -50,8 +50,8 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaire_questionnairesPresent_200() throws Exception {
-        QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel1 = QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel2 = QuestionnaireModel.builder().build();
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
 
@@ -69,9 +69,9 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaires_sorting() throws ServiceException {
-        QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel3 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel1 =  QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel2 =  QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel3 =  QuestionnaireModel.builder().build();
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto3 = new QuestionnaireDto();
@@ -113,7 +113,7 @@ public class QuestionnaireControllerTest {
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
-        Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(new QuestionnaireModel());
+        Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(QuestionnaireModel.builder().build());
 
         ResponseEntity<Void> result = subject.createQuestionnaire(request);
 
@@ -127,7 +127,7 @@ public class QuestionnaireControllerTest {
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
         Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn("questionnaire-1");
 
@@ -177,7 +177,7 @@ public class QuestionnaireControllerTest {
         QuestionDto questionDto = buildQuestionDto();
         request.setQuestions(List.of(questionDto));
 
-        QuestionModel questionModel = new QuestionModel();
+        QuestionModel questionModel = QuestionModel.builder().build();
         Mockito.when(dtoMapper.mapQuestion(questionDto)).thenReturn(questionModel);
 
         Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(qualifyId, null, null, null, List.of(questionModel), null);
