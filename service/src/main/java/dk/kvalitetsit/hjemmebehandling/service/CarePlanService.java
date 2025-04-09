@@ -183,7 +183,7 @@ public class CarePlanService extends AccessValidatingService {
         try {
             if (patient.isPresent()) {
                 fhirClient.update(patient.get());
-                return fhirClient.save(fhirMapper.mapCarePlanModel(updatedCarePlan));
+                return fhirClient.save(fhirMapper.mapCarePlanModel(updatedCarePlan)).getId();
             }
 
             if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) {
@@ -214,7 +214,7 @@ public class CarePlanService extends AccessValidatingService {
                 }
             }
 
-            return fhirClient.saveCarePlan(
+            return fhirClient.save(
                     fhirMapper.mapCarePlanModel(updatedCarePlan),
                     fhirMapper.mapPatientModel(updatedPatient)
             );
@@ -395,7 +395,11 @@ public class CarePlanService extends AccessValidatingService {
         validateAccess(carePlan);
 
         // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
-        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions().stream().map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult)).toList();
+        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions()
+                .stream()
+                .map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult))
+                .toList();
+
         if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
                 "Not every questionnaireId could be found in the provided plan definitions.",
                 ErrorKind.BAD_REQUEST,

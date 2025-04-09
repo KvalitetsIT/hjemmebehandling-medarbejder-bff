@@ -216,27 +216,54 @@ public class FhirClient {
         return lookupQuestionnaireResponsesByStatus(List.of(status));
     }
 
-    public String saveCarePlan(CarePlan carePlan) throws ServiceException {
-        return save(carePlan);
-    }
 
-    public String saveCarePlan(CarePlan carePlan, Patient patient) throws ServiceException {
-
+    public String save(CarePlan carePlan, Patient patient) throws ServiceException {
         // Build a transaction bundle.
         var bundle = new BundleBuilder().buildCreateCarePlanBundle(carePlan, patient);
         addOrganizationTag(bundle);
 
         var id = saveInTransaction(bundle, ResourceType.CarePlan);
-        if (id.isEmpty()) {
-            throw new IllegalStateException("Could not locate location-header in response when executing transaction.");
+
+        return id.orElseThrow(() -> new IllegalStateException("Could not locate location-header in response when executing transaction."));
+    }
+
+    public CarePlan save(CarePlan carePlan) throws ServiceException {
+        return saveResource(carePlan);
+    }
+
+    public Practitioner save(Practitioner practitioner) throws ServiceException {
+        return saveResource(practitioner);
+    }
+
+    public QuestionnaireResponse save(QuestionnaireResponse questionnaireResponse) throws ServiceException {
+        return saveResource(questionnaireResponse);
+    }
+
+    public Questionnaire save(Questionnaire questionnaire) throws ServiceException {
+        return this.saveResource(questionnaire);
+    }
+
+    public PlanDefinition save(PlanDefinition planDefinition) throws ServiceException {
+        return this.saveResource(planDefinition);
+    }
+
+    public Patient save(Patient patient) throws ServiceException {
+        return this.saveResource(patient);
+    }
+
+
+    private <T extends Resource> T saveResource(Resource resource) throws ServiceException {
+        addOrganizationTag(resource);
+
+        IGenericClient client = context.newRestfulGenericClient(endpoint);
+
+        MethodOutcome outcome = client.create().resource(resource).execute();
+        if (!outcome.getCreated()) {
+            throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
         }
-        return id.get();
+        return (T) outcome.getResource();
     }
 
-
-    public String saveQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) throws ServiceException {
-        return save(questionnaireResponse);
-    }
 
     public FhirLookupResult lookupPlanDefinition(String planDefinitionId) {
         var idCriterion = PlanDefinition.RES_ID.exactly().code(planDefinitionId);
@@ -461,18 +488,8 @@ public class FhirClient {
         return lookupOrganizationsByCriteria(List.of(idCriterion));
     }
 
-    public <T extends Resource> String save(Resource resource) throws ServiceException {
-        addOrganizationTag(resource);
 
-        IGenericClient client = context.newRestfulGenericClient(endpoint);
-
-        MethodOutcome outcome = client.create().resource(resource).execute();
-        if (!outcome.getCreated()) {
-            throw new IllegalStateException(String.format("Tried to create resource of type %s, but it was not created!", resource.getResourceType().name()));
-        }
-        return outcome.getId().toUnqualifiedVersionless().getIdPart();
-    }
-
+    
     private Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
 
@@ -495,7 +512,7 @@ public class FhirClient {
         return Optional.of(id);
     }
 
-    public  <T extends Resource> void update(Resource resource) {
+    public <T extends Resource> void update(Resource resource) {
         IGenericClient client = context.newRestfulGenericClient(endpoint);
         client.update().resource(resource).execute();
     }
@@ -573,7 +590,7 @@ public class FhirClient {
             p.getNameFirstRep().addGiven(userContextProvider.getUserContext().getFirstName().get());
             p.getNameFirstRep().setFamily(userContextProvider.getUserContext().getLastName().get());
 
-            String practitionerId = save(p);
+            String practitionerId = save(p).getId();
             return lookupPractitionerById(practitionerId).get();
         }
     }

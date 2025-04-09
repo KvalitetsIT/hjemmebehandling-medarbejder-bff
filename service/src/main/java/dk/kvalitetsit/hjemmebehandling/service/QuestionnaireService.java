@@ -56,11 +56,13 @@ public class QuestionnaireService extends AccessValidatingService {
         return lookupResult.getQuestionnaires().stream().map(fhirMapper::mapQuestionnaire).toList();
     }
 
-    public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
+    public QuestionnaireModel createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
         var mappedQuestionnaire = fhirMapper.mapQuestionnaireModel(initializedQuestionnaire);
-        return fhirClient.save(mappedQuestionnaire);
+
+        var savedQuestionnaire = fhirClient.save(mappedQuestionnaire);
+        return fhirMapper.mapQuestionnaire(savedQuestionnaire);
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -68,43 +70,25 @@ public class QuestionnaireService extends AccessValidatingService {
 
         var updatedQuestions = Optional.ofNullable(questionnaire.questions()).map(questions -> questions
                 .stream()
-                .map(q -> q.linkId() == null ?
-                        new QuestionModel(
-                                IdType.newRandomUuid().getValueAsString(),
-                                q.text(),
-                                q.abbreviation(),
-                                q.helperText(),
-                                q.required(),
-                                q.questionType(),
-                                q.measurementType(),
-                                q.options(),
-                                q.enableWhens(),
-                                q.thresholds(),
-                                q.subQuestions(),
-                                q.deprecated()
-                        ) : q
+                .map(q -> Optional.ofNullable(q.linkId())
+                        .map(x -> q)
+                        .orElse(QuestionModel.Builder
+                                .from(q)
+                                .linkId(IdType.newRandomUuid().getValueAsString())
+                                .build()
+                        )
                 ).toList()).orElse(null);
 
-        var callToAction = questionnaire.callToAction();
+        var callToAction = Optional.ofNullable(questionnaire.callToAction()).map(x -> QuestionModel.Builder.from(x)
+                .linkId(Systems.CALL_TO_ACTION_LINK_ID)
+                .build()
+        ).orElse(null);
+
 
         return QuestionnaireModel.builder()
                 .id(null)
                 .questions(updatedQuestions)
-                .callToAction(callToAction != null && callToAction.linkId() == null ?
-                        new QuestionModel(
-                                Systems.CALL_TO_ACTION_LINK_ID,
-                                callToAction.text(),
-                                callToAction.abbreviation(),
-                                callToAction.helperText(),
-                                callToAction.required(),
-                                callToAction.questionType(),
-                                callToAction.measurementType(),
-                                callToAction.options(),
-                                callToAction.enableWhens(),
-                                callToAction.thresholds(),
-                                callToAction.subQuestions(),
-                                callToAction.deprecated()
-                        ) : null)
+                .callToAction(callToAction)
                 .build();
 
     }

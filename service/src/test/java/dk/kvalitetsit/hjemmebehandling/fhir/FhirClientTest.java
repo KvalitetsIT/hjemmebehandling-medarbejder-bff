@@ -285,8 +285,8 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, true);
-        String result = subject.saveCarePlan(carePlan);
-        assertEquals("1", result);
+        CarePlan result = subject.save(carePlan);
+        assertEquals("1",result.getId());
     }
 
     @Test
@@ -294,7 +294,7 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, true);
-        subject.saveCarePlan(carePlan);
+        subject.save(carePlan);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_1));
     }
 
@@ -303,7 +303,7 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, false);
-        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
+        assertThrows(IllegalStateException.class, () -> subject.save(carePlan));
     }
 
     @Test
@@ -312,7 +312,7 @@ public class FhirClientTest {
         Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
         setupTransactionClient(responseBundle);
-        String result = subject.saveCarePlan(carePlan, patient);
+        String result = subject.save(carePlan, patient);
         assertEquals("CarePlan/2", result);
     }
 
@@ -322,7 +322,7 @@ public class FhirClientTest {
         Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "Questionnaire/4", "201", "Patient/3");
         setupTransactionClient(responseBundle);
-        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
+        assertThrows(IllegalStateException.class, () -> subject.save(carePlan, patient));
     }
 
     @Test
@@ -331,7 +331,7 @@ public class FhirClientTest {
         Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("400", null, "400", null);
         setupTransactionClient(responseBundle);
-        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
+        assertThrows(IllegalStateException.class, () -> subject.save(carePlan, patient));
     }
 
     @Test
@@ -340,7 +340,7 @@ public class FhirClientTest {
         Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
         setupTransactionClient(responseBundle, SOR_CODE_2, ORGANIZATION_ID_2);
-        subject.saveCarePlan(carePlan, patient);
+        subject.save(carePlan, patient);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_2));
         assertFalse(isTagged(patient));
     }
@@ -358,7 +358,7 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId("1");
         setupSaveClient(questionnaireResponse, true);
-        String result = subject.saveQuestionnaireResponse(questionnaireResponse);
+        String result = subject.save(questionnaireResponse).getId();
         assertEquals("1", result);
     }
 
@@ -366,7 +366,7 @@ public class FhirClientTest {
     public void saveQuestionnaireResponse_notCreated_throwsException() {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         setupSaveClient(questionnaireResponse, false);
-        assertThrows(IllegalStateException.class, () -> subject.saveQuestionnaireResponse(questionnaireResponse));
+        assertThrows(IllegalStateException.class, () -> subject.save(questionnaireResponse));
     }
 
 

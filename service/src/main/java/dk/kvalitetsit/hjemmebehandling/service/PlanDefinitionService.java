@@ -70,7 +70,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 .build();
 
         try {
-            return fhirClient.save(fhirMapper.mapPlanDefinitionModel(planDefinition));
+            return fhirClient.save(fhirMapper.mapPlanDefinitionModel(planDefinition)).getId();
         } catch (Exception e) {
             throw new ServiceException("Error saving PlanDefinition", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }

@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
@@ -129,7 +130,7 @@ public class QuestionnaireControllerTest {
 
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
-        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn("questionnaire-1");
+        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(QuestionnaireModel.builder().id(new QualifiedId("questionnaire-1", ResourceType.Questionnaire)).build());
 
         String location = "http://localhost:8080/api/v1/questionnaire/questionnaire-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("questionnaire-1")).thenReturn(URI.create(location));

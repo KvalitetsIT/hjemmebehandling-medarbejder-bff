@@ -106,7 +106,9 @@ public class CarePlanServiceTest {
 
             Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-            Mockito.when(fhirClient.saveCarePlan(any())).thenReturn("1");
+            var savedCareplan = new CarePlan();
+            savedCareplan.setId("1");
+            Mockito.when(fhirClient.save(Mockito.any(CarePlan.class))).thenReturn(savedCareplan);
 
             String result = subject.createCarePlan(carePlanModel);
             fail("No error was thrown");
@@ -129,7 +131,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         subject.createCarePlan(carePlanModel);
-        Mockito.verify(fhirClient).saveCarePlan(carePlan, patient);
+        Mockito.verify(fhirClient).save(carePlan, patient);
     }
 
     @Test

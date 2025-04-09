@@ -105,9 +105,13 @@ public class QuestionnaireServiceTest {
     @Test
     public void createQuestionnaire_success() throws Exception {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        Mockito.when(fhirClient.save(any())).thenReturn("1");
-        String result = subject.createQuestionnaire(questionnaireModel);
-        assertEquals("1", result);
+
+        Questionnaire savedQuestionnaire = new Questionnaire();
+        savedQuestionnaire.setId("1");
+
+        Mockito.when(fhirClient.save(Mockito.any(Questionnaire.class))).thenReturn(savedQuestionnaire);
+        QuestionnaireModel result = subject.createQuestionnaire(questionnaireModel);
+        assertEquals("1", result.id());
     }
 
     @Test
@@ -118,17 +122,20 @@ public class QuestionnaireServiceTest {
                 .questions(List.of(buildQuestionModel(linkId), buildQuestionModel(nullLinkId)))
                 .callToAction(buildQuestionModel(nullLinkId))
                 .build();
-        Mockito.when(fhirClient.save(any())).thenReturn("1");
+        Questionnaire savedQuestionnaire = new Questionnaire();
+        savedQuestionnaire.setId("1");
 
-        String result = subject.createQuestionnaire(questionnaireModel);
+        Mockito.when(fhirClient.save(Mockito.any(Questionnaire.class))).thenReturn(savedQuestionnaire);
 
-        assertEquals("1", result);
+        QuestionnaireModel result = subject.createQuestionnaire(questionnaireModel);
+
+        assertEquals("1", result.id());
         assertEquals(2, questionnaireModel.questions().size());
-        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().equals(linkId)));
-        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().startsWith("urn:uuid")));
-        assertTrue(questionnaireModel.questions().stream().noneMatch(q -> q.linkId().equals(nullLinkId)));
-        assertNotNull(questionnaireModel.callToAction());
-        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.callToAction().linkId());
+        assertTrue(result.questions().stream().anyMatch(q -> q.linkId().equals(linkId)));
+        assertTrue(result.questions().stream().anyMatch(q -> q.linkId().startsWith("urn:uuid")));
+        assertTrue(result.questions().stream().noneMatch(q -> q.linkId().equals(nullLinkId)));
+        assertNotNull(result.callToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, result.callToAction().linkId());
     }
 
     @Test

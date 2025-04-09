@@ -233,18 +233,18 @@ public class FhirMapper {
                 // Extract phone numbers
                 var primaryRelativeContactDetails = ContactDetailsModel.builder();
 
-                if (contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
-
-                    for (var telecom : contact.getTelecom()) {
+                Optional.ofNullable(contact.getTelecom()).ifPresent(telecoms -> {
+                    telecoms.forEach(telecom -> {
                         if (telecom.getRank() == 1) {
                             primaryRelativeContactDetails.primaryPhone(telecom.getValue());
                         }
                         if (telecom.getRank() == 2) {
                             primaryRelativeContactDetails.secondaryPhone(telecom.getValue());
                         }
-                    }
+                    });
+                });
 
-                }
+
 
                 return new PrimaryContactModel(
                         primaryRelativeContactDetails.build(),
