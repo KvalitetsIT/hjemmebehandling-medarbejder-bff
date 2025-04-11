@@ -7,8 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -24,11 +23,15 @@ import java.util.Optional;
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
 
-    private final FhirClient fhirClient;
+    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
 
     private final FhirMapper fhirMapper;
 
-    public QuestionnaireService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator) {
+    public QuestionnaireService(
+            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirMapper fhirMapper,
+            AccessValidator accessValidator
+    ) {
         super(accessValidator);
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
@@ -56,13 +59,10 @@ public class QuestionnaireService extends AccessValidatingService {
         return lookupResult.getQuestionnaires().stream().map(fhirMapper::mapQuestionnaire).toList();
     }
 
-    public QuestionnaireModel createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
+    public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
-        var mappedQuestionnaire = fhirMapper.mapQuestionnaireModel(initializedQuestionnaire);
-
-        var savedQuestionnaire = fhirClient.save(mappedQuestionnaire);
-        return fhirMapper.mapQuestionnaire(savedQuestionnaire);
+        return fhirClient.saveQuestionnaire(initializedQuestionnaire);
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -114,7 +114,7 @@ public class QuestionnaireService extends AccessValidatingService {
         var updateQuestionnaireModel = updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.update(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
+        fhirClient.updateQuestionnaire(updateQuestionnaireModel);
     }
 
     private QuestionnaireModel updateQuestionnaireModel(
@@ -181,7 +181,9 @@ public class QuestionnaireService extends AccessValidatingService {
         }
 
         Questionnaire retiredQuestionnaire = questionnaire.get().setStatus(Enumerations.PublicationStatus.RETIRED);
-        fhirClient.update(retiredQuestionnaire);
+
+//        todo: Koden herunder skal fikses ellers opdateres questionnaire iikke
+//        fhirClient.updateQuestionnaire(retiredQuestionnaire);
     }
 
 

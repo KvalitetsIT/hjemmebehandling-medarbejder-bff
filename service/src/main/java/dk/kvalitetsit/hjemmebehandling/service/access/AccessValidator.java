@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.DomainResource;
@@ -15,9 +15,9 @@ import java.util.List;
 @Component
 public class AccessValidator {
     private final UserContextProvider userContextProvider;
-    private final FhirClient fhirClient;
+    private final ConcreteFhirClient fhirClient;
 
-    public AccessValidator(UserContextProvider userContextProvider, FhirClient fhirClient) {
+    public AccessValidator(UserContextProvider userContextProvider, ConcreteFhirClient fhirClient) {
         this.userContextProvider = userContextProvider;
         this.fhirClient = fhirClient;
     }

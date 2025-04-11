@@ -20,6 +20,17 @@ public record ContactDetailsModel(
         private String primaryPhone;
         private String secondaryPhone;
 
+        public static Builder from(ContactDetailsModel model) {
+            if (model == null) return builder();
+            return new Builder()
+                    .street(model.street)
+                    .postalCode(model.postalCode)
+                    .country(model.country)
+                    .city(model.city)
+                    .primaryPhone(model.primaryPhone)
+                    .secondaryPhone(model.secondaryPhone);
+        }
+
         public Builder street(String street) {
             this.street = street;
             return this;

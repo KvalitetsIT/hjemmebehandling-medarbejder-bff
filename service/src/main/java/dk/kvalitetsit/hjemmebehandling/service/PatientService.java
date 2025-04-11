@@ -10,7 +10,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -26,7 +26,8 @@ import java.util.*;
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
-    private final FhirClient fhirClient;
+    // TODO: Should be split into one which is only concerned about patient
+    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
 
     private final FhirMapper fhirMapper;
 
@@ -34,7 +35,12 @@ public class PatientService extends AccessValidatingService {
 
     private CustomUserClient customUserService;
 
-    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DtoMapper dtoMapper) {
+    public PatientService(
+            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirMapper fhirMapper,
+            AccessValidator accessValidator,
+            DtoMapper dtoMapper
+    ) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
@@ -50,7 +56,7 @@ public class PatientService extends AccessValidatingService {
                     .customUserId(customerUserLinkId)
                     .build();
 
-            fhirClient.save(fhirMapper.mapPatientModel(modifiedPatient));
+            fhirClient.savePatient(modifiedPatient);
         } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
@@ -73,7 +79,7 @@ public class PatientService extends AccessValidatingService {
 
     public PatientModel patient(String cpr) throws ServiceException {
         // Look up the patient
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
+        Optional<PatientModel> patient = fhirClient.lookupPatientByCpr(cpr);
         if (patient.isEmpty()) {
             return null;
         }
@@ -81,7 +87,7 @@ public class PatientService extends AccessValidatingService {
         var orgId = fhirClient.getOrganizationId();
 
         // Map to the domain model
-        return fhirMapper.mapPatient(patient.get(), orgId);
+        return patient.get();
     }
 
     boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient) {

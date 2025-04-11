@@ -2,11 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class QuestionnaireServiceTest {
@@ -37,7 +39,7 @@ public class QuestionnaireServiceTest {
     @InjectMocks
     private QuestionnaireService subject;
     @Mock
-    private FhirClient fhirClient;
+    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -106,12 +108,11 @@ public class QuestionnaireServiceTest {
     public void createQuestionnaire_success() throws Exception {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
 
-        Questionnaire savedQuestionnaire = new Questionnaire();
-        savedQuestionnaire.setId("1");
+        Mockito.when(fhirClient.saveQuestionnaire(Mockito.any(QuestionnaireModel.class))).thenReturn("1");
+        Mockito.when(fhirMapper.mapQuestionnaireModel(Mockito.any())).thenReturn(new Questionnaire());
 
-        Mockito.when(fhirClient.save(Mockito.any(Questionnaire.class))).thenReturn(savedQuestionnaire);
-        QuestionnaireModel result = subject.createQuestionnaire(questionnaireModel);
-        assertEquals("1", result.id());
+        String result = subject.createQuestionnaire(questionnaireModel);
+        assertEquals("1", result);
     }
 
     @Test
@@ -122,20 +123,25 @@ public class QuestionnaireServiceTest {
                 .questions(List.of(buildQuestionModel(linkId), buildQuestionModel(nullLinkId)))
                 .callToAction(buildQuestionModel(nullLinkId))
                 .build();
-        Questionnaire savedQuestionnaire = new Questionnaire();
-        savedQuestionnaire.setId("1");
 
-        Mockito.when(fhirClient.save(Mockito.any(Questionnaire.class))).thenReturn(savedQuestionnaire);
 
-        QuestionnaireModel result = subject.createQuestionnaire(questionnaireModel);
+        subject.createQuestionnaire(questionnaireModel);
 
-        assertEquals("1", result.id());
+        // Assert
+        ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
+        Mockito.verify(fhirMapper, times(1)).mapQuestionnaireModel(captor.capture()); // capturing the argument to save(...)
+
+
+        questionnaireModel = captor.getValue();
+
         assertEquals(2, questionnaireModel.questions().size());
-        assertTrue(result.questions().stream().anyMatch(q -> q.linkId().equals(linkId)));
-        assertTrue(result.questions().stream().anyMatch(q -> q.linkId().startsWith("urn:uuid")));
-        assertTrue(result.questions().stream().noneMatch(q -> q.linkId().equals(nullLinkId)));
-        assertNotNull(result.callToAction());
-        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, result.callToAction().linkId());
+        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().equals(linkId)));
+        assertTrue(questionnaireModel.questions().stream().anyMatch(q -> q.linkId().startsWith("urn:uuid")));
+        assertTrue(questionnaireModel.questions().stream().noneMatch(q -> q.linkId().equals(nullLinkId)));
+
+        assertNotNull(questionnaireModel.callToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.callToAction().linkId());
+
     }
 
     @Test

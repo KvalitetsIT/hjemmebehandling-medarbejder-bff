@@ -1,17 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
+import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.hl7.fhir.r4.model.Reference;
@@ -44,7 +44,7 @@ public class QuestionnaireResponseServiceTest {
     @InjectMocks
     private QuestionnaireResponseService subject;
     @Mock
-    private FhirClient fhirClient;
+    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -239,7 +239,7 @@ public class QuestionnaireResponseServiceTest {
         List<Questionnaire> historicalQuestionnaires = null;
         QuestionnaireResponseModel model = QuestionnaireResponseModel.builder().build();
 
-        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, historicalQuestionnaires, null)).thenReturn(model);
+//        Mockito.when(fhirMapper.mapQuestionnaireResponse(secondResponse, lookupResult, historicalQuestionnaires, null)).thenReturn(model);
         Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(1);
 
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
@@ -340,7 +340,7 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirMapper.mapQuestionnaireResponse(response, lookupResult, null)).thenReturn(model);
         Mockito.when(fhirMapper.mapQuestionnaireResponseModel(model)).thenReturn(response);
 
-        Mockito.doNothing().when(fhirClient).update(response);
+        Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(model);
 
         subject.updateExaminationStatus(id, status);
 

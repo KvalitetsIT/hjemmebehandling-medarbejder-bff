@@ -1,9 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +17,11 @@ import java.util.List;
 public class ValueSetService {
     private static final Logger logger = LoggerFactory.getLogger(ValueSetService.class);
 
-    private final FhirClient fhirClient;
+    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
 
     private final FhirMapper fhirMapper;
 
-    public ValueSetService(FhirClient fhirClient, FhirMapper fhirMapper) {
+    public ValueSetService(FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient, FhirMapper fhirMapper) {
         this.fhirClient = fhirClient;
         this.fhirMapper = fhirMapper;
     }

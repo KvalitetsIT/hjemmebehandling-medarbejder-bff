@@ -3,12 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -29,13 +25,18 @@ import java.util.stream.Collectors;
 public class QuestionnaireResponseService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
-    private final FhirClient fhirClient;
+    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
 
     private final FhirMapper fhirMapper;
 
     private final Comparator<QuestionnaireResponse> priorityComparator;
 
-    public QuestionnaireResponseService(FhirClient fhirClient, FhirMapper fhirMapper, Comparator<QuestionnaireResponse> priorityComparator, AccessValidator accessValidator) {
+    public QuestionnaireResponseService(
+            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirMapper fhirMapper,
+            Comparator<QuestionnaireResponse> priorityComparator,
+            AccessValidator accessValidator
+    ) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
@@ -48,7 +49,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
-        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
+        List<QuestionnaireModel> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
         FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
         List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
 
@@ -62,10 +63,11 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         var orgId = fhirClient.getOrganizationId();
 
-        return responses
-                .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
-                .toList();
+        return null;
+//        return responses
+//                .stream()
+//                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
+//                .toList();
 
     }
 
@@ -97,7 +99,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         // below is supposed to return a list of ids in the following format: "questionnaire-infektionsmedicinsk-1"
         List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdPart()).toList();
 
-        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
+        List<QuestionnaireModel> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
 
 
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
@@ -143,16 +145,16 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         var orgId = fhirClient.getOrganizationId();
 
-        Practitioner user = fhirClient.getOrCreateUserAsPractitioner();
+        PractitionerModel user = fhirClient.getOrCreateUserAsPractitioner();
 
         QuestionnaireResponseModel mappedResponse = QuestionnaireResponseModel.Builder
                 .from(fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult, orgId))
                 .examinationStatus(examinationStatus)
-                .examinationAuthor(fhirMapper.mapPractitioner(user))
+                .examinationAuthor(user)
                 .build();
 
         // Save the updated QuestionnaireResponse
-        fhirClient.update(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
+        fhirClient.updateQuestionnaireResponse(mappedResponse);
         return mappedResponse;
     }
 

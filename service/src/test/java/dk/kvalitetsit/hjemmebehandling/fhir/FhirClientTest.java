@@ -9,7 +9,9 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +39,7 @@ public class FhirClientTest {
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
     private final String endpoint = "http://foo";
-    private FhirClient subject;
+    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> subject;
     @Mock
     private FhirContext context;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -48,7 +50,8 @@ public class FhirClientTest {
     @BeforeEach
     public void setup() {
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
-        subject = new FhirClient(context, endpoint, userContextProvider);
+        subject = new FhirAdopter(new FhirMapper(), new ConcreteFhirClient(context, endpoint, userContextProvider));
+
     }
 
     @Test
@@ -145,7 +148,7 @@ public class FhirClientTest {
         patient.setId(id);
         setupSearchPatientClient(patient);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<Patient> result = subject.lookupPatientById(id);
+        Optional<PatientModel> result = subject.lookupPatientById(id);
         assertTrue(result.isPresent());
         assertEquals(patient, result.get());
     }
@@ -155,7 +158,7 @@ public class FhirClientTest {
         String id = "patient-1";
         setupSearchPatientClient();
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<Patient> result = subject.lookupPatientById(id);
+        Optional<PatientModel> result = subject.lookupPatientById(id);
         assertFalse(result.isPresent());
     }
 
@@ -282,56 +285,53 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlan_created_returnsId() throws ServiceException {
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId("1");
+        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
         setupSaveClient(carePlan, true);
-        CarePlan result = subject.save(carePlan);
-        assertEquals("1",result.getId());
+        String result = subject.saveCarePlan(carePlan);
+        assertEquals("1",result);
     }
 
     @Test
     public void saveCarePlan_addsOrganizationTag() throws ServiceException {
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId("1");
+        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
         setupSaveClient(carePlan, true);
-        subject.save(carePlan);
+        subject.saveCarePlan(carePlan);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_1));
     }
 
     @Test
     public void saveCarePlan_notCreated_throwsException() {
-        CarePlan carePlan = new CarePlan();
-        carePlan.setId("1");
+        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
         setupSaveClient(carePlan, false);
-        assertThrows(IllegalStateException.class, () -> subject.save(carePlan));
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
     }
 
     @Test
     public void saveCarePlanWithPatient_returnsCarePlanId() throws ServiceException {
-        CarePlan carePlan = new CarePlan();
-        Patient patient = new Patient();
+        PatientModel patient = PatientModel.builder().build();
+        CarePlanModel carePlan =  CarePlanModel.builder().build();
         Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
         setupTransactionClient(responseBundle);
-        String result = subject.save(carePlan, patient);
+        String result = subject.saveCarePlan(carePlan, patient);
         assertEquals("CarePlan/2", result);
     }
 
     @Test
     public void saveCarePlanWithPatient_carePlanLocationMissing_throwsException() {
-        CarePlan carePlan = new CarePlan();
-        Patient patient = new Patient();
+        CarePlanModel carePlan = CarePlanModel.builder().build();
+        PatientModel patient = PatientModel.builder().build();
         Bundle responseBundle = buildResponseBundle("201", "Questionnaire/4", "201", "Patient/3");
         setupTransactionClient(responseBundle);
-        assertThrows(IllegalStateException.class, () -> subject.save(carePlan, patient));
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
     }
 
     @Test
     public void saveCarePlanWithPatient_unwantedHttpStatus_throwsException() {
-        CarePlan carePlan = new CarePlan();
-        Patient patient = new Patient();
+        CarePlanModel carePlan = CarePlan.();
+        PatientModel patient = Patient();
         Bundle responseBundle = buildResponseBundle("400", null, "400", null);
         setupTransactionClient(responseBundle);
-        assertThrows(IllegalStateException.class, () -> subject.save(carePlan, patient));
+        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
     }
 
     @Test
@@ -340,7 +340,7 @@ public class FhirClientTest {
         Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
         setupTransactionClient(responseBundle, SOR_CODE_2, ORGANIZATION_ID_2);
-        subject.save(carePlan, patient);
+        subject.saveCarePlan(carePlan, patient);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_2));
         assertFalse(isTagged(patient));
     }
@@ -349,7 +349,7 @@ public class FhirClientTest {
     public void savePatient_organizationTagIsOmitted() throws ServiceException {
         Patient patient = new Patient();
         setupSaveClient(patient, true, null, null);
-        subject.save(patient);
+        subject.savePatient(patient);
         assertFalse(isTagged(patient));
     }
 
@@ -358,7 +358,7 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId("1");
         setupSaveClient(questionnaireResponse, true);
-        String result = subject.save(questionnaireResponse).getId();
+        String result = subject.saveQuestionnaireResponse(questionnaireResponse);
         assertEquals("1", result);
     }
 
@@ -366,7 +366,7 @@ public class FhirClientTest {
     public void saveQuestionnaireResponse_notCreated_throwsException() {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         setupSaveClient(questionnaireResponse, false);
-        assertThrows(IllegalStateException.class, () -> subject.save(questionnaireResponse));
+        assertThrows(IllegalStateException.class, () -> subject.saveQuestionnaireResponse(questionnaireResponse));
     }
 
 

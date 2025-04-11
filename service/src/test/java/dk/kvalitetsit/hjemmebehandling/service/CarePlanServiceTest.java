@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -23,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -60,7 +58,7 @@ public class CarePlanServiceTest {
     @InjectMocks
     private CarePlanService subject;
     @Mock
-    private FhirClient fhirClient;
+    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -69,6 +67,7 @@ public class CarePlanServiceTest {
     private AccessValidator accessValidator;
     @Mock
     private CustomUserClient customUserService;
+
 
     private static Stream<Arguments> getCarePlansWithUnsatisfiedSchedules_sortCareplans_byPatientName() {
         HumanName a_a = new HumanName().addGiven("a").setFamily("a");
@@ -106,9 +105,7 @@ public class CarePlanServiceTest {
 
             Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-            var savedCareplan = new CarePlan();
-            savedCareplan.setId("1");
-            Mockito.when(fhirClient.save(Mockito.any(CarePlan.class))).thenReturn(savedCareplan);
+            Mockito.when(fhirClient.savePatient(Mockito.any(CarePlan.class))).thenReturn("1");
 
             String result = subject.createCarePlan(carePlanModel);
             fail("No error was thrown");
@@ -131,7 +128,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         subject.createCarePlan(carePlanModel);
-        Mockito.verify(fhirClient).save(carePlan, patient);
+        Mockito.verify(fhirClient).saveCarePlan(carePlan, patient);
     }
 
     @Test
@@ -479,7 +476,7 @@ public class CarePlanServiceTest {
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.questionnaires().get(1).satisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.satisfiedUntil());
 
-        Mockito.verify(fhirClient).update(carePlan);
+        Mockito.verify(fhirClient).updateCarePlan(carePlan);
     }
 
     @Test
@@ -553,7 +550,7 @@ public class CarePlanServiceTest {
         Mockito.doNothing().when(accessValidator).validateAccess(List.of(planDefinition));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
 
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies,patientDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
     }
 
     @Test
@@ -575,7 +572,7 @@ public class CarePlanServiceTest {
         Mockito.doNothing().when(accessValidator).validateAccess(List.of());
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
 
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails));
+        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
     }
 
     @Test
@@ -658,7 +655,7 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
         assertEquals(patientDetails.patientPrimaryPhone(), patientModel.contactDetails().primaryPhone());
         assertEquals(patientDetails.patientSecondaryPhone(), patientModel.contactDetails().secondaryPhone());
@@ -719,13 +716,12 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies,patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
         //assertTrue(nextNextSatisfiedUntilTime.isBefore(POINT_IN_TIME));
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.questionnaires().getFirst().satisfiedUntil());
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.satisfiedUntil());
     }
-
 
 
     @Test
@@ -757,7 +753,7 @@ public class CarePlanServiceTest {
         PatientModel patientModel = buildPatientModel();
         var orgId = "";
         Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientModel);
-        Mockito.when(fhirMapper.mapPatientModel(patientModel)).thenReturn(patient);
+        Mockito.when(fhirMapper.mapPatientModel(any())).thenReturn(patient);
 
         CarePlanModel carePlanModel = buildCarePlanModel(planDefinitionIds, questionnaireIds, patientModel);
         Mockito.when(fhirMapper.mapCarePlan(carePlan, carePlanResult, ORGANISATION_ID_1)).thenReturn(carePlanModel);
@@ -771,12 +767,17 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources());
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds,frequencies, patientDetails);
+        subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
+
+
+        ArgumentCaptor<PatientModel> patientCaptor = ArgumentCaptor.forClass(PatientModel.class);
+        ArgumentCaptor<CarePlanModel> carePlanCaptor = ArgumentCaptor.forClass(CarePlanModel.class);
+
+//        Mockito.verify(fhirAdaptor, times(1)).updateCarePlan(carePlanCaptor.capture(), patientCaptor.capture());
 
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.questionnaires().getFirst().satisfiedUntil());
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.satisfiedUntil());
     }
-
 
 
     @Test
@@ -869,7 +870,6 @@ public class CarePlanServiceTest {
         return CarePlanModel.builder()
                 .id(id)
                 .patient(patient)
-                .patient(PatientModel.builder().cpr(CPR_1).build())
                 .planDefinitions(List.of())
                 .planDefinitions(Optional.ofNullable(planDefinitionIds).map(x1 -> x1.stream().map(this::buildPlanDefinitionModel).toList()).orElse(null))
                 .questionnaires(questionnaireIds != null ? questionnaireIds.stream().map(this::buildQuestionnaireWrapperModel).toList() : List.of())
@@ -981,7 +981,6 @@ public class CarePlanServiceTest {
         patient.setContact(new ArrayList<>(List.of(contact)));
         return patient;
     }
-
 
 
     private Reference buildReference() {

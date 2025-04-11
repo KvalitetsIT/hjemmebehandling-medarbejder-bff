@@ -29,10 +29,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class CarePlanService extends AccessValidatingService {
+public class CarePlanService extends AccessValidatingService  {
 
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
-    private final FhirClient fhirClient;
+
+    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
     private final CustomUserClient customUserService;
@@ -42,7 +44,14 @@ public class CarePlanService extends AccessValidatingService {
     @Value("${patientidp.api.url}")
     private String patientidpApiUrl;
 
-    public CarePlanService(FhirClient fhirClient, FhirMapper fhirMapper, DateProvider dateProvider, AccessValidator accessValidator, DtoMapper dtoMapper, CustomUserClient customUserService) {
+    public CarePlanService(
+            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirMapper fhirMapper,
+            DateProvider dateProvider,
+            AccessValidator accessValidator,
+            DtoMapper dtoMapper,
+            CustomUserClient customUserService
+    ) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
@@ -61,196 +70,196 @@ public class CarePlanService extends AccessValidatingService {
     }
 
     public String createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
-        String cpr = carePlan.patient().cpr();
-        var patient = fhirClient.lookupPatientByCpr(cpr);
-
-        PatientModel updatedPatient = carePlan.patient();
-
-        if (updatedPatient.primaryContact() != null) {
-            var updatedPrimaryContact = PrimaryContactModel.Builder
-                    .from(updatedPatient.primaryContact())
-                    .organisation(fhirClient.getOrganizationId())
-                    .build();
-
-            updatedPatient = new PatientModel(
-                    updatedPatient.id(),
-                    updatedPatient.cpr(),
-                    updatedPatient.familyName(),
-                    updatedPatient.cpr(),
-                    updatedPatient.contactDetails(),
-                    updatedPrimaryContact,
-                    updatedPatient.additionalRelativeContactDetails(),
-                    updatedPatient.customUserId(),
-                    updatedPatient.customUserName()
-            );
-        }
-
-        if (patient.isPresent()) {
-            String patientId = patient.get().getIdElement().toUnqualifiedVersionless().getValue();
-            boolean onlyActiveCarePlans = true;
-            var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
-
-            if (!carePlanResult.getCarePlans().isEmpty()) {
-                throw new ServiceException(String.format(
-                        "Could not create careplan for cpr %s: Another active careplan already exists!", cpr),
-                        ErrorKind.BAD_REQUEST,
-                        ErrorDetails.CAREPLAN_EXISTS
-                );
-            }
-
-            var newPatient = fhirMapper.mapPatientModel(updatedPatient);
-
-            if (updatedPatient.primaryContact() != null) {
-                newPatient.getContactFirstRep().setOrganization(new Reference(fhirClient.getOrganizationId()));
-                var contacts = this.mergeContacts(patient.get().getContact(), newPatient.getContact());
-                patient.get().setContact(contacts);
-            }
-
-            patient.get().setTelecom(newPatient.getTelecom());
-
-            var orgId = fhirClient.getOrganizationId();
-            updatedPatient = fhirMapper.mapPatient(patient.get(), orgId);
-        }
-
-        // Validate referenced questionnaires
-        if (carePlan.questionnaires() != null && !carePlan.questionnaires().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(
-                    carePlan.questionnaires().stream()
-                            .map(qw -> qw.questionnaire().id().toString())
-                            .toList()
-            );
-            validateAccess(lookupResult.getQuestionnaires());
-        }
-
-        // Validate referenced plan definitions
-        if (carePlan.planDefinitions() != null && !carePlan.planDefinitions().isEmpty()) {
-            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitionsById(
-                    carePlan.planDefinitions().stream()
-                            .map(pd -> pd.id().toString())
-                            .toList()
-            );
-            validateAccess(lookupResult.getPlanDefinitions());
-        }
-
-        var now = dateProvider.now();
-        var today = dateProvider.today().toInstant();
-
-        // Update satisfiedUntil for each questionnaire wrapper
-        List<QuestionnaireWrapperModel> updatedQuestionnaires = carePlan.questionnaires().stream()
-                .map(qw -> {
-                    FrequencyEnumerator enumerator = new FrequencyEnumerator(qw.frequency());
-                    Instant satisfiedUntil = enumerator.getSatisfiedUntilForInitialization(now);
-                    return new QuestionnaireWrapperModel(
-                            qw.questionnaire(),
-                            qw.frequency(),
-                            satisfiedUntil,
-                            qw.thresholds()
-                    );
-                })
-                .toList();
-
-        CarePlanModel updatedCarePlan = new CarePlanModel(
-                null, // id must be null for creation
-                carePlan.organizationId(),
-                carePlan.title(),
-                CarePlanStatus.ACTIVE,
-                today,
-                today,
-                null,
-                updatedPatient,
-                updatedQuestionnaires,
-                carePlan.planDefinitions(),
-                carePlan.departmentName(),
-                null // will be computed below
-        );
-
-        Instant finalSatisfiedUntil = getRefreshedFrequencyTimestampForCarePlan(updatedCarePlan);
-        updatedCarePlan = new CarePlanModel(
-                updatedCarePlan.id(),
-                updatedCarePlan.organizationId(),
-                updatedCarePlan.title(),
-                updatedCarePlan.status(),
-                updatedCarePlan.created(),
-                updatedCarePlan.startDate(),
-                updatedCarePlan.endDate(),
-                updatedCarePlan.patient(),
-                updatedCarePlan.questionnaires(),
-                updatedCarePlan.planDefinitions(),
-                updatedCarePlan.departmentName(),
-                finalSatisfiedUntil
-        );
-
-        try {
-            if (patient.isPresent()) {
-                fhirClient.update(patient.get());
-                return fhirClient.save(fhirMapper.mapCarePlanModel(updatedCarePlan)).getId();
-            }
-
-            if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) {
-                try {
-                    Optional<CustomUserResponseDto> customUserResponse = customUserService
-                            .createUser(dtoMapper.mapPatientModelToCustomUserRequest(updatedPatient));
-
-                    if (customUserResponse.isPresent()) {
-                        CustomUserResponseDto dto = customUserResponse.get();
-                        updatedPatient = new PatientModel(
-                                updatedPatient.id(),
-                                updatedPatient.cpr(),
-                                updatedPatient.familyName(),
-                                updatedPatient.cpr(),
-                                updatedPatient.contactDetails(),
-                                updatedPatient.primaryContact(),
-                                updatedPatient.additionalRelativeContactDetails(),
-                                dto.getId(),
-                                dto.getUsername()
-                        );
-                    }
-                } catch (Exception e) {
-                    throw new ServiceException(
-                            String.format("Could not create customlogin for patient with id %s!", updatedPatient.id()),
-                            ErrorKind.BAD_GATEWAY,
-                            ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR
-                    );
-                }
-            }
-
-            return fhirClient.save(
-                    fhirMapper.mapCarePlanModel(updatedCarePlan),
-                    fhirMapper.mapPatientModel(updatedPatient)
-            );
-
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
-        }
+//        String cpr = carePlan.patient().cpr();
+//        var patient = fhirClient.lookupPatientByCpr(cpr);
+//
+//        PatientModel updatedPatient = carePlan.patient();
+//
+//        if (updatedPatient.primaryContact() != null) {
+//            var updatedPrimaryContact = PrimaryContactModel.Builder
+//                    .from(updatedPatient.primaryContact())
+//                    .organisation(fhirClient.getOrganizationId())
+//                    .build();
+//
+//            updatedPatient = new PatientModel(
+//                    updatedPatient.id(),
+//                    updatedPatient.cpr(),
+//                    updatedPatient.familyName(),
+//                    updatedPatient.cpr(),
+//                    updatedPatient.contactDetails(),
+//                    updatedPrimaryContact,
+//                    updatedPatient.additionalRelativeContactDetails(),
+//                    updatedPatient.customUserId(),
+//                    updatedPatient.customUserName()
+//            );
+//        }
+//
+//        if (patient.isPresent()) {
+//            String patientId = patient.get().getIdElement().toUnqualifiedVersionless().getValue();
+//            boolean onlyActiveCarePlans = true;
+//            var carePlanResult = fhirClient.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+//
+//            if (!carePlanResult.getCarePlans().isEmpty()) {
+//                throw new ServiceException(String.format(
+//                        "Could not create careplan for cpr %s: Another active careplan already exists!", cpr),
+//                        ErrorKind.BAD_REQUEST,
+//                        ErrorDetails.CAREPLAN_EXISTS
+//                );
+//            }
+//
+//            var newPatient = fhirMapper.mapPatientModel(updatedPatient);
+//
+//            if (updatedPatient.primaryContact() != null) {
+//                newPatient.getContactFirstRep().setOrganization(new Reference(fhirClient.getOrganizationId()));
+//                var contacts = this.mergeContacts(patient.get().getContact(), newPatient.getContact());
+//                patient.get().setContact(contacts);
+//            }
+//
+//            patient.get().setTelecom(newPatient.getTelecom());
+//
+//            var orgId = fhirClient.getOrganizationId();
+//            updatedPatient = fhirMapper.mapPatient(patient.get(), orgId);
+//        }
+//
+//        // Validate referenced questionnaires
+//        if (carePlan.questionnaires() != null && !carePlan.questionnaires().isEmpty()) {
+//            FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(
+//                    carePlan.questionnaires().stream()
+//                            .map(qw -> qw.questionnaire().id().toString())
+//                            .toList()
+//            );
+//            validateAccess(lookupResult.getQuestionnaires());
+//        }
+//
+//        // Validate referenced plan definitions
+//        if (carePlan.planDefinitions() != null && !carePlan.planDefinitions().isEmpty()) {
+//            FhirLookupResult lookupResult = fhirClient.lookupPlanDefinitionsById(
+//                    carePlan.planDefinitions().stream()
+//                            .map(pd -> pd.id().toString())
+//                            .toList()
+//            );
+//            validateAccess(lookupResult.getPlanDefinitions());
+//        }
+//
+//        var now = dateProvider.now();
+//        var today = dateProvider.today().toInstant();
+//
+//        // Update satisfiedUntil for each questionnaire wrapper
+//        List<QuestionnaireWrapperModel> updatedQuestionnaires = carePlan.questionnaires().stream()
+//                .map(qw -> {
+//                    FrequencyEnumerator enumerator = new FrequencyEnumerator(qw.frequency());
+//                    Instant satisfiedUntil = enumerator.getSatisfiedUntilForInitialization(now);
+//                    return new QuestionnaireWrapperModel(
+//                            qw.questionnaire(),
+//                            qw.frequency(),
+//                            satisfiedUntil,
+//                            qw.thresholds()
+//                    );
+//                })
+//                .toList();
+//
+//        CarePlanModel updatedCarePlan = new CarePlanModel(
+//                null, // id must be null for creation
+//                carePlan.organizationId(),
+//                carePlan.title(),
+//                CarePlanStatus.ACTIVE,
+//                today,
+//                today,
+//                null,
+//                updatedPatient,
+//                updatedQuestionnaires,
+//                carePlan.planDefinitions(),
+//                carePlan.departmentName(),
+//                null // will be computed below
+//        );
+//
+//        Instant finalSatisfiedUntil = getRefreshedFrequencyTimestampForCarePlan(updatedCarePlan);
+//        updatedCarePlan = new CarePlanModel(
+//                updatedCarePlan.id(),
+//                updatedCarePlan.organizationId(),
+//                updatedCarePlan.title(),
+//                updatedCarePlan.status(),
+//                updatedCarePlan.created(),
+//                updatedCarePlan.startDate(),
+//                updatedCarePlan.endDate(),
+//                updatedCarePlan.patient(),
+//                updatedCarePlan.questionnaires(),
+//                updatedCarePlan.planDefinitions(),
+//                updatedCarePlan.departmentName(),
+//                finalSatisfiedUntil
+//        );
+//
+//        try {
+//            if (patient.isPresent()) {
+//                fhirClient.updatePatient(patient.get());
+//                return fhirClient.saveCarePlan(updatedCarePlan);
+//            }
+//
+//            if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) {
+//                try {
+//                    Optional<CustomUserResponseDto> customUserResponse = customUserService
+//                            .createUser(dtoMapper.mapPatientModelToCustomUserRequest(updatedPatient));
+//
+//                    if (customUserResponse.isPresent()) {
+//                        CustomUserResponseDto dto = customUserResponse.get();
+//                        updatedPatient = new PatientModel(
+//                                updatedPatient.id(),
+//                                updatedPatient.cpr(),
+//                                updatedPatient.familyName(),
+//                                updatedPatient.cpr(),
+//                                updatedPatient.contactDetails(),
+//                                updatedPatient.primaryContact(),
+//                                updatedPatient.additionalRelativeContactDetails(),
+//                                dto.getId(),
+//                                dto.getUsername()
+//                        );
+//                    }
+//                } catch (Exception e) {
+//                    throw new ServiceException(
+//                            String.format("Could not create customlogin for patient with id %s!", updatedPatient.id()),
+//                            ErrorKind.BAD_GATEWAY,
+//                            ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR
+//                    );
+//                }
+//            }
+//
+//            return fhirClient.saveCarePlan(updatedCarePlan, updatedPatient);
+//
+//        } catch (ServiceException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw new ServiceException("Error saving CarePlan", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
+//        }
+        return null;
     }
 
 
     public CarePlanModel completeCarePlan(String carePlanId) throws ServiceException {
-        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
+//        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+//        FhirLookupResult lookupResult = fhirClient.lookupCarePlanById(qualifiedId);
+//
+//
+//        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
+//
+//        if (carePlan.isEmpty()) {
+//            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+//        }
+//
+//        var questionnaireResponsesStillNotExamined = fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId).getQuestionnaireResponses();
+//        if (!questionnaireResponsesStillNotExamined.isEmpty()) {
+//            throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
+//        }
+//
+//        if (ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.get().getExtension()).isBefore(Instant.now())) {
+//            throw new ServiceException(String.format("Careplan with id %s is missing scheduled responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
+//        }
+//
+//        CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
+//        fhirClient.updateCarePlan(completedCarePlan);
+//
+//        return fhirMapper.mapCarePlan(completedCarePlan, lookupResult, fhirClient.getOrganizationId()); // for auditlog
 
-
-        Optional<CarePlan> carePlan = lookupResult.getCarePlan(qualifiedId);
-
-        if (carePlan.isEmpty()) {
-            throw new ServiceException(String.format("Could not lookup careplan with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
-        }
-
-        var questionnaireResponsesStillNotExamined = fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId).getQuestionnaireResponses();
-        if (!questionnaireResponsesStillNotExamined.isEmpty()) {
-            throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
-        }
-
-        if (ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.get().getExtension()).isBefore(Instant.now())) {
-            throw new ServiceException(String.format("Careplan with id %s is missing scheduled responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
-        }
-
-        CarePlan completedCarePlan = carePlan.get().setStatus(CarePlan.CarePlanStatus.COMPLETED);
-        fhirClient.update(completedCarePlan);
-
-        return fhirMapper.mapCarePlan(completedCarePlan, lookupResult, fhirClient.getOrganizationId()); // for auditlog
+        return null;
     }
 
     public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
@@ -347,163 +356,166 @@ public class CarePlanService extends AccessValidatingService {
                 .build();
 
         // Save the updated carePlan
-        fhirClient.update(fhirMapper.mapCarePlanModel(carePlanModel));
+        fhirClient.updateCarePlan(carePlanModel);
         return carePlanModel; // for auditlog
     }
 
     public CarePlanModel updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
-        // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
-        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitionsById(planDefinitionIds);
-        if (planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) throw new ServiceException(
-                "Could not look up plan definitions to update!",
-                ErrorKind.BAD_REQUEST,
-                ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
-        );
+//        // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
+//        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitionsById(planDefinitionIds);
+//        if (planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) throw new ServiceException(
+//                "Could not look up plan definitions to update!",
+//                ErrorKind.BAD_REQUEST,
+//                ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
+//        );
+//
+//        // Validate that the client is allowed to reference the plan definitions.
+//        validateAccess(planDefinitionResult.getPlanDefinitions());
+//
+//        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
+//        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnairesById(questionnaireIds);
+//        if (questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) throw new ServiceException(
+//                "Could not look up questionnaires to update!",
+//                ErrorKind.BAD_REQUEST,
+//                ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
+//        );
+//
+//
+//        // Validate that the client is allowed to reference the questionnaires.
+//        validateAccess(questionnaireResult.getQuestionnaires());
+//
+//        // Look up the CarePlan, throw an exception in case it does not exist.
+//        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+//        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
+//
+//        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
+//
+//        if (emptyResult) {
+//            throw new ServiceException(
+//                    String.format("Could not lookup careplan with id %s!", qualifiedId),
+//                    ErrorKind.BAD_REQUEST,
+//                    ErrorDetails.CAREPLAN_DOES_NOT_EXIST
+//            );
+//        }
+//
+//        CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
+//
+//        // Validate that the client is allowed to update the carePlan.
+//        validateAccess(carePlan);
+//
+//        // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
+//        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions()
+//                .stream()
+//                .map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult))
+//                .toList();
+//
+//        if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
+//                "Not every questionnaireId could be found in the provided plan definitions.",
+//                ErrorKind.BAD_REQUEST,
+//                ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN
+//        );
+//
+//
+//        // find evt. fjernede spørgeskemaer
+//        List<String> removedQuestionnaireIds = getIdsOfRemovedQuestionnaires(questionnaireIds, carePlan);
+//
+//        // tjek om et fjernet spørgeskema har blå alarm
+//        if (!removedQuestionnaireIds.isEmpty()) {
+//            boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
+//            if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
+//                    "Not every questionnaireId could be found in the provided plan definitions.",
+//                    ErrorKind.BAD_REQUEST,
+//                    ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
+//            );
+//        }
+//
+//        // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
+//        var removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
+//
+//        if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
+//                String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId),
+//                ErrorKind.BAD_REQUEST,
+//                ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
+//        );
+//
+//
+//        var orgId = fhirClient.getOrganizationId();
+//        // Update carePlan
+//        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult), orgId);
+//
+//        carePlanModel = updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);
+//
+//
+//        // Update patient
+//        String patientId = carePlanModel.patient().id().toString();
+//
+//        var oldPatient = careplanResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId)));
+//
+//        PatientModel newPatient = fhirMapper.mapPatient(oldPatient, orgId);
+//
+//        newPatient = PatientModel.Builder.from(newPatient)
+//                .primaryContact(PrimaryContactModel.Builder
+//                        .from(newPatient.primaryContact())
+//                        .organisation(fhirClient.getOrganizationId())
+//                        .build()
+//                ).build();
+//
+//        newPatient = updatePatientModel(newPatient, patientDetails);
+//
+//
+//        var mappedPatient = fhirMapper.mapPatientModel(newPatient);
+//
+//        var mergedContacts = mergeContacts(oldPatient.getContact(), mappedPatient.getContact());
+//
+//        // Without setting the contacts below, the old contacts for other departments/organisations will be discarded
+//        var updatedPatient = mappedPatient.setContact(mergedContacts);
+//
+//        // Save the updated CarePlan
+//        fhirClient.updateCarePlan(carePlanModel, updatedPatient);
+//        return carePlanModel; // for auditlogging
 
-        // Validate that the client is allowed to reference the plan definitions.
-        validateAccess(planDefinitionResult.getPlanDefinitions());
+        return null;
+    }
 
-        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnairesById(questionnaireIds);
-        if (questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) throw new ServiceException(
-                "Could not look up questionnaires to update!",
-                ErrorKind.BAD_REQUEST,
-                ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
-        );
-
-
-        // Validate that the client is allowed to reference the questionnaires.
-        validateAccess(questionnaireResult.getQuestionnaires());
-
-        // Look up the CarePlan, throw an exception in case it does not exist.
-        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
-
-        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
-
-        if (emptyResult) {
-            throw new ServiceException(
-                    String.format("Could not lookup careplan with id %s!", qualifiedId),
-                    ErrorKind.BAD_REQUEST,
-                    ErrorDetails.CAREPLAN_DOES_NOT_EXIST
-            );
-        }
-
-        CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
-
-        // Validate that the client is allowed to update the carePlan.
-        validateAccess(carePlan);
-
-        // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
-        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions()
-                .stream()
-                .map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult))
-                .toList();
-
-        if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
-                "Not every questionnaireId could be found in the provided plan definitions.",
-                ErrorKind.BAD_REQUEST,
-                ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN
-        );
-
-
-        // find evt. fjernede spørgeskemaer
-        List<String> removedQuestionnaireIds = getIdsOfRemovedQuestionnaires(questionnaireIds, carePlan);
-
-        // tjek om et fjernet spørgeskema har blå alarm
-        if (!removedQuestionnaireIds.isEmpty()) {
-            boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
-            if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
-                    "Not every questionnaireId could be found in the provided plan definitions.",
-                    ErrorKind.BAD_REQUEST,
-                    ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
-            );
-        }
-
-        // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
-        var removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
-
-        if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
-                String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId),
-                ErrorKind.BAD_REQUEST,
-                ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
-        );
-
-
-        var orgId = fhirClient.getOrganizationId();
-        // Update carePlan
-        CarePlanModel originalCareplan = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult), orgId);
-
-
-        List<QuestionnaireWrapperModel> updatedQuestionnaires = planDefinitions.stream()
+    private CarePlanModel updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
+        var updatedQuestionnaires = planDefinitions.stream()
                 .flatMap(pd -> pd.questionnaires().stream())
                 .toList();
 
-
-        // Update patient
-        String patientId = originalCareplan.patient().id().toString();
-
-        var oldPatient = careplanResult
-                .getPatient(originalCareplan.patient().id().toString())
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId)));
-
-
-        CarePlanModel updatedCarePlan = CarePlanModel.Builder
-                .from(originalCareplan)
+        carePlanModel = CarePlanModel.Builder
+                .from(carePlanModel)
                 .planDefinitions(planDefinitions)
-                .questionnaires(buildQuestionnaireWrapperModels(originalCareplan, updatedQuestionnaires, frequencies))
-                .satisfiedUntil(getRefreshedFrequencyTimestampForCarePlan(originalCareplan))
+                .questionnaires(buildQuestionnaireWrapperModels(carePlanModel, updatedQuestionnaires, frequencies))
+                .satisfiedUntil(getRefreshedFrequencyTimestampForCarePlan(carePlanModel))
                 .build();
-
-
-        PatientModel patientModel = fhirMapper.mapPatient(oldPatient, orgId);
-
-
-        var contactDetails = patientModel.primaryContact().contactDetails();
-
-
-        if (patientDetails.primaryRelativePrimaryPhone() != null || patientDetails.primaryRelativeSecondaryPhone() != null) {
-            if (patientModel.primaryContact().contactDetails() == null) {
-                contactDetails = new ContactDetailsModel(
-                        null,
-                        null,
-                        null,
-                        null,
-                        patientDetails.primaryRelativePrimaryPhone(),
-                        patientDetails.primaryRelativeSecondaryPhone()
-                );
-            }
-        }
-
-        patientModel = PatientModel.Builder
-                .from(patientModel)
-                .contactDetails(new ContactDetailsModel(
-                        patientModel.contactDetails().street(),
-                        patientModel.contactDetails().postalCode(),
-                        patientModel.contactDetails().country(),
-                        patientModel.contactDetails().city(),
-                        patientDetails.patientPrimaryPhone(),
-                        patientDetails.patientSecondaryPhone()
-                ))
-                .primaryContact(new PrimaryContactModel(
-                        contactDetails,
-                        patientDetails.primaryRelativeName(),
-                        patientDetails.primaryRelativeAffiliation(),
-                        fhirClient.getOrganizationId())
-                )
-                .build();
-
-        var newPatient = fhirMapper.mapPatientModel(patientModel);
-
-        var mergedContacts = mergeContacts(oldPatient.getContact(), newPatient.getContact());
-
-        // Without setting the contacts below, the old contacts for other departments/organisations will be discarded
-        var updatedPatient = newPatient.setContact(mergedContacts);
-
-        // Save the updated CarePlan
-        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(updatedCarePlan), updatedPatient);
-        return updatedCarePlan; // for auditlogging
+        return carePlanModel;
     }
+
+    private PatientModel updatePatientModel(PatientModel patientModel, PatientDetails patientDetails) {
+        var primaryContactDetails = ContactDetailsModel.Builder
+                .from(patientModel.primaryContact().contactDetails())
+                .primaryPhone(patientDetails.primaryRelativePrimaryPhone() != null ? patientDetails.primaryRelativePrimaryPhone() : patientDetails.patientPrimaryPhone())
+                .secondaryPhone(patientDetails.primaryRelativeSecondaryPhone() != null ? patientDetails.primaryRelativeSecondaryPhone() : patientDetails.patientSecondaryPhone())
+                .build();
+
+        var primaryContact = PrimaryContactModel.Builder
+                .from(patientModel.primaryContact())
+                .name(patientDetails.primaryRelativeName())
+                .affiliation(patientDetails.primaryRelativeAffiliation())
+                .contactDetails(primaryContactDetails);
+
+        var contactDetails = ContactDetailsModel.Builder
+                .from(patientModel.primaryContact().contactDetails())
+                .primaryPhone(patientDetails.patientPrimaryPhone())
+                .secondaryPhone(patientDetails.patientSecondaryPhone())
+                .build();
+
+        return PatientModel.Builder.from(patientModel)
+                .contactDetails(contactDetails)
+                .primaryContact(primaryContact.build())
+                .build();
+    }
+
 
     public List<QuestionnaireModel> getUnresolvedQuestionnaires(String carePlanId) throws AccessValidationException, ServiceException {
 
@@ -554,69 +566,68 @@ public class CarePlanService extends AccessValidatingService {
         return allowedQuestionnaires.containsAll(actualQuestionnaires);
     }
 
-    private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(CarePlanModel carePlan, List<QuestionnaireWrapperModel> updatedQuestionnaires, Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
+    private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(
+            CarePlanModel carePlan,
+            List<QuestionnaireWrapperModel> updatedQuestionnaires,
+            Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
+
         List<QuestionnaireWrapperModel> currentQuestionnaires = carePlan.questionnaires();
+
         return updatedQuestionnaires.stream().map(wrapper -> {
             Optional<QuestionnaireWrapperModel> currentQuestionnaire = currentQuestionnaires.stream()
                     .filter(q -> q.questionnaire().id().equals(wrapper.questionnaire().id()))
                     .findFirst();
 
             FrequencyModel updatedFrequency = updatedQuestionnaireIdFrequencies.get(wrapper.questionnaire().id().toString());
-
-
-            if (currentQuestionnaire.isEmpty()) {
-                // Initialize the 'satisfied-until' timestamp-
-                FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(wrapper.frequency());
-                Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntilForInitialization(dateProvider.now());
-                return QuestionnaireWrapperModel.Builder
-                        .from(wrapper)
-                        .frequency(updatedFrequency)
-                        .satisfiedUntil(satisfiedUntil)
-                        .build();
-            }
+            FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(updatedFrequency);
 
             var builder = QuestionnaireWrapperModel.Builder
                     .from(wrapper)
                     .frequency(updatedFrequency);
 
-            if (!updatedFrequency.equals(currentQuestionnaire.get().frequency())) {
-                // re-Initialize the 'satisfied-until' timestamp-
-                Instant currentSatisfiedUntil = currentQuestionnaire.get().satisfiedUntil();
+            if (currentQuestionnaire.isEmpty()) {
+                // Questionnaire is new – initialize satisfiedUntil
+                Instant satisfiedUntil = frequencyEnumerator.getSatisfiedUntilForInitialization(dateProvider.now());
+                return builder.satisfiedUntil(satisfiedUntil).build();
+            }
 
-                FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(wrapper.frequency());
+            // Questionnaire exists already – check if frequency changed
+            QuestionnaireWrapperModel existing = currentQuestionnaire.get();
+            if (!updatedFrequency.equals(existing.frequency())) {
+                Instant currentSatisfiedUntil = existing.satisfiedUntil();
                 Instant newSatisfiedUntil = frequencyEnumerator.getSatisfiedUntilForFrequencyChange(dateProvider.now());
 
-                // if current satisfied-until > new, this means that the patient has already answered today
-                // and in this case we want to keep this as 'SatisfiedUntil'
                 if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
-                    String questionnaireId = currentQuestionnaire.get().questionnaire().id().id();
-                    FhirLookupResult lookupQuestionnaireResponses = fhirClient.lookupQuestionnaireResponses(carePlan.id().id(), List.of(questionnaireId));
+                    String questionnaireId = existing.questionnaire().id().id();
+                    FhirLookupResult lookupQuestionnaireResponses =
+                            fhirClient.lookupQuestionnaireResponses(carePlan.id().id(), List.of(questionnaireId));
 
                     ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
 
-                    boolean answerFromTodayExist = lookupQuestionnaireResponses.getQuestionnaireResponses().stream()
+                    boolean answerFromTodayExists = lookupQuestionnaireResponses.getQuestionnaireResponses().stream()
                             .anyMatch(questionnaireResponse -> {
-                                ZonedDateTime answered = ZonedDateTime.ofInstant(questionnaireResponse.getAuthored().toInstant(), ZoneId.of("Europe/Copenhagen"));
-
-                                // check if answer is from 'today and before deadline'
-                                return answered.toLocalDate().equals(now.toLocalDate()) && answered.toLocalTime().isBefore(updatedFrequency.timeOfDay());
+                                ZonedDateTime answered = ZonedDateTime.ofInstant(
+                                        questionnaireResponse.getAuthored().toInstant(), ZoneId.of("Europe/Copenhagen"));
+                                return answered.toLocalDate().equals(now.toLocalDate())
+                                        && answered.toLocalTime().isBefore(updatedFrequency.timeOfDay());
                             });
 
-                    if (answerFromTodayExist) {
+                    if (answerFromTodayExists) {
                         Instant nextSatisfiedUntil = frequencyEnumerator.getSatisfiedUntil(dateProvider.now(), false);
                         return builder.satisfiedUntil(nextSatisfiedUntil).build();
+                    } else {
+                        return builder.satisfiedUntil(newSatisfiedUntil).build();
                     }
-
+                } else {
                     return builder.satisfiedUntil(newSatisfiedUntil).build();
-
                 }
-                return builder.satisfiedUntil(newSatisfiedUntil).build();
             }
 
-            return builder.satisfiedUntil(currentQuestionnaire.get().satisfiedUntil()).build();
+            // Frequency has not changed – reuse current satisfiedUntil
+            return builder.satisfiedUntil(existing.satisfiedUntil()).build();
         }).toList();
-
     }
+
 
     private Instant recomputeFrequencyTimestamps(CarePlanModel carePlanModel, String questionnaireId, Instant currentPointInTime) {
         List<QuestionnaireWrapperModel> updatedQuestionnaires = carePlanModel.questionnaires().stream()

@@ -245,7 +245,6 @@ public class FhirMapper {
                 });
 
 
-
                 return new PrimaryContactModel(
                         primaryRelativeContactDetails.build(),
                         contact.getName().getText(),
@@ -397,7 +396,7 @@ public class FhirMapper {
     public QuestionnaireResponseModel mapQuestionnaireResponse(
             QuestionnaireResponse questionnaireResponse,
             FhirLookupResult lookupResult,
-            List<Questionnaire> historicalQuestionnaires,
+            List<QuestionnaireModel> historicalQuestionnaires,
             String organisationId
     ) {
         if (historicalQuestionnaires == null) {
@@ -408,7 +407,7 @@ public class FhirMapper {
                 .map(item -> {
                     var builder = IntStream.range(0, historicalQuestionnaires.size())
                             .mapToObj(i -> {
-                                Questionnaire q = historicalQuestionnaires.get(i);
+                                QuestionnaireModel q = historicalQuestionnaires.get(i);
                                 boolean deprecated = i > 0;
                                 return Optional.of(QuestionModel.Builder
                                         .from(getQuestion(q, item.getLinkId()))
@@ -604,6 +603,11 @@ public class FhirMapper {
         }
         return null;
     }
+
+    private QuestionModel getQuestion(QuestionnaireModel questionnaire, String linkId) {
+        return getQuestion(mapQuestionnaireModel(questionnaire), linkId);
+    }
+
 
     private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
         return Optional.ofNullable(getQuestionnaireItem(questionnaire, linkId))
@@ -1036,5 +1040,17 @@ public class FhirMapper {
             case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
             case RETIRED -> Enumerations.PublicationStatus.RETIRED;
         };
+    }
+
+    public PatientModel mapPatient(Patient patient) {
+        return null;
+    }
+
+    public CarePlan mapCarePlan(CarePlanModel carePlan) {
+        return null;
+    }
+
+    public Practitioner mapPractitionerModel(PractitionerModel practitioner) {
+        return null;
     }
 }

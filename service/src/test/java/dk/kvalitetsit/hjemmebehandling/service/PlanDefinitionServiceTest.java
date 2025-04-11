@@ -2,10 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -16,6 +13,7 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -27,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionServiceTest {
@@ -37,7 +37,7 @@ public class PlanDefinitionServiceTest {
     @InjectMocks
     private PlanDefinitionService subject;
     @Mock
-    private FhirClient fhirClient;
+    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -73,10 +73,17 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
         Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
+        Mockito.when(fhirMapper.mapPlanDefinitionResult(planDefinition, lookupResult)).thenReturn(planDefinitionModel);
 
-        subject.updatePlanDefinition(id, "a new name", null, List.of(), List.of());
 
-        assertEquals("a new name", planDefinitionModel.title());
+        var expectedName = "a new name";
+
+        subject.updatePlanDefinition(id, expectedName, null, List.of(), List.of());
+
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        Mockito.verify(fhirMapper, times(1)).mapPlanDefinitionModel(captor.capture()); // capturing the argument to save(...)
+
+        assertEquals(expectedName, captor.getValue().name());
     }
 
     @Test

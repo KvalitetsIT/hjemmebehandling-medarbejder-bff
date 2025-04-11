@@ -130,7 +130,7 @@ public class QuestionnaireControllerTest {
 
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
-        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(QuestionnaireModel.builder().id(new QualifiedId("questionnaire-1", ResourceType.Questionnaire)).build());
+        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn("questionnaire-1");
 
         String location = "http://localhost:8080/api/v1/questionnaire/questionnaire-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("questionnaire-1")).thenReturn(URI.create(location));

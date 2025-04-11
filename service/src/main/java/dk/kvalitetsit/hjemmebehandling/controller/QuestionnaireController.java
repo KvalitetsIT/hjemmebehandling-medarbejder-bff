@@ -48,7 +48,7 @@ public class QuestionnaireController extends BaseController implements Questionn
 
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(createQuestionnaireRequest.getQuestionnaire());
         try {
-            String questionnaireId = questionnaireService.createQuestionnaire(questionnaire).id().toString();
+            String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
             URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
             return ResponseEntity.created(location).build();
         } catch (ServiceException e) {
