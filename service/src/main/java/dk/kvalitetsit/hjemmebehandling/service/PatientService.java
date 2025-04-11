@@ -27,7 +27,7 @@ public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
     // TODO: Should be split into one which is only concerned about patient
-    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private final FhirClient fhirClient;
 
     private final FhirMapper fhirMapper;
 
@@ -36,7 +36,7 @@ public class PatientService extends AccessValidatingService {
     private CustomUserClient customUserService;
 
     public PatientService(
-            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirClient fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator,
             DtoMapper dtoMapper
@@ -56,7 +56,7 @@ public class PatientService extends AccessValidatingService {
                     .customUserId(customerUserLinkId)
                     .build();
 
-            fhirClient.savePatient(modifiedPatient);
+            fhirClient.savePatient(fhirMapper.mapPatientModel(modifiedPatient));
         } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
@@ -79,7 +79,7 @@ public class PatientService extends AccessValidatingService {
 
     public PatientModel patient(String cpr) throws ServiceException {
         // Look up the patient
-        Optional<PatientModel> patient = fhirClient.lookupPatientByCpr(cpr);
+        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
         if (patient.isEmpty()) {
             return null;
         }
@@ -87,7 +87,7 @@ public class PatientService extends AccessValidatingService {
         var orgId = fhirClient.getOrganizationId();
 
         // Map to the domain model
-        return patient.get();
+        return fhirMapper.mapPatient(patient.get());
     }
 
     boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient) {

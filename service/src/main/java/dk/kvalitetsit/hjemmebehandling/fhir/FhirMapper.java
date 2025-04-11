@@ -396,7 +396,7 @@ public class FhirMapper {
     public QuestionnaireResponseModel mapQuestionnaireResponse(
             QuestionnaireResponse questionnaireResponse,
             FhirLookupResult lookupResult,
-            List<QuestionnaireModel> historicalQuestionnaires,
+            List<Questionnaire> historicalQuestionnaires,
             String organisationId
     ) {
         if (historicalQuestionnaires == null) {
@@ -407,7 +407,7 @@ public class FhirMapper {
                 .map(item -> {
                     var builder = IntStream.range(0, historicalQuestionnaires.size())
                             .mapToObj(i -> {
-                                QuestionnaireModel q = historicalQuestionnaires.get(i);
+                                Questionnaire q = historicalQuestionnaires.get(i);
                                 boolean deprecated = i > 0;
                                 return Optional.of(QuestionModel.Builder
                                         .from(getQuestion(q, item.getLinkId()))

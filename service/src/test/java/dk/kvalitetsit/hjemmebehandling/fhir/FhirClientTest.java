@@ -39,7 +39,7 @@ public class FhirClientTest {
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
     private final String endpoint = "http://foo";
-    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> subject;
+    private FhirClient subject;
     @Mock
     private FhirContext context;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -50,7 +50,7 @@ public class FhirClientTest {
     @BeforeEach
     public void setup() {
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
-        subject = new FhirAdopter(new FhirMapper(), new ConcreteFhirClient(context, endpoint, userContextProvider));
+        subject = new FhirClient(context, endpoint, userContextProvider);
 
     }
 
@@ -148,7 +148,7 @@ public class FhirClientTest {
         patient.setId(id);
         setupSearchPatientClient(patient);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<PatientModel> result = subject.lookupPatientById(id);
+        Optional<Patient> result = subject.lookupPatientById(id);
         assertTrue(result.isPresent());
         assertEquals(patient, result.get());
     }
@@ -158,7 +158,7 @@ public class FhirClientTest {
         String id = "patient-1";
         setupSearchPatientClient();
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<PatientModel> result = subject.lookupPatientById(id);
+        Optional<Patient> result = subject.lookupPatientById(id);
         assertFalse(result.isPresent());
     }
 
@@ -285,7 +285,8 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlan_created_returnsId() throws ServiceException {
-        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
         setupSaveClient(carePlan, true);
         String result = subject.saveCarePlan(carePlan);
         assertEquals("1",result);
@@ -293,7 +294,8 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlan_addsOrganizationTag() throws ServiceException {
-        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
         setupSaveClient(carePlan, true);
         subject.saveCarePlan(carePlan);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_1));
@@ -301,15 +303,16 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlan_notCreated_throwsException() {
-        CarePlanModel carePlan = CarePlanModel.builder().id(new QualifiedId("1")).build();
+        CarePlan carePlan = new CarePlan();
+        carePlan.setId("1");
         setupSaveClient(carePlan, false);
         assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
     }
 
     @Test
     public void saveCarePlanWithPatient_returnsCarePlanId() throws ServiceException {
-        PatientModel patient = PatientModel.builder().build();
-        CarePlanModel carePlan =  CarePlanModel.builder().build();
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "CarePlan/2", "201", "Patient/3");
         setupTransactionClient(responseBundle);
         String result = subject.saveCarePlan(carePlan, patient);
@@ -318,8 +321,8 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlanWithPatient_carePlanLocationMissing_throwsException() {
-        CarePlanModel carePlan = CarePlanModel.builder().build();
-        PatientModel patient = PatientModel.builder().build();
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("201", "Questionnaire/4", "201", "Patient/3");
         setupTransactionClient(responseBundle);
         assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));
@@ -327,8 +330,8 @@ public class FhirClientTest {
 
     @Test
     public void saveCarePlanWithPatient_unwantedHttpStatus_throwsException() {
-        CarePlanModel carePlan = CarePlan.();
-        PatientModel patient = Patient();
+        CarePlan carePlan = new CarePlan();
+        Patient patient = new Patient();
         Bundle responseBundle = buildResponseBundle("400", null, "400", null);
         setupTransactionClient(responseBundle);
         assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan, patient));

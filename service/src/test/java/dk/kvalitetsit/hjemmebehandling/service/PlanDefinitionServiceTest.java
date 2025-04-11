@@ -13,10 +13,7 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -37,7 +34,7 @@ public class PlanDefinitionServiceTest {
     @InjectMocks
     private PlanDefinitionService subject;
     @Mock
-    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private FhirClient fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -311,7 +308,6 @@ public class PlanDefinitionServiceTest {
         Mockito.when(fhirMapper.mapCarePlan(existingCarePlan, carePlanLookupResult, ORGANISATION_ID_1)).thenReturn(existingCarePlanModel);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
-        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
         assertEquals(1, planDefinitionModel.questionnaires().size());
         assertEquals(1, existingCarePlanModel.questionnaires().size());

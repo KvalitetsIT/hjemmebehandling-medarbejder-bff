@@ -33,7 +33,7 @@ public class CarePlanService extends AccessValidatingService  {
 
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
-    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private final FhirClient fhirClient;
 
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
@@ -45,7 +45,7 @@ public class CarePlanService extends AccessValidatingService  {
     private String patientidpApiUrl;
 
     public CarePlanService(
-            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirClient fhirClient,
             FhirMapper fhirMapper,
             DateProvider dateProvider,
             AccessValidator accessValidator,
@@ -356,125 +356,125 @@ public class CarePlanService extends AccessValidatingService  {
                 .build();
 
         // Save the updated carePlan
-        fhirClient.updateCarePlan(carePlanModel);
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel));
         return carePlanModel; // for auditlog
     }
 
     public CarePlanModel updateCarePlan(String carePlanId, List<String> planDefinitionIds, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
-//        // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
-//        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitionsById(planDefinitionIds);
-//        if (planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) throw new ServiceException(
-//                "Could not look up plan definitions to update!",
-//                ErrorKind.BAD_REQUEST,
-//                ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
-//        );
-//
-//        // Validate that the client is allowed to reference the plan definitions.
-//        validateAccess(planDefinitionResult.getPlanDefinitions());
-//
-//        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
-//        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnairesById(questionnaireIds);
-//        if (questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) throw new ServiceException(
-//                "Could not look up questionnaires to update!",
-//                ErrorKind.BAD_REQUEST,
-//                ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
-//        );
-//
-//
-//        // Validate that the client is allowed to reference the questionnaires.
-//        validateAccess(questionnaireResult.getQuestionnaires());
-//
-//        // Look up the CarePlan, throw an exception in case it does not exist.
-//        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
-//        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
-//
-//        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
-//
-//        if (emptyResult) {
-//            throw new ServiceException(
-//                    String.format("Could not lookup careplan with id %s!", qualifiedId),
-//                    ErrorKind.BAD_REQUEST,
-//                    ErrorDetails.CAREPLAN_DOES_NOT_EXIST
-//            );
-//        }
-//
-//        CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
-//
-//        // Validate that the client is allowed to update the carePlan.
-//        validateAccess(carePlan);
-//
-//        // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
-//        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions()
-//                .stream()
-//                .map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult))
-//                .toList();
-//
-//        if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
-//                "Not every questionnaireId could be found in the provided plan definitions.",
-//                ErrorKind.BAD_REQUEST,
-//                ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN
-//        );
-//
-//
-//        // find evt. fjernede spørgeskemaer
-//        List<String> removedQuestionnaireIds = getIdsOfRemovedQuestionnaires(questionnaireIds, carePlan);
-//
-//        // tjek om et fjernet spørgeskema har blå alarm
-//        if (!removedQuestionnaireIds.isEmpty()) {
-//            boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
-//            if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
-//                    "Not every questionnaireId could be found in the provided plan definitions.",
-//                    ErrorKind.BAD_REQUEST,
-//                    ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
-//            );
-//        }
-//
-//        // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
-//        var removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
-//
-//        if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
-//                String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId),
-//                ErrorKind.BAD_REQUEST,
-//                ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
-//        );
-//
-//
-//        var orgId = fhirClient.getOrganizationId();
-//        // Update carePlan
-//        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult), orgId);
-//
-//        carePlanModel = updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);
-//
-//
-//        // Update patient
-//        String patientId = carePlanModel.patient().id().toString();
-//
-//        var oldPatient = careplanResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId)));
-//
-//        PatientModel newPatient = fhirMapper.mapPatient(oldPatient, orgId);
-//
-//        newPatient = PatientModel.Builder.from(newPatient)
-//                .primaryContact(PrimaryContactModel.Builder
-//                        .from(newPatient.primaryContact())
-//                        .organisation(fhirClient.getOrganizationId())
-//                        .build()
-//                ).build();
-//
-//        newPatient = updatePatientModel(newPatient, patientDetails);
-//
-//
-//        var mappedPatient = fhirMapper.mapPatientModel(newPatient);
-//
-//        var mergedContacts = mergeContacts(oldPatient.getContact(), mappedPatient.getContact());
-//
-//        // Without setting the contacts below, the old contacts for other departments/organisations will be discarded
-//        var updatedPatient = mappedPatient.setContact(mergedContacts);
-//
-//        // Save the updated CarePlan
-//        fhirClient.updateCarePlan(carePlanModel, updatedPatient);
-//        return carePlanModel; // for auditlogging
+        // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
+        FhirLookupResult planDefinitionResult = fhirClient.lookupPlanDefinitionsById(planDefinitionIds);
+        if (planDefinitionResult.getPlanDefinitions().size() != planDefinitionIds.size()) throw new ServiceException(
+                "Could not look up plan definitions to update!",
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
+        );
 
-        return null;
+        // Validate that the client is allowed to reference the plan definitions.
+        validateAccess(planDefinitionResult.getPlanDefinitions());
+
+        // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
+        FhirLookupResult questionnaireResult = fhirClient.lookupQuestionnairesById(questionnaireIds);
+        if (questionnaireResult.getQuestionnaires().size() != questionnaireIds.size()) throw new ServiceException(
+                "Could not look up questionnaires to update!",
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
+        );
+
+
+        // Validate that the client is allowed to reference the questionnaires.
+        validateAccess(questionnaireResult.getQuestionnaires());
+
+        // Look up the CarePlan, throw an exception in case it does not exist.
+        String qualifiedId = FhirUtils.qualifyId(carePlanId, ResourceType.CarePlan);
+        FhirLookupResult careplanResult = fhirClient.lookupCarePlanById(qualifiedId);
+
+        boolean emptyResult = careplanResult.getCarePlans().size() != 1 || careplanResult.getCarePlan(qualifiedId).isEmpty();
+
+        if (emptyResult) {
+            throw new ServiceException(
+                    String.format("Could not lookup careplan with id %s!", qualifiedId),
+                    ErrorKind.BAD_REQUEST,
+                    ErrorDetails.CAREPLAN_DOES_NOT_EXIST
+            );
+        }
+
+        CarePlan carePlan = careplanResult.getCarePlan(qualifiedId).get();
+
+        // Validate that the client is allowed to update the carePlan.
+        validateAccess(carePlan);
+
+        // Check that every provided questionnaire is a part of (at least) one of the plan definitions.
+        List<PlanDefinitionModel> planDefinitions = planDefinitionResult.getPlanDefinitions()
+                .stream()
+                .map(pd -> fhirMapper.mapPlanDefinitionResult(pd, planDefinitionResult))
+                .toList();
+
+        if (!questionnairesAllowedByPlanDefinitions(planDefinitions, questionnaireIds)) throw new ServiceException(
+                "Not every questionnaireId could be found in the provided plan definitions.",
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN
+        );
+
+
+        // find evt. fjernede spørgeskemaer
+        List<String> removedQuestionnaireIds = getIdsOfRemovedQuestionnaires(questionnaireIds, carePlan);
+
+        // tjek om et fjernet spørgeskema har blå alarm
+        if (!removedQuestionnaireIds.isEmpty()) {
+            boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
+            if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
+                    "Not every questionnaireId could be found in the provided plan definitions.",
+                    ErrorKind.BAD_REQUEST,
+                    ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
+            );
+        }
+
+        // check om der er ubehandlede besvarelser relateret til fjernede spørgeskemaer
+        var removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
+
+        if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
+                String.format("Careplan with id %s still has unhandled questionnaire-responses!", qualifiedId),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
+        );
+
+
+        var orgId = fhirClient.getOrganizationId();
+        // Update carePlan
+        CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, careplanResult.merge(questionnaireResult), orgId);
+
+        carePlanModel = updateCarePlanModel(carePlanModel, questionnaireIds, frequencies, planDefinitions);
+
+
+        // Update patient
+        String patientId = carePlanModel.patient().id().toString();
+
+        var oldPatient = careplanResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId)));
+
+        PatientModel newPatient = fhirMapper.mapPatient(oldPatient, orgId);
+
+        newPatient = PatientModel.Builder.from(newPatient)
+                .primaryContact(PrimaryContactModel.Builder
+                        .from(newPatient.primaryContact())
+                        .organisation(fhirClient.getOrganizationId())
+                        .build()
+                ).build();
+
+        newPatient = updatePatientModel(newPatient, patientDetails);
+
+
+        var mappedPatient = fhirMapper.mapPatientModel(newPatient);
+
+        var mergedContacts = mergeContacts(oldPatient.getContact(), mappedPatient.getContact());
+
+        // Without setting the contacts below, the old contacts for other departments/organisations will be discarded
+        var updatedPatient = mappedPatient.setContact(mergedContacts);
+
+        // Save the updated CarePlan
+        fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(carePlanModel), updatedPatient);
+        return carePlanModel; // for auditlogging
+
+
     }
 
     private CarePlanModel updateCarePlanModel(CarePlanModel carePlanModel, List<String> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {

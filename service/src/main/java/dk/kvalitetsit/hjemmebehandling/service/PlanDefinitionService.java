@@ -28,12 +28,12 @@ import java.util.stream.Stream;
 public class PlanDefinitionService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionService.class);
 
-    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private final FhirClient fhirClient;
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
 
     public PlanDefinitionService(
-            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirClient fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator,
             DateProvider dateProvider
@@ -75,7 +75,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 .build();
 
         try {
-            return fhirClient.savePlanDefinition(planDefinition);
+            return fhirClient.savePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinition));
         } catch (Exception e) {
             throw new ServiceException("Error saving PlanDefinition", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
@@ -189,7 +189,7 @@ public class PlanDefinitionService extends AccessValidatingService {
                 updatedWrappers
         );
 
-        fhirClient.updatePlanDefinition(planDefinitionModel);
+        fhirClient.updatePlanDefinition(fhirMapper.mapPlanDefinitionModel(planDefinitionModel));
 
         // if questionnaire(s) has been removed, remove them from appropriate careplans
         if (!removedQuestionnaireIds.isEmpty()) {
@@ -199,7 +199,7 @@ public class PlanDefinitionService extends AccessValidatingService {
             carePlanResult.getCarePlans().forEach(carePlan -> {
                 CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan, carePlanResult, orgId);
                 var questionnaires = carePlanModel.questionnaires().stream().filter(qw -> removedQuestionnaireIds.contains(qw.questionnaire().id().toString())).toList();
-                fhirClient.updateCarePlan(CarePlanModel.Builder.from(carePlanModel).questionnaires(questionnaires).build());
+                fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(CarePlanModel.Builder.from(carePlanModel).questionnaires(questionnaires).build()));
             });
         }
 
@@ -231,28 +231,28 @@ public class PlanDefinitionService extends AccessValidatingService {
                         model.satisfiedUntil()
                 );
 
-                fhirClient.updateCarePlan(updatedModel);
+                fhirClient.updateCarePlan(fhirMapper.mapCarePlanModel(updatedModel));
             });
         }
     }
 
 
     public void retirePlanDefinition(String id) throws ServiceException {
-//        String qualifiedId = FhirUtils.qualifyId(id, ResourceType.PlanDefinition);
-//        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinition(qualifiedId);
-//
-//        Optional<PlanDefinition> planDefinition = lookupResult.getPlanDefinition(qualifiedId);
-//        if (planDefinition.isEmpty()) {
-//            throw new ServiceException(String.format("Could not lookup plandefinition with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
-//        }
-//
-//        var activeCarePlansWithPlanDefinition = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
-//        if (!activeCarePlansWithPlanDefinition.isEmpty()) {
-//            throw new ServiceException(String.format("Plandefinition with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN);
-//        }
-//
-//        PlanDefinition retiredPlanDefinition = planDefinition.get().setStatus(Enumerations.PublicationStatus.RETIRED);
-//        fhirClient.updatePlanDefinition(retiredPlanDefinition);
+        String qualifiedId = FhirUtils.qualifyId(id, ResourceType.PlanDefinition);
+        FhirLookupResult lookupResult = fhirClient.lookupPlanDefinition(qualifiedId);
+
+        Optional<PlanDefinition> planDefinition = lookupResult.getPlanDefinition(qualifiedId);
+        if (planDefinition.isEmpty()) {
+            throw new ServiceException(String.format("Could not lookup plandefinition with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
+        }
+
+        var activeCarePlansWithPlanDefinition = fhirClient.lookupActiveCarePlansWithPlanDefinition(qualifiedId).getCarePlans();
+        if (!activeCarePlansWithPlanDefinition.isEmpty()) {
+            throw new ServiceException(String.format("Plandefinition with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN);
+        }
+
+        PlanDefinition retiredPlanDefinition = planDefinition.get().setStatus(Enumerations.PublicationStatus.RETIRED);
+        fhirClient.updatePlanDefinition(retiredPlanDefinition);
     }
 
     public List<CarePlanModel> getCarePlansThatIncludes(String planDefinitionId) throws ServiceException {

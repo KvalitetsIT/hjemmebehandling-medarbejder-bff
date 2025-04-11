@@ -7,5 +7,5 @@ import org.openapitools.model.UserContext;
 
 public interface IUserContextHandler {
 
-    UserContext mapTokenToUser(FhirClient<?, ?, ?, ?, ?, ?> client, DecodedJWT jwt) throws ServiceException;
+    UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) throws ServiceException;
 }

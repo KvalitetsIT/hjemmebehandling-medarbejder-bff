@@ -23,12 +23,12 @@ import java.util.Optional;
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
 
-    private final FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private final FhirClient fhirClient;
 
     private final FhirMapper fhirMapper;
 
     public QuestionnaireService(
-            FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient,
+            FhirClient fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator
     ) {
@@ -62,7 +62,7 @@ public class QuestionnaireService extends AccessValidatingService {
     public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
-        return fhirClient.saveQuestionnaire(initializedQuestionnaire);
+        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaireModel(initializedQuestionnaire));
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -114,7 +114,7 @@ public class QuestionnaireService extends AccessValidatingService {
         var updateQuestionnaireModel = updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(updateQuestionnaireModel);
+        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
     }
 
     private QuestionnaireModel updateQuestionnaireModel(

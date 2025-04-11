@@ -58,7 +58,7 @@ public class CarePlanServiceTest {
     @InjectMocks
     private CarePlanService subject;
     @Mock
-    private FhirClient<CarePlanModel, PatientModel, PlanDefinitionModel, QuestionnaireModel, QuestionnaireResponseModel, PractitionerModel> fhirClient;
+    private FhirClient fhirClient;
     @Mock
     private FhirMapper fhirMapper;
     @Mock
@@ -105,7 +105,7 @@ public class CarePlanServiceTest {
 
             Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
-            Mockito.when(fhirClient.savePatient(Mockito.any(CarePlan.class))).thenReturn("1");
+            Mockito.when(fhirClient.saveCarePlan(Mockito.any(CarePlan.class))).thenReturn("1");
 
             String result = subject.createCarePlan(carePlanModel);
             fail("No error was thrown");
@@ -122,8 +122,6 @@ public class CarePlanServiceTest {
         CarePlan carePlan = new CarePlan();
         Patient patient = new Patient();
 
-        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
-        Mockito.when(fhirMapper.mapPatientModel(carePlanModel.patient())).thenReturn(patient);
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
@@ -451,8 +449,8 @@ public class CarePlanServiceTest {
 
     @Test
     public void resolveAlarm_recomputesSatisfiedUntil_savesCarePlan() throws Exception {
-
         CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan);
         Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(lookupResult);
 
@@ -464,7 +462,6 @@ public class CarePlanServiceTest {
 
         Mockito.when(fhirMapper.mapCarePlan(carePlan, lookupResult, ORGANISATION_ID_1)).thenReturn(carePlanModel);
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        Mockito.when(fhirMapper.mapCarePlanModel(carePlanModel)).thenReturn(carePlan);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1);
@@ -768,12 +765,6 @@ public class CarePlanServiceTest {
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
-
-
-        ArgumentCaptor<PatientModel> patientCaptor = ArgumentCaptor.forClass(PatientModel.class);
-        ArgumentCaptor<CarePlanModel> carePlanCaptor = ArgumentCaptor.forClass(CarePlanModel.class);
-
-//        Mockito.verify(fhirAdaptor, times(1)).updateCarePlan(carePlanCaptor.capture(), patientCaptor.capture());
 
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.questionnaires().getFirst().satisfiedUntil());
         assertEquals(nextNextSatisfiedUntilTime, carePlanModel.satisfiedUntil());
