@@ -23,18 +23,7 @@ public record QuestionnaireModel(
         questions = questions != null ? questions : List.of();
     }
 
-    public static Builder from(QuestionnaireModel questionnaire) {
-        return new Builder(
-                questionnaire.id,
-                questionnaire.title,
-                questionnaire.description,
-                questionnaire.status,
-                questionnaire.questions,
-                questionnaire.callToAction,
-                questionnaire.version,
-                questionnaire.lastUpdated
-        );
-    }
+
 
     public static Builder builder() {
         return new Builder();
@@ -54,6 +43,19 @@ public record QuestionnaireModel(
         private QuestionModel callToAction;
         private String version;
         private Date lastUpdated;
+
+        public static Builder from(QuestionnaireModel questionnaire) {
+            return new Builder(
+                    questionnaire.id,
+                    questionnaire.title,
+                    questionnaire.description,
+                    questionnaire.status,
+                    questionnaire.questions,
+                    questionnaire.callToAction,
+                    questionnaire.version,
+                    questionnaire.lastUpdated
+            );
+        }
 
         public void organizationId(String organizationId) {
             this.organizationId = organizationId;

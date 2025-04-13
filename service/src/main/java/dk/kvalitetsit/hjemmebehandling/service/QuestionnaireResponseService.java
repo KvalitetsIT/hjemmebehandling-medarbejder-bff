@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -10,11 +11,9 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hl7.fhir.r4.model.Practitioner;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
-import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,22 +24,37 @@ import java.util.stream.Collectors;
 public class QuestionnaireResponseService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
-    private final FhirClient fhirClient;
 
-    private final FhirMapper fhirMapper;
+    private final FhirClient<
+            CarePlanModel,
+            PlanDefinitionModel,
+            PractitionerModel,
+            PatientModel,
+            QuestionnaireModel,
+            QuestionnaireResponseModel,
+            Organization,
+            CarePlanStatus> fhirClient;
 
-    private final Comparator<QuestionnaireResponse> priorityComparator;
+
+    private final Comparator<QuestionnaireResponseModel> priorityComparator;
 
     public QuestionnaireResponseService(
-            FhirClient fhirClient,
-            FhirMapper fhirMapper,
-            Comparator<QuestionnaireResponse> priorityComparator,
+            FhirClient<
+                    CarePlanModel,
+                    PlanDefinitionModel,
+                    PractitionerModel,
+                    PatientModel,
+                    QuestionnaireModel,
+                    QuestionnaireResponseModel,
+                    Organization,
+                    CarePlanStatus> fhirClient,
+            Comparator<QuestionnaireResponseModel> priorityComparator,
             AccessValidator accessValidator
     ) {
         super(accessValidator);
 
         this.fhirClient = fhirClient;
-        this.fhirMapper = fhirMapper;
+
         this.priorityComparator = priorityComparator;
     }
 
@@ -49,14 +63,14 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(String carePlanId, List<String> questionnaireIds) throws ServiceException, AccessValidationException {
-        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
-        List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
+        List<QuestionnaireModel> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds);
+
+        List<QuestionnaireResponseModel> responses =fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds);
 
         if (responses.isEmpty()) return List.of();
 
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
-        validateAccess(responses);
+        //validateAccess(responses);
 
         // Sort the responses by priority.
         responses = sortResponsesByDate(responses);
@@ -64,10 +78,8 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         var orgId = fhirClient.getOrganizationId();
 
 
-        return responses
-                .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
-                .toList();
+
+        throw new NotImplementedException();
 
     }
 
@@ -83,23 +95,21 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException {
 
-        FhirLookupResult lookupResult;
 
-        // Get the questionnaires by status
-
-        lookupResult = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
-
-        List<QuestionnaireResponse> responses = lookupResult.getQuestionnaireResponses();
+        List<QuestionnaireResponseModel> responses = fhirClient.lookupQuestionnaireResponsesByStatus(statuses);
 
         // Validate that the user is allowed to retrieve the QuestionnaireResponses.
-        validateAccess(responses);
+        //validateAccess(responses);
 
         if (responses.isEmpty()) return List.of();
 
         // below is supposed to return a list of ids in the following format: "questionnaire-infektionsmedicinsk-1"
-        List<String> ids = lookupResult.getQuestionnaires().stream().map(questionnaire -> questionnaire.getIdElement().getIdPart()).toList();
+        List<String> ids = responses
+                .stream()
+                .map(questionnaire -> questionnaire.id().toString())
+                .toList();
 
-        List<Questionnaire> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
+        List<QuestionnaireModel> historicalQuestionnaires = fhirClient.lookupVersionsOfQuestionnaireById(ids);
 
 
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
@@ -115,10 +125,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
         var orgId = fhirClient.getOrganizationId();
 
         // Map and return the responses
-        return responses
-                .stream()
-                .map(qr -> fhirMapper.mapQuestionnaireResponse(qr, lookupResult, historicalQuestionnaires, orgId))
-                .toList();
+        throw new NotImplementedException();
 
     }
 
@@ -136,36 +143,36 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     public QuestionnaireResponseModel updateExaminationStatus(String questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
         String qualifiedId = FhirUtils.qualifyId(questionnaireResponseId, ResourceType.QuestionnaireResponse);
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId);
-        QuestionnaireResponse questionnaireResponse = lookupResult.getQuestionnaireResponse(qualifiedId)
+
+        var questionnaireResponse = fhirClient.lookupQuestionnaireResponseById(questionnaireResponseId)
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST));
 
         // Validate that the user is allowed to update the QuestionnaireResponse.
-        validateAccess(questionnaireResponse);
+        //validateAccess(questionnaireResponse);
 
         var orgId = fhirClient.getOrganizationId();
 
-        Practitioner user = fhirClient.getOrCreateUserAsPractitioner();
+        PractitionerModel user = fhirClient.getOrCreateUserAsPractitioner();
 
         QuestionnaireResponseModel mappedResponse = QuestionnaireResponseModel.Builder
-                .from(fhirMapper.mapQuestionnaireResponse(questionnaireResponse, lookupResult, orgId))
+                .from(questionnaireResponse)
                 .examinationStatus(examinationStatus)
-                .examinationAuthor(fhirMapper.mapPractitioner(user))
+                .examinationAuthor(user)
                 .build();
 
         // Save the updated QuestionnaireResponse
-        fhirClient.updateQuestionnaireResponse(fhirMapper.mapQuestionnaireResponseModel(mappedResponse));
+        fhirClient.updateQuestionnaireResponse(mappedResponse);
         return mappedResponse;
     }
 
-    private List<QuestionnaireResponse> filterResponses(List<QuestionnaireResponse> responses) {
+    private List<QuestionnaireResponseModel> filterResponses(List<QuestionnaireResponseModel> responses) {
         // Given the list of responses, ensure that only one QuestionnaireResponse exists for each <patientId, questionnaireId>-pair,
         // and in case of duplicates, the one with the highest priority is retained.
 
         // Group the responses by  <patientId, questionnaireId>.
         var groupedResponses = responses
                 .stream()
-                .collect(Collectors.groupingBy(r -> new ImmutablePair<>(r.getSubject().getReference(), r.getQuestionnaire())));
+                .collect(Collectors.groupingBy(r -> new ImmutablePair<>(r.id(), r.questionnaireId())));
 
         // For each of the pairs, retain only the response with maximal priority.
         return groupedResponses.values()
@@ -174,21 +181,21 @@ public class QuestionnaireResponseService extends AccessValidatingService {
                 .toList();
     }
 
-    private List<QuestionnaireResponse> sortResponses(List<QuestionnaireResponse> responses) {
+    private List<QuestionnaireResponseModel> sortResponses(List<QuestionnaireResponseModel> responses) {
         return responses
                 .stream()
                 .sorted(priorityComparator)
                 .toList();
     }
 
-    private List<QuestionnaireResponse> sortResponsesByDate(List<QuestionnaireResponse> responses) {
+    private static List<QuestionnaireResponseModel> sortResponsesByDate(List<QuestionnaireResponseModel> responses) {
         return responses
                 .stream()
-                .sorted((a, b) -> b.getAuthored().compareTo(a.getAuthored()))
+                //.sorted((a, b) -> b.getAuthored().compareTo(a.getAuthored()))
                 .toList();
     }
 
-    private List<QuestionnaireResponseModel> pageResponses(List<QuestionnaireResponseModel> responses, Pagination pagination) {
+    private static List<QuestionnaireResponseModel> pageResponses(List<QuestionnaireResponseModel> responses, Pagination pagination) {
         return responses
                 .stream()
                 .skip((long) (pagination.getOffset() - 1) * pagination.getLimit())
@@ -196,7 +203,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
                 .toList();
     }
 
-    private QuestionnaireResponse extractMaximalPriorityResponse(List<QuestionnaireResponse> responses) {
+    private  QuestionnaireResponseModel extractMaximalPriorityResponse(List<QuestionnaireResponseModel> responses) {
         var response = responses
                 .stream()
                 .min(priorityComparator); // priorityComperator is ordering elements from high to low, so extract the first element (eg. highest priority)

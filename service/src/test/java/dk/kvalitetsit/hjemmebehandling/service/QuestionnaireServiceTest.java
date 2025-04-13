@@ -1,8 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -38,16 +40,14 @@ public class QuestionnaireServiceTest {
     @InjectMocks
     private QuestionnaireService subject;
     @Mock
-    private FhirClient fhirClient;
-    @Mock
-    private FhirMapper fhirMapper;
+    private FhirClientAdaptor fhirClient;
     @Mock
     private AccessValidator accessValidator;
 
     private static Stream<Arguments> updateQuestionnaire_illegalStatusChange_throwsException() {
-        Map<Enumerations.PublicationStatus, List<Enumerations.PublicationStatus>> valid = new HashMap<>();
-        valid.put(Enumerations.PublicationStatus.ACTIVE, List.of(Enumerations.PublicationStatus.ACTIVE, Enumerations.PublicationStatus.RETIRED));
-        valid.put(Enumerations.PublicationStatus.DRAFT, List.of(Enumerations.PublicationStatus.DRAFT, Enumerations.PublicationStatus.ACTIVE));
+        Map<QuestionnaireStatus, List<QuestionnaireStatus>> valid = new HashMap<>();
+        valid.put(QuestionnaireStatus.ACTIVE, List.of(QuestionnaireStatus.ACTIVE, QuestionnaireStatus.RETIRED));
+        valid.put(QuestionnaireStatus.DRAFT, List.of(QuestionnaireStatus.DRAFT, QuestionnaireStatus.ACTIVE));
 
         // compute and add illegal status changes
         Stream.Builder<Arguments> argumentBuilder = Stream.builder();
@@ -65,13 +65,14 @@ public class QuestionnaireServiceTest {
 
     @Test
     public void getQuestionnairesById_sucecss() throws Exception {
-        Questionnaire questionnaire = buildQuestionnaire();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(new QualifiedId(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1))
+                .status(QuestionnaireStatus.ACTIVE)
+                .build();
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
 
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
-        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
-
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
 
         assertTrue(result.isPresent());
@@ -80,22 +81,16 @@ public class QuestionnaireServiceTest {
 
     @Test
     public void getQuestionnairesById_notFound() throws Exception {
-        FhirLookupResult emptyLookupResult = FhirLookupResult.fromBundle(new Bundle());
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
-
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of());
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
-
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void getQuestionnaires_success() throws Exception {
-        Questionnaire questionnaire = new Questionnaire();
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
 
-        Mockito.when(fhirClient.lookupQuestionnairesByStatus(Collections.emptyList())).thenReturn(lookupResult);
-        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
+        Mockito.when(fhirClient.lookupQuestionnairesByStatus(Collections.emptyList())).thenReturn(List.of(questionnaireModel));
 
         List<QuestionnaireModel> result = subject.getQuestionnaires(Collections.emptyList());
 
@@ -105,10 +100,9 @@ public class QuestionnaireServiceTest {
 
     @Test
     public void createQuestionnaire_success() throws Exception {
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
 
-        Mockito.when(fhirClient.saveQuestionnaire(Mockito.any(Questionnaire.class))).thenReturn("1");
-        Mockito.when(fhirMapper.mapQuestionnaireModel(Mockito.any())).thenReturn(new Questionnaire());
+        Mockito.when(fhirClient.saveQuestionnaire(Mockito.any(QuestionnaireModel.class))).thenReturn("1");
 
         String result = subject.createQuestionnaire(questionnaireModel);
         assertEquals("1", result);
@@ -128,8 +122,6 @@ public class QuestionnaireServiceTest {
 
         // Assert
         ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
-        Mockito.verify(fhirMapper, times(1)).mapQuestionnaireModel(captor.capture()); // capturing the argument to save(...)
-
 
         questionnaireModel = captor.getValue();
 
@@ -151,12 +143,10 @@ public class QuestionnaireServiceTest {
         List<QuestionModel> newQuestions = List.of(buildQuestionModel());
         QuestionModel newCallToAction = buildQuestionModel();
 
-        Questionnaire questionnaire = buildQuestionnaire();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
 
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
-        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, newTitle, newDescription, newStatus, newQuestions, newCallToAction);
 
@@ -174,11 +164,9 @@ public class QuestionnaireServiceTest {
         String newStatus = "ACTIVE";
         List<QuestionModel> newQuestions = List.of(buildQuestionModel(linkId));
         QuestionModel newCallToAction = buildQuestionModel(linkId);
-        Questionnaire questionnaire = buildQuestionnaire();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
-        Mockito.when(fhirMapper.mapQuestionnaire(questionnaire)).thenReturn(questionnaireModel);
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToAction);
 
@@ -191,49 +179,58 @@ public class QuestionnaireServiceTest {
 
     @Test
     public void updateQuestionnaire_accessViolation_throwsException() throws Exception {
-        Questionnaire questionnaire = buildQuestionnaire();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(questionnaire);
         assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, null, null, null));
     }
 
     @Test
     public void updateQuestionnaire_questionnaireNotFound_throwsException() throws Exception {
-        FhirLookupResult emptyLookupResult = FhirLookupResult.fromBundle(new Bundle());
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(emptyLookupResult);
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of());
         assertThrows(ServiceException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, null, null, null));
     }
 
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void updateQuestionnaire_illegalStatusChange_throwsException(Enumerations.PublicationStatus currentStatus, Enumerations.PublicationStatus newStatus) throws Exception {
+    public void updateQuestionnaire_illegalStatusChange_throwsException(QuestionnaireStatus currentStatus, Enumerations.PublicationStatus newStatus) throws Exception {
         String newStatusParam = newStatus.toString();
-        Questionnaire questionnaire = buildQuestionnaire(currentStatus);
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel
+                .builder()
+                .status(currentStatus)
+                .build();
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
         assertThrows(ServiceException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatusParam, null, null));
     }
 
     @Test
     public void retireQuestionnaire_noActiveCarePlanReferences_isRetired() throws ServiceException {
         String id = "questionnaire-1";
-        Questionnaire questionnaire = buildQuestionnaire(Enumerations.PublicationStatus.ACTIVE);
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(new QualifiedId(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1))
+                .status(QuestionnaireStatus.ACTIVE)
+                .build();
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of());
         subject.retireQuestionnaire(id);
-        assertEquals(Enumerations.PublicationStatus.RETIRED, questionnaire.getStatus());
+        assertEquals(QuestionnaireStatus.RETIRED, questionnaire.status());
     }
 
     @Test
     public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
         String id = "questionnaire-1";
-        Questionnaire questionnaire = buildQuestionnaire(Enumerations.PublicationStatus.ACTIVE);
-        CarePlan activeCarePlan = new CarePlan();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(questionnaire, activeCarePlan);
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(lookupResult);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(new QualifiedId(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1))
+                .status(QuestionnaireStatus.ACTIVE)
+                .build();
+
+        CarePlanModel activeCarePlan = CarePlanModel.builder().build();
+
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of(activeCarePlan));
         try {
             subject.retireQuestionnaire(id);
             fail();
@@ -243,20 +240,9 @@ public class QuestionnaireServiceTest {
         }
     }
 
-    private Questionnaire buildQuestionnaire() {
-        return buildQuestionnaire(Enumerations.PublicationStatus.ACTIVE);
-    }
 
-    private Questionnaire buildQuestionnaire(Enumerations.PublicationStatus status) {
-        Questionnaire questionnaire = new Questionnaire();
-        questionnaire.setId(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1);
-        questionnaire.setStatus(status);
-        return questionnaire;
-    }
 
-    private QuestionnaireModel buildQuestionnaireModel() {
-        return QuestionnaireModel.builder().build();
-    }
+
 
     private QuestionModel buildQuestionModel(String linkId) {
         var builder = QuestionModel.builder();

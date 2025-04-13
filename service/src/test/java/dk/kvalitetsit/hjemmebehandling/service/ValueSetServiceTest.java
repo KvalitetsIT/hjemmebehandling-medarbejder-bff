@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -22,10 +23,7 @@ public class ValueSetServiceTest {
     private ValueSetService subject;
 
     @Mock
-    private FhirClient fhirClient;
-
-    @Mock
-    private FhirMapper fhirMapper;
+    private FhirClientAdaptor fhirClient;
 
     @Test
     public void getPlanDefinitions_sucecss() throws Exception {
@@ -33,7 +31,6 @@ public class ValueSetServiceTest {
         MeasurementTypeModel measurementTypeModel = MeasurementTypeModel.builder().build();
         FhirLookupResult lookupResult = FhirLookupResult.fromResource(valueSet);
         Mockito.when(fhirClient.lookupValueSet()).thenReturn(lookupResult);
-        Mockito.when(fhirMapper.extractMeasurementTypes(valueSet)).thenReturn(List.of(measurementTypeModel));
 
         List<MeasurementTypeModel> result = subject.getMeasurementTypes();
 

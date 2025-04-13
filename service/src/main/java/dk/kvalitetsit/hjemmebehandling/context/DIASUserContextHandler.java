@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 import org.openapitools.model.UserContext;
@@ -24,7 +24,7 @@ public class DIASUserContextHandler implements IUserContextHandler {
 
 
     @Override
-    public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) throws ServiceException {
+    public UserContext mapTokenToUser(ConcreteFhirClient client, DecodedJWT jwt) throws ServiceException {
         var context = new UserContext();
         if (jwt == null) {
             return context;

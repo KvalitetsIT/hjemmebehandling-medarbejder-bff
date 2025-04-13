@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -15,9 +15,9 @@ public class UserContextInterceptor implements HandlerInterceptor {
 
     private final IUserContextHandler contextHandler;
     private final UserContextProvider userContextProvider;
-    private final FhirClient client;
+    private final ConcreteFhirClient client;
 
-    public UserContextInterceptor(FhirClient client, UserContextProvider userContextProvider, IUserContextHandler userContextHandler) {
+    public UserContextInterceptor(ConcreteFhirClient client, UserContextProvider userContextProvider, IUserContextHandler userContextHandler) {
         this.client = client;
         this.userContextProvider = userContextProvider;
         this.contextHandler = userContextHandler;

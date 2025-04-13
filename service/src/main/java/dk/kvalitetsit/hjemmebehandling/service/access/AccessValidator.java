@@ -2,7 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.DomainResource;
@@ -15,18 +16,18 @@ import java.util.List;
 @Component
 public class AccessValidator {
     private final UserContextProvider userContextProvider;
-    private final FhirClient fhirClient;
+    private final ConcreteFhirClient fhirClient;
 
-    public AccessValidator(UserContextProvider userContextProvider, FhirClient fhirClient) {
+    public AccessValidator(UserContextProvider userContextProvider, ConcreteFhirClient fhirClient) {
         this.userContextProvider = userContextProvider;
         this.fhirClient = fhirClient;
     }
 
-    public void validateAccess(DomainResource resource) throws AccessValidationException, ServiceException {
+    public void validateAccess(BaseModel resource) throws AccessValidationException, ServiceException {
         validateAccess(List.of(resource));
     }
 
-    public void validateAccess(List<? extends DomainResource> resources) throws AccessValidationException, ServiceException {
+    public void validateAccess(List<? extends BaseModel> resources) throws AccessValidationException, ServiceException {
         // Validate that the user is allowed to access all the resources.
         String userOrganizationId = getOrganizationIdForUser();
 
@@ -36,8 +37,8 @@ public class AccessValidator {
             if (!userOrganizationId.equals(resourceOrganizationId)) {
                 throw new AccessValidationException(String.format(
                         "Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
-                        resource.getResourceType(),
-                        resource.getId(),
+                        resource.getClass(),
+                        resource.id(),
                         userOrganizationId,
                         resourceOrganizationId));
             }
@@ -57,13 +58,7 @@ public class AccessValidator {
         return organization.getIdElement().toUnqualifiedVersionless().getValue();
     }
 
-    private String getOrganizationIdForResource(DomainResource resource) {
-        var extension = resource.getExtension()
-                .stream()
-                .filter(e -> e.getUrl().equals(Systems.ORGANIZATION) && e.getValue() instanceof Reference)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        String.format("No organization id was present on resource %s!", resource.getId())));
-        return ((Reference) extension.getValue()).getReference();
+    private String getOrganizationIdForResource(BaseModel resource) {
+        return  resource.organizationId();
     }
 }

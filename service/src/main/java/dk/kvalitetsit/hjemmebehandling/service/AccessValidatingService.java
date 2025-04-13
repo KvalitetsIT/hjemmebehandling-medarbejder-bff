@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -14,11 +15,11 @@ public abstract class AccessValidatingService {
         this.accessValidator = accessValidator;
     }
 
-    protected void validateAccess(DomainResource resource) throws AccessValidationException, ServiceException {
+    protected void validateAccess(BaseModel resource) throws AccessValidationException, ServiceException {
         accessValidator.validateAccess(resource);
     }
 
-    protected void validateAccess(List<? extends DomainResource> resources) throws AccessValidationException, ServiceException {
+    protected void validateAccess(List<? extends BaseModel> resources) throws AccessValidationException, ServiceException {
         accessValidator.validateAccess(resources);
     }
 }

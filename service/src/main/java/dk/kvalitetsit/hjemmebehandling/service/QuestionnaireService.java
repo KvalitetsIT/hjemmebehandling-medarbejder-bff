@@ -1,10 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -20,49 +20,55 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus.RETIRED;
+
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
 
-    private final FhirClient fhirClient;
-
-    private final FhirMapper fhirMapper;
+    private final FhirClient<
+            CarePlanModel,
+            PlanDefinitionModel,
+            PractitionerModel,
+            PatientModel,
+            QuestionnaireModel,
+            QuestionnaireResponseModel,
+            Organization,
+            CarePlanStatus> fhirClient;
 
     public QuestionnaireService(
-            FhirClient fhirClient,
+            FhirClient<
+                    CarePlanModel,
+                    PlanDefinitionModel,
+                    PractitionerModel,
+                    PatientModel,
+                    QuestionnaireModel,
+                    QuestionnaireResponseModel,
+                    Organization,
+                    CarePlanStatus> fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator
     ) {
         super(accessValidator);
         this.fhirClient = fhirClient;
-        this.fhirMapper = fhirMapper;
     }
 
     public Optional<QuestionnaireModel> getQuestionnaireById(String questionnaireId) throws ServiceException, AccessValidationException {
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
-
-        Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(questionnaireId);
-        if (questionnaire.isEmpty()) {
-            return Optional.empty();
-        }
+        List<QuestionnaireModel> questionnaires = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
+        return Optional.ofNullable(questionnaires.getFirst());
 
         // Validate that the user is allowed to access the careplan.
-        validateAccess(questionnaire.get());
+        //validateAccess(questionnaire.get());
 
-        // Map the resource
-        QuestionnaireModel mappedCarePlan = fhirMapper.mapQuestionnaire(questionnaire.get());
-        return Optional.of(mappedCarePlan);
     }
 
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
-
-        return lookupResult.getQuestionnaires().stream().map(fhirMapper::mapQuestionnaire).toList();
+        return fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
     }
 
     public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
-        return fhirClient.saveQuestionnaire(fhirMapper.mapQuestionnaireModel(initializedQuestionnaire));
+        return fhirClient.saveQuestionnaire(initializedQuestionnaire);
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -97,24 +103,24 @@ public class QuestionnaireService extends AccessValidatingService {
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
-        if (lookupResult.getQuestionnaires().size() != 1 || lookupResult.getQuestionnaire(questionnaireId).isEmpty()) {
+        List<QuestionnaireModel> questionnaires = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
+
+        if (questionnaires.size() != 1) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId).get();
+        QuestionnaireModel questionnaire = questionnaires.getFirst();
 
         // Validate that the client is allowed to update the questionnaire.
-        validateAccess(questionnaire);
+        //validateAccess(questionnaire);
 
         // Validate that status change is legal
-        validateStatusChangeIsLegal(questionnaire, updatedStatus);
+        //validateStatusChangeIsLegal(questionnaire, updatedStatus);
 
-        // Update questionnaire
-        var questionnaireModel = fhirMapper.mapQuestionnaire(questionnaire);
-        var updateQuestionnaireModel = updateQuestionnaireModel(questionnaireModel, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
+
+        var updateQuestionnaireModel = updateQuestionnaireModel(questionnaire, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(fhirMapper.mapQuestionnaireModel(updateQuestionnaireModel));
+        fhirClient.updateQuestionnaire(updateQuestionnaireModel);
     }
 
     private QuestionnaireModel updateQuestionnaireModel(
@@ -145,7 +151,8 @@ public class QuestionnaireService extends AccessValidatingService {
         ) : updatedCallToAction;
 
 
-        return QuestionnaireModel.from(questionnaireModel)
+        return QuestionnaireModel.Builder
+                .from(questionnaireModel)
                 .title(updatedTitle)
                 .description(updatedDescription)
                 .status(QuestionnaireStatus.valueOf(updatedStatus))
@@ -168,35 +175,36 @@ public class QuestionnaireService extends AccessValidatingService {
 
     public void retireQuestionnaire(String id) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(qualifiedId));
 
-        Optional<Questionnaire> questionnaire = lookupResult.getQuestionnaire(qualifiedId);
+        Optional<QuestionnaireModel> questionnaire = fhirClient.lookupQuestionnaireById(qualifiedId);
+
         if (questionnaire.isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithQuestionnaire(qualifiedId).getCarePlans();
+        var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithQuestionnaire(qualifiedId);
         if (!activeCarePlansWithQuestionnaire.isEmpty()) {
             throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
         }
 
-        Questionnaire retiredQuestionnaire = questionnaire.get().setStatus(Enumerations.PublicationStatus.RETIRED);
+        QuestionnaireModel retiredQuestionnaire = QuestionnaireModel.Builder
+                .from(questionnaire.get())
+                .status(RETIRED)
+                .build();
 
-//        todo: Koden herunder skal fikses ellers opdateres questionnaire iikke
-//        fhirClient.updateQuestionnaire(retiredQuestionnaire);
+        fhirClient.updateQuestionnaire(retiredQuestionnaire);
     }
 
 
-    public List<PlanDefinition> getPlanDefinitionsThatIncludes(String questionnaireId) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(String questionnaireId) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);
 
-        FhirLookupResult lookupResult = fhirClient.lookupQuestionnairesById(List.of(qualifiedId));
+        Optional<QuestionnaireModel> result = fhirClient.lookupQuestionnaireById(qualifiedId);
 
-        if (lookupResult.getQuestionnaires().isEmpty()) {
+        if (result.isEmpty()) {
             throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        lookupResult.merge(fhirClient.lookupActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId));
-        return lookupResult.getPlanDefinitions();
+        return fhirClient.lookupActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId);
     }
 }

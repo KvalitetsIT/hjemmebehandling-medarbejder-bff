@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestDto;
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,14 +21,18 @@ public class CustomUserClient {
     private static final Logger logger = LoggerFactory.getLogger(CustomUserClient.class);
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper = new ObjectMapper();
+    private final DtoMapper dtoMapper;
     @Value("${patientidp.api.url}")
     private String patientidpApiUrl;
 
-    public CustomUserClient(RestTemplate restTemplate) {
+    public CustomUserClient(RestTemplate restTemplate, DtoMapper dtoMapper) {
+        this.dtoMapper = dtoMapper;
         this.restTemplate = restTemplate;
     }
 
-    public Optional<CustomUserResponseDto> createUser(CustomUserRequestDto userCreateRequest) throws JsonProcessingException {
+    public Optional<CustomUserResponseDto> createUser(PatientModel patient) throws JsonProcessingException {
+
+        CustomUserRequestDto userCreateRequest = dtoMapper.mapPatientModelToCustomUserRequest(patient);
         if (patientidpApiUrl == null || patientidpApiUrl.isEmpty()) {
             logger.info("The custom url: patientidp.api.url i not set. User not created in customuser");
             return Optional.empty();

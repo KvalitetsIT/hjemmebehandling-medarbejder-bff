@@ -1,7 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -35,12 +37,12 @@ public class PatientServiceTest {
     private static final String CAREPLAN_ID_2 = "CarePlan/careplan-2";
     private static final String CAREPLAN_ID_3 = "CarePlan/careplan-3";
     private static final String PATIENT_ID_1 = "Patient/patient-1";
+
     @InjectMocks
     private PatientService subject;
     @Mock
-    private FhirClient fhirClient;
-    @Mock
-    private FhirMapper fhirMapper;
+    private FhirClientAdaptor fhirClient;
+
 
     private static Stream<Arguments> getPatients_TwoResponses_ReturnAlphabetically() {
         return Stream.of(
@@ -64,7 +66,6 @@ public class PatientServiceTest {
         var orgId = "";
 
         PatientModel patientModel = PatientModel.builder().build();
-        Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientModel);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         List<PatientModel> result = subject.searchPatients(List.of(CPR_1));
@@ -144,7 +145,6 @@ public class PatientServiceTest {
             PatientModel patientmodel = PatientModel.builder().givenName(name).build();
 
             var orgId = "";
-            Mockito.when(fhirMapper.mapPatient(patient, orgId)).thenReturn(patientmodel);
         }
 
         Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
@@ -171,7 +171,7 @@ public class PatientServiceTest {
 
         FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
 
-        Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(activeLookup);
+        Mockito.when(fhirClient.getPatientsByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(carePlan1, patient));
 
         var pagination = new Pagination(1, 10);
         var includeActive = true;
@@ -204,10 +204,9 @@ public class PatientServiceTest {
         carePlan3.setStatus(CarePlan.CarePlanStatus.ACTIVE);
 
         FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, carePlan2, carePlan3, patient);
-        Mockito.when(fhirClient.searchPatients(new ArrayList<>(), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.searchPatients(new ArrayList<>(), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
 
         PatientModel patientModel = PatientModel.builder().build();
-        Mockito.when(fhirMapper.mapPatient(patient, "")).thenReturn(patientModel);
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         List<PatientModel> result = subject.searchPatients(new ArrayList<>());

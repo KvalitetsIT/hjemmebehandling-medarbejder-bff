@@ -179,11 +179,9 @@ public class ExtensionMapper {
 
     private static Extension buildCompositeExtension(List<Extension> extensions) {
         Extension extension = new Extension(Systems.THRESHOLD);
-
         for (Extension e : extensions) {
             extension.addExtension(e);
         }
-
         return extension;
     }
 
@@ -198,14 +196,12 @@ public class ExtensionMapper {
 
     private static Extension buildRangeExtension(Double low, Double high) {
         Range range = new Range();
-
         if (low != null) {
             range.setLow(new Quantity(low));
         }
         if (high != null) {
             range.setHigh(new Quantity(high));
         }
-
         return new Extension(Systems.THRESHOLD_VALUE_RANGE, range);
     }
 

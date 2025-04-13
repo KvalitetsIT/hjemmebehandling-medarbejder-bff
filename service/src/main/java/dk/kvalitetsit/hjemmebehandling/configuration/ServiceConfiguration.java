@@ -4,15 +4,14 @@ import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.context.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
 import dk.kvalitetsit.hjemmebehandling.service.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +25,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -60,9 +60,23 @@ public class ServiceConfiguration {
         return new InMemoryAuditEventRepository();
     }
 
+
+    @Bean
+    public ConcreteFhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
+        FhirContext context = FhirContext.forR4();
+        return new ConcreteFhirClient(context, fhirServerUrl, userContextProvider);
+    }
+
+
+    @Bean
+    public FhirClientAdaptor getFhirClient(ConcreteFhirClient client, FhirMapper mapper) {
+        return new FhirClientAdaptor(client, mapper);
+    }
+
+
     @Bean
     public CarePlanService getCarePlanService(
-            @Autowired FhirClient client,
+            @Autowired FhirClientAdaptor client,
             @Autowired FhirMapper mapper,
             @Autowired DateProvider dateProvider,
             @Autowired AccessValidator accessValidator,
@@ -73,8 +87,8 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator, @Autowired DtoMapper dtoMapper) {
-        return new PatientService(client, mapper, accessValidator, dtoMapper);
+    public PatientService getPatientService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+        return new PatientService(client, mapper, accessValidator);
     }
 
     @Bean
@@ -83,31 +97,23 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireService getQuestionnaireService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireService getQuestionnaireService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
         return new QuestionnaireService(client, mapper, accessValidator);
     }
 
     @Bean
-    public CustomUserClient getCustomUserService() {
-        return new CustomUserClient(new RestTemplate());
+    public CustomUserClient getCustomUserService(DtoMapper dtoMapper) {
+        return new CustomUserClient(new RestTemplate(), dtoMapper);
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClient client, @Autowired FhirMapper mapper, @Autowired QuestionnaireResponsePriorityComparator priorityComparator, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired Comparator<QuestionnaireResponseModel> priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
         return new QuestionnaireResponseService(client, mapper, priorityComparator, accessValidator);
     }
 
     @Bean
-    public FhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
-        FhirContext context = FhirContext.forR4();
-        return new FhirClient(context, fhirServerUrl, userContextProvider);
-    }
-
-
-
-    @Bean
-    public WebMvcConfigurer getWebMvcConfigurer(FhirClient client, @Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider, @Autowired IUserContextHandler userContextHandler) {
+    public WebMvcConfigurer getWebMvcConfigurer(ConcreteFhirClient client, @Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider, @Autowired IUserContextHandler userContextHandler) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NotNull CorsRegistry registry) {
@@ -137,7 +143,7 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public ValueSetService getValueSetService(@Autowired FhirClient client, @Autowired FhirMapper mapper) {
+    public ValueSetService getValueSetService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper) {
         return new ValueSetService(client, mapper);
     }
 }

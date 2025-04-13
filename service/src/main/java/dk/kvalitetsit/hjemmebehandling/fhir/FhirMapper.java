@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,20 +71,16 @@ public class FhirMapper {
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult, String organisationId) {
+    public CarePlanModel mapCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, List<PlanDefinition> planDefinitions, Organization organization, String organisationId, PatientModel patient, List<PlanDefinitionModel> plandefinitions) {
         var id = carePlan.getId();
-
-        String patientId = carePlan.getSubject().getReference();
-
-        List<PlanDefinitionModel> plandefinitions = carePlan.getInstantiatesCanonical().stream().map(ic -> lookupResult.getPlanDefinition(ic.getValue())
-                .map(x -> this.mapPlanDefinitionResult(x, lookupResult))
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", id)))).toList();
 
 
         var wrapper = carePlan.getActivity().stream().map(activity -> {
             String questionnaireId = activity.getDetail().getInstantiatesCanonical().getFirst().getValue();
-            var questionnaire = lookupResult
-                    .getQuestionnaire(questionnaireId)
+            var questionnaire = questionnaires
+                    .stream()
+                    .filter(x -> x.getIdElement().toUnqualifiedVersionless().getValue().equals(questionnaireId))
+                    .findFirst()
                     .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire for CarePlan %s!", id)));
 
             var questionnaireModel = mapQuestionnaire(questionnaire);
@@ -97,7 +94,12 @@ public class FhirMapper {
                             .toList()
             );
 
-            thresholds.addAll(plandefinitions.stream()
+
+            List<PlanDefinitionModel> planDefinitionModels = planDefinitions.stream()
+                    .map(x -> this.mapPlanDefinition(x, questionnaire, organization))
+                    .toList();
+
+            thresholds.addAll(planDefinitionModels.stream()
                     .flatMap(p -> p.questionnaires().stream())
                     .filter(q -> q.questionnaire().id().equals(questionnaireModel.id()))
                     .findFirst()
@@ -113,15 +115,9 @@ public class FhirMapper {
 
         String organizationId = ExtensionMapper.extractOrganizationId(carePlan.getExtension());
 
-        Organization organization = lookupResult
-                .getOrganization(organizationId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Organization with id %s was not present when trying to map careplan %s!", organizationId, carePlan.getId())));
 
         CarePlanStatus carePlanStatus = Enum.valueOf(CarePlanStatus.class, carePlan.getStatus().toString());
 
-        var patient = lookupResult.getPatient(patientId)
-                .map(p -> mapPatient(p, organisationId))
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", id)));
 
         return new CarePlanModel(
                 extractId(carePlan),
@@ -267,7 +263,7 @@ public class FhirMapper {
 
     }
 
-    public PlanDefinitionModel mapPlanDefinitionResult(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, Questionnaire questionnaire, Organization organization) {
         return new PlanDefinitionModel(
                 extractId(planDefinition),
                 ExtensionMapper.extractOrganizationId(planDefinition.getExtension()),
@@ -276,7 +272,7 @@ public class FhirMapper {
                 Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()),
                 Optional.ofNullable(planDefinition.getDate()).map(Date::toInstant).orElse(null),
                 Optional.ofNullable(planDefinition.getMeta().getLastUpdated()).map(Date::toInstant).orElse(null),
-                planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).toList()
+                planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, questionnaire, organization)).toList()
 
         );
     }
@@ -366,11 +362,8 @@ public class FhirMapper {
         return questionnaireResponse;
     }
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
-        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
-
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireResponse.getQuestionnaire())
-                .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireResponse.getQuestionnaire())));
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, organisationId, null, null, questionnaire, examinationAuthor, patient);
 
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = questionnaireResponse.getItem().stream().map(item -> {
@@ -395,19 +388,21 @@ public class FhirMapper {
 
     public QuestionnaireResponseModel mapQuestionnaireResponse(
             QuestionnaireResponse questionnaireResponse,
-            FhirLookupResult lookupResult,
-            List<Questionnaire> historicalQuestionnaires,
+            Questionnaire questionnaire,
+            Practitioner examinationAuthor,
+            Patient patient,
+            List<QuestionnaireModel> historicalQuestionnaires,
             String organisationId
     ) {
         if (historicalQuestionnaires == null) {
-            return mapQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
+            return mapQuestionnaireResponse(questionnaireResponse, organisationId, questionnaire, examinationAuthor, patient);
         }
 
         List<QuestionAnswerPairModel> answers = questionnaireResponse.getItem().stream()
                 .map(item -> {
                     var builder = IntStream.range(0, historicalQuestionnaires.size())
                             .mapToObj(i -> {
-                                Questionnaire q = historicalQuestionnaires.get(i);
+                                QuestionnaireModel q = historicalQuestionnaires.get(i);
                                 boolean deprecated = i > 0;
                                 return Optional.of(QuestionModel.Builder
                                         .from(getQuestion(q, item.getLinkId()))
@@ -424,32 +419,31 @@ public class FhirMapper {
                 .toList();
 
         return QuestionnaireResponseModel.Builder
-                .from(constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId))
+                .from(constructQuestionnaireResponse(questionnaireResponse, organisationId, null, null, null, null, null))
                 .questionAnswerPairs(answers)
                 .build();
     }
 
 
-    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
+    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, PlanDefinition planDefinition, CarePlan carePlan, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
         String qId = questionnaireResponse.getQuestionnaire();
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(qId).orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", qId)));
+
         String patientId = questionnaireResponse.getSubject().getReference();
         String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
 
-        String plandefinitionTitle = lookupResult.getCarePlan(carePlanId)
+        String planDefinitionTitle = Optional.ofNullable(carePlan)
                 .map(CarePlan::getInstantiatesCanonical)
                 .flatMap(canonicals -> canonicals.stream()
                         .map(CanonicalType::getValue)
-                        .map(planDefinitionId -> lookupResult.getPlanDefinition(planDefinitionId)
-                                .filter(planDefinition -> planDefinition.getAction().stream()
+                        .map(planDefinitionId -> Optional.ofNullable(planDefinition)
+                                .filter(p -> p.getAction().stream()
                                         .anyMatch(action -> action.getDefinitionCanonicalType().equals(qId)))
                                 .map(PlanDefinition::getTitle))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .findFirst()
                 )
-                .orElseThrow(() -> new IllegalStateException(
-                        String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
+                .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
 
         var id = extractId(questionnaireResponse);
         var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
@@ -465,13 +459,6 @@ public class FhirMapper {
                 .map(QualifiedId::new)
                 .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
 
-        var examinationAuthor = lookupResult
-                .getPractitioner(ExtensionMapper.tryExtractExaminationAuthorPractitionerId(questionnaireResponse.getExtension()))
-                .map(this::mapPractitioner).orElse(null);
-
-        PatientModel patient = lookupResult.getPatient(patientId)
-                .map(x -> mapPatient(x, organisationId))
-                .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
 
         return new QuestionnaireResponseModel(
                 id,
@@ -484,10 +471,10 @@ public class FhirMapper {
                 null,
                 questionnaireResponse.getAuthored().toInstant(),
                 ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()),
-                examinationAuthor,
+                mapPractitioner(examinationAuthor),
                 ExtensionMapper.extractTriagingCategory(questionnaireResponse.getExtension()),
-                patient,
-                plandefinitionTitle
+                mapPatient(patient, organisationId),
+                planDefinitionTitle
         );
 
 
@@ -942,23 +929,8 @@ public class FhirMapper {
         };
     }
 
-    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
-
-        String questionnaireId = action.getDefinitionCanonicalType().getValue();
-
-        Questionnaire questionnaire = lookupResult
-                .getQuestionnaire(questionnaireId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
-
+    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, Questionnaire questionnaire, Organization organization) {
         var thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
-
-        // initialize timeofday from responsible organization
-        String organizationId = ExtensionMapper.extractOrganizationId(questionnaire.getExtension());
-        Organization organization = lookupResult
-                .getOrganization(organizationId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Organization with id %s!", organizationId)));
-
-
         FrequencyModel timeType = Optional.ofNullable(ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension()))
                 .map(time -> {
                     Timing timing = new Timing();
@@ -1043,14 +1015,26 @@ public class FhirMapper {
     }
 
     public PatientModel mapPatient(Patient patient) {
-        return null;
+        throw new NotImplementedException();
     }
 
-    public CarePlan mapCarePlan(CarePlanModel carePlan) {
-        return null;
+    public CarePlanModel mapCarePlan(CarePlan carePlan) {
+        throw new NotImplementedException();
     }
 
     public Practitioner mapPractitionerModel(PractitionerModel practitioner) {
-        return null;
+        throw new NotImplementedException();
+    }
+
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
+        throw new NotImplementedException();
+    }
+
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        throw new NotImplementedException();
+    }
+
+    public CarePlan.CarePlanStatus mapCarePlanStatus(CarePlanStatus carePlanStatus) {
+        throw new NotImplementedException();
     }
 }

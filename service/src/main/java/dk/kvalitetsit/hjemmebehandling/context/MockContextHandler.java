@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import org.openapitools.model.UserContext;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class MockContextHandler implements IUserContextHandler {
     }
 
     @Override
-    public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) {
+    public UserContext mapTokenToUser(ConcreteFhirClient client, DecodedJWT jwt) {
         var context = new UserContext();
 
         context.setFullName(Optional.of("Test Testsen"));

@@ -10,8 +10,6 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +37,7 @@ public class FhirClientTest {
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
     private final String endpoint = "http://foo";
-    private FhirClient subject;
+    private ConcreteFhirClient subject;
     @Mock
     private FhirContext context;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -50,7 +48,7 @@ public class FhirClientTest {
     @BeforeEach
     public void setup() {
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
-        subject = new FhirClient(context, endpoint, userContextProvider);
+        subject = new ConcreteFhirClient(context, endpoint, userContextProvider);
 
     }
 
@@ -62,9 +60,9 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
-        assertTrue(result.getCarePlan(carePlanId).isPresent());
-        assertEquals(carePlan, result.getCarePlan(carePlanId).get());
+        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        assertTrue(result.isPresent());
+        assertEquals(carePlan, result.get());
     }
 
     @Test
@@ -74,8 +72,8 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
-        assertFalse(result.getCarePlan(carePlanId).isPresent());
+        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        assertFalse(result.isPresent());
     }
 
     @Test
@@ -87,8 +85,8 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlanById(carePlanId);
-        assertTrue(result.getOrganization(ORGANIZATION_ID_1).isPresent());
+        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        assertTrue(result.isPresent());
     }
 
     @Test
@@ -99,9 +97,9 @@ public class FhirClientTest {
         setupSearchCarePlanClient(onlyActiveCarePlans, carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
-        assertEquals(1, result.getCarePlans().size());
-        assertEquals(carePlan, result.getCarePlans().get(0));
+        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+        assertEquals(1, result.size());
+        assertEquals(carePlan, result.getFirst());
     }
 
     @Test
@@ -111,8 +109,8 @@ public class FhirClientTest {
         setupSearchCarePlanClient();
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
-        assertEquals(0, result.getCarePlans().size());
+        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -124,9 +122,9 @@ public class FhirClientTest {
         setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans, carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
-        assertEquals(1, result.getCarePlans().size());
-        assertEquals(carePlan, result.getCarePlans().get(0));
+        List<CarePlan> result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        assertEquals(1, result.size());
+        assertEquals(carePlan, result.getFirst());
     }
 
     @Test
@@ -137,8 +135,8 @@ public class FhirClientTest {
         setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
-        assertEquals(0, result.getCarePlans().size());
+        List<CarePlan> result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -170,10 +168,10 @@ public class FhirClientTest {
         setupSearchPlanDefinitionClient(planDefinition);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
-        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
+        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
 
-        assertTrue(result.getPlanDefinition(plandefinitionId).isPresent());
-        assertEquals(planDefinition, result.getPlanDefinition(plandefinitionId).get());
+        assertTrue(result.isPresent());
+        assertEquals(planDefinition, result.get());
     }
 
     @Test
@@ -181,8 +179,8 @@ public class FhirClientTest {
         String plandefinitionId = "plandefinition-1";
         setupSearchPlanDefinitionClient();
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
-        assertFalse(result.getPlanDefinition(plandefinitionId).isPresent());
+        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+        assertFalse(result.isPresent());
     }
 
     @Test
@@ -193,8 +191,8 @@ public class FhirClientTest {
         planDefinition.setId(plandefinitionId);
         setupSearchPlanDefinitionClient(planDefinition);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupPlanDefinition(plandefinitionId);
-        assertTrue(result.getOrganization(ORGANIZATION_ID_1).isPresent());
+        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+        assertTrue(result.isPresent());
     }
 
     @Test
@@ -203,9 +201,9 @@ public class FhirClientTest {
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
         setupSearchPlanDefinitionClient(planDefinition);
-        FhirLookupResult result = subject.lookupPlanDefinitions();
-        assertEquals(1, result.getPlanDefinitions().size());
-        assertEquals(planDefinition, result.getPlanDefinitions().get(0));
+        List<PlanDefinition> result = subject.lookupPlanDefinitions();
+        assertEquals(1, result.size());
+        assertEquals(planDefinition, result.getFirst());
     }
 
     @Test
@@ -221,11 +219,11 @@ public class FhirClientTest {
 
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 
-        FhirLookupResult result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
 
-        assertEquals(2, result.getQuestionnaireResponses().size());
-        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse1));
-        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse2));
+        assertEquals(2, result.size());
+        assertTrue(result.contains(questionnaireResponse1));
+        assertTrue(result.contains(questionnaireResponse2));
     }
 
     @Test
@@ -238,10 +236,10 @@ public class FhirClientTest {
         questionnaireResponse2.setId(QUESTIONNAIRE_RESPONSE_ID_2);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse1, questionnaireResponse2);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        FhirLookupResult result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
-        assertEquals(2, result.getQuestionnaireResponses().size());
-        assertEquals(1, result.getPlanDefinitions().size());
-        assertTrue(result.getPlanDefinition(PLANDEFINITION_ID_1).isPresent());
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponses(carePlanId, List.of(questionnaireId));
+        assertEquals(2, result.size());
+        assertEquals(1, result.size());
+        assertTrue(result.stream().anyMatch(x -> x.getId().equals(PLANDEFINITION_ID_1)));
     }
 
     @Test
@@ -252,9 +250,9 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
-        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
-        assertEquals(1, result.getQuestionnaireResponses().size());
-        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
     }
 
     @Test
@@ -265,9 +263,9 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
-        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
-        assertEquals(1, result.getQuestionnaireResponses().size());
-        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
     }
 
     @Test
@@ -278,9 +276,9 @@ public class FhirClientTest {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
         questionnaireResponse.setId(QUESTIONNAIRE_RESPONSE_ID_1);
         setupSearchQuestionnaireResponseClient(2, questionnaireResponse);
-        FhirLookupResult result = subject.lookupQuestionnaireResponsesByStatus(statuses);
-        assertEquals(1, result.getQuestionnaireResponses().size());
-        assertTrue(result.getQuestionnaireResponses().contains(questionnaireResponse));
+        List<QuestionnaireResponse> result = subject.lookupQuestionnaireResponsesByStatus(statuses);
+        assertEquals(1, result.size());
+        assertTrue(result.contains(questionnaireResponse));
     }
 
     @Test

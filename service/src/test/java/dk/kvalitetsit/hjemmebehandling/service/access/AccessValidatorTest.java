@@ -2,8 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
@@ -34,7 +33,7 @@ public class AccessValidatorTest {
     @Mock
     private UserContextProvider userContextProvider;
     @Mock
-    private FhirClient fhirClient;
+    private ConcreteFhirClient fhirClient;
 
     @Test
     public void validateAccess_contextNotInitialized() {
