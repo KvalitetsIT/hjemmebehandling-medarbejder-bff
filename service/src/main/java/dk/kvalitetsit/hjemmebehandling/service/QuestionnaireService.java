@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -25,26 +25,26 @@ import static dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus.RETI
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
 
-    private final FhirClient<
-            CarePlanModel,
-            PlanDefinitionModel,
-            PractitionerModel,
-            PatientModel,
-            QuestionnaireModel,
-            QuestionnaireResponseModel,
-            Organization,
-            CarePlanStatus> fhirClient;
+    private final Client<
+                CarePlanModel,
+                PlanDefinitionModel,
+                PractitionerModel,
+                PatientModel,
+                QuestionnaireModel,
+                QuestionnaireResponseModel,
+                Organization,
+                CarePlanStatus> fhirClient;
 
     public QuestionnaireService(
-            FhirClient<
-                    CarePlanModel,
-                    PlanDefinitionModel,
-                    PractitionerModel,
-                    PatientModel,
-                    QuestionnaireModel,
-                    QuestionnaireResponseModel,
-                    Organization,
-                    CarePlanStatus> fhirClient,
+            Client<
+                                CarePlanModel,
+                                PlanDefinitionModel,
+                                PractitionerModel,
+                                PatientModel,
+                                QuestionnaireModel,
+                                QuestionnaireResponseModel,
+                                Organization,
+                                CarePlanStatus> fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator
     ) {

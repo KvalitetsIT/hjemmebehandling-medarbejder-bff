@@ -10,7 +10,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class FhirClientAdaptor implements FhirClient<
+/**
+ * The ClientAdaptor is responsible for mapping from the business models and calling further into the stack with the arguments expected by the client
+ */
+public class ClientAdaptor implements Client<
         CarePlanModel,
         PlanDefinitionModel,
         PractitionerModel,
@@ -20,10 +23,10 @@ public class FhirClientAdaptor implements FhirClient<
         Organization,
         CarePlanStatus> {
 
-    private final ConcreteFhirClient client;
+    private final FhirClient client;
     private final FhirMapper mapper;
 
-    public FhirClientAdaptor(ConcreteFhirClient client, FhirMapper mapper) {
+    public ClientAdaptor(FhirClient client, FhirMapper mapper) {
         this.client = client;
         this.mapper = mapper;
     }

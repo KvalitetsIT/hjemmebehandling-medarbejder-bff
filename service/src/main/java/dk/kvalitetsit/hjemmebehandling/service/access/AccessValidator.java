@@ -1,14 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.service.access;
 
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Reference;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,9 +13,9 @@ import java.util.List;
 @Component
 public class AccessValidator {
     private final UserContextProvider userContextProvider;
-    private final ConcreteFhirClient fhirClient;
+    private final FhirClient fhirClient;
 
-    public AccessValidator(UserContextProvider userContextProvider, ConcreteFhirClient fhirClient) {
+    public AccessValidator(UserContextProvider userContextProvider, FhirClient fhirClient) {
         this.userContextProvider = userContextProvider;
         this.fhirClient = fhirClient;
     }

@@ -34,15 +34,15 @@ public class CarePlanService extends AccessValidatingService  {
 
     private static final Logger logger = LoggerFactory.getLogger(CarePlanService.class);
 
-    private final FhirClient<
-            CarePlanModel,
-            PlanDefinitionModel,
-            PractitionerModel,
-            PatientModel,
-            QuestionnaireModel,
-            QuestionnaireResponseModel,
-            Organization,
-            CarePlanStatus> fhirClient;
+    private final Client<
+                CarePlanModel,
+                PlanDefinitionModel,
+                PractitionerModel,
+                PatientModel,
+                QuestionnaireModel,
+                QuestionnaireResponseModel,
+                Organization,
+                CarePlanStatus> fhirClient;
 
     private final DateProvider dateProvider;
     private final CustomUserClient customUserService;
@@ -53,15 +53,15 @@ public class CarePlanService extends AccessValidatingService  {
     private String patientidpApiUrl;
 
     public CarePlanService(
-            FhirClient<
-                    CarePlanModel,
-                    PlanDefinitionModel,
-                    PractitionerModel,
-                    PatientModel,
-                    QuestionnaireModel,
-                    QuestionnaireResponseModel,
-                    Organization,
-                    CarePlanStatus> fhirClient,
+            Client<
+                                CarePlanModel,
+                                PlanDefinitionModel,
+                                PractitionerModel,
+                                PatientModel,
+                                QuestionnaireModel,
+                                QuestionnaireResponseModel,
+                                Organization,
+                                CarePlanStatus> fhirClient,
             FhirMapper fhirMapper,
             DateProvider dateProvider,
             AccessValidator accessValidator,

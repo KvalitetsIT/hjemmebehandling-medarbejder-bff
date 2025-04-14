@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Component
 public class FhirMapper {
@@ -31,6 +30,38 @@ public class FhirMapper {
             }
         });
         return out.stream().toList();
+    }
+
+    public Enumerations.PublicationStatus mapStatus(PlanDefinitionStatus status) {
+        return switch (status) {
+            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
+            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
+            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
+        };
+    }
+
+    public PatientModel mapPatient(Patient patient) {
+        throw new NotImplementedException();
+    }
+
+    public CarePlanModel mapCarePlan(CarePlan carePlan) {
+        throw new NotImplementedException();
+    }
+
+    public Practitioner mapPractitionerModel(PractitionerModel practitioner) {
+        throw new NotImplementedException();
+    }
+
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
+        throw new NotImplementedException();
+    }
+
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        throw new NotImplementedException();
+    }
+
+    public CarePlan.CarePlanStatus mapCarePlanStatus(CarePlanStatus carePlanStatus) {
+        throw new NotImplementedException();
     }
 
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
@@ -320,23 +351,6 @@ public class FhirMapper {
         );
     }
 
-    private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
-        return switch (status) {
-            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
-            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
-            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
-        };
-    }
-
-    private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
-        return switch (status) {
-            case ACTIVE -> QuestionnaireStatus.ACTIVE;
-            case DRAFT -> QuestionnaireStatus.DRAFT;
-            case RETIRED -> QuestionnaireStatus.RETIRED;
-            default ->
-                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
-        };
-    }
 
     public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse()
@@ -386,99 +400,6 @@ public class FhirMapper {
                 .build();
     }
 
-    public QuestionnaireResponseModel mapQuestionnaireResponse(
-            QuestionnaireResponse questionnaireResponse,
-            Questionnaire questionnaire,
-            Practitioner examinationAuthor,
-            Patient patient,
-            List<QuestionnaireModel> historicalQuestionnaires,
-            String organisationId
-    ) {
-        if (historicalQuestionnaires == null) {
-            return mapQuestionnaireResponse(questionnaireResponse, organisationId, questionnaire, examinationAuthor, patient);
-        }
-
-        List<QuestionAnswerPairModel> answers = questionnaireResponse.getItem().stream()
-                .map(item -> {
-                    var builder = IntStream.range(0, historicalQuestionnaires.size())
-                            .mapToObj(i -> {
-                                QuestionnaireModel q = historicalQuestionnaires.get(i);
-                                boolean deprecated = i > 0;
-                                return Optional.of(QuestionModel.Builder
-                                        .from(getQuestion(q, item.getLinkId()))
-                                        .deprecated(deprecated)
-                                        .build());
-                            })
-                            .flatMap(Optional::stream)
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalStateException("Corresponding question could not be found in the given questionnaires"));
-
-                    AnswerModel answer = getAnswer(item);
-                    return new QuestionAnswerPairModel(builder, answer);
-                })
-                .toList();
-
-        return QuestionnaireResponseModel.Builder
-                .from(constructQuestionnaireResponse(questionnaireResponse, organisationId, null, null, null, null, null))
-                .questionAnswerPairs(answers)
-                .build();
-    }
-
-
-    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, PlanDefinition planDefinition, CarePlan carePlan, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
-        String qId = questionnaireResponse.getQuestionnaire();
-
-        String patientId = questionnaireResponse.getSubject().getReference();
-        String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
-
-        String planDefinitionTitle = Optional.ofNullable(carePlan)
-                .map(CarePlan::getInstantiatesCanonical)
-                .flatMap(canonicals -> canonicals.stream()
-                        .map(CanonicalType::getValue)
-                        .map(planDefinitionId -> Optional.ofNullable(planDefinition)
-                                .filter(p -> p.getAction().stream()
-                                        .anyMatch(action -> action.getDefinitionCanonicalType().equals(qId)))
-                                .map(PlanDefinition::getTitle))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .findFirst()
-                )
-                .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
-
-        var id = extractId(questionnaireResponse);
-        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
-        var questionnaireId = extractId(questionnaire);
-
-        var authorId = Optional.ofNullable(questionnaireResponse.getAuthor())
-                .map(Reference::getReference)
-                .map(QualifiedId::new)
-                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", id)));
-
-        var sourceId = Optional.ofNullable(questionnaireResponse.getSource())
-                .map(Reference::getReference)
-                .map(QualifiedId::new)
-                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
-
-
-        return new QuestionnaireResponseModel(
-                id,
-                organizationId,
-                questionnaireId,
-                new QualifiedId(carePlanId),
-                authorId,
-                sourceId,
-                questionnaire.getName(),
-                null,
-                questionnaireResponse.getAuthored().toInstant(),
-                ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()),
-                mapPractitioner(examinationAuthor),
-                ExtensionMapper.extractTriagingCategory(questionnaireResponse.getExtension()),
-                mapPatient(patient, organisationId),
-                planDefinitionTitle
-        );
-
-
-    }
 
     public Optional<FrequencyModel> mapTiming(Timing timing) {
         return Optional.ofNullable(timing.getRepeat()).map(repeat -> new FrequencyModel(
@@ -487,6 +408,29 @@ public class FhirMapper {
         ));
     }
 
+
+    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
+        PlanDefinition planDefinition = new PlanDefinition()
+                .setTitle(planDefinitionModel.title())
+                .setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.status().toString()));
+
+
+        mapBaseAttributesToFhir(planDefinition, planDefinitionModel);
+
+        // Map questionnaires to actions
+        if (planDefinitionModel.questionnaires() != null) {
+            planDefinition.setAction(planDefinitionModel.questionnaires()
+                    .stream()
+                    .map(this::buildPlanDefinitionAction)
+                    .toList());
+        }
+
+        return planDefinition;
+    }
+
+    public String extractCpr(Patient patient) {
+        return patient.getIdentifier().getFirst().getValue();
+    }
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
@@ -511,8 +455,22 @@ public class FhirMapper {
                 .setValue(cpr);
     }
 
-    public String extractCpr(Patient patient) {
-        return patient.getIdentifier().getFirst().getValue();
+    private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
+        return switch (status) {
+            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
+            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
+            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
+        };
+    }
+
+    private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
+        return switch (status) {
+            case ACTIVE -> QuestionnaireStatus.ACTIVE;
+            case DRAFT -> QuestionnaireStatus.DRAFT;
+            case RETIRED -> QuestionnaireStatus.RETIRED;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
+        };
     }
 
     private HumanName buildName(String givenName, String familyName) {
@@ -956,42 +914,10 @@ public class FhirMapper {
         );
     }
 
-    public List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
-        return valueSet.getCompose().getInclude()
-                .stream()
-                .flatMap(csc -> csc.getConcept()
-                        .stream()
-                        .map(crc -> mapCodingConcept(csc.getSystem(), crc))).toList();
-
-
-    }
-
-    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
-        return mapCodingConcept(system, concept.getCode(), concept.getDisplay());
-    }
-
     private MeasurementTypeModel mapCodingConcept(String system, String code, String display) {
         return new MeasurementTypeModel(system, code, display);
     }
 
-    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
-        PlanDefinition planDefinition = new PlanDefinition()
-                .setTitle(planDefinitionModel.title())
-                .setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.status().toString()));
-
-
-        mapBaseAttributesToFhir(planDefinition, planDefinitionModel);
-
-        // Map questionnaires to actions
-        if (planDefinitionModel.questionnaires() != null) {
-            planDefinition.setAction(planDefinitionModel.questionnaires()
-                    .stream()
-                    .map(this::buildPlanDefinitionAction)
-                    .toList());
-        }
-
-        return planDefinition;
-    }
 
     private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(QuestionnaireWrapperModel questionnaireWrapperModel) {
         CanonicalType definitionCanonical = new CanonicalType(questionnaireWrapperModel.questionnaire().id().toString());
@@ -1006,35 +932,59 @@ public class FhirMapper {
     }
 
 
-    public Enumerations.PublicationStatus mapStatus(PlanDefinitionStatus status) {
-        return switch (status) {
-            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
-            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
-            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
-        };
+    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, PlanDefinition planDefinition, CarePlan carePlan, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
+        String qId = questionnaireResponse.getQuestionnaire();
+
+        String patientId = questionnaireResponse.getSubject().getReference();
+        String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
+
+        String planDefinitionTitle = Optional.ofNullable(carePlan)
+                .map(CarePlan::getInstantiatesCanonical)
+                .flatMap(canonicals -> canonicals.stream()
+                        .map(CanonicalType::getValue)
+                        .map(planDefinitionId -> Optional.ofNullable(planDefinition)
+                                .filter(p -> p.getAction().stream()
+                                        .anyMatch(action -> action.getDefinitionCanonicalType().equals(qId)))
+                                .map(PlanDefinition::getTitle))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .findFirst()
+                )
+                .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
+
+        var id = extractId(questionnaireResponse);
+        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
+        var questionnaireId = extractId(questionnaire);
+
+        var authorId = Optional.ofNullable(questionnaireResponse.getAuthor())
+                .map(Reference::getReference)
+                .map(QualifiedId::new)
+                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", id)));
+
+        var sourceId = Optional.ofNullable(questionnaireResponse.getSource())
+                .map(Reference::getReference)
+                .map(QualifiedId::new)
+                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
+
+
+        return new QuestionnaireResponseModel(
+                id,
+                organizationId,
+                questionnaireId,
+                new QualifiedId(carePlanId),
+                authorId,
+                sourceId,
+                questionnaire.getName(),
+                null,
+                questionnaireResponse.getAuthored().toInstant(),
+                ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()),
+                mapPractitioner(examinationAuthor),
+                ExtensionMapper.extractTriagingCategory(questionnaireResponse.getExtension()),
+                mapPatient(patient, organisationId),
+                planDefinitionTitle
+        );
+
+
     }
 
-    public PatientModel mapPatient(Patient patient) {
-        throw new NotImplementedException();
-    }
-
-    public CarePlanModel mapCarePlan(CarePlan carePlan) {
-        throw new NotImplementedException();
-    }
-
-    public Practitioner mapPractitionerModel(PractitionerModel practitioner) {
-        throw new NotImplementedException();
-    }
-
-    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
-        throw new NotImplementedException();
-    }
-
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
-        throw new NotImplementedException();
-    }
-
-    public CarePlan.CarePlanStatus mapCarePlanStatus(CarePlanStatus carePlanStatus) {
-        throw new NotImplementedException();
-    }
 }

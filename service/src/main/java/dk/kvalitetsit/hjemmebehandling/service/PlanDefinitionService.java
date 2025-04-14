@@ -26,29 +26,29 @@ import java.util.stream.Stream;
 public class PlanDefinitionService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionService.class);
 
-    private final FhirClient<
-            CarePlanModel,
-            PlanDefinitionModel,
-            PractitionerModel,
-            PatientModel,
-            QuestionnaireModel,
-            QuestionnaireResponseModel,
-            Organization,
-            CarePlanStatus> fhirClient;
+    private final Client<
+                CarePlanModel,
+                PlanDefinitionModel,
+                PractitionerModel,
+                PatientModel,
+                QuestionnaireModel,
+                QuestionnaireResponseModel,
+                Organization,
+                CarePlanStatus> fhirClient;
 
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
 
     public PlanDefinitionService(
-            FhirClient<
-                    CarePlanModel,
-                    PlanDefinitionModel,
-                    PractitionerModel,
-                    PatientModel,
-                    QuestionnaireModel,
-                    QuestionnaireResponseModel,
-                    Organization,
-                    CarePlanStatus> fhirClient,
+            Client<
+                                CarePlanModel,
+                                PlanDefinitionModel,
+                                PractitionerModel,
+                                PatientModel,
+                                QuestionnaireModel,
+                                QuestionnaireResponseModel,
+                                Organization,
+                                CarePlanStatus> fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator,
             DateProvider dateProvider

@@ -1,7 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
@@ -19,8 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -43,7 +40,7 @@ public class QuestionnaireResponseServiceTest {
     @InjectMocks
     private QuestionnaireResponseService subject;
     @Mock
-    private FhirClientAdaptor fhirClient;
+    private ClientAdaptor fhirClient;
     @Mock
     private QuestionnaireResponsePriorityComparator priorityComparator;
     @Mock

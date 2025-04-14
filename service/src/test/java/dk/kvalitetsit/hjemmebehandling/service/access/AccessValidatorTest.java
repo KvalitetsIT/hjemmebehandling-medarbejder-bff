@@ -1,14 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.service.access;
 
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Reference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,7 +31,7 @@ public class AccessValidatorTest {
     @Mock
     private UserContextProvider userContextProvider;
     @Mock
-    private ConcreteFhirClient fhirClient;
+    private FhirClient fhirClient;
 
     @Test
     public void validateAccess_contextNotInitialized() {
@@ -110,16 +108,16 @@ public class AccessValidatorTest {
         assertDoesNotThrow(() -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
-    private DomainResource buildResource() {
+    private BaseModel buildResource() {
         return buildResource(null);
     }
 
-    private DomainResource buildResource(String organizationId) {
-        var resource = new CarePlan();
+    private BaseModel buildResource(String organizationId) {
+        var resource = CarePlanModel.builder();
         if (organizationId != null) {
-            resource.addExtension(Systems.ORGANIZATION, new Reference(organizationId));
+            resource.organizationId(organizationId);
         }
-        return resource;
+        return resource.build();
     }
 
     private Organization buildOrganization() {

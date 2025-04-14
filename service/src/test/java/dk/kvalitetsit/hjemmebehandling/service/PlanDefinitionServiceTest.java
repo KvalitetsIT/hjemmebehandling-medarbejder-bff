@@ -2,7 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.*;
+import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -13,7 +15,10 @@ import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -22,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionServiceTest {
@@ -34,7 +37,7 @@ public class PlanDefinitionServiceTest {
     @InjectMocks
     private PlanDefinitionService subject;
     @Mock
-    private FhirClientAdaptor fhirClient;
+    private ClientAdaptor fhirClient;
 
     @Mock
     private AccessValidator accessValidator;
@@ -43,9 +46,8 @@ public class PlanDefinitionServiceTest {
 
     @Test
     public void getPlanDefinitions_success() throws Exception {
-        PlanDefinition planDefinition = new PlanDefinition();
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-
 
 
         Mockito.when(fhirClient.lookupPlanDefinitionsByStatus(List.of())).thenReturn(List.of(planDefinition));
@@ -79,13 +81,12 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_status() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         subject.updatePlanDefinition(id, "", PlanDefinitionStatus.DRAFT, List.of(), List.of());
 
@@ -101,16 +102,14 @@ public class PlanDefinitionServiceTest {
     public void patchPlanDefinition_name_existingIsUntouched() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
         String name = "existing name";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel
                 .builder()
                 .name(name)
                 .build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         subject.updatePlanDefinition(id, null, null, List.of(), List.of());
 
@@ -120,9 +119,9 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_threshold() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
-        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_1));
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+//        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_1));
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
@@ -132,10 +131,8 @@ public class PlanDefinitionServiceTest {
         questions.add(temperatureQuestion);
         planDefinitionModel.questionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1));
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         ThresholdModel thresholdModel = buildThresholdModel(temperatureQuestion.linkId());
 
@@ -157,11 +154,11 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_threshold_onMultipleQuestionnaires() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
-        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
-        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_1));
-        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_2));
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+//        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_1));
+//        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_2));
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
@@ -173,10 +170,9 @@ public class PlanDefinitionServiceTest {
         planDefinitionModel.questionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1));
         planDefinitionModel.questionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2));
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire1, questionnaire2));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire1, questionnaire2));
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         ThresholdModel thresholdModel1 = buildThresholdModel(temperatureQuestion1.linkId());
         ThresholdModel thresholdModel2 = buildThresholdModel(temperatureQuestion2.linkId());
@@ -193,7 +189,7 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_updateThreshold_onExistingQuestionnaire() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
 
         QuestionModel temperatureQuestion = buildMeasurementQuestionModel();
 
@@ -224,11 +220,11 @@ public class PlanDefinitionServiceTest {
                 .questionnaires(List.of(questionnaireWrapperModel))
                 .build();
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         ThresholdModel newThresholdModel = buildThresholdModel(temperatureQuestion.linkId(), thresholdModel.valueQuantityLow() - 1);
 
@@ -249,16 +245,14 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_addNew() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResource(questionnaire));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
@@ -269,22 +263,18 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_without_same_questionnaire() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        FhirLookupResult questionnaireResult = FhirLookupResult.fromResource(questionnaire);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(questionnaireResult);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
 
-        CarePlan existingCarePlan = new CarePlan();
-        CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(new ArrayList<>()).build();
+        CarePlanModel existingCarePlanModel = CarePlanModel.builder().build();
 
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
 
@@ -298,22 +288,19 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_with_same_questionnaire() throws AccessValidationException, ServiceException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-        Questionnaire questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        FhirLookupResult questionnaireResult = FhirLookupResult.fromResource(questionnaire);
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(questionnaireResult);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
-        CarePlan existingCarePlan = new CarePlan();
+
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(List.of(questionnaireWrapperModel)).build();
 
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         try {
@@ -329,8 +316,8 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
 
 
         var questionnaires = List.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1), buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2));
@@ -339,11 +326,9 @@ public class PlanDefinitionServiceTest {
                 .questionnaires(questionnaires)
                 .build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire1));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire1));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
@@ -363,8 +348,8 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_without_questionnaire() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
 
@@ -373,21 +358,20 @@ public class PlanDefinitionServiceTest {
                 .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
                 .build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire1));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(FhirLookupResult.fromResources(questionnaire1));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        CarePlanModel existingCarePlan = CarePlanModel.builder()
+                .id(new QualifiedId("CarePlan/careplan-1"))
+                .build();
 
-        CarePlan existingCarePlan = new CarePlan();
-        existingCarePlan.setId("CarePlan/careplan-1");
         CarePlanModel existingCarePlanModel = CarePlanModel.builder()
                 .questionnaires(List.of(questionnaireWrapperModel1))
                 .build();
 
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id().toString())).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
@@ -411,29 +395,29 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2)).build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire2));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
 
-        CarePlan existingCarePlan = new CarePlan();
-        existingCarePlan.setId("CarePlan/careplan-1");
+        CarePlanModel existingCarePlan = CarePlanModel.builder()
+                .id(new QualifiedId("CarePlan/careplan-1"))
+                .build();
+
         CarePlanModel existingCarePlanModel = CarePlanModel
                 .builder()
                 .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
                 .build();
 
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id().toString())).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
 
@@ -458,31 +442,30 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_missingScheduledResponses() throws AccessValidationException, ServiceException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().questionnaires((List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))).build();
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire2));
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         // setup and mock careplen
-        CarePlan existingCarePlan = new CarePlan();
-        existingCarePlan.setId("CarePlan/careplan-1");
-        CarePlan.CarePlanActivityComponent activityComponent1 = new CarePlan.CarePlanActivityComponent();
-        activityComponent1.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_1).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
-        existingCarePlan.addActivity(activityComponent1);
-        CarePlan.CarePlanActivityComponent activityComponent2 = new CarePlan.CarePlanActivityComponent();
-        activityComponent2.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_2).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
-        existingCarePlan.addActivity(activityComponent2);
-        existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now()));
+        CarePlanModel existingCarePlan = CarePlanModel.builder()
+                .id(new QualifiedId("CarePlan/careplan-1"))
+                .build();
 
+//        CarePlan.CarePlanActivityComponent activityComponent1 = new CarePlan.CarePlanActivityComponent();
+//        activityComponent1.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_1).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
+//        existingCarePlan.addActivity(activityComponent1);
+//        CarePlan.CarePlanActivityComponent activityComponent2 = new CarePlan.CarePlanActivityComponent();
+//        activityComponent2.getDetail().addInstantiatesCanonical(QUESTIONNAIRE_ID_2).addExtension(ExtensionMapper.mapActivitySatisfiedUntil(Instant.now()));
+//        existingCarePlan.addActivity(activityComponent2);
+//        existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now()));
 
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
 
         Mockito.when(dateProvider.now()).thenReturn(Instant.now());
 
@@ -513,21 +496,19 @@ public class PlanDefinitionServiceTest {
         Instant after = Instant.now();
 
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        Questionnaire questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
-        Questionnaire questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
         QuestionnaireModel questionnaireModel2 = buildQuestionnaireModel(QUESTIONNAIRE_ID_2);
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2)).build();
 
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire2));
 
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_2))).thenReturn(FhirLookupResult.fromResources(questionnaire2));
-
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         // setup and mock careplen
         CarePlan existingCarePlan = new CarePlan();
@@ -541,14 +522,17 @@ public class PlanDefinitionServiceTest {
         existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(after));
 
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2)).build();
-        FhirLookupResult carePlanLookupResult = FhirLookupResult.fromResources(existingCarePlan);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(carePlanLookupResult);
+
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
 
         Mockito.when(dateProvider.now()).thenReturn(before);
 
-        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1);
-        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(FhirLookupResult.fromResources(questionnaireResponse));
+        QuestionnaireResponseModel questionnaireResponse = QuestionnaireResponseModel
+                .builder()
+                .questionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .build();
+
+        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.getId())).thenReturn(List.of(questionnaireResponse));
 
         try {
             subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
@@ -562,15 +546,13 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_existingIsUntouched() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
         QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().questionnaires(List.of(questionnaireWrapperModel)).build();
 
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
-
-        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(FhirLookupResult.fromBundle(new Bundle()));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(FhirLookupResult.fromResources());
+        Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(), List.of());
 
@@ -580,26 +562,25 @@ public class PlanDefinitionServiceTest {
     @Test
     public void retirePlanDefinition_noActiveCarePlanReferences_isRetired() throws ServiceException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
 
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.retirePlanDefinition(id);
 
-        assertEquals(Enumerations.PublicationStatus.RETIRED, planDefinition.getStatus());
+        assertEquals(Enumerations.PublicationStatus.RETIRED, planDefinition.status());
     }
 
     @Test
     public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
         String id = "plandefinition-1";
-        PlanDefinition planDefinition = buildPlanDefinition();
-        CarePlan activeCarePlan = new CarePlan();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResources(planDefinition, activeCarePlan);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
+        CarePlanModel activeCarePlan = CarePlanModel.builder().build();
 
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(lookupResult);
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(activeCarePlan));
 
         try {
             subject.retirePlanDefinition(id);
@@ -675,11 +656,11 @@ public class PlanDefinitionServiceTest {
         );
     }
 
-    private PlanDefinition buildPlanDefinition() {
-        PlanDefinition planDefinition = new PlanDefinition();
-        planDefinition.setId(PlanDefinitionServiceTest.PLANDEFINITION_ID_1);
-        planDefinition.setStatus(Enumerations.PublicationStatus.ACTIVE);
-        return planDefinition;
+    private PlanDefinitionModel buildPlanDefinition() {
+        return PlanDefinitionModel.builder()
+                .id(new QualifiedId(PlanDefinitionServiceTest.PLANDEFINITION_ID_1))
+                .status(PlanDefinitionStatus.ACTIVE)
+                .build();
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel(String questionnaireId, ThresholdModel questionnaireThreshold) {
@@ -696,10 +677,10 @@ public class PlanDefinitionServiceTest {
                 .build();
     }
 
-    private Questionnaire buildQuestionnaire(String questionnaireId) {
-        Questionnaire questionnaire = new Questionnaire();
-        questionnaire.setId(questionnaireId);
-        return questionnaire;
+    private QuestionnaireModel buildQuestionnaire(String questionnaireId) {
+        return QuestionnaireModel.builder()
+                .id(new QualifiedId(questionnaireId))
+                .build();
     }
 
     private Questionnaire.QuestionnaireItemComponent buildMeasurementQuestion() {

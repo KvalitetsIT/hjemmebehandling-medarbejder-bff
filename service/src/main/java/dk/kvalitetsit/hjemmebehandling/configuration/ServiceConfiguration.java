@@ -4,8 +4,8 @@ import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.context.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
@@ -62,21 +62,21 @@ public class ServiceConfiguration {
 
 
     @Bean
-    public ConcreteFhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
+    public FhirClient getFhirClient(@Autowired UserContextProvider userContextProvider) {
         FhirContext context = FhirContext.forR4();
-        return new ConcreteFhirClient(context, fhirServerUrl, userContextProvider);
+        return new FhirClient(context, fhirServerUrl, userContextProvider);
     }
 
 
     @Bean
-    public FhirClientAdaptor getFhirClient(ConcreteFhirClient client, FhirMapper mapper) {
-        return new FhirClientAdaptor(client, mapper);
+    public ClientAdaptor getFhirClient(FhirClient client, FhirMapper mapper) {
+        return new ClientAdaptor(client, mapper);
     }
 
 
     @Bean
     public CarePlanService getCarePlanService(
-            @Autowired FhirClientAdaptor client,
+            @Autowired ClientAdaptor client,
             @Autowired FhirMapper mapper,
             @Autowired DateProvider dateProvider,
             @Autowired AccessValidator accessValidator,
@@ -87,7 +87,7 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+    public PatientService getPatientService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
         return new PatientService(client, mapper, accessValidator);
     }
 
@@ -97,7 +97,7 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireService getQuestionnaireService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireService getQuestionnaireService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
         return new QuestionnaireService(client, mapper, accessValidator);
     }
 
@@ -107,13 +107,13 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper, @Autowired Comparator<QuestionnaireResponseModel> priorityComparator, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired Comparator<QuestionnaireResponseModel> priorityComparator, @Autowired AccessValidator accessValidator) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, mapper, priorityComparator, accessValidator);
+        return new QuestionnaireResponseService(client, priorityComparator, accessValidator);
     }
 
     @Bean
-    public WebMvcConfigurer getWebMvcConfigurer(ConcreteFhirClient client, @Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider, @Autowired IUserContextHandler userContextHandler) {
+    public WebMvcConfigurer getWebMvcConfigurer(FhirClient client, @Value("${allowed_origins}") String allowedOrigins, @Autowired UserContextProvider userContextProvider, @Autowired IUserContextHandler userContextHandler) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NotNull CorsRegistry registry) {
@@ -143,7 +143,7 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public ValueSetService getValueSetService(@Autowired FhirClientAdaptor client, @Autowired FhirMapper mapper) {
-        return new ValueSetService(client, mapper);
+    public ValueSetService getValueSetService(@Autowired ClientAdaptor client) {
+        return new ValueSetService(client);
     }
 }

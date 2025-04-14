@@ -25,29 +25,29 @@ public class QuestionnaireResponseService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseService.class);
 
 
-    private final FhirClient<
-            CarePlanModel,
-            PlanDefinitionModel,
-            PractitionerModel,
-            PatientModel,
-            QuestionnaireModel,
-            QuestionnaireResponseModel,
-            Organization,
-            CarePlanStatus> fhirClient;
+    private final Client<
+                CarePlanModel,
+                PlanDefinitionModel,
+                PractitionerModel,
+                PatientModel,
+                QuestionnaireModel,
+                QuestionnaireResponseModel,
+                Organization,
+                CarePlanStatus> fhirClient;
 
 
     private final Comparator<QuestionnaireResponseModel> priorityComparator;
 
     public QuestionnaireResponseService(
-            FhirClient<
-                    CarePlanModel,
-                    PlanDefinitionModel,
-                    PractitionerModel,
-                    PatientModel,
-                    QuestionnaireModel,
-                    QuestionnaireResponseModel,
-                    Organization,
-                    CarePlanStatus> fhirClient,
+            Client<
+                                CarePlanModel,
+                                PlanDefinitionModel,
+                                PractitionerModel,
+                                PatientModel,
+                                QuestionnaireModel,
+                                QuestionnaireResponseModel,
+                                Organization,
+                                CarePlanStatus> fhirClient,
             Comparator<QuestionnaireResponseModel> priorityComparator,
             AccessValidator accessValidator
     ) {
@@ -77,9 +77,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         var orgId = fhirClient.getOrganizationId();
 
-
-
-        throw new NotImplementedException();
+        return responses;
 
     }
 
@@ -124,8 +122,7 @@ public class QuestionnaireResponseService extends AccessValidatingService {
 
         var orgId = fhirClient.getOrganizationId();
 
-        // Map and return the responses
-        throw new NotImplementedException();
+        return responses;
 
     }
 

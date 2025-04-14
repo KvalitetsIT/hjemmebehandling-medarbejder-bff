@@ -1,9 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ConcreteFhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.junit.jupiter.api.Test;
@@ -23,7 +21,7 @@ public class ValueSetServiceTest {
     private ValueSetService subject;
 
     @Mock
-    private FhirClientAdaptor fhirClient;
+    private ClientAdaptor fhirClient;
 
     @Test
     public void getPlanDefinitions_sucecss() throws Exception {

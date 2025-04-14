@@ -37,7 +37,7 @@ public class FhirClientTest {
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
     private final String endpoint = "http://foo";
-    private ConcreteFhirClient subject;
+    private FhirClient subject;
     @Mock
     private FhirContext context;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -48,7 +48,7 @@ public class FhirClientTest {
     @BeforeEach
     public void setup() {
         Mockito.when(context.newRestfulGenericClient(endpoint)).thenReturn(client);
-        subject = new ConcreteFhirClient(context, endpoint, userContextProvider);
+        subject = new FhirClient(context, endpoint, userContextProvider);
 
     }
 
