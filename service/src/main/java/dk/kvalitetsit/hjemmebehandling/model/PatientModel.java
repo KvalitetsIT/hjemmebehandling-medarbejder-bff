@@ -4,8 +4,7 @@ import java.util.List;
 
 public record PatientModel(
         QualifiedId id,
-        String givenName,
-        String familyName,
+        PersonNameModel name,
         String cpr,
         ContactDetailsModel contactDetails,
         PrimaryContactModel primaryContact,
@@ -20,8 +19,7 @@ public record PatientModel(
 
     public static class Builder {
         private QualifiedId id;
-        private String givenName;
-        private String familyName;
+        private PersonNameModel name;
         private String cpr;
         private ContactDetailsModel contactDetails;
         private PrimaryContactModel primaryContactModel;
@@ -31,9 +29,7 @@ public record PatientModel(
 
         public static Builder from(PatientModel model) {
             return new Builder()
-                    .id(model.id)
-                    .givenName(model.givenName)
-                    .familyName(model.familyName)
+                    .id(model.id).name(model.name)
                     .cpr(model.cpr)
                     .contactDetails(model.contactDetails)
                     .customUserId(model.customUserId)
@@ -47,14 +43,8 @@ public record PatientModel(
             return this;
         }
 
-        public Builder givenName(String givenName) {
-            this.givenName = givenName;
-            return this;
-
-        }
-
-        public Builder familyName(String familyName) {
-            this.familyName = familyName;
+        public Builder name(PersonNameModel name) {
+            this.name = name;
             return this;
         }
 
@@ -89,7 +79,7 @@ public record PatientModel(
         }
 
         public PatientModel build() {
-            return new PatientModel(this.id, this.givenName, this.familyName, this.cpr, this.contactDetails, this.primaryContactModel, this.additionalRelativeContactDetails, this.customUserId, this.customUserName);
+            return new PatientModel(this.id, this.name, this.cpr, this.contactDetails, this.primaryContactModel, this.additionalRelativeContactDetails, this.customUserId, this.customUserName);
         }
     }
 }

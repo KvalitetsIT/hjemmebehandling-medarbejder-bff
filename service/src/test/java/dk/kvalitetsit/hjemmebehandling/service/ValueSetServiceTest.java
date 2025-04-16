@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import org.hl7.fhir.r4.model.ValueSet;

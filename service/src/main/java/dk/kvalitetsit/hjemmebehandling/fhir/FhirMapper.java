@@ -61,7 +61,10 @@ public class FhirMapper {
     }
 
     public CarePlan.CarePlanStatus mapCarePlanStatus(CarePlanStatus carePlanStatus) {
-        throw new NotImplementedException();
+        return switch (carePlanStatus) {
+            case ACTIVE -> CarePlan.CarePlanStatus.ACTIVE;
+            case COMPLETED -> CarePlan.CarePlanStatus.COMPLETED;
+        };
     }
 
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
@@ -104,7 +107,6 @@ public class FhirMapper {
 
     public CarePlanModel mapCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, List<PlanDefinition> planDefinitions, Organization organization, String organisationId, PatientModel patient, List<PlanDefinitionModel> plandefinitions) {
         var id = carePlan.getId();
-
 
         var wrapper = carePlan.getActivity().stream().map(activity -> {
             String questionnaireId = activity.getDetail().getInstantiatesCanonical().getFirst().getValue();
@@ -187,7 +189,7 @@ public class FhirMapper {
             patient.setId(patientModel.id().toString());
         }
 
-        var name = buildName(patientModel.givenName(), patientModel.familyName());
+        var name = buildName(patientModel.name().given().getFirst(), patientModel.name().family());
         patient.addName(name);
 
         patient.getIdentifier().add(makeCprIdentifier(patientModel.cpr()));
@@ -285,8 +287,7 @@ public class FhirMapper {
                 .id(extractId(patient))
                 .customUserId(ExtensionMapper.extractCustomUserId(patient.getExtension()))
                 .customUserName(ExtensionMapper.extractCustomUserName(patient.getExtension()))
-                .givenName(extractGivenNames(patient))
-                .familyName(extractFamilyName(patient))
+                .name(new PersonNameModel(extractFamilyName(patient), List.of(Objects.requireNonNull(extractGivenNames(patient)))))
                 .cpr(extractCpr(patient))
                 .contactDetails(extractPatientContactDetails(patient))
                 .primaryContact(primaryContact)

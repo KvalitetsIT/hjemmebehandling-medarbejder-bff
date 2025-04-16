@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.api;
+package dk.kvalitetsit.hjemmebehandling.client;
 
 public class CustomUserRequestAttributesDto {
 

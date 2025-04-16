@@ -9,6 +9,7 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
@@ -60,7 +61,7 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        Optional<CarePlan> result = subject.fetch(carePlanId);
         assertTrue(result.isPresent());
         assertEquals(carePlan, result.get());
     }
@@ -72,7 +73,7 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        Optional<CarePlan> result = subject.fetch(carePlanId);
         assertFalse(result.isPresent());
     }
 
@@ -85,7 +86,7 @@ public class FhirClientTest {
         setupSearchCarePlanByIdClient(carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        Optional<CarePlan> result = subject.lookupCarePlanById(carePlanId);
+        Optional<CarePlan> result = subject.fetch(carePlanId);
         assertTrue(result.isPresent());
     }
 
@@ -97,7 +98,7 @@ public class FhirClientTest {
         setupSearchCarePlanClient(onlyActiveCarePlans, carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+        List<CarePlan> result = subject.fetchCarePlansByPatientId(patientId, onlyActiveCarePlans);
         assertEquals(1, result.size());
         assertEquals(carePlan, result.getFirst());
     }
@@ -109,7 +110,7 @@ public class FhirClientTest {
         setupSearchCarePlanClient();
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        List<CarePlan> result = subject.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans);
+        List<CarePlan> result = subject.fetchCarePlansByPatientId(patientId, onlyActiveCarePlans);
         assertEquals(0, result.size());
     }
 
@@ -122,7 +123,7 @@ public class FhirClientTest {
         setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans, carePlan);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        List<CarePlan> result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        List<CarePlan> result = subject.fetchCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
         assertEquals(1, result.size());
         assertEquals(carePlan, result.getFirst());
     }
@@ -135,7 +136,7 @@ public class FhirClientTest {
         setupSearchCarePlanClient(true, false, false, onlyActiveCarePlans);
         setupUserContext(SOR_CODE_1);
         setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-        List<CarePlan> result = subject.lookupCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
+        List<CarePlan> result = subject.fetchCarePlans(pointInTime, onlyActiveCarePlans, useUnsatisfied);
         assertEquals(0, result.size());
     }
 
@@ -286,7 +287,7 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, true);
-        String result = subject.saveCarePlan(carePlan);
+        String result = subject.save(carePlan);
         assertEquals("1",result);
     }
 
@@ -295,7 +296,7 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, true);
-        subject.saveCarePlan(carePlan);
+        subject.save(carePlan);
         assertTrue(isTaggedWithId(carePlan, ORGANIZATION_ID_1));
     }
 
@@ -304,7 +305,7 @@ public class FhirClientTest {
         CarePlan carePlan = new CarePlan();
         carePlan.setId("1");
         setupSaveClient(carePlan, false);
-        assertThrows(IllegalStateException.class, () -> subject.saveCarePlan(carePlan));
+        assertThrows(IllegalStateException.class, () -> subject.save(carePlan));
     }
 
     @Test

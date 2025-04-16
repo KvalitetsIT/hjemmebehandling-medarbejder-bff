@@ -1,15 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.PersonNameModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.HumanName;
-import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,13 +104,13 @@ public class PatientServiceTest {
     @Test
     public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() throws ServiceException {
 
-        CarePlanModel carePlan1 =  CarePlanModel.builder()
+        CarePlanModel carePlan1 = CarePlanModel.builder()
                 .id(new QualifiedId(CAREPLAN_ID_1))
                 .patient(PatientModel.builder().id(new QualifiedId(PatientServiceTest.PATIENT_ID_1)).build())
                 .status(CarePlanStatus.COMPLETED)
                 .build();
 
-        CarePlanModel carePlan2 =  CarePlanModel.builder()
+        CarePlanModel carePlan2 = CarePlanModel.builder()
                 .id(new QualifiedId(CAREPLAN_ID_2))
                 .patient(PatientModel.builder().id(new QualifiedId(PatientServiceTest.PATIENT_ID_1)).build())
                 .build();
@@ -139,28 +138,14 @@ public class PatientServiceTest {
             int pageSize
     ) throws ServiceException {
 
-        CarePlanModel carePlan1 = CarePlanModel.builder()
-                .id(new QualifiedId(CAREPLAN_ID_1))
-                .status(CarePlanStatus.ACTIVE)
-                .patient(PatientModel.builder()
-                        .id(new QualifiedId(PatientServiceTest.PATIENT_ID_1))
-                        .build())
-                .build();
 
-        for (var name : names) {
-            PatientModel patient = buildPatient(name, name);
-            HumanName patientName = new HumanName();
-            patientName.setGiven(List.of(new StringType(name)));
-//            patient.setName(List.of(patientName));
-//            inactiveLookup.merge(FhirLookupResult.fromResources(patient));
+        List<PatientModel> patients = names.stream().map(name -> PatientModel.builder()
+                .name(PersonNameModel.builder()
+                        .given(List.of(name))
+                        .build()
+                ).build()).toList();
 
-            PatientModel patientmodel = PatientModel.builder().givenName(name).build();
-
-            var orgId = "";
-        }
-
-//        Mockito.when(fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE)).thenReturn(inactiveLookup);
-        Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
+        Mockito.when(fhirClient.getPatientsByStatus(CarePlanStatus.ACTIVE)).thenReturn(patients);
 
         var pagedetails = new Pagination(page, pageSize);
         var includeActive = true;
@@ -169,7 +154,7 @@ public class PatientServiceTest {
 
         assertEquals(namesInExpectedOrder.size(), result.size());
         for (var i = 0; i < namesInExpectedOrder.size(); i++) {
-            assertEquals(namesInExpectedOrder.get(i), result.get(i).givenName());
+            assertEquals(namesInExpectedOrder.get(i), result.get(i).name().given().getFirst());
         }
     }
 
@@ -179,7 +164,9 @@ public class PatientServiceTest {
 //        carePlan1.setStatus(CarePlan.CarePlanStatus.ACTIVE);
 //        carePlan1.setStatus(CarePlan.CarePlanStatus.COMPLETED);
 
+
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+
 
 //        FhirLookupResult activeLookup = FhirLookupResult.fromResources(carePlan1, patient);
 
@@ -204,18 +191,29 @@ public class PatientServiceTest {
 
     @Test
     public void searchPatients_emptyResult_emptySearch() throws ServiceException {
-        PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+        PatientModel patient = PatientModel.builder()
+                .id(new QualifiedId(PatientServiceTest.PATIENT_ID_1))
+                .build();
 
-        CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1);
-//        carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+        CarePlanModel carePlan1 = CarePlanModel.builder()
+                .id(new QualifiedId(CAREPLAN_ID_1))
+                .status(CarePlanStatus.ACTIVE)
+                .patient(patient)
+                .build();
 
-        CarePlanModel carePlan2 = buildCarePlan(CAREPLAN_ID_2);
-//        carePlan2.setStatus(CarePlan.CarePlanStatus.COMPLETED);
+        CarePlanModel carePlan2 = CarePlanModel.builder()
+                .id(new QualifiedId(CAREPLAN_ID_2))
+                .status(CarePlanStatus.COMPLETED)
+                .patient(patient)
+                .build();
 
-        CarePlanModel carePlan3 = buildCarePlan(CAREPLAN_ID_3);
-//        carePlan3.setStatus(CarePlan.CarePlanStatus.ACTIVE);
+        CarePlanModel carePlan3 = CarePlanModel.builder()
+                .id(new QualifiedId(CAREPLAN_ID_3))
+                .status(CarePlanStatus.ACTIVE)
+                .patient(patient)
+                .build();
 
-//        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan, carePlan2, carePlan3, patient);
+
         Mockito.when(fhirClient.searchPatients(new ArrayList<>(), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
 
         PatientModel patientModel = PatientModel.builder().build();

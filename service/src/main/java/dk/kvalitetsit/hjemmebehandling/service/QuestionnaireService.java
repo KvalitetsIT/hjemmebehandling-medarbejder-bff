@@ -4,7 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.Client;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -182,7 +182,7 @@ public class QuestionnaireService extends AccessValidatingService {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        var activeCarePlansWithQuestionnaire = fhirClient.lookupActiveCarePlansWithQuestionnaire(qualifiedId);
+        var activeCarePlansWithQuestionnaire = fhirClient.fetchActiveCarePlansWithQuestionnaire(qualifiedId);
         if (!activeCarePlansWithQuestionnaire.isEmpty()) {
             throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
         }
@@ -205,6 +205,6 @@ public class QuestionnaireService extends AccessValidatingService {
             throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        return fhirClient.lookupActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId);
+        return fhirClient.fetchActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId);
     }
 }

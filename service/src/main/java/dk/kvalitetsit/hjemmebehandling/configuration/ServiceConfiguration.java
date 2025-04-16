@@ -4,8 +4,8 @@ import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.context.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
@@ -38,7 +38,6 @@ public class ServiceConfiguration {
 
     @Value("${user.mock.context.entitlements}")
     private String mockContextEntitlements;
-
 
     @Value("${fhir.server.url}")
     private String fhirServerUrl;
@@ -83,7 +82,7 @@ public class ServiceConfiguration {
             @Autowired DtoMapper dtoMapper,
             @Autowired CustomUserClient customUserService
     ) {
-        return new CarePlanService(client, mapper, dateProvider, accessValidator, dtoMapper, customUserService);
+        return new CarePlanService(client, dateProvider, accessValidator, customUserService);
     }
 
     @Bean

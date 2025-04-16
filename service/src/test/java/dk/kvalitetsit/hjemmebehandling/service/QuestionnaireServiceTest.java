@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -207,7 +207,7 @@ public class QuestionnaireServiceTest {
                 .status(QuestionnaireStatus.ACTIVE)
                 .build();
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of());
         subject.retireQuestionnaire(id);
         assertEquals(QuestionnaireStatus.RETIRED, questionnaire.status());
     }
@@ -223,7 +223,7 @@ public class QuestionnaireServiceTest {
         CarePlanModel activeCarePlan = CarePlanModel.builder().build();
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of(activeCarePlan));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithQuestionnaire(QUESTIONNAIRE_ID_1)).thenReturn(List.of(activeCarePlan));
         try {
             subject.retireQuestionnaire(id);
             fail();

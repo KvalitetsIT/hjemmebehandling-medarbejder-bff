@@ -143,7 +143,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.NOT_EXAMINED)).thenReturn(ExaminationStatus.NOT_EXAMINED);
 
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statusesdto, pagination.getOffset(), pagination.getLimit());
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statusesdto, pagination.offset(), pagination.limit());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, result.getBody().size());
@@ -159,7 +159,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenReturn(List.of());
 
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(List.of(ExaminationStatusDto.UNDER_EXAMINATION), pagination.getOffset(), pagination.getLimit());
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(List.of(ExaminationStatusDto.UNDER_EXAMINATION), pagination.offset(), pagination.limit());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(result.getBody().isEmpty());
@@ -176,7 +176,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.EXAMINED)).thenReturn(ExaminationStatus.EXAMINED);
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
-        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByStatus(statusesDtos, pagination.getOffset(), pagination.getLimit()));
+        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByStatus(statusesDtos, pagination.offset(), pagination.limit()));
     }
 
     @Test

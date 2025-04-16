@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.fhir.Client;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;

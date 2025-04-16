@@ -359,7 +359,7 @@ public class FhirMapperTest {
                 .build();
     }
 
-    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patiientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {
+    private QuestionnaireResponse buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId, String patientId, List<QuestionnaireResponse.QuestionnaireResponseItemComponent> answerItems) {
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
 
         questionnaireResponse.setId(questionnaireResponseId);
@@ -367,7 +367,7 @@ public class FhirMapperTest {
         questionnaireResponse.setBasedOn(List.of(new Reference(CAREPLAN_ID_1)));
         questionnaireResponse.setAuthor(new Reference(PATIENT_ID_1));
         questionnaireResponse.setSource(new Reference(PATIENT_ID_1));
-        questionnaireResponse.setSubject(new Reference(patiientId));
+        questionnaireResponse.setSubject(new Reference(patientId));
         questionnaireResponse.getItem().addAll(answerItems);
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));

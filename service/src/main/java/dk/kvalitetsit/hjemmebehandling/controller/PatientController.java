@@ -17,6 +17,8 @@ import org.openapitools.model.PatientDto;
 import org.openapitools.model.PatientListResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,11 +39,6 @@ public class PatientController extends BaseController implements PatientApi {
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
         this.customUserClient = customUserClient;
-    }
-
-    private String getClinicalIdentifier() {
-        // TODO - get clinical identifier (from token?)
-        return "1234";
     }
 
     private PatientListResponse buildResponse(List<PatientModel> patients) {
@@ -70,12 +67,9 @@ public class PatientController extends BaseController implements PatientApi {
     public ResponseEntity<PatientDto> getPatient(String cpr) {
         logger.info("Getting patient ...");
 
-        String clinicalIdentifier = getClinicalIdentifier();
-
         try {
-            PatientModel patient = patientService.patient(cpr);
+            PatientModel patient = patientService.getPatient(cpr);
             auditLoggingService.log("GET /v1/patient", patient);
-
             if (patient == null) {
                 throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
             }
@@ -86,17 +80,11 @@ public class PatientController extends BaseController implements PatientApi {
     }
 
 
-
     @Override
     public ResponseEntity<org.openapitools.model.PatientListResponse> getPatientList() {
         logger.info("Getting patient list ...");
-
-        String clinicalIdentifier = getClinicalIdentifier();
-
-        List<PatientModel> patients = patientService.getPatients(clinicalIdentifier);
-        auditLoggingService.log("GET /v1/patientlist", patients);
-
-        return ResponseEntity.ok(buildResponse(patients));
+        auditLoggingService.log("GET /v1/patientlist", List.of());
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
     @Override
@@ -120,14 +108,14 @@ public class PatientController extends BaseController implements PatientApi {
     public ResponseEntity<Void> resetPassword(String cpr) {
         logger.info("reset password for patient");
         try {
-            PatientModel patientModel = patientService.patient(cpr);
+            PatientModel patientModel = patientService.getPatient(cpr);
             customUserClient.resetPassword(cpr, patientModel.customUserName());
+            return ResponseEntity.ok().build();
         } catch (ServiceException e) {
             throw toStatusCodeException(e);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        return ResponseEntity.ok().build();
     }
 
     @Override

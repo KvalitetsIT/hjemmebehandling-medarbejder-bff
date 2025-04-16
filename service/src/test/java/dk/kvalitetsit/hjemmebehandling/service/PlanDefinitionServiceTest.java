@@ -2,9 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -25,8 +24,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionServiceTest {
@@ -64,16 +66,16 @@ public class PlanDefinitionServiceTest {
         String id = "plandefinition-1";
         PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
 
-
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-
 
         var expectedName = "a new name";
 
         subject.updatePlanDefinition(id, expectedName, null, List.of(), List.of());
 
         ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
 
         assertEquals(expectedName, captor.getValue().name());
     }
@@ -82,19 +84,22 @@ public class PlanDefinitionServiceTest {
     public void patchPlanDefinition_status() throws ServiceException, AccessValidationException {
         String id = "plandefinition-1";
         PlanDefinitionModel planDefinition = buildPlanDefinition();
-        PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         subject.updatePlanDefinition(id, "", PlanDefinitionStatus.DRAFT, List.of(), List.of());
 
-        assertEquals(PlanDefinitionStatus.DRAFT, planDefinitionModel.status());
+        ArgumentCaptor<PlanDefinitionModel> captor1 = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor1.capture());
+        assertEquals(PlanDefinitionStatus.DRAFT, captor1.getValue().status());
+
 
         subject.updatePlanDefinition(id, "", PlanDefinitionStatus.ACTIVE, List.of(), List.of());
 
-        assertEquals(PlanDefinitionStatus.ACTIVE, planDefinitionModel.status());
+        ArgumentCaptor<PlanDefinitionModel> captor2 = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(2)).updatePlanDefinition(captor2.capture());
+        assertEquals(PlanDefinitionStatus.ACTIVE, captor2.getValue().status());
     }
 
 
@@ -113,6 +118,7 @@ public class PlanDefinitionServiceTest {
 
         subject.updatePlanDefinition(id, null, null, List.of(), List.of());
 
+        fail("Falsk positiv - der testes på et forkert grundlag");
         assertEquals(name, planDefinitionModel.name());
     }
 
@@ -129,18 +135,27 @@ public class PlanDefinitionServiceTest {
 
         List<QuestionModel> questions = questionnaireModel.questions();
         questions.add(temperatureQuestion);
-        planDefinitionModel.questionnaires().add(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1));
+
+        var questionnaires = Stream.concat(planDefinitionModel.questionnaires().stream(), Stream.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1))).toList();
+
+        planDefinitionModel = PlanDefinitionModel.Builder.from(planDefinitionModel)
+                .questionnaires(questionnaires)
+                .build();
+
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
+        Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinitionModel));
 
         ThresholdModel thresholdModel = buildThresholdModel(temperatureQuestion.linkId());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of(thresholdModel));
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
-        assertEquals(2, planDefinitionModel.questionnaires().getFirst().thresholds().size());
-        assertTrue(planDefinitionModel.questionnaires().getFirst().thresholds().stream().anyMatch(t -> t.questionnaireItemLinkId().equals(thresholdModel.questionnaireItemLinkId())));
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+
+        assertEquals(1, captor.getValue().questionnaires().size());
+        assertEquals(2, captor.getValue().questionnaires().getFirst().thresholds().size());
+        assertTrue(captor.getValue().questionnaires().getFirst().thresholds().stream().anyMatch(t -> t.questionnaireItemLinkId().equals(thresholdModel.questionnaireItemLinkId())));
 
     }
 
@@ -188,7 +203,7 @@ public class PlanDefinitionServiceTest {
 
     @Test
     public void patchPlanDefinition_updateThreshold_onExistingQuestionnaire() throws ServiceException, AccessValidationException {
-        String id = "plandefinition-1";
+
         PlanDefinitionModel planDefinition = buildPlanDefinition();
 
         QuestionModel temperatureQuestion = buildMeasurementQuestionModel();
@@ -204,10 +219,10 @@ public class PlanDefinitionServiceTest {
         ThresholdModel thresholdModel = buildMeasurementThresholdModel(temperatureQuestion.linkId());
 
         var thresholds = questionnaireModel.questions().stream()
-                .flatMap(q -> q.thresholds().stream())
+                .flatMap(q -> Stream.concat(q.thresholds().stream(), Stream.of(thresholdModel)))
                 .toList();
 
-        thresholds.add(thresholdModel);
+
 
         var questionnaireWrapperModel = QuestionnaireWrapperModel.builder()
                 .questionnaire(questionnaireModel)
@@ -224,18 +239,24 @@ public class PlanDefinitionServiceTest {
 
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         ThresholdModel newThresholdModel = buildThresholdModel(temperatureQuestion.linkId(), thresholdModel.valueQuantityLow() - 1);
 
+        subject.updatePlanDefinition("plandefinition-1", null, null, List.of(), List.of(newThresholdModel));
 
-        subject.updatePlanDefinition(id, null, null, List.of(), List.of(newThresholdModel));
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
-        assertEquals(2, planDefinitionModel.questionnaires().getFirst().thresholds().size());
 
-        Optional<ThresholdModel> updatedThreshold = planDefinitionModel.questionnaires().getFirst().thresholds().stream().filter(t -> t.questionnaireItemLinkId().equals(temperatureQuestion.linkId())).findFirst();
+        assertEquals(1, captor.getValue().questionnaires().size());
+        assertEquals(2, captor.getValue().questionnaires().getFirst().thresholds().size());
+
+        Optional<ThresholdModel> updatedThreshold = captor.getValue().questionnaires().getFirst().thresholds().stream().filter(t -> t.questionnaireItemLinkId().equals(temperatureQuestion.linkId())).findFirst();
         assertTrue(updatedThreshold.isPresent());
+
+        assertEquals(1, captor.getValue().questionnaires().size());
+
 
         assertNotEquals(thresholdModel.valueQuantityLow(), newThresholdModel.valueQuantityLow());
         assertEquals(newThresholdModel.valueQuantityLow(), updatedThreshold.get().valueQuantityLow());
@@ -252,12 +273,13 @@ public class PlanDefinitionServiceTest {
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
-
-        assertEquals(1, planDefinitionModel.questionnaires().size());
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+        assertEquals(1, captor.getValue().questionnaires().size());
     }
 
     @Test
@@ -274,11 +296,17 @@ public class PlanDefinitionServiceTest {
 
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().build();
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
+        subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
+
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+
+        assertEquals(1, captor.getValue().questionnaires().size());
+
         assertEquals(1, existingCarePlanModel.questionnaires().size());
         assertNotNull(existingCarePlanModel.questionnaires().getFirst().frequency());
         assertTrue(existingCarePlanModel.questionnaires().getFirst().frequency().weekdays().isEmpty());
@@ -300,7 +328,7 @@ public class PlanDefinitionServiceTest {
 
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(List.of(questionnaireWrapperModel)).build();
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
 
         try {
@@ -328,11 +356,13 @@ public class PlanDefinitionServiceTest {
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire1));
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+        assertEquals(1, captor.getValue().questionnaires().size());
     }
 
     /**
@@ -369,7 +399,7 @@ public class PlanDefinitionServiceTest {
                 .questionnaires(List.of(questionnaireWrapperModel1))
                 .build();
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id().toString())).thenReturn(List.of());
 
@@ -415,15 +445,19 @@ public class PlanDefinitionServiceTest {
                 .build();
 
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id().toString())).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
 
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+        assertEquals(1, captor.getValue().questionnaires().size());
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_2, planDefinitionModel.questionnaires().getFirst().questionnaire().id().toString());
+
+        assertEquals(1, captor.getValue().questionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_2, captor.getValue().questionnaires().getFirst().questionnaire().id().toString());
 
         assertEquals(1, existingCarePlanModel.questionnaires().size());
         assertEquals(QUESTIONNAIRE_ID_2, existingCarePlanModel.questionnaires().getFirst().questionnaire().id().toString());
@@ -465,7 +499,7 @@ public class PlanDefinitionServiceTest {
 //        existingCarePlan.addActivity(activityComponent2);
 //        existingCarePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.now()));
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
 
         Mockito.when(dateProvider.now()).thenReturn(Instant.now());
 
@@ -523,7 +557,7 @@ public class PlanDefinitionServiceTest {
 
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2)).build();
 
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlanModel));
 
         Mockito.when(dateProvider.now()).thenReturn(before);
 
@@ -552,11 +586,14 @@ public class PlanDefinitionServiceTest {
 
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.updatePlanDefinition(id, null, null, List.of(), List.of());
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+        assertEquals(1, captor.getValue().questionnaires().size());
+
     }
 
     @Test
@@ -566,11 +603,15 @@ public class PlanDefinitionServiceTest {
 
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
         subject.retirePlanDefinition(id);
 
-        assertEquals(Enumerations.PublicationStatus.RETIRED, planDefinition.status());
+
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(fhirClient, times(1)).updatePlanDefinition(captor.capture());
+
+        assertEquals(PlanDefinitionStatus.RETIRED, captor.getValue().status());
     }
 
     @Test
@@ -580,15 +621,9 @@ public class PlanDefinitionServiceTest {
         CarePlanModel activeCarePlan = CarePlanModel.builder().build();
 
         Mockito.when(fhirClient.lookupPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
-        Mockito.when(fhirClient.lookupActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(activeCarePlan));
+        Mockito.when(fhirClient.fetchActiveCarePlansWithPlanDefinition(PLANDEFINITION_ID_1)).thenReturn(List.of(activeCarePlan));
 
-        try {
-            subject.retirePlanDefinition(id);
-            fail();
-        } catch (ServiceException se) {
-            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
-            assertEquals(ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
-        }
+        assertThrows(ServiceException.class, () -> subject.retirePlanDefinition(id));
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(String questionnaireId) {

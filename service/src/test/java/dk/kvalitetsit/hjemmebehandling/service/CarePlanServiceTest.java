@@ -2,8 +2,9 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -60,7 +61,7 @@ public class CarePlanServiceTest {
     @InjectMocks
     private CarePlanService subject;
     @Mock
-    private ClientAdaptor fhirClient;
+    private Client<CarePlanModel, PlanDefinitionModel, PractitionerModel, PatientModel, QuestionnaireModel, QuestionnaireResponseModel, Organization, CarePlanStatus> fhirClient;
 
     @Mock
     private DateProvider dateProvider;
@@ -101,9 +102,9 @@ public class CarePlanServiceTest {
             Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.empty());
 
             boolean onlyActiveCarePlans = true;
-            Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(List.of());
+            Mockito.when(fhirClient.fetchCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(List.of());
             Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
-            Mockito.when(fhirClient.saveCarePlan(Mockito.any(CarePlanModel.class))).thenReturn("1");
+            Mockito.when(fhirClient.save(Mockito.any(CarePlanModel.class))).thenReturn("1");
 
             String result = subject.createCarePlan(carePlanModel);
             fail("No error was thrown");
@@ -139,7 +140,7 @@ public class CarePlanServiceTest {
         boolean onlyActiveCarePlans = true;
 
         Mockito.when(fhirClient.lookupPatientByCpr(CPR_1)).thenReturn(Optional.of(patient));
-        Mockito.when(fhirClient.lookupCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(List.of(existingCareplan));
+        Mockito.when(fhirClient.fetchCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(List.of(existingCareplan));
 
         assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
     }
@@ -303,7 +304,7 @@ public class CarePlanServiceTest {
 
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
 
-        Mockito.when(fhirClient.lookupCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of(carePlan));
+        Mockito.when(fhirClient.fetchCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of(carePlan));
 
         CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
@@ -322,7 +323,7 @@ public class CarePlanServiceTest {
         boolean unsatisfied = true;
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        Mockito.when(fhirClient.lookupCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of());
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(onlyActiveCarePlans, unsatisfied, new Pagination(1, 4));
 
@@ -335,7 +336,7 @@ public class CarePlanServiceTest {
         boolean unsatisfied = true;
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
-        Mockito.when(fhirClient.lookupCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of());
+        Mockito.when(fhirClient.fetchCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of());
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(onlyActiveCarePlans, unsatisfied, new Pagination(3, 4));
     }
@@ -354,7 +355,7 @@ public class CarePlanServiceTest {
         PatientModel patient2 = buildPatient(PATIENT_ID_2, CPR_2, name2.getGivenAsSingleString(), name2.getFamily());
 
 //        FhirLookupResult lookupResult = FhirLookupResult.fromResources(carePlan1, carePlan2, patient1, patient2);
-        Mockito.when(fhirClient.lookupCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of(carePlan1, carePlan2));
+        Mockito.when(fhirClient.fetchCarePlans(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of(carePlan1, carePlan2));
 
         CarePlanModel carePlanModel1 = CarePlanModel.builder().patient(buildPatientModel(PATIENT_ID_1, name1.getGivenAsSingleString(), name1.getFamily())).build();
         CarePlanModel carePlanModel2 = CarePlanModel.builder().patient(buildPatientModel(PATIENT_ID_2, name2.getGivenAsSingleString(), name2.getFamily())).build();
@@ -364,10 +365,10 @@ public class CarePlanServiceTest {
         List<CarePlanModel> result = subject.getCarePlansWithFilters(onlyActiveCarePlans, unsatisfied);
 
         assertEquals(2, result.size());
-        assertEquals(expectedOrder.get(0).getGivenAsSingleString(), result.get(0).patient().givenName());
-        assertEquals(expectedOrder.get(0).getFamily(), result.get(0).patient().familyName());
-        assertEquals(expectedOrder.get(1).getGivenAsSingleString(), result.get(1).patient().givenName());
-        assertEquals(expectedOrder.get(1).getFamily(), result.get(1).patient().familyName());
+        assertEquals(expectedOrder.get(0).getGivenAsSingleString(), result.get(0).patient().name().given().getFirst());
+        assertEquals(expectedOrder.get(0).getFamily(), result.get(0).patient().name().family());
+        assertEquals(expectedOrder.get(1).getGivenAsSingleString(), result.get(1).patient().name().given().getFirst());
+        assertEquals(expectedOrder.get(1).getFamily(), result.get(1).patient().name().family());
     }
 
     @Test
@@ -386,7 +387,7 @@ public class CarePlanServiceTest {
         String carePlanId = "CarePlan/careplan-1";
         String patientId = "Patient/patient-1";
         CarePlanModel carePlan = buildCarePlan(carePlanId, patientId);
-        Mockito.when(fhirClient.lookupCarePlanById(carePlan.id().toString())).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(carePlan.id().toString())).thenReturn(Optional.of(carePlan));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
         assertThrows(AccessValidationException.class, () -> subject.getCarePlanById(carePlanId));
     }
@@ -394,7 +395,7 @@ public class CarePlanServiceTest {
     @Test
     public void getCarePlanById_carePlanMissing_returnsEmpty() throws Exception {
         String carePlanId = CAREPLAN_ID_1;
-        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.empty());
+        Mockito.when(fhirClient.fetch(carePlanId)).thenReturn(Optional.empty());
         Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
         assertFalse(result.isPresent());
     }
@@ -402,7 +403,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_carePlanMissing_throwsException() throws ServiceException {
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.empty());
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.empty());
 
 
         assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
@@ -411,7 +412,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_accessViolation_throwsException() throws Exception {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
 
@@ -421,7 +422,7 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_carePlanSatisfiedIntoTheFuture_throwsException() throws Exception {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         CarePlanModel carePlanModel = CarePlanModel.builder().satisfiedUntil(POINT_IN_TIME.plusSeconds(200)).build();
         Mockito.when(fhirClient.getOrganizationId()).thenReturn(ORGANISATION_ID_1);
@@ -435,7 +436,7 @@ public class CarePlanServiceTest {
     public void resolveAlarm_recomputesSatisfiedUntil_savesCarePlan() throws Exception {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         CarePlanModel carePlanModel = CarePlanModel.builder().satisfiedUntil(POINT_IN_TIME.minusSeconds(100))
                 .questionnaires(List.of(
@@ -455,14 +456,14 @@ public class CarePlanServiceTest {
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.questionnaires().get(1).satisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.satisfiedUntil());
 
-        Mockito.verify(fhirClient).updateCarePlan(carePlan);
+        Mockito.verify(fhirClient).update(carePlan);
     }
 
     @Test
     public void completeCareplan_NoQuestionnaireResponses_and_satisfiedSchedule_ShouldBeCompleted() throws ServiceException {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), CAREPLAN_ID_1)).thenReturn(List.of());
 
@@ -476,7 +477,7 @@ public class CarePlanServiceTest {
     public void completeCareplan_OneQuestionnaireResponses_ShouldThrowError() throws ServiceException {
 
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), CAREPLAN_ID_1)).thenReturn(List.of(QuestionnaireResponseModel.builder().build()));
 
@@ -544,9 +545,8 @@ public class CarePlanServiceTest {
                 .id(new QualifiedId(carePlanId))
                 .build();
 
-        Mockito.when(fhirClient.lookupCarePlanById(carePlanId)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(carePlanId)).thenReturn(Optional.of(carePlan));
         Mockito.when(fhirClient.lookupQuestionnairesById(List.of())).thenReturn(List.of());
-        Mockito.doNothing().when(accessValidator).validateAccess(List.of());
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
 
         assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
@@ -614,7 +614,7 @@ public class CarePlanServiceTest {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
 
         PatientModel patientModel = buildPatientModel();
 
@@ -753,7 +753,7 @@ public class CarePlanServiceTest {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME.plusSeconds(1L));
 
         try {
@@ -786,7 +786,7 @@ public class CarePlanServiceTest {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(fhirClient.lookupCarePlanById(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+        Mockito.when(fhirClient.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
@@ -851,8 +851,7 @@ public class CarePlanServiceTest {
         return PatientModel.builder()
                 .id(new QualifiedId(patientId))
                 .contactDetails(ContactDetailsModel.builder().build())
-                .givenName(givenName)
-                .familyName(familyName)
+                .name(new PersonNameModel(familyName, List.of(givenName)))
                 .build();
     }
 
@@ -908,7 +907,7 @@ public class CarePlanServiceTest {
 
         return PatientModel.builder()
                 .id(new QualifiedId(patientId))
-                .givenName("Yvonne")
+                .name(PersonNameModel.builder().given(List.of("Yvonne")).build())
                 .primaryContact(PrimaryContactModel.builder()
                         .name("Yvonne")
                         .affiliation("Moster")
@@ -946,8 +945,11 @@ public class CarePlanServiceTest {
         PatientModel patient = buildPatient(patientId, cpr);
 
         return PatientModel.Builder.from(patient)
-                .givenName(givenName)
-                .familyName(familyName)
+                .name(PersonNameModel.builder()
+                        .given(List.of(givenName))
+                        .family(familyName)
+                        .build()
+                )
                 .build();
     }
 

@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,18 +16,16 @@ public class QualifiedIdTest {
     public void testme() {
         PatientModel p = PatientModel.builder()
                 .cpr("cpr")
-                .givenName("given").
-                familyName("family")
+                .name(new PersonNameModel("family", List.of("given")))
                 .build();
 
         PatientModel p2 = PatientModel.builder()
                 .cpr("cpr")
-                .givenName("given")
-                .familyName("family")
+                .name(new PersonNameModel("family", List.of("given")))
                 .build();
 
         Map<String, String> result = Stream.of(p, p2)
-                .collect(Collectors.toMap(PatientModel::cpr, u -> u.givenName() + " " + u.familyName(), (existing, replacement) -> existing));
+                .collect(Collectors.toMap(PatientModel::cpr, u -> u.name().given().getFirst() + " " + u.name().family(), (existing, replacement) -> existing));
         for (String key : result.keySet()) {
             System.out.println(key + ": " + result.get(key));
         }

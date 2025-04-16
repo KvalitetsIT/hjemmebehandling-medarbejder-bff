@@ -1,8 +1,11 @@
-package dk.kvalitetsit.hjemmebehandling.fhir;
+package dk.kvalitetsit.hjemmebehandling.fhir.client;
 
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.Organization;
 
 import java.time.Instant;
@@ -11,7 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The ClientAdaptor is responsible for mapping from the business models and calling further into the stack with the arguments expected by the client
+ * An adapter whose responsibility is to adapt between FHIR and the domain logic.
+ * This primarily covers mapping from business models and calling further into the stack with the expected arguments
+ * For now, it implements the client interface, but this might change in the future
  */
 public class ClientAdaptor implements Client<
         CarePlanModel,
@@ -31,50 +36,16 @@ public class ClientAdaptor implements Client<
         this.mapper = mapper;
     }
 
-    @Override
-    public List<CarePlanModel> lookupActiveCarePlansWithQuestionnaire(String questionnaireId) throws ServiceException {
-        return client.lookupActiveCarePlansWithQuestionnaire(questionnaireId).stream().map(mapper::mapCarePlan).toList();
-    }
+
 
     @Override
-    public List<PlanDefinitionModel> lookupActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) throws ServiceException {
-        return client.lookupActivePlanDefinitionsUsingQuestionnaireWithId(questionnaireId).stream().map(mapper::mapPlanDefinition).toList();
+    public List<PlanDefinitionModel> fetchActivePlanDefinitionsUsingQuestionnaireWithId(String questionnaireId) throws ServiceException {
+        return client.fetchActivePlanDefinitionsUsingQuestionnaireWithId(questionnaireId).stream().map(mapper::mapPlanDefinition).toList();
     }
 
-    @Override
-    public List<CarePlanModel> lookupActiveCarePlansWithPlanDefinition(String plandefinitionId) throws ServiceException {
-        return client.lookupActiveCarePlansWithPlanDefinition(plandefinitionId).stream().map(mapper::mapCarePlan).toList();
-    }
 
-    @Override
-    public List<CarePlanModel> lookupCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) throws ServiceException {
-        return client.lookupCarePlansByPatientId(patientId, onlyActiveCarePlans)
-                .stream()
-                .map(mapper::mapCarePlan)
-                .toList();
-    }
 
-    @Override
-    public List<CarePlanModel> lookupCarePlans(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        return client.lookupCarePlans(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
-                .stream()
-                .map(mapper::mapCarePlan)
-                .toList();
-    }
 
-    @Override
-    public List<CarePlanModel> lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        return client.lookupCarePlans(cpr, unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
-                .stream()
-                .map(mapper::mapCarePlan)
-                .toList();
-    }
-
-    @Override
-    public Optional<CarePlanModel> lookupCarePlanById(String carePlanId) throws ServiceException {
-        return client.lookupCarePlanById(carePlanId)
-                .map(mapper::mapCarePlan);
-    }
 
     @Override
     public Optional<Organization> lookupOrganizationBySorCode(String sorCode) throws ServiceException {
@@ -141,16 +112,6 @@ public class ClientAdaptor implements Client<
                 .toList();
     }
 
-    @Override
-    public String saveCarePlan(CarePlanModel carePlan, PatientModel patient) throws ServiceException {
-        return client.saveCarePlan(this.mapper.mapCarePlanModel(carePlan), this.mapper.mapPatientModel(patient));
-    }
-
-
-    @Override
-    public String saveCarePlan(CarePlanModel carePlan) throws ServiceException {
-        return client.saveCarePlan(this.mapper.mapCarePlanModel(carePlan));
-    }
 
 
     @Override
@@ -218,11 +179,6 @@ public class ClientAdaptor implements Client<
     }
 
     @Override
-    public void updateCarePlan(CarePlanModel carePlan) {
-        this.client.updateCarePlan(this.mapper.mapCarePlanModel(carePlan));
-    }
-
-    @Override
     public void updatePlanDefinition(PlanDefinitionModel planDefinition) {
         this.client.updatePlanDefinition(this.mapper.mapPlanDefinitionModel(planDefinition));
 
@@ -283,5 +239,34 @@ public class ClientAdaptor implements Client<
     public FhirLookupResult lookupValueSet() throws ServiceException {
         return client.lookupValueSet();
     }
+
+    @Override
+    public void update(CarePlanModel resource) {
+        this.client.update(this.mapper.mapCarePlanModel(resource));
+    }
+
+    @Override
+    public String save(CarePlanModel resource) throws ServiceException {
+        return client.save(this.mapper.mapCarePlanModel(resource));
+    }
+
+    @Override
+    public Optional<CarePlanModel> fetch(String id) throws ServiceException {
+        return client.fetch(id).map(this.mapper::mapCarePlan);
+    }
+
+
+
+
+    @Override
+    public List<CarePlanModel> fetch(String... id) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<CarePlanModel> fetch() {
+        throw new NotImplementedException();
+    }
+
 
 }

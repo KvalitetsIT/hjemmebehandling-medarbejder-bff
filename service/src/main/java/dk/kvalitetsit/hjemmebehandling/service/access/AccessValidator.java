@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;

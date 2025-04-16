@@ -1,5 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
 import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -126,8 +128,7 @@ public class DtoMapper {
     public PatientModel mapPatientDto(PatientDto patient) {
         return new PatientModel(
                 null,
-                patient.getGivenName().orElse(null),
-                patient.getFamilyName().orElse(null),
+                new PersonNameModel(patient.getFamilyName().orElse(null), patient.getGivenName().map(x -> List.of(x)).orElse(null)),
                 patient.getCpr().orElse(null),
                 patient.getPatientContactDetails().map(this::mapContactDetailsDto).orElse(null),
                 new PrimaryContactModel(
@@ -145,8 +146,8 @@ public class DtoMapper {
     public PatientDto mapPatientModel(PatientModel patient) {
         PatientDto patientDto = new PatientDto();
         patientDto.setCpr(Optional.ofNullable(patient.cpr()));
-        patientDto.setFamilyName(Optional.ofNullable(patient.familyName()));
-        patientDto.setGivenName(Optional.ofNullable(patient.givenName()));
+        patientDto.setFamilyName(Optional.ofNullable(patient.name().family()));
+        patientDto.setGivenName(Optional.ofNullable(patient.name().given().getFirst()));
         patientDto.setCustomUserName(Optional.ofNullable(patient.customUserName()));
         Optional.ofNullable(patient.contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPatientContactDetails(Optional.of(x)));
         patientDto.setPrimaryRelativeName(Optional.ofNullable(patient.primaryContact().name()));
@@ -266,16 +267,15 @@ public class DtoMapper {
 
     public CustomUserRequestDto mapPatientModelToCustomUserRequest(PatientModel patientModel) {
         CustomUserRequestDto customUserRequestDto = new CustomUserRequestDto();
-        customUserRequestDto.setFirstName(patientModel.givenName());
-        customUserRequestDto.setFullName(patientModel.givenName() + " " + patientModel.familyName());
-        customUserRequestDto.setLastName(patientModel.familyName());
+        customUserRequestDto.setFirstName(patientModel.name().given().getFirst());
+        customUserRequestDto.setFullName(patientModel.name().given().getFirst() + " " + patientModel.name().family());
+        customUserRequestDto.setLastName(patientModel.name().family());
         customUserRequestDto.setTempPassword(patientModel.cpr().substring(0, 6));
         CustomUserRequestAttributesDto userCreatedRequestModelAttributes = new CustomUserRequestAttributesDto();
         userCreatedRequestModelAttributes.setCpr(patientModel.cpr());
-        userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.givenName(), patientModel.familyName()));
+        userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.name().given().getFirst(), patientModel.name().family()));
         customUserRequestDto.setAttributes(userCreatedRequestModelAttributes);
         return customUserRequestDto;
-
     }
 
     private String getInitials(String firstName, String lastName) {
@@ -302,7 +302,6 @@ public class DtoMapper {
                 .triagingCategory(Optional.ofNullable(questionnaireResponseModel.triagingCategory()).map(this::mapTriagingCategoryModel).orElse(null))
                 .patient(Optional.ofNullable(questionnaireResponseModel.patient()).map(this::mapPatientModel).orElse(null))
                 .planDefinitionTitle(questionnaireResponseModel.planDefinitionTitle());
-
     }
 
     private QuestionnaireResponseDto.TriagingCategoryEnum mapTriagingCategoryModel(TriagingCategory triagingCategory) {

@@ -247,7 +247,7 @@ public class CarePlanControllerTest {
     @MethodSource // arguments comes from a method that is name the same as the test
     public void searchCarePlans_VerifyThatCorrectMethodIsCalled_withUndefinedCPR_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException {
         Pagination pagination = new Pagination(1, 10);
-        assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit())));
+        assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
         Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(expectedOnlyActive, expectedUnsatisfied, pagination);
     }
 
@@ -255,7 +255,7 @@ public class CarePlanControllerTest {
     @MethodSource // arguments comes from a method that is name the same as the test
     public void searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException {
         Pagination pagination = new Pagination(1, 10);
-        assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit())));
+        assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
         Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(cpr, expectedOnlyActive, expectedUnsatisfied, pagination);
     }
 
@@ -275,7 +275,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit()));
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit()));
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, Objects.requireNonNull(result.getBody()).size());
@@ -299,7 +299,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of("0101010101"), Optional.of(onlyUnsatisfiedSchedules), Optional.of(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit()));
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of("0101010101"), Optional.of(onlyUnsatisfiedSchedules), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit()));
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, Objects.requireNonNull(result.getBody()).size());
@@ -317,7 +317,7 @@ public class CarePlanControllerTest {
 
         Mockito.when(carePlanService.getCarePlansWithFilters(cpr, onlyActiveCarePlans, false, pagination)).thenReturn(List.of());
 
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit()));
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit()));
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(Objects.requireNonNull(result.getBody()).isEmpty());
@@ -333,6 +333,6 @@ public class CarePlanControllerTest {
 
         Mockito.when(carePlanService.getCarePlansWithFilters(cpr, onlyActiveCarePlans, false, pagination)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
-        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.getOffset()), Optional.of(pagination.getLimit())));
+        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
     }
 }

@@ -61,8 +61,8 @@ public class QuestionnaireResponseController extends BaseController implements Q
             var response = new PaginatedListQuestionnaireResponseDto();
 
             response.setList(dtos);
-            response.setLimit(Optional.of(pagination.getLimit()));
-            response.setOffset(Optional.of(pagination.getOffset()));
+            response.setLimit(Optional.of(pagination.limit()));
+            response.setOffset(Optional.of(pagination.offset()));
             response.setTotal(Optional.of(dtos.size()));
 
             return ResponseEntity.ok(response);

@@ -16,11 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 public class PersonService {
     private static final Logger logger = LoggerFactory.getLogger(PersonService.class);
-
+    private final RestTemplate restTemplate;
     @Value("${cpr.url}")
     private String cprUrl;
-
-    private final RestTemplate restTemplate;
 
 
     public PersonService(RestTemplate restTemplate) {
@@ -29,10 +27,9 @@ public class PersonService {
 
     // http://localhost:8080/api/v1/person?cpr=2512489996
     public PersonModel getPerson(String cpr) throws JsonProcessingException, ServiceException {
-        PersonModel person = null;
         try {
             String result = restTemplate.getForObject(cprUrl + cpr, String.class);
-            person = new ObjectMapper().readValue(result, PersonModel.class);
+            return new ObjectMapper().readValue(result, PersonModel.class);
         } catch (HttpClientErrorException httpClientErrorException) {
             httpClientErrorException.printStackTrace();
             if (HttpStatus.NOT_FOUND.equals(httpClientErrorException.getStatusCode())) {
@@ -40,7 +37,6 @@ public class PersonService {
             }
             throw new ServiceException("Could not fetch person from cpr-service", ErrorKind.BAD_GATEWAY, ErrorDetails.CPRSERVICE_UNKOWN_ERROR);
         }
-        return person;
     }
 }
 

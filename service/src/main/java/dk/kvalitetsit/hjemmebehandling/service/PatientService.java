@@ -1,21 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
-
 import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.Client;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Organization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,27 +23,27 @@ public class PatientService extends AccessValidatingService {
 
     // TODO: Should be split into one which is only concerned about patient
     private final Client<
-                CarePlanModel,
-                PlanDefinitionModel,
-                PractitionerModel,
-                PatientModel,
-                QuestionnaireModel,
-                QuestionnaireResponseModel,
-                Organization,
-                CarePlanStatus> fhirClient;
+            CarePlanModel,
+            PlanDefinitionModel,
+            PractitionerModel,
+            PatientModel,
+            QuestionnaireModel,
+            QuestionnaireResponseModel,
+            Organization,
+            CarePlanStatus> fhirClient;
 
     private CustomUserClient customUserService;
 
     public PatientService(
             Client<
-                                CarePlanModel,
-                                PlanDefinitionModel,
-                                PractitionerModel,
-                                PatientModel,
-                                QuestionnaireModel,
-                                QuestionnaireResponseModel,
-                                Organization,
-                                CarePlanStatus> fhirClient,
+                    CarePlanModel,
+                    PlanDefinitionModel,
+                    PractitionerModel,
+                    PatientModel,
+                    QuestionnaireModel,
+                    QuestionnaireResponseModel,
+                    Organization,
+                    CarePlanStatus> fhirClient,
             FhirMapper fhirMapper,
             AccessValidator accessValidator
     ) {
@@ -71,73 +67,41 @@ public class PatientService extends AccessValidatingService {
         }
     }
 
-    public List<PatientModel> getPatients(String clinicalIdentifier) {
-        FhirContext context = FhirContext.forR4();
-        IGenericClient client = context.newRestfulGenericClient("http://hapi-server:8080/fhir");
 
-        Bundle bundle = (Bundle) client.search().forResource("Patient").prettyPrint().execute();
-
-        PatientModel p = PatientModel.builder()
-                .cpr("0101010101")
-                .familyName("Ærtegærde Ømø Ååstrup")
-                .givenName("Torgot")
-                .build();
-
-        return List.of(p);
+    public PatientModel getPatient(String cpr) throws ServiceException {
+        return fhirClient.lookupPatientByCpr(cpr).orElse(null);
     }
 
-    public PatientModel patient(String cpr) throws ServiceException {
-        // Look up the patient
-        Optional<PatientModel> patient = fhirClient.lookupPatientByCpr(cpr);
-        if (patient.isEmpty()) {
-            return null;
-        }
-
-        var orgId = fhirClient.getOrganizationId();
-
-        // Map to the domain model
-        return patient.get();
-    }
-
-    boolean patientIsInList(PatientModel patientToSearchFor, List<PatientModel> listToSearchForPatient) {
-        return listToSearchForPatient
-                .stream().
-                anyMatch(listP -> Objects.equals(
-                        listP.cpr(),
-                        patientToSearchFor.cpr()
-                ));
-    }
-
+    // TODO: Bad Practice... replace 'includeActive' and 'includeCompleted' with 'CarePlanStatus...  status'
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException {
 
         var patients = new ArrayList<PatientModel>();
 
-        var patientsWithActiveCareplan = fhirClient.getPatientsByStatus(CarePlanStatus.ACTIVE);
+        var patientsWithActiveCarePlan = fhirClient.getPatientsByStatus(CarePlanStatus.ACTIVE);
 
         if (includeActive)
-            patients.addAll(patientsWithActiveCareplan);
+            patients.addAll(patientsWithActiveCarePlan);
 
         if (includeCompleted) {
-            var patientsWithInactiveCareplan = fhirClient.getPatientsByStatus(CarePlanStatus.COMPLETED);
-            patientsWithInactiveCareplan.removeIf(potentialPatient -> patientIsInList(potentialPatient, patientsWithActiveCareplan));
-            patients.addAll(patientsWithInactiveCareplan);
-        }
+            var patientsWithInactiveCarePlan = fhirClient.getPatientsByStatus(CarePlanStatus.COMPLETED).stream()
+                    .filter(potentialPatient -> patientsWithActiveCarePlan.stream().anyMatch(p -> p.cpr().equals(potentialPatient.cpr())))
+                    .toList();
 
-        var orgId = fhirClient.getOrganizationId();
+            patients.addAll(patientsWithInactiveCarePlan);
+        }
 
         // Map the resources
         return patients
                 .stream()
-                .sorted(Comparator.comparing(PatientModel::givenName))
+                .sorted(Comparator.comparing((PatientModel x) -> x.name().given().getFirst()))
                 .toList();
     }
 
-
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException {
         List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
-
         return new PaginatedList<>(patients, pagination).getList();
     }
+
 
 
     public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {

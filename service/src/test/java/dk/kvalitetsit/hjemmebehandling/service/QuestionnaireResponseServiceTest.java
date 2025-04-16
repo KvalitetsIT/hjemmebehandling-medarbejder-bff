@@ -1,28 +1,32 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ClientAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.comparator.QuestionnaireResponsePriorityComparator;
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class QuestionnaireResponseServiceTest {
@@ -56,13 +60,15 @@ public class QuestionnaireResponseServiceTest {
         Mockito.when(fhirClient.lookupQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(response));
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(questionnaireIds)).thenReturn(null);
 
-        QuestionnaireResponseModel responseModel = QuestionnaireResponseModel.builder().build();
-
         Pagination pagination = new Pagination(1, 5);
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponses(carePlanId, questionnaireIds, pagination);
 
+        ArgumentCaptor<QuestionnaireResponseModel> captor = ArgumentCaptor.forClass(QuestionnaireResponseModel.class);
+        verify(fhirClient, times(1)).updateQuestionnaireResponse(captor.capture());
+
+
         assertEquals(1, result.size());
-        assertTrue(result.contains(responseModel));
+
     }
 
     @Test
@@ -84,28 +90,27 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, null, accessValidator);
 
         QuestionnaireResponseModel response1 = QuestionnaireResponseModel.builder()
-                .id(new QualifiedId("1"))
+                .id(new QualifiedId("1", ResourceType.QuestionnaireResponse))
+                .answered(new Date(1, Calendar.JANUARY, 1).toInstant())
                 .build();
-        //response1.setAuthored(new Date(1, Calendar.JANUARY, 1));
 
         QuestionnaireResponseModel response2 = QuestionnaireResponseModel.builder()
-                .id(new QualifiedId("2"))
+                .id(new QualifiedId("2", ResourceType.QuestionnaireResponse))
+                .answered(new Date(2, Calendar.FEBRUARY, 2).toInstant())
                 .build();
-        //response2.setAuthored(new Date(2, Calendar.FEBRUARY, 2));
+
 
         QuestionnaireResponseModel response3 = QuestionnaireResponseModel.builder()
-                .id(new QualifiedId("3"))
+                .id(new QualifiedId("3", ResourceType.QuestionnaireResponse))
+                .answered(new Date(3, Calendar.MARCH, 3).toInstant())
                 .build();
-        //response3.setAuthored(new Date(3, Calendar.MARCH, 3));
 
         QuestionnaireResponseModel response4 = QuestionnaireResponseModel.builder()
-                .id(new QualifiedId("4"))
+                .id(new QualifiedId("4", ResourceType.QuestionnaireResponse))
+                .answered(new Date(4, Calendar.APRIL, 4).toInstant())
                 .build();
-        //response4.setAuthored(new Date(4, Calendar.APRIL, 4));
-
 
         Mockito.when(fhirClient.lookupQuestionnaireResponses(null, null)).thenReturn(List.of(response1, response3, response4, response2));
-
         Mockito.when(fhirClient.lookupVersionsOfQuestionnaireById(null)).thenReturn(List.of());
 
         Pagination pagination1 = new Pagination(1, 2);
@@ -319,13 +324,13 @@ public class QuestionnaireResponseServiceTest {
 
         Mockito.when(fhirClient.lookupQuestionnaireResponseById(id)).thenReturn(Optional.of(response));
 
-        QuestionnaireResponseModel model = QuestionnaireResponseModel.builder().build();
-
-        Mockito.doNothing().when(fhirClient).updateQuestionnaireResponse(response);
-
         subject.updateExaminationStatus(id, status);
 
-        assertEquals(status, model.examinationStatus());
+        ArgumentCaptor<QuestionnaireResponseModel> captor = ArgumentCaptor.forClass(QuestionnaireResponseModel.class);
+
+        verify(fhirClient, times(1)).updateQuestionnaireResponse(captor.capture());
+
+        assertEquals(status, captor.getValue().examinationStatus());
     }
 
     private QuestionnaireResponseModel buildQuestionnaireResponse(String questionnaireResponseId, String questionnaireId) {

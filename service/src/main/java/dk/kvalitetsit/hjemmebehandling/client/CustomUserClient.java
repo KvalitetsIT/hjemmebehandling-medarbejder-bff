@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestDto;
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;

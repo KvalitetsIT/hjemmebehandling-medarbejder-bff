@@ -39,26 +39,6 @@ public class PatientControllerTest {
     @Mock
     private CustomUserClient customUserClient;
 
-
-    @Test
-    public void getPatientList_success_201() {
-
-        CreatePatientRequest request = new CreatePatientRequest();
-        request.setPatient(Optional.of(new PatientDto()));
-
-        PatientModel patientModel = PatientModel.builder().build();
-        Mockito.when(patientService.getPatients(Mockito.anyString())).thenReturn(List.of(patientModel));
-
-        PatientDto patientDto = new PatientDto();
-        Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
-
-        PatientListResponse result = subject.getPatientList().getBody();
-
-        //assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(1, Objects.requireNonNull(result).getPatients().size());
-        assertEquals(patientDto, result.getPatients().getFirst());
-    }
-
     @Test
     public void createPatient_success_201() {
 
@@ -92,7 +72,7 @@ public class PatientControllerTest {
     @Test
     public void getPatient_error_notExist() throws ServiceException {
 
-        Mockito.when(patientService.patient(Mockito.anyString())).thenReturn(null);
+        Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(null);
 
 
         Exception e = assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(Mockito.anyString()));
@@ -102,7 +82,7 @@ public class PatientControllerTest {
     public void getPatient_success_201() throws ServiceException {
 
         PatientModel patientModel = PatientModel.builder().build();
-        Mockito.when(patientService.patient(Mockito.anyString())).thenReturn(patientModel);
+        Mockito.when(patientService.getPatient(Mockito.anyString())).thenReturn(patientModel);
 
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);

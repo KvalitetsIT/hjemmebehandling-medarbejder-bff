@@ -4,11 +4,11 @@
 //import ch.qos.logback.classic.spi.ILoggingEvent;
 //import ch.qos.logback.core.read.ListAppender;
 //import com.fasterxml.jackson.databind.ObjectMapper;
-//import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestAttributesDto;
-//import dk.kvalitetsit.hjemmebehandling.api.CustomUserRequestDto;
+//import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
+//import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
 //import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
 //import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-//import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+//import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
 //import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 //import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 //import static org.hamcrest.MatcherAssert.assertThat;
