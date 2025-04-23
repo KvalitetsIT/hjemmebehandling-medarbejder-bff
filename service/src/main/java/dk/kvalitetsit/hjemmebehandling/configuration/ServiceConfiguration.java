@@ -3,10 +3,13 @@ package dk.kvalitetsit.hjemmebehandling.configuration;
 import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.context.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.ClientAdaptor;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.*;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.CarePlanRepositoryAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.ConcreteCarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
 import dk.kvalitetsit.hjemmebehandling.service.*;
@@ -66,23 +69,35 @@ public class ServiceConfiguration {
         return new FhirClient(context, fhirServerUrl, userContextProvider);
     }
 
-
     @Bean
-    public ClientAdaptor getFhirClient(FhirClient client, FhirMapper mapper) {
-        return new ClientAdaptor(client, mapper);
+    public CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository(FhirClient fhirClient){
+        var repository = new ConcreteCarePlanRepository(fhirClient);
+        var mapper = new FhirMapper();
+        return new CarePlanRepositoryAdaptor(repository, mapper);
     }
-
 
     @Bean
     public CarePlanService getCarePlanService(
-            @Autowired ClientAdaptor client,
-            @Autowired FhirMapper mapper,
+            @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
+            @Autowired PatientRepository<PatientModel, CarePlanStatus> patientRepository,
+            @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+            @Autowired PlanDefinitionRepository<PlanDefinitionModel> plaDefinitinRepository,
+            @Autowired QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
             @Autowired DateProvider dateProvider,
             @Autowired AccessValidator accessValidator,
             @Autowired DtoMapper dtoMapper,
             @Autowired CustomUserClient customUserService
     ) {
-        return new CarePlanService(client, dateProvider, accessValidator, customUserService);
+        return new CarePlanService(
+                dateProvider,
+                accessValidator,
+                carePlanRepository,
+                patientRepository,
+                customUserService,
+                questionnaireRepository,
+                plaDefinitinRepository,
+                questionnaireResponseRepository
+        );
     }
 
     @Bean
@@ -96,8 +111,12 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireService getQuestionnaireService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
-        return new QuestionnaireService(client, mapper, accessValidator);
+    public QuestionnaireService getQuestionnaireService(@Autowired AccessValidator accessValidator,
+                                                        @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+                                                        @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
+                                                        @Autowired PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository
+    ) {
+        return new QuestionnaireService(accessValidator, questionnaireRepository, carePlanRepository, planDefinitionRepository);
     }
 
     @Bean
@@ -106,7 +125,10 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired Comparator<QuestionnaireResponseModel> priorityComparator, @Autowired AccessValidator accessValidator) {
+    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired ClientAdaptor client,
+                                                                        @Autowired Comparator<QuestionnaireResponseModel> priorityComparator,
+                                                                        @Autowired AccessValidator accessValidator
+    ) {
         // Reverse the comporator: We want responses by descending priority.
         return new QuestionnaireResponseService(client, priorityComparator, accessValidator);
     }

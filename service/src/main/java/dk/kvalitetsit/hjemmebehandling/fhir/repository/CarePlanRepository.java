@@ -1,17 +1,13 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.client;
+package dk.kvalitetsit.hjemmebehandling.fhir.repository;
 
 
-import ca.uhn.fhir.rest.api.SortSpec;
-import ca.uhn.fhir.rest.gclient.ICriterion;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.Patient;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
-public interface CarePlanClient<CarePlan, Patient> extends CRUD<CarePlan> {
+public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePlan> {
 
     /**
      * Updates a care plan and its associated patient.
@@ -39,7 +35,7 @@ public interface CarePlanClient<CarePlan, Patient> extends CRUD<CarePlan> {
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansWithPlanDefinition(String plandefinitionId) throws ServiceException;
+    List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId plandefinitionId) throws ServiceException;
 
     /**
      * Fetches active care plans that include a specific questionnaire.
@@ -48,7 +44,7 @@ public interface CarePlanClient<CarePlan, Patient> extends CRUD<CarePlan> {
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansWithQuestionnaire(String questionnaireId) throws ServiceException;
+    List<CarePlan> fetchActiveCarePlansWithQuestionnaire(QualifiedId questionnaireId) throws ServiceException;
 
     /**
      * Fetches care plans for a specific patient.
@@ -58,7 +54,7 @@ public interface CarePlanClient<CarePlan, Patient> extends CRUD<CarePlan> {
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchCarePlansByPatientId(String patientId, boolean onlyActiveCarePlans) throws ServiceException;
+    List<CarePlan> fetchCarePlansByPatientId(QualifiedId patientId, boolean onlyActiveCarePlans) throws ServiceException;
 
     /**
      * Fetches care plans based on satisfaction state and creation date.
@@ -69,23 +65,18 @@ public interface CarePlanClient<CarePlan, Patient> extends CRUD<CarePlan> {
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchCarePlans(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
+    List<CarePlan> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
 
     /**
-     * Looks up care plans based on CPR and optional filters.
+     * Fetches care plans based on CPR and optional filters.
      *
-     * @param cpr                  The CPR number.
+     * @param patientId
      * @param unsatisfiedToDate   Date filter for unsatisfied care plans.
-     * @param onlyActiveCarePlans Whether to include only active plans.
      * @param onlyUnSatisfied     Whether to include only unsatisfied plans.
+     * @param onlyActiveCarePlans Whether to include only active plans.
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
-
-
-    FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) throws ServiceException ;
-
-    FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec) throws ServiceException;
+    List<CarePlan> fetch(QualifiedId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException;
 
 }

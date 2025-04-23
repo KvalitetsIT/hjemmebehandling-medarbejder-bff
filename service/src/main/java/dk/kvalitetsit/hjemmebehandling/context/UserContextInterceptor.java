@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;

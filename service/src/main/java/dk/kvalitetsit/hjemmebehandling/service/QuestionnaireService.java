@@ -1,18 +1,21 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.PlanDefinitionRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Enumerations;
+import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,50 +28,32 @@ import static dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus.RETI
 public class QuestionnaireService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireService.class);
 
-    private final Client<
-                CarePlanModel,
-                PlanDefinitionModel,
-                PractitionerModel,
-                PatientModel,
-                QuestionnaireModel,
-                QuestionnaireResponseModel,
-                Organization,
-                CarePlanStatus> fhirClient;
+    private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
+    private final CarePlanRepository<CarePlanModel, PatientModel> careplanRepository;
+    private final PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository;
 
-    public QuestionnaireService(
-            Client<
-                                CarePlanModel,
-                                PlanDefinitionModel,
-                                PractitionerModel,
-                                PatientModel,
-                                QuestionnaireModel,
-                                QuestionnaireResponseModel,
-                                Organization,
-                                CarePlanStatus> fhirClient,
-            FhirMapper fhirMapper,
-            AccessValidator accessValidator
-    ) {
+    public QuestionnaireService(AccessValidator accessValidator, QuestionnaireRepository<QuestionnaireModel> questionnaireRepository, CarePlanRepository<CarePlanModel, PatientModel> careplanRepository, PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository) {
         super(accessValidator);
-        this.fhirClient = fhirClient;
+        this.questionnaireRepository = questionnaireRepository;
+        this.careplanRepository = careplanRepository;
+        this.plandefinitionRepository = plandefinitionRepository;
     }
 
     public Optional<QuestionnaireModel> getQuestionnaireById(String questionnaireId) throws ServiceException, AccessValidationException {
-        List<QuestionnaireModel> questionnaires = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
-        return Optional.ofNullable(questionnaires.getFirst());
-
+        return questionnaireRepository.fetch(questionnaireId);
         // Validate that the user is allowed to access the careplan.
         //validateAccess(questionnaire.get());
 
     }
 
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
-        return fhirClient.lookupQuestionnairesByStatus(statusesToInclude);
+        return questionnaireRepository.lookupQuestionnairesByStatus(statusesToInclude);
     }
 
     public String createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
         // Initialize basic attributes for a new CarePlan: Id, status and so on.
         var initializedQuestionnaire = initializeAttributesForNewQuestionnaire(questionnaire);
-        return fhirClient.saveQuestionnaire(initializedQuestionnaire);
+        return questionnaireRepository.save(initializedQuestionnaire);
     }
 
     private QuestionnaireModel initializeAttributesForNewQuestionnaire(QuestionnaireModel questionnaire) {
@@ -96,19 +81,18 @@ public class QuestionnaireService extends AccessValidatingService {
                 .questions(updatedQuestions)
                 .callToAction(callToAction)
                 .build();
-
     }
 
 
     public void updateQuestionnaire(String questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
-        List<QuestionnaireModel> questionnaires = fhirClient.lookupQuestionnairesById(List.of(questionnaireId));
+        Optional<QuestionnaireModel> result = questionnaireRepository.fetch(questionnaireId);
 
-        if (questionnaires.size() != 1) {
+        if (result.isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
-        QuestionnaireModel questionnaire = questionnaires.getFirst();
+        QuestionnaireModel questionnaire = result.get();
 
         // Validate that the client is allowed to update the questionnaire.
         //validateAccess(questionnaire);
@@ -120,7 +104,7 @@ public class QuestionnaireService extends AccessValidatingService {
         var updateQuestionnaireModel = updateQuestionnaireModel(questionnaire, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
 
         // Save the updated Questionnaire
-        fhirClient.updateQuestionnaire(updateQuestionnaireModel);
+        questionnaireRepository.update(updateQuestionnaireModel);
     }
 
     private QuestionnaireModel updateQuestionnaireModel(
@@ -176,13 +160,13 @@ public class QuestionnaireService extends AccessValidatingService {
     public void retireQuestionnaire(String id) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
 
-        Optional<QuestionnaireModel> questionnaire = fhirClient.lookupQuestionnaireById(qualifiedId);
+        Optional<QuestionnaireModel> questionnaire = questionnaireRepository.fetch(qualifiedId);
 
         if (questionnaire.isEmpty()) {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        var activeCarePlansWithQuestionnaire = fhirClient.fetchActiveCarePlansWithQuestionnaire(qualifiedId);
+        var activeCarePlansWithQuestionnaire = careplanRepository.fetchActiveCarePlansWithQuestionnaire(qualifiedId);
         if (!activeCarePlansWithQuestionnaire.isEmpty()) {
             throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
         }
@@ -192,19 +176,16 @@ public class QuestionnaireService extends AccessValidatingService {
                 .status(RETIRED)
                 .build();
 
-        fhirClient.updateQuestionnaire(retiredQuestionnaire);
+        questionnaireRepository.update(retiredQuestionnaire);
     }
 
 
     public List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(String questionnaireId) throws ServiceException {
         String qualifiedId = FhirUtils.qualifyId(questionnaireId, ResourceType.Questionnaire);
-
-        Optional<QuestionnaireModel> result = fhirClient.lookupQuestionnaireById(qualifiedId);
-
+        Optional<QuestionnaireModel> result = questionnaireRepository.fetch(qualifiedId);
         if (result.isEmpty()) {
             throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
-
-        return fhirClient.fetchActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId);
+        return plandefinitionRepository.fetchActivePlanDefinitionsUsingQuestionnaireWithId(qualifiedId);
     }
 }

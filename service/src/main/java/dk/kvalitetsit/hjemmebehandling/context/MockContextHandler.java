@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
 import org.openapitools.model.UserContext;
 
 import java.util.List;

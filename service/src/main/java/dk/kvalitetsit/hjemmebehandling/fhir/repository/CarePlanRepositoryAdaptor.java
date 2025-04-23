@@ -1,11 +1,9 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.client;
+package dk.kvalitetsit.hjemmebehandling.fhir.repository;
 
-import ca.uhn.fhir.rest.api.SortSpec;
-import ca.uhn.fhir.rest.gclient.ICriterion;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
@@ -14,12 +12,17 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-public class CarePlanClientAdaptor implements CarePlanClient<CarePlanModel, PatientModel> {
+/**
+ * An adapter whose responsibility is to adapt between FHIR and the domain logic.
+ * This primarily covers mapping from business models and calling further into the stack with the expected arguments
+ * For now, it implements the CarePlanRepository interface, but this might change in the future
+ */
+public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanModel, PatientModel> {
 
-    private final CarePlanClient<CarePlan, Patient> client;
+    private final CarePlanRepository<CarePlan, Patient> client;
     private final FhirMapper mapper;
 
-    public CarePlanClientAdaptor(CarePlanClient<CarePlan, Patient> client, FhirMapper mapper) {
+    public CarePlanRepositoryAdaptor(CarePlanRepository<CarePlan, Patient> client, FhirMapper mapper) {
         this.client = client;
         this.mapper = mapper;
     }
@@ -40,12 +43,17 @@ public class CarePlanClientAdaptor implements CarePlanClient<CarePlanModel, Pati
     }
 
     @Override
-    public List<CarePlanModel> fetch(String... id) {
-        return this.client.fetch(id).stream().map(mapper::mapCarePlan).toList();
+    public List<CarePlanModel> fetch(QualifiedId... ids) throws ServiceException {
+        return this.client.fetch(ids).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
-    public List<CarePlanModel> fetch() {
+    public List<CarePlanModel> fetch(List<QualifiedId> ids) throws ServiceException {
+        return this.fetch(ids.toArray(String[]::new));
+    }
+
+    @Override
+    public List<CarePlanModel> fetch() throws ServiceException {
         return this.client.fetch().stream().map(mapper::mapCarePlan).toList();
     }
 
@@ -55,8 +63,8 @@ public class CarePlanClientAdaptor implements CarePlanClient<CarePlanModel, Pati
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansWithPlanDefinition(String plandefinitionId) throws ServiceException {
-        return client.fetchActiveCarePlansWithPlanDefinition(plandefinitionId).stream().map(mapper::mapCarePlan).toList();
+    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(String plandefinitionId) throws ServiceException {
+        return client.fetchActiveCarePlansByPlanDefinitionId(plandefinitionId).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
@@ -68,29 +76,19 @@ public class CarePlanClientAdaptor implements CarePlanClient<CarePlanModel, Pati
     }
 
     @Override
-    public List<CarePlanModel> fetchCarePlans(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        return client.fetchCarePlans(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
+    public List<CarePlanModel> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+        return client.fetch(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
                 .stream()
                 .map(mapper::mapCarePlan)
                 .toList();
     }
 
     @Override
-    public List<CarePlanModel> lookupCarePlans(String cpr, Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        return client.lookupCarePlans(cpr, unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
+    public List<CarePlanModel> fetch(String patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException {
+        return client.fetch(patientId, unsatisfiedToDate, onlyUnSatisfied, onlyActiveCarePlans)
                 .stream()
                 .map(mapper::mapCarePlan)
                 .toList();
-    }
-
-    @Override
-    public FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
-        return null;
-    }
-
-    @Override
-    public FhirLookupResult lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec) throws ServiceException {
-        return null;
     }
 
     @Override

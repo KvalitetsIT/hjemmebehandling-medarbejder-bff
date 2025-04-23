@@ -5,7 +5,7 @@ import java.util.List;
 public record PatientModel(
         QualifiedId id,
         PersonNameModel name,
-        String cpr,
+        CPR cpr,
         ContactDetailsModel contactDetails,
         PrimaryContactModel primaryContact,
         List<ContactDetailsModel> additionalRelativeContactDetails,
@@ -20,7 +20,7 @@ public record PatientModel(
     public static class Builder {
         private QualifiedId id;
         private PersonNameModel name;
-        private String cpr;
+        private CPR cpr;
         private ContactDetailsModel contactDetails;
         private PrimaryContactModel primaryContactModel;
         private List<ContactDetailsModel> additionalRelativeContactDetails;
@@ -48,7 +48,7 @@ public record PatientModel(
             return this;
         }
 
-        public Builder cpr(String cpr) {
+        public Builder cpr(CPR cpr) {
             this.cpr = cpr;
             return this;
         }

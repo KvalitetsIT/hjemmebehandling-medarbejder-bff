@@ -43,7 +43,7 @@ public class AuditLoggingService {
 
     public void log(String message, List<PatientModel> patients) {
         Map<String, String> result = patients.stream()
-                .collect(Collectors.toMap(PatientModel::cpr, u -> u.name().given().getFirst() + " " + u.name().family(), (existing, replacement) -> existing));
+                .collect(Collectors.toMap(x -> x.cpr().value(), u -> u.name().given().getFirst() + " " + u.name().family(), (existing, replacement) -> existing));
 
         auditLog(message, result);
     }

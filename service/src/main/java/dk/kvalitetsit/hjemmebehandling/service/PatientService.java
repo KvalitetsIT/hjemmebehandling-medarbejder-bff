@@ -5,52 +5,30 @@ import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.client.Client;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.Organization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class PatientService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
 
     // TODO: Should be split into one which is only concerned about patient
-    private final Client<
-            CarePlanModel,
-            PlanDefinitionModel,
-            PractitionerModel,
-            PatientModel,
-            QuestionnaireModel,
-            QuestionnaireResponseModel,
-            Organization,
-            CarePlanStatus> fhirClient;
+    private final PatientRepository<PatientModel, CarePlanStatus> patientRepository;
 
     private CustomUserClient customUserService;
 
-    public PatientService(
-            Client<
-                    CarePlanModel,
-                    PlanDefinitionModel,
-                    PractitionerModel,
-                    PatientModel,
-                    QuestionnaireModel,
-                    QuestionnaireResponseModel,
-                    Organization,
-                    CarePlanStatus> fhirClient,
-            FhirMapper fhirMapper,
-            AccessValidator accessValidator
-    ) {
+    public PatientService(AccessValidator accessValidator, PatientRepository<PatientModel, CarePlanStatus> patientRepository) {
         super(accessValidator);
-
-        this.fhirClient = fhirClient;
-
+        this.patientRepository = patientRepository;
     }
 
     public void createPatient(PatientModel patientModel) throws ServiceException {
@@ -61,7 +39,7 @@ public class PatientService extends AccessValidatingService {
                     .customUserId(customerUserLinkId)
                     .build();
 
-            fhirClient.savePatient(modifiedPatient);
+            patientRepository.save(modifiedPatient);
         } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
@@ -69,7 +47,7 @@ public class PatientService extends AccessValidatingService {
 
 
     public PatientModel getPatient(String cpr) throws ServiceException {
-        return fhirClient.lookupPatientByCpr(cpr).orElse(null);
+        return patientRepository.fetch(cpr).orElse(null);
     }
 
     // TODO: Bad Practice... replace 'includeActive' and 'includeCompleted' with 'CarePlanStatus...  status'
@@ -77,13 +55,13 @@ public class PatientService extends AccessValidatingService {
 
         var patients = new ArrayList<PatientModel>();
 
-        var patientsWithActiveCarePlan = fhirClient.getPatientsByStatus(CarePlanStatus.ACTIVE);
+        var patientsWithActiveCarePlan = patientRepository.getPatientsByStatus(CarePlanStatus.ACTIVE);
 
         if (includeActive)
             patients.addAll(patientsWithActiveCarePlan);
 
         if (includeCompleted) {
-            var patientsWithInactiveCarePlan = fhirClient.getPatientsByStatus(CarePlanStatus.COMPLETED).stream()
+            var patientsWithInactiveCarePlan = patientRepository.getPatientsByStatus(CarePlanStatus.COMPLETED).stream()
                     .filter(potentialPatient -> patientsWithActiveCarePlan.stream().anyMatch(p -> p.cpr().equals(potentialPatient.cpr())))
                     .toList();
 
@@ -103,8 +81,7 @@ public class PatientService extends AccessValidatingService {
     }
 
 
-
     public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {
-        return fhirClient.searchPatients(searchStrings, CarePlanStatus.ACTIVE);
+        return patientRepository.searchPatients(searchStrings, CarePlanStatus.ACTIVE);
     }
 }
