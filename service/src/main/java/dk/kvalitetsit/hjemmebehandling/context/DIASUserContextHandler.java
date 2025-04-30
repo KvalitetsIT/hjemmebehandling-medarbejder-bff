@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 import org.openapitools.model.UserContext;
@@ -21,7 +22,11 @@ public class DIASUserContextHandler implements IUserContextHandler {
     private static final String REGIONS_ID = "RegionsID";
     private static final String EMAIL = "email";
     private static final String BSK_AUTORISATIONS_INFORMATION = "bSKAutorisationsInformation";
+    private final OrganizationRepository<Organization> organizationRepository;
 
+    public DIASUserContextHandler(OrganizationRepository<Organization> organizationRepository) {
+        this.organizationRepository = organizationRepository;
+    }
 
     @Override
     public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) throws ServiceException {
@@ -37,7 +42,7 @@ public class DIASUserContextHandler implements IUserContextHandler {
         if (jwt.getClaim(DIASUserContextHandler.SOR_ID) != null) {
             String sorid = jwt.getClaim(DIASUserContextHandler.SOR_ID).asString();
             context.setOrgId(Optional.ofNullable(sorid));
-            Optional<Organization> organization = client.lookupOrganizationBySorCode(sorid);
+            Optional<Organization> organization = organizationRepository.lookupOrganizationBySorCode(sorid);
             organization.ifPresent(value -> context.setOrgName(Optional.ofNullable(value.getName())));
         }
 

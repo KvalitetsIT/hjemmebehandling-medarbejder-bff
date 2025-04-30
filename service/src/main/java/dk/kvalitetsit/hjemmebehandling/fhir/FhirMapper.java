@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.*;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import jakarta.validation.constraints.NotNull;
@@ -127,7 +127,6 @@ public class FhirMapper {
                             .toList()
             );
 
-
             List<PlanDefinitionModel> planDefinitionModels = planDefinitions.stream()
                     .map(x -> this.mapPlanDefinition(x, questionnaire, organization))
                     .toList();
@@ -153,8 +152,8 @@ public class FhirMapper {
 
 
         return new CarePlanModel(
-                extractId(carePlan),
-                organizationId,
+                new QualifiedId.CarePlanId(carePlan.getId()),
+                new QualifiedId.OrganizationId(organizationId),
                 carePlan.getTitle(),
                 carePlanStatus,
                 carePlan.getCreated().toInstant(),
@@ -192,7 +191,7 @@ public class FhirMapper {
         var name = buildName(patientModel.name().given().getFirst(), patientModel.name().family());
         patient.addName(name);
 
-        patient.getIdentifier().add(makeCprIdentifier(patientModel.cpr()));
+        patient.getIdentifier().add(makeCprIdentifier(patientModel.cpr().toString()));
 
         patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.customUserId()));
         patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.customUserName()));
@@ -220,7 +219,7 @@ public class FhirMapper {
             var contactName = buildName(patientModel.primaryContact().name());
             contact.setName(contactName);
             var organisation = new Reference();
-            organisation.setReference(patientModel.primaryContact().organisation());
+            organisation.setReference(patientModel.primaryContact().organisation().unQualifiedId());
             contact.setOrganization(organisation);
 
             if (patientModel.primaryContact().affiliation() != null) {
@@ -278,13 +277,13 @@ public class FhirMapper {
                         primaryRelativeContactDetails.build(),
                         contact.getName().getText(),
                         contact.getRelationshipFirstRep().getText(),
-                        contact.getOrganization().getReference()
+                        new QualifiedId.OrganizationId(contact.getOrganization().getReference())
                 );
             });
         }).orElse(null);
 
         return PatientModel.builder()
-                .id(extractId(patient))
+                .id(new QualifiedId.PatientId(patient.getId()))
                 .customUserId(ExtensionMapper.extractCustomUserId(patient.getExtension()))
                 .customUserName(ExtensionMapper.extractCustomUserName(patient.getExtension()))
                 .name(new PersonNameModel(extractFamilyName(patient), List.of(Objects.requireNonNull(extractGivenNames(patient)))))
@@ -297,8 +296,8 @@ public class FhirMapper {
 
     public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, Questionnaire questionnaire, Organization organization) {
         return new PlanDefinitionModel(
-                extractId(planDefinition),
-                ExtensionMapper.extractOrganizationId(planDefinition.getExtension()),
+                new QualifiedId.PlanDefinitionId(planDefinition.getId()),
+                new QualifiedId.OrganizationId(ExtensionMapper.extractOrganizationId(planDefinition.getExtension())),
                 planDefinition.getName(),
                 planDefinition.getTitle(),
                 Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()),
@@ -340,7 +339,7 @@ public class FhirMapper {
                 .orElse(null);
 
         return new QuestionnaireModel(
-                extractId(questionnaire),
+                new QualifiedId.QuestionnaireId(questionnaire.getId()),
                 ExtensionMapper.extractOrganizationId(questionnaire.getExtension()),
                 questionnaire.getTitle(),
                 null,
@@ -429,25 +428,14 @@ public class FhirMapper {
         return planDefinition;
     }
 
-    public String extractCpr(Patient patient) {
-        return patient.getIdentifier().getFirst().getValue();
+    public CPR extractCpr(Patient patient) {
+        return new CPR(patient.getIdentifier().getFirst().getValue());
     }
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
         Optional.ofNullable(source.id()).ifPresent(id -> target.setId(id.toString()));
-        Optional.ofNullable(source.organizationId()).ifPresent(id -> target.addExtension(ExtensionMapper.mapOrganizationId(source.organizationId())));
-    }
-
-    private QualifiedId extractId(DomainResource resource) {
-        String unqualifiedVersionless = resource.getIdElement().toUnqualifiedVersionless().getValue();
-        if (FhirUtils.isPlainId(unqualifiedVersionless)) {
-            return new QualifiedId(unqualifiedVersionless, resource.getResourceType());
-        } else if (FhirUtils.isQualifiedId(unqualifiedVersionless, resource.getResourceType())) {
-            return new QualifiedId(unqualifiedVersionless);
-        } else {
-            throw new IllegalArgumentException(String.format("Illegal id for resource of type %s: %s!", resource.getResourceType(), unqualifiedVersionless));
-        }
+        Optional.ofNullable(source.organizationId()).ifPresent(id -> target.addExtension(ExtensionMapper.mapOrganizationId(source.organizationId().unQualifiedId())));
     }
 
     private Identifier makeCprIdentifier(String cpr) {
@@ -909,7 +897,7 @@ public class FhirMapper {
 
     public PractitionerModel mapPractitioner(Practitioner practitioner) {
         return new PractitionerModel(
-                extractId(practitioner),
+                new QualifiedId.PractitionerId(practitioner.getId()),
                 practitioner.getNameFirstRep().getGivenAsSingleString(),
                 practitioner.getNameFirstRep().getFamily()
         );
@@ -953,26 +941,25 @@ public class FhirMapper {
                 )
                 .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
 
-        var id = extractId(questionnaireResponse);
-        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
-        var questionnaireId = extractId(questionnaire);
+        var id = new QualifiedId.QuestionnaireResponseId(questionnaireResponse.getId());
+        var organizationId = new QualifiedId.OrganizationId(ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension())) ;
 
         var authorId = Optional.ofNullable(questionnaireResponse.getAuthor())
                 .map(Reference::getReference)
-                .map(QualifiedId::new)
+                .map(QualifiedId.PractitionerId::new)
                 .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", id)));
 
         var sourceId = Optional.ofNullable(questionnaireResponse.getSource())
                 .map(Reference::getReference)
-                .map(QualifiedId::new)
+                .map(QualifiedId.QuestionnaireId::new)
                 .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
 
 
         return new QuestionnaireResponseModel(
                 id,
                 organizationId,
-                questionnaireId,
-                new QualifiedId(carePlanId),
+                new QualifiedId.QuestionnaireId(questionnaire.getId()),
+                new QualifiedId.CarePlanId(carePlanId),
                 authorId,
                 sourceId,
                 questionnaire.getName(),

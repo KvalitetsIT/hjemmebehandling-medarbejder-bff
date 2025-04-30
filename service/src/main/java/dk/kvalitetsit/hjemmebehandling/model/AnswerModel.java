@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.AnswerType;
 
 import java.util.List;
 

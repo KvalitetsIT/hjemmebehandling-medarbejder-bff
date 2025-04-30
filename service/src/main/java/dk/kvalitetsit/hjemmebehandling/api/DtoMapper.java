@@ -2,13 +2,12 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
-import dk.kvalitetsit.hjemmebehandling.constants.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.*;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
-import org.hl7.fhir.r4.model.ResourceType;
+import org.jetbrains.annotations.NotNull;
 import org.openapitools.model.*;
 import org.openapitools.model.Option;
 import org.springframework.stereotype.Component;
@@ -30,7 +29,7 @@ public class DtoMapper {
 
     public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
         return new CarePlanModel(
-                extractQualifiedId(carePlanDto, ResourceType.CarePlan).orElse(null),
+                carePlanDto.getId().map(QualifiedId.CarePlanId::new).orElse(null),
                 null, //Todo: organizationId was expected but is not defined by the api
                 carePlanDto.getTitle().orElse(null),
                 carePlanDto.getStatus().map(status -> Enum.valueOf(CarePlanStatus.class, status)).orElse(null),
@@ -128,8 +127,8 @@ public class DtoMapper {
     public PatientModel mapPatientDto(PatientDto patient) {
         return new PatientModel(
                 null,
-                new PersonNameModel(patient.getFamilyName().orElse(null), patient.getGivenName().map(x -> List.of(x)).orElse(null)),
-                patient.getCpr().orElse(null),
+                patient.getName().map(nameDto -> new PersonNameModel(nameDto.getFamily().orElse(null), patient.getName().get().getGiven().map(List::of).orElse(null))).orElse(null),
+                patient.getCpr().map(CPR::new).orElse(null),
                 patient.getPatientContactDetails().map(this::mapContactDetailsDto).orElse(null),
                 new PrimaryContactModel(
                         patient.getPrimaryRelativeContactDetails().map(this::mapContactDetailsDto).orElse(null),
@@ -144,14 +143,16 @@ public class DtoMapper {
     }
 
     public PatientDto mapPatientModel(PatientModel patient) {
-        PatientDto patientDto = new PatientDto();
-        patientDto.setCpr(Optional.ofNullable(patient.cpr()));
-        patientDto.setFamilyName(Optional.ofNullable(patient.name().family()));
-        patientDto.setGivenName(Optional.ofNullable(patient.name().given().getFirst()));
-        patientDto.setCustomUserName(Optional.ofNullable(patient.customUserName()));
+        PatientDto patientDto = new PatientDto()
+                .cpr(patient.cpr().toString())
+                .name(new NameDto()
+                        .family(patient.name().family())
+                        .given(patient.name().given().getFirst()))
+                .customUserName(patient.customUserName())
+                .primaryRelativeName(patient.primaryContact().name())
+                .primaryRelativeAffiliation(patient.primaryContact().affiliation());
+
         Optional.ofNullable(patient.contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPatientContactDetails(Optional.of(x)));
-        patientDto.setPrimaryRelativeName(Optional.ofNullable(patient.primaryContact().name()));
-        patientDto.setPrimaryRelativeAffiliation(Optional.ofNullable(patient.primaryContact().affiliation()));
         Optional.ofNullable(patient.primaryContact().contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPrimaryRelativeContactDetails(Optional.of(x)));
         Optional.ofNullable(patient.additionalRelativeContactDetails()).map(x -> x.stream().map(this::mapContactDetailsModel).toList()).ifPresent(patientDto::setAdditionalRelativeContactDetails);
         return patientDto;
@@ -159,11 +160,11 @@ public class DtoMapper {
 
     public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
         return new PlanDefinitionModel(
-                extractQualifiedId(planDefinitionDto, ResourceType.PlanDefinition).orElse(null),
+                planDefinitionDto.getId().map(QualifiedId.PlanDefinitionId::new).orElse(null),
                 null, // Todo: organizationId was expected but is not defined by the api
                 planDefinitionDto.getName().orElse(null),
                 planDefinitionDto.getTitle().orElse(null),
-                planDefinitionDto.getStatus().map(x -> Enum.valueOf(PlanDefinitionStatus.class, x)).orElse(null),
+                planDefinitionDto.getStatus().map(this::mapPlandefinitionStatus).orElse(null),
                 planDefinitionDto.getCreated().map(OffsetDateTime::toInstant).orElse(null),
                 planDefinitionDto.getLastUpdated().map(OffsetDateTime::toInstant).orElse(null),
                 Optional.ofNullable(planDefinitionDto.getQuestionnaires()).map(questionnaires -> questionnaires.stream().map(this::mapQuestionnaireWrapperDto).toList()).orElse(null)
@@ -171,14 +172,16 @@ public class DtoMapper {
     }
 
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-        planDefinitionDto.setId(Optional.ofNullable(planDefinitionModel.id()).map(Object::toString));
-        planDefinitionDto.setName(Optional.ofNullable(planDefinitionModel.name()));
-        planDefinitionDto.setTitle(Optional.ofNullable(planDefinitionModel.title()));
-        planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.status().toString()));
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto().id(planDefinitionModel.id().unQualifiedId())
+                .name(planDefinitionModel.name())
+                .title(planDefinitionModel.title());
+
+        planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.status()).map(this::mapPlandefinitionStatus));
         planDefinitionDto.setCreated(Optional.ofNullable(planDefinitionModel.created()).map(this::mapInstant));
         planDefinitionDto.setLastUpdated(Optional.ofNullable(planDefinitionModel.lastUpdated()).map(this::mapInstant));
-        Optional.ofNullable(planDefinitionModel.questionnaires()).ifPresent(questionnaires -> planDefinitionDto.setQuestionnaires(questionnaires.stream().map(this::mapQuestionnaireWrapperModel).toList()));
+        Optional.ofNullable(planDefinitionModel.questionnaires())
+                .ifPresent(questionnaires -> planDefinitionDto.setQuestionnaires(questionnaires.stream().map(this::mapQuestionnaireWrapperModel).toList()));
+
         return planDefinitionDto;
     }
 
@@ -202,12 +205,13 @@ public class DtoMapper {
     }
 
     public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
-        ThresholdDto thresholdDto = new ThresholdDto();
-        thresholdDto.setQuestionId(Optional.ofNullable(thresholdModel.questionnaireItemLinkId()));
-        thresholdDto.setValueBoolean(Optional.ofNullable(thresholdModel.valueBoolean()));
-        thresholdDto.setValueQuantityLow(Optional.ofNullable(thresholdModel.valueQuantityLow()));
-        thresholdDto.setValueQuantityHigh(Optional.ofNullable(thresholdModel.valueQuantityHigh()));
-        thresholdDto.setValueOption(Optional.ofNullable(thresholdModel.valueOption()));
+        ThresholdDto thresholdDto = new ThresholdDto()
+                .questionId(thresholdModel.questionnaireItemLinkId())
+                .valueBoolean(thresholdModel.valueBoolean())
+                .valueQuantityLow(thresholdModel.valueQuantityLow())
+                .valueQuantityHigh(thresholdModel.valueQuantityHigh())
+                .valueOption(thresholdModel.valueOption());
+
         thresholdDto.setType(Optional.ofNullable(thresholdModel.type()).map(this::mapThresholdTypeModel));
         return thresholdDto;
     }
@@ -223,8 +227,7 @@ public class DtoMapper {
     public PersonDto mapPersonModel(PersonModel person) {
         PersonDto personDto = new PersonDto();
         personDto.setCpr(Optional.ofNullable(person.identifier().id()));
-        personDto.setFamilyName(Optional.ofNullable(person.name().family()));
-        personDto.setGivenName(Optional.of(String.join(" ", person.name().given())));
+        personDto.name(new NameDto().family(person.name().family()).given(String.join(" ", person.name().given())));
         personDto.setBirthDate(Optional.ofNullable(person.birthDate()));
         personDto.setDeceasedBoolean(Optional.of(person.deceasedBoolean()));
         personDto.setGender(Optional.ofNullable(person.gender()));
@@ -240,7 +243,7 @@ public class DtoMapper {
 
 
         return new QuestionnaireModel(
-                extractQualifiedId(questionnaireDto, ResourceType.Questionnaire).orElse(null),
+                questionnaireDto.getId().map(QualifiedId.QuestionnaireId::new).orElse(null),
                 null, // Todo: organizationId was expected but is not defined by the api
                 questionnaireDto.getTitle().orElse(null),
                 null, // Todo: Description was expected but is not defined by the api
@@ -270,7 +273,7 @@ public class DtoMapper {
         customUserRequestDto.setFirstName(patientModel.name().given().getFirst());
         customUserRequestDto.setFullName(patientModel.name().given().getFirst() + " " + patientModel.name().family());
         customUserRequestDto.setLastName(patientModel.name().family());
-        customUserRequestDto.setTempPassword(patientModel.cpr().substring(0, 6));
+        customUserRequestDto.setTempPassword(patientModel.cpr().toString().substring(0, 6));
         CustomUserRequestAttributesDto userCreatedRequestModelAttributes = new CustomUserRequestAttributesDto();
         userCreatedRequestModelAttributes.setCpr(patientModel.cpr());
         userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.name().given().getFirst(), patientModel.name().family()));
@@ -318,21 +321,6 @@ public class DtoMapper {
             case UNDER_EXAMINATION -> ExaminationStatusDto.UNDER_EXAMINATION;
             case EXAMINED -> ExaminationStatusDto.EXAMINED;
         };
-    }
-
-    private Optional<QualifiedId> extractQualifiedId(BaseDto source, ResourceType resourceType) {
-        if (source.getId().isEmpty()) {
-            // OK, in case a resource is being created.
-            return Optional.empty();
-        }
-
-        if (FhirUtils.isPlainId(source.getId().get())) {
-            return Optional.of(new QualifiedId(source.getId().get(), resourceType));
-        } else if (FhirUtils.isQualifiedId(source.getId().get(), resourceType)) {
-            return Optional.of(new QualifiedId(source.getId().get()));
-        } else {
-            throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType, source.getId()));
-        }
     }
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
@@ -540,13 +528,22 @@ public class DtoMapper {
         };
     }
 
-    public PlanDefinitionStatus mapPlanDefinitionStatusDto(PatchPlanDefinitionRequest.StatusEnum status) {
-        return switch (status) {
+    public PlanDefinitionStatus mapPlandefinitionStatus(@NotNull PlanDefinitionStatusDto planDefinitionStatus) {
+        return switch (planDefinitionStatus) {
             case DRAFT -> PlanDefinitionStatus.DRAFT;
             case ACTIVE -> PlanDefinitionStatus.ACTIVE;
             case RETIRED -> PlanDefinitionStatus.RETIRED;
         };
     }
+
+    private PlanDefinitionStatusDto mapPlandefinitionStatus(@NotNull PlanDefinitionStatus planDefinitionStatus) {
+        return switch (planDefinitionStatus) {
+            case DRAFT -> PlanDefinitionStatusDto.DRAFT;
+            case ACTIVE -> PlanDefinitionStatusDto.ACTIVE;
+            case RETIRED -> PlanDefinitionStatusDto.RETIRED;
+        };
+    }
+
 }
 
 

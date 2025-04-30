@@ -1,15 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.client;
 
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
+
 public class CustomUserRequestAttributesDto {
 
-    private String cpr;
+    private CPR cpr;
     private String initials;
 
-    public String getCpr() {
+    public CPR getCpr() {
         return cpr;
     }
 
-    public void setCpr(String cpr) {
+    public void setCpr(CPR cpr) {
         this.cpr = cpr;
     }
 

@@ -1,12 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.fhir.repository;
 
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface PatientRepository<Patient, CarePlanStatus> extends Repository<Patient> {
+public interface PatientRepository<Patient, CarePlanStatus> extends Repository<Patient, QualifiedId.PatientId> {
 
 
     /**
@@ -15,7 +16,7 @@ public interface PatientRepository<Patient, CarePlanStatus> extends Repository<P
      * @param cpr The CPR number.
      * @return An optional patient.
      */
-    Optional<Patient> fetch(CPR cpr); // TODO: Model the cpr and rename method from lookupPatientByCpr to fetch(CPR cpr)
+    Optional<Patient> fetch(CPR cpr) throws ServiceException; // TODO: Model the cpr and rename method from lookupPatientByCpr to fetch(CPR cpr)
 
     /**
      * Searches patients by given terms and care plan status.

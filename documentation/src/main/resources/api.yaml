@@ -34,7 +34,7 @@ paths:
           in: query
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/CprDto'
       responses:
         "400":
           description: Bad Request
@@ -270,7 +270,7 @@ paths:
           schema:
             type: array
             items:
-              type: string
+              $ref: '#/components/schemas/PlanDefinitionStatusDto'
       responses:
         "400":
           description: Bad Request
@@ -455,7 +455,7 @@ paths:
         - name: cpr
           in: query
           schema:
-            type: string
+            $ref: '#/components/schemas/CprDto'
         - name: only_unsatisfied_schedules
           in: query
           schema:
@@ -815,7 +815,7 @@ paths:
           in: query
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/CprDto'
       responses:
         "400":
           description: Bad Request
@@ -1411,7 +1411,7 @@ paths:
           in: query
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/CprDto'
       responses:
         "400":
           description: Bad Request
@@ -1713,7 +1713,7 @@ paths:
           schema:
             type: array
             items:
-              type: string
+              $ref: '#/components/schemas/PlanDefinitionStatusDto'
       responses:
         "400":
           description: Bad Request
@@ -1880,8 +1880,6 @@ components:
               type: string
               format: date-time
 
-
-
     ThresholdDto:
       type: object
       properties:
@@ -1931,7 +1929,7 @@ components:
             title:
               type: string
             status:
-              type: string
+              $ref: "#/components/schemas/PlanDefinitionStatusDto"
             created:
               type: string
               format: date-time
@@ -1942,6 +1940,13 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/QuestionnaireWrapperDto'
+
+    PlanDefinitionStatusDto:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - RETIRED
 
     QuestionnaireWrapperDto:
       type: object
@@ -2007,12 +2012,10 @@ components:
     PatientDto:
       type: object
       properties:
-        givenName:
-          type: string
-        familyName:
-          type: string
+        name:
+          $ref: '#/components/schemas/NameDto'
         cpr:
-          type: string
+          $ref: '#/components/schemas/CprDto'
         customUserName:
           type: string
         patientContactDetails:
@@ -2163,11 +2166,8 @@ components:
           items:
             $ref: '#/components/schemas/ThresholdDto'
         status:
-          type: string
-          enum:
-            - DRAFT
-            - ACTIVE
-            - RETIRED
+          $ref: '#/components/schemas/PlanDefinitionStatusDto'
+
     QuestionnaireFrequencyPairDto:
       type: object
       properties:
@@ -2202,7 +2202,7 @@ components:
       type: object
       properties:
         orgId:
-          type: string
+          $ref: '#/components/schemas/SORCodeDto'
         firstName:
           type: string
         lastName:
@@ -2217,12 +2217,20 @@ components:
           type: string
         email:
           type: string
+          format: email
         entitlements:
           type: array
           items:
             type: string
         orgName:
           type: string
+    SORCodeDto:
+      type: string
+      description: "Sundhedsvæsenets Organisations Register (SOR)"
+    CprDto:
+      type: string
+      description: "Et personnummer, i daglig tale kaldet CPR-nummer (eng. civil registration number), er et ti-cifret, personligt identifikationsnummer"
+
     PaginatedListQuestionnaireResponseDto:
       type: object
       properties:
@@ -2243,11 +2251,9 @@ components:
       type: object
       properties:
         cpr:
-          type: string
-        givenName:
-          type: string
-        familyName:
-          type: string
+          $ref: '#/components/schemas/CprDto'
+        name:
+          $ref: '#/components/schemas/NameDto'
         gender:
           type: string
         birthDate:
@@ -2256,6 +2262,14 @@ components:
           type: boolean
         patientContactDetails:
           $ref: '#/components/schemas/ContactDetailsDto'
+    NameDto:
+      type: object
+      properties:
+        given:
+          type: string
+        family:
+          type: string
+
     PatientListResponse:
       type: object
       properties:

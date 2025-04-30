@@ -1,21 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.ResourceType;
 import org.openapitools.api.PlanDefinitionApi;
-import org.openapitools.model.CreatePlanDefinitionRequest;
-import org.openapitools.model.PatchPlanDefinitionRequest;
-import org.openapitools.model.PlanDefinitionDto;
-import org.openapitools.model.ThresholdDto;
+import org.openapitools.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -33,11 +29,11 @@ import java.util.stream.Stream;
 public class PlanDefinitionController extends BaseController implements PlanDefinitionApi {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionController.class);
 
-    private final PlanDefinitionService planDefinitionService;
+    private final ConcretePlanDefinitionService planDefinitionService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
 
-    public PlanDefinitionController(PlanDefinitionService planDefinitionService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public PlanDefinitionController(ConcretePlanDefinitionService planDefinitionService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.planDefinitionService = planDefinitionService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -46,29 +42,30 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
 
     @Override
     public ResponseEntity<Void> createPlanDefinition(CreatePlanDefinitionRequest createPlanDefinitionRequest) {
-        String planDefinitionId = null;
         try {
             PlanDefinitionModel planDefinition = dtoMapper.mapPlanDefinitionDto(createPlanDefinitionRequest.getPlanDefinition());
-            planDefinitionId = planDefinitionService.createPlanDefinition(planDefinition);
+            String planDefinitionId = planDefinitionId = planDefinitionService.createPlanDefinition(planDefinition).toString();
+
+            URI location = locationHeaderBuilder.buildLocationHeader(planDefinitionId);
+            return ResponseEntity.created(location).build();
+
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Error creating PlanDefinition", e);
             throw toStatusCodeException(e);
         }
-
-        URI location = locationHeaderBuilder.buildLocationHeader(planDefinitionId);
-        return ResponseEntity.created(location).build();
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(Optional<List<String>> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(Optional<List<PlanDefinitionStatusDto>> statusesToInclude) {
         try {
             if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
+            var statuses = statusesToInclude.map(x -> x.stream().map(dtoMapper::mapPlandefinitionStatus)).map(Stream::toList).orElse(List.of());
 
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.orElse(List.of()));
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statuses);
 
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing((x) -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed())).toList());
         } catch (ServiceException e) {
@@ -81,7 +78,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     public ResponseEntity<Boolean> isPlanDefinitionInUse(String id) {
         boolean isPlanDefinitionInUse;
         try {
-            isPlanDefinitionInUse = !planDefinitionService.getCarePlansThatIncludes(id).isEmpty();
+            isPlanDefinitionInUse = !planDefinitionService.getCarePlansThatIncludes(new QualifiedId.PlanDefinitionId(id)).isEmpty();
         } catch (ServiceException se) {
             throw toStatusCodeException(se);
         }
@@ -93,12 +90,12 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     public ResponseEntity<Void> patchPlanDefinition(String id, PatchPlanDefinitionRequest request) {
         try {
             String name = request.getName();
-            List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
+            List<QualifiedId.QuestionnaireId> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
             List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
 
-            var status = dtoMapper.mapPlanDefinitionStatusDto(request.getStatus());
+            var status = dtoMapper.mapPlandefinitionStatus(request.getStatus());
 
-            planDefinitionService.updatePlanDefinition(id, name, status, questionnaireIds, thresholds);
+            planDefinitionService.updatePlanDefinition(new QualifiedId.PlanDefinitionId(id), name, status, questionnaireIds, thresholds);
         } catch (Exception e) {
             throw toStatusCodeException(e);
         }
@@ -108,7 +105,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     @Override
     public ResponseEntity<Void> retirePlanDefinition(String id) {
         try {
-            planDefinitionService.retirePlanDefinition(id);
+            planDefinitionService.retirePlanDefinition(new QualifiedId.PlanDefinitionId(id));
         } catch (ServiceException se) {
             throw toStatusCodeException(se);
         }
@@ -121,9 +118,8 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
         throw new UnsupportedOperationException();
     }
 
-
-    private List<String> getQuestionnaireIds(List<String> questionnaireIds) {
-        return collectionToStream(questionnaireIds).map(id -> FhirUtils.qualifyId(id, ResourceType.Questionnaire)).toList();
+    private List<QualifiedId.QuestionnaireId> getQuestionnaireIds(List<String> questionnaireIds) {
+        return questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList();
     }
 
     private List<ThresholdModel> getThresholds(List<ThresholdDto> thresholdDtos) {

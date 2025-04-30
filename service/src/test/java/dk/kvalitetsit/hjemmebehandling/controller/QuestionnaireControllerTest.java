@@ -5,10 +5,9 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -41,7 +40,7 @@ public class QuestionnaireControllerTest {
     private QuestionnaireController subject;
 
     @Mock
-    private QuestionnaireService questionnaireService;
+    private ConcreteQuestionnaireService questionnaireService;
 
     @Mock
     private DtoMapper dtoMapper;

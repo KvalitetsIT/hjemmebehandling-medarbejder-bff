@@ -4,7 +4,7 @@ public record PrimaryContactModel(
         ContactDetailsModel contactDetails,
         String name,
         String affiliation,
-        String organisation
+        QualifiedId.OrganizationId organisation
 ) {
     public static Builder builder() {
         return new Builder();
@@ -14,7 +14,7 @@ public record PrimaryContactModel(
         private ContactDetailsModel contactDetails;
         private String name;
         private String affiliation;
-        private String organisation;
+        private QualifiedId.OrganizationId organisation;
 
         public static Builder from(PrimaryContactModel model) {
             return new Builder()
@@ -39,7 +39,7 @@ public record PrimaryContactModel(
             return this;
         }
 
-        public Builder organisation(String organisation) {
+        public Builder organisation(QualifiedId.OrganizationId organisation) {
             this.organisation = organisation;
             return this;
         }

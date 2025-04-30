@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import java.util.List;
 
 public record PatientModel(
-        QualifiedId id,
+        QualifiedId.PatientId id,
         PersonNameModel name,
         CPR cpr,
         ContactDetailsModel contactDetails,
@@ -18,7 +18,7 @@ public record PatientModel(
     }
 
     public static class Builder {
-        private QualifiedId id;
+        private QualifiedId.PatientId id;
         private PersonNameModel name;
         private CPR cpr;
         private ContactDetailsModel contactDetails;
@@ -38,7 +38,7 @@ public record PatientModel(
                     .additionalRelativeContactDetails(model.additionalRelativeContactDetails);
         }
 
-        public Builder id(QualifiedId id) {
+        public Builder id(QualifiedId.PatientId id) {
             this.id = id;
             return this;
         }

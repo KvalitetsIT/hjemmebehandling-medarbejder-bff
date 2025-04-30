@@ -1,12 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.*;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -40,7 +40,7 @@ public class CarePlanControllerTest {
     @InjectMocks
     private CarePlanController subject;
     @Mock
-    private CarePlanService carePlanService;
+    private ConcreteCarePlanService carePlanService;
     @Mock
     private AuditLoggingService auditLoggingService;
     @Mock

@@ -1,15 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
@@ -34,13 +34,13 @@ import java.util.stream.Collectors;
 public class CarePlanController extends BaseController implements CarePlanApi {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
-    private final CarePlanService carePlanService;
+    private final ConcreteCarePlanService carePlanService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
-    private final PlanDefinitionService planDefinitionService;
+    private final ConcretePlanDefinitionService planDefinitionService;
 
-    public CarePlanController(PlanDefinitionService planDefinitionService, CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public CarePlanController(ConcretePlanDefinitionService planDefinitionService, ConcreteCarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
@@ -51,7 +51,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     @Override
     public ResponseEntity<Void> completeCarePlan(String id) {
         try {
-            CarePlanModel carePlan = carePlanService.completeCarePlan(id);
+            CarePlanModel carePlan = carePlanService.completeCarePlan(new QualifiedId.CarePlanId(id));
             auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.patient());
         } catch (ServiceException e) {
             logger.error("completeCarePlan({}) error:", id, e);
@@ -74,7 +74,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
 
-            carePlanId = carePlanService.createCarePlan(carePlan);
+            carePlanId = carePlanService.createCarePlan(carePlan).unQualifiedId();
 
             auditLoggingService.log("POST /v1/careplan", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
@@ -89,7 +89,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     @Override
     public ResponseEntity<CarePlanDto> getCarePlanById(String id) {
         try {
-            Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(id);
+            Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(new QualifiedId.CarePlanId(id));
 
             if (carePlan.isEmpty()) {
                 throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
@@ -103,14 +103,14 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<String>> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<PlanDefinitionStatusDto>> statusesToInclude) {
         try {
             if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.orElse(List.of()));
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map( x -> x.stream().map(dtoMapper::mapPlandefinitionStatus).toList()).orElse(List.of()));
 
             // todo: 'Optional.get()' without 'isPresent()' check
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());
@@ -120,10 +120,11 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         }
     }
 
+
     @Override
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
         try {
-            List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
+            List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(new QualifiedId.CarePlanId(id));
             List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.id().id()).toList();
             return ResponseEntity.ok(ids);
         } catch (ServiceException e) {
@@ -144,7 +145,13 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
             PatientDetails patientDetails = getPatientDetails(request);
 
-            CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
+            CarePlanModel carePlanModel = carePlanService.updateCarePlan(
+                    new QualifiedId.CarePlanId(id),
+                    request.getPlanDefinitionIds().stream().map(QualifiedId.PlanDefinitionId::new).toList(),
+                    questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList(),
+                    frequencies,
+                    patientDetails
+            );
 
             auditLoggingService.log("PATCH /v1/careplan/" + id, carePlanModel.patient());
         } catch (AccessValidationException | ServiceException e) {
@@ -156,7 +163,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     @Override
     public ResponseEntity<Void> resolveAlarm(String id, String questionnaireId) {
         try {
-            CarePlanModel carePlan = carePlanService.resolveAlarm(id, questionnaireId);
+            CarePlanModel carePlan = carePlanService.resolveAlarm(new QualifiedId.CarePlanId(id), new QualifiedId.QuestionnaireId(questionnaireId));
             auditLoggingService.log("PUT /v1/careplan/" + id + "/resolve-alarm", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
             logger.error(String.format("resolveAlarm(%s, %s) error:", id, questionnaireId), e);
@@ -175,14 +182,14 @@ public class CarePlanController extends BaseController implements CarePlanApi {
                 Pagination pagination = new Pagination(pageNumber.get(), pageSize.get());
 
                 if (cpr.isPresent()) {
-                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
+                    carePlans = carePlanService.getCarePlansWithFilters(new CPR(cpr.get()), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
                 } else {
                     carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
                 }
 
             } else {
                 if (cpr.isPresent()) {
-                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
+                    carePlans = carePlanService.getCarePlansWithFilters(new CPR(cpr.get()), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
                 } else {
                     carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
                 }

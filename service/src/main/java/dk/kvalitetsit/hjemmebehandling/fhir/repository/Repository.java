@@ -7,20 +7,58 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import java.util.List;
 import java.util.Optional;
 
-public interface Repository<R> {
+/**
+ * A generic repository interface for managing resources.
+ *
+ * @param <R>  the type of resource managed by the repository
+ * @param <ID> the type of identifier for the resource, must extend {@link QualifiedId}
+ */
+public interface Repository<R, ID extends QualifiedId> {
 
-    // TODO: Should return the the updated resource if successful
-    void update(R resource);
+    /**
+     * Updates the given resource in the repository.
+     * <p>
+     * Implementations should update the resource if it exists, and may throw an exception if not.
+     *
+     * @param resource the resource to update
+     * @throws ServiceException if the update fails due to a service-level issue
+     */
+    void update(R resource) throws ServiceException;
 
-    // TODO: Should return the the saved resource if successful
-    String save(R resource) throws ServiceException;
+    /**
+     * Saves the given resource to the repository.
+     * <p>
+     * If the resource is new, it will be created; otherwise, it may be updated depending on implementation.
+     *
+     * @param resource the resource to save
+     * @return the identifier of the saved resource
+     * @throws ServiceException if the save operation fails
+     */
+    ID save(R resource) throws ServiceException;
 
-    Optional<R> fetch (QualifiedId id) throws ServiceException;
+    /**
+     * Fetches a resource by its identifier.
+     *
+     * @param id the identifier of the resource to fetch
+     * @return an {@code Optional} containing the resource if found, or empty if not
+     * @throws ServiceException if the fetch operation fails
+     */
+    Optional<R> fetch(ID id) throws ServiceException;
 
-    List<R> fetch (List<QualifiedId> id) throws ServiceException;
+    /**
+     * Fetches multiple resources by their identifiers.
+     *
+     * @param id a list of resource identifiers to fetch
+     * @return a list of resources that match the given identifiers
+     * @throws ServiceException if the fetch operation fails
+     */
+    List<R> fetch(List<ID> id) throws ServiceException;
 
-
-    List<R> fetch () throws ServiceException;
-
-
+    /**
+     * Fetches all resources from the repository.
+     *
+     * @return a list of all resources
+     * @throws ServiceException if the fetch operation fails
+     */
+    List<R> fetch() throws ServiceException;
 }

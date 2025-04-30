@@ -1,13 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 public class QuestionnaireServiceTest {
     private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
     @InjectMocks
-    private QuestionnaireService subject;
+    private ConcreteQuestionnaireService subject;
     @Mock
     private ClientAdaptor fhirClient;
     @Mock

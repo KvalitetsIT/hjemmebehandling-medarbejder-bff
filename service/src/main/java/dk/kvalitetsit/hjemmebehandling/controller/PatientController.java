@@ -3,14 +3,16 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
+import org.checkerframework.checker.units.qual.C;
 import org.openapitools.api.PatientApi;
 import org.openapitools.model.CreatePatientRequest;
 import org.openapitools.model.PatientDto;
@@ -18,7 +20,6 @@ import org.openapitools.model.PatientListResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,12 +30,12 @@ import java.util.List;
 public class PatientController extends BaseController implements PatientApi {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
-    private final PatientService patientService;
+    private final ConcretePatientService patientService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
     private final CustomUserClient customUserClient;
 
-    public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
+    public PatientController(ConcretePatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
         this.patientService = patientService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
@@ -68,7 +69,7 @@ public class PatientController extends BaseController implements PatientApi {
         logger.info("Getting patient ...");
 
         try {
-            PatientModel patient = patientService.getPatient(cpr);
+            PatientModel patient = patientService.getPatient(new CPR(cpr));
             auditLoggingService.log("GET /v1/patient", patient);
             if (patient == null) {
                 throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
@@ -108,7 +109,7 @@ public class PatientController extends BaseController implements PatientApi {
     public ResponseEntity<Void> resetPassword(String cpr) {
         logger.info("reset password for patient");
         try {
-            PatientModel patientModel = patientService.getPatient(cpr);
+            PatientModel patientModel = patientService.getPatient(new CPR(cpr));
             customUserClient.resetPassword(cpr, patientModel.customUserName());
             return ResponseEntity.ok().build();
         } catch (ServiceException e) {

@@ -2,5 +2,5 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 public interface BaseModel {
     QualifiedId id();
-    String organizationId();
+    QualifiedId.OrganizationId organizationId();
 }

@@ -1,12 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.PersonNameModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +38,7 @@ public class PatientServiceTest {
     private static final String PATIENT_ID_1 = "Patient/patient-1";
 
     @InjectMocks
-    private PatientService subject;
+    private ConcretePatientService subject;
     @Mock
     private ClientAdaptor fhirClient;
 

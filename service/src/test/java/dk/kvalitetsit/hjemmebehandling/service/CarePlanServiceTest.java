@@ -2,8 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.repository.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
@@ -12,6 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -59,9 +60,9 @@ public class CarePlanServiceTest {
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T10:00:00.000Z");
 
     @InjectMocks
-    private CarePlanService subject;
+    private ConcreteCarePlanService subject;
     @Mock
-    private Client<CarePlanModel, PlanDefinitionModel, PractitionerModel, PatientModel, QuestionnaireModel, QuestionnaireResponseModel, Organization, CarePlanStatus> fhirClient;
+    private Client fhirClient;
 
     @Mock
     private DateProvider dateProvider;
@@ -815,7 +816,7 @@ public class CarePlanServiceTest {
 
     }
 
-    private CarePlanModel buildCarePlanModel(QualifiedId id, List<String> planDefinitionIds, List<String> questionnaireIds, PatientModel patient) {
+    private CarePlanModel buildCarePlanModel(QualifiedId.CarePlanId id, List<String> planDefinitionIds, List<String> questionnaireIds, PatientModel patient) {
         return CarePlanModel.builder()
                 .id(id)
                 .patient(patient)

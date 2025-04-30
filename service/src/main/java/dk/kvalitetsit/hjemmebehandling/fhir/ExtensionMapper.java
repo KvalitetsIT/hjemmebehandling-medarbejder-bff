@@ -1,8 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.PractitionerModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;

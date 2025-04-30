@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.util.List;
 
 public record PlanDefinitionModel(
-        QualifiedId id,
-        String organizationId,
+        QualifiedId.PlanDefinitionId id,
+        QualifiedId.OrganizationId organizationId,
         String name,
         String title,
         PlanDefinitionStatus status,
@@ -26,25 +26,25 @@ public record PlanDefinitionModel(
     }
 
     @Override
-    public QualifiedId id() {
+    public QualifiedId.PlanDefinitionId id() {
         return id;
     }
 
     @Override
-    public String organizationId() {
+    public QualifiedId.OrganizationId organizationId() {
         return organizationId;
     }
 
     public static class Builder {
 
-        private QualifiedId id;
+        private QualifiedId.PlanDefinitionId id;
         private String name;
         private String title;
         private PlanDefinitionStatus status;
         private Instant created;
         private Instant lastUpdated;
         private List<QuestionnaireWrapperModel> questionnaires;
-        private String organizationId;
+        private QualifiedId.OrganizationId organizationId;
 
         public static Builder from(PlanDefinitionModel model) {
             return new Builder()
@@ -89,12 +89,12 @@ public record PlanDefinitionModel(
         }
 
 
-        public Builder id(QualifiedId id) {
+        public Builder id(QualifiedId.PlanDefinitionId id) {
             this.id = id;
             return this;
         }
 
-        public Builder organizationId(String organizationId) {
+        public Builder organizationId(QualifiedId.OrganizationId organizationId) {
             this.organizationId = organizationId;
             return this;
         }

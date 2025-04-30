@@ -6,7 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.List;
 
-public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends Repository<QuestionnaireResponse> {
+public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends Repository<QuestionnaireResponse, QualifiedId.QuestionnaireResponseId> {
 
 
     /**
@@ -16,7 +16,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @param questionnaireIds The questionnaire IDs.
      * @return List of matching responses.
      */
-    List<QuestionnaireResponse> fetch(QualifiedId carePlanId, List<QualifiedId> questionnaireIds);
+    List<QuestionnaireResponse> fetch(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds);
 
 
     /**
@@ -36,7 +36,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @return List of responses.
      * @throws ServiceException If the operation fails.
      */
-    List<QuestionnaireResponse> fetch(List<ExaminationStatus> statuses, QualifiedId carePlanId) throws ServiceException;
+    List<QuestionnaireResponse> fetch(List<ExaminationStatus> statuses, QualifiedId.CarePlanId carePlanId) throws ServiceException;
 
     /**
      * Looks up questionnaire responses by a single status.

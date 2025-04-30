@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
@@ -41,7 +42,7 @@ public class QuestionnaireResponseServiceTest {
     private static final String QUESTIONNAIRE_RESPONSE_ID_3 = "QuestionnaireResponse/questionnaireresponse-3";
 
     @InjectMocks
-    private QuestionnaireResponseService subject;
+    private ConcreteQuestionnaireResponseService subject;
     @Mock
     private ClientAdaptor fhirClient;
     @Mock
@@ -72,7 +73,7 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void getQuestionnaireResponses_ReturnOneItem_WhenPagesizeIsOne() throws Exception {
-        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, null, accessValidator);
+        ConcreteQuestionnaireResponseService qrservice = new ConcreteQuestionnaireResponseService(fhirClient, null, accessValidator);
 
         QuestionnaireResponseModel response = QuestionnaireResponseModel.builder().build();
 
@@ -86,7 +87,7 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void getQuestionnaireResponses_ReturnSortedPages_WhenTwoPages() throws Exception {
-        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, null, accessValidator);
+        ConcreteQuestionnaireResponseService qrservice = new ConcreteQuestionnaireResponseService(fhirClient, null, accessValidator);
 
         QuestionnaireResponseModel response1 = QuestionnaireResponseModel.builder()
                 .id(new QualifiedId("1", ResourceType.QuestionnaireResponse))
@@ -136,7 +137,7 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void getQuestionnaireResponses_ReturnZeroItem_WhenPagesizeIsZero() throws Exception {
-        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, null, accessValidator);
+        ConcreteQuestionnaireResponseService qrservice = new ConcreteQuestionnaireResponseService(fhirClient, null, accessValidator);
 
         QuestionnaireResponseModel response = QuestionnaireResponseModel.builder().build();
 
@@ -150,7 +151,7 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void getQuestionnaireResponses_ReturnZeroItem_WhenOnSecondPage() throws Exception {
-        QuestionnaireResponseService qrservice = new QuestionnaireResponseService(fhirClient, null, accessValidator);
+        ConcreteQuestionnaireResponseService qrservice = new ConcreteQuestionnaireResponseService(fhirClient, null, accessValidator);
 
         QuestionnaireResponseModel response = QuestionnaireResponseModel.builder().build();
 

@@ -7,15 +7,12 @@ import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
-import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
-import dk.kvalitetsit.hjemmebehandling.constants.SearchParameters;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +29,7 @@ import java.util.Optional;
 /**
  * Concrete client implementation which covers the communication with the fhir server
  */
-public class FhirClient implements Client<Organization> {
+public class FhirClient {
     private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
     private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
     private final UserContextProvider userContextProvider;
@@ -44,16 +41,17 @@ public class FhirClient implements Client<Organization> {
         this.client = context.newRestfulGenericClient(endpoint);
     }
 
+    public static List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
+        return questionnaireResponses.stream().map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension())).filter(Objects::nonNull).distinct().toList();
+    }
+
     public FhirLookupResult lookupValueSet() throws ServiceException {
-        var organizationCriterion = buildOrganizationCriterion();
+        var organizationCriterion = dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils.buildOrganizationCriterion();
         return lookupByCriteria(ValueSet.class, List.of(organizationCriterion));
     }
 
-
-
-    protected <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+    public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
         var query = client.search().forResource(resourceClass);
-
         if (criteria != null && !criteria.isEmpty()) {
             query = query.where(criteria.getFirst());
             for (int i = 1; i < criteria.size(); i++) {
@@ -85,16 +83,16 @@ public class FhirClient implements Client<Organization> {
         return lookupResult;
     }
 
-    protected <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) {
+    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) {
         return lookupByCriteria(resourceClass, criteria, null);
     }
 
-    protected <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
+    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
         boolean withOrganizations = true;
         return lookupByCriteria(resourceClass, criteria, includes, withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    protected Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
+    public Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
 
         // Execute the transaction
         var responseBundle = client.transaction().withBundle(transactionBundle).execute();
@@ -115,18 +113,13 @@ public class FhirClient implements Client<Organization> {
         return Optional.of(id);
     }
 
-    protected void addOrganizationTag(Bundle bundle) throws ServiceException {
+    public void addOrganizationTag(Bundle bundle) throws ServiceException {
         for (var entry : bundle.getEntry()) {
             addOrganizationTag(entry.getResource());
         }
     }
 
-    protected ICriterion<?> buildOrganizationCriterion(QualifiedId organizationId) throws ServiceException {
-        String organizationId = getOrganizationId();
-        return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId);
-    }
-
-    protected <T extends Resource> String saveResource(Resource resource) throws ServiceException {
+    public <T extends Resource> String saveResource(Resource resource) throws ServiceException {
         addOrganizationTag(resource);
 
         MethodOutcome outcome = client.create().resource(resource).execute();
@@ -138,8 +131,8 @@ public class FhirClient implements Client<Organization> {
     }
 
     @NotNull
-    protected ArrayList<ICriterion<?>> createCriteria(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        var organizationCriterion = buildOrganizationCriterion();
+    public ArrayList<ICriterion<?>> createCriteria(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
         var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
@@ -155,16 +148,8 @@ public class FhirClient implements Client<Organization> {
         return criteria;
     }
 
-    protected <T extends Resource> void updateResource(Resource resource) {
+    public  <T extends Resource> void updateResource(Resource resource) {
         client.update().resource(resource).execute();
-    }
-
-    protected static List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
-        return questionnaireResponses.stream().map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension())).filter(Objects::nonNull).distinct().toList();
-    }
-
-    protected static List<String> getPlanDefinitionIds(List<CarePlan> carePlans) {
-        return carePlans.stream().flatMap(cp -> cp.getInstantiatesCanonical().stream().map(PrimitiveType::getValue)).toList();
     }
 
     private void addOrganizationTag(Resource resource) throws ServiceException {

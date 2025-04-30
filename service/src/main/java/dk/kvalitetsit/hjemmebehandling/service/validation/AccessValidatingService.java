@@ -1,0 +1,24 @@
+package dk.kvalitetsit.hjemmebehandling.service.validation;
+
+import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
+import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+
+import java.util.List;
+
+public abstract class AccessValidatingService {
+    private final AccessValidator accessValidator;
+
+    public AccessValidatingService(AccessValidator accessValidator) {
+        this.accessValidator = accessValidator;
+    }
+
+    protected void validateAccess(BaseModel resource) throws AccessValidationException, ServiceException {
+        accessValidator.validateAccess(resource);
+    }
+
+    protected void validateAccess(List<? extends BaseModel> resources) throws AccessValidationException, ServiceException {
+        accessValidator.validateAccess(resources);
+    }
+}

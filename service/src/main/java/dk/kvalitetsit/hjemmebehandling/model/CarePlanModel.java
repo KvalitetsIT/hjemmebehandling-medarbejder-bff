@@ -1,14 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 public record CarePlanModel(
-        QualifiedId id,
-        String organizationId,
+        QualifiedId.CarePlanId id,
+        QualifiedId.OrganizationId organizationId,
         String title,
         CarePlanStatus status,
         Instant created,
@@ -31,8 +31,8 @@ public record CarePlanModel(
     }
 
     public static class Builder {
-        private QualifiedId id;
-        private String organizationId;
+        private QualifiedId.CarePlanId id;
+        private QualifiedId.OrganizationId organizationId;
         private String title;
         private CarePlanStatus status;
         private Instant created;
@@ -61,12 +61,12 @@ public record CarePlanModel(
 
         }
 
-        public Builder id(QualifiedId id) {
+        public Builder id(QualifiedId.CarePlanId id) {
             this.id = id;
             return this;
         }
 
-        public Builder organizationId(String organizationId) {
+        public Builder organizationId(QualifiedId.OrganizationId organizationId) {
             this.organizationId = organizationId;
             return this;
         }

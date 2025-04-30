@@ -4,14 +4,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 
-public sealed interface QualifiedId permits
-        QualifiedId.PatientId,
-        QualifiedId.CarePlanId,
-        QualifiedId.PersonId,
-        QualifiedId.PlanDefinitionId,
-        QualifiedId.QuestionnaireId,
-        QualifiedId.QuestionnaireResponseId,
-        QualifiedId.PractitionerId {
+public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId {
 
     static void validateUnqualifiedId(String unqualifiedId) throws IllegalArgumentException {
         if (!FhirUtils.isPlainId(unqualifiedId)) {
@@ -84,7 +77,7 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.CarePlan;
         }
     }
 
@@ -97,7 +90,7 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.Person;
         }
     }
 
@@ -110,7 +103,7 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.PlanDefinition;
         }
     }
 
@@ -123,7 +116,7 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.Questionnaire;
         }
     }
 
@@ -136,7 +129,7 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.QuestionnaireResponse;
         }
     }
 
@@ -148,9 +141,20 @@ public sealed interface QualifiedId permits
 
         @Override
         public ResourceType qualifier() {
-            return ResourceType.Patient;
+            return ResourceType.Practitioner;
         }
     }
 
 
+    record OrganizationId(String id) implements QualifiedId {
+
+        public OrganizationId {
+            validateUnqualifiedId(id);
+        }
+
+        @Override
+        public ResourceType qualifier() {
+            return ResourceType.Organization;
+        }
+    }
 }

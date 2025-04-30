@@ -1,8 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;

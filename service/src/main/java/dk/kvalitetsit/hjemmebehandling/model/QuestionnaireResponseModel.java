@@ -1,17 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 
 import java.time.Instant;
 import java.util.List;
 
 public record QuestionnaireResponseModel(
-        QualifiedId id,
-        String organizationId,
-        QualifiedId questionnaireId,
-        QualifiedId carePlanId,
-        QualifiedId authorId,
-        QualifiedId sourceId,
+        QualifiedId.QuestionnaireResponseId id,
+        QualifiedId.OrganizationId organizationId,
+        QualifiedId.QuestionnaireId questionnaireId,
+        QualifiedId.CarePlanId carePlanId,
+        QualifiedId.PractitionerId authorId,
+        QualifiedId.QuestionnaireId sourceId,
         String questionnaireName,
         List<QuestionAnswerPairModel> questionAnswerPairs,
         Instant answered,
@@ -28,16 +28,16 @@ public record QuestionnaireResponseModel(
     }
 
     @Override
-    public String organizationId() {
+    public QualifiedId.OrganizationId organizationId() {
         return organizationId;
     }
 
     public static class Builder {
-        private QualifiedId id;
-        private QualifiedId questionnaireId;
-        private QualifiedId carePlanId;
-        private QualifiedId authorId;
-        private QualifiedId sourceId;
+        private QualifiedId.QuestionnaireResponseId id;
+        private QualifiedId.QuestionnaireId questionnaireId;
+        private QualifiedId.CarePlanId carePlanId;
+        private QualifiedId.PractitionerId authorId;
+        private QualifiedId.QuestionnaireId sourceId;
         private String questionnaireName;
         private List<QuestionAnswerPairModel> questionAnswerPairs;
         private Instant answered;
@@ -46,29 +46,29 @@ public record QuestionnaireResponseModel(
         private TriagingCategory triagingCategory;
         private PatientModel patient;
         private String planDefinitionTitle;
-        private String organizationId;
+        private QualifiedId.OrganizationId organizationId;
 
-        public Builder organizationId(String organizationId) {
+        public Builder organizationId(QualifiedId.OrganizationId organizationId) {
             this.organizationId = organizationId;
             return this;
         }
 
-        public Builder questionnaireId(QualifiedId questionnaireId) {
+        public Builder questionnaireId(QualifiedId.QuestionnaireId questionnaireId) {
             this.questionnaireId = questionnaireId;
             return this;
         }
 
-        public Builder carePlanId(QualifiedId carePlanId) {
+        public Builder carePlanId(QualifiedId.CarePlanId carePlanId) {
             this.carePlanId = carePlanId;
             return this;
         }
 
-        public Builder authorId(QualifiedId authorId) {
+        public Builder authorId(QualifiedId.PractitionerId authorId) {
             this.authorId = authorId;
             return this;
         }
 
-        public Builder sourceId(QualifiedId sourceId) {
+        public Builder sourceId(QualifiedId.QuestionnaireId sourceId) {
             this.sourceId = sourceId;
             return this;
         }
@@ -113,7 +113,7 @@ public record QuestionnaireResponseModel(
             return this;
         }
 
-        public Builder id(QualifiedId id) {
+        public Builder id(QualifiedId.QuestionnaireResponseId id) {
             this.id = id;
             return this;
         }

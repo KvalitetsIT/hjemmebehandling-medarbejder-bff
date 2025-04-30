@@ -1,13 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public record QuestionnaireModel(
-        QualifiedId id,
+        QualifiedId.QuestionnaireId id,
         String organizationId,
         String title,
         String description,
@@ -35,7 +35,7 @@ public record QuestionnaireModel(
     }
 
     public static class Builder {
-        private QualifiedId id;
+        private QualifiedId.QuestionnaireId id;
         private String title;
         private String description;
         private QuestionnaireStatus status;
@@ -63,7 +63,7 @@ public record QuestionnaireModel(
 
         private String organizationId;
 
-        public Builder(QualifiedId id, String title, String description, QuestionnaireStatus status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
+        public Builder(QualifiedId.QuestionnaireId id, String title, String description, QuestionnaireStatus status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
             this.id = id;
             this.title = title;
             this.description = description;
@@ -113,7 +113,7 @@ public record QuestionnaireModel(
         }
 
 
-        public Builder id(QualifiedId id) {
+        public Builder id(QualifiedId.QuestionnaireId id) {
             this.id = id;
             return this;
         }

@@ -5,8 +5,8 @@ import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +31,7 @@ public class PatientControllerTest {
     private PatientController subject;
 
     @Mock
-    private PatientService patientService;
+    private ConcretePatientService patientService;
     @Mock
     private AuditLoggingService auditLoggingService;
     @Mock

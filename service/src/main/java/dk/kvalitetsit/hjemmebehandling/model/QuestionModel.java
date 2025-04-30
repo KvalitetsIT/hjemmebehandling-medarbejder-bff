@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.EnableWhenOperator;
+import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionType;
 
 import java.util.ArrayList;
 import java.util.List;

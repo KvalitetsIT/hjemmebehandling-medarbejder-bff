@@ -1,13 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.*;
@@ -36,7 +37,7 @@ public class PlanDefinitionServiceTest {
     private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
     private static final String ORGANISATION_ID_1 = "";
     @InjectMocks
-    private PlanDefinitionService subject;
+    private ConcretePlanDefinitionService subject;
     @Mock
     private ClientAdaptor fhirClient;
 

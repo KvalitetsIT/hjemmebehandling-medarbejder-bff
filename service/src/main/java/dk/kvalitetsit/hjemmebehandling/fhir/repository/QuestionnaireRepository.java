@@ -6,7 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import java.util.Collection;
 import java.util.List;
 
-public interface QuestionnaireRepository<Questionnaire> extends Repository<Questionnaire> {
+public interface QuestionnaireRepository<Questionnaire> extends Repository<Questionnaire, QualifiedId.QuestionnaireId> {
 
 
     /**
@@ -24,6 +24,6 @@ public interface QuestionnaireRepository<Questionnaire> extends Repository<Quest
      * @param ids List of questionnaire IDs.
      * @return List of questionnaires.
      */
-    List<Questionnaire> lookupVersionsOfQuestionnaireById(List<QualifiedId> ids);
+    List<Questionnaire> lookupVersionsOfQuestionnaireById(List<QualifiedId.QuestionnaireId> ids);
 
 }

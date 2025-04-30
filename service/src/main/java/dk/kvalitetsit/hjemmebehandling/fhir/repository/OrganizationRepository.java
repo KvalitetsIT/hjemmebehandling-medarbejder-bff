@@ -1,10 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.fhir.repository;
 
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.Optional;
 
-public interface OrganizationRepository<Organization> {
+public interface OrganizationRepository<Organization> extends Repository<Organization, QualifiedId.OrganizationId> {
 
     /**
      * Looks up an organization by its SOR code.
@@ -22,7 +23,7 @@ public interface OrganizationRepository<Organization> {
      * @return The organization ID.
      * @throws ServiceException If the operation fails.
      */
-    String getOrganizationId() throws ServiceException;
+    QualifiedId.OrganizationId getOrganizationId() throws ServiceException;
 
     /**
      * Gets the organization of the currently authenticated user.

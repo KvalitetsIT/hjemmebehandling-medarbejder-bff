@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 
 public record PractitionerModel(
-        QualifiedId id,
+        QualifiedId.PractitionerId id,
         String givenName,
         String familyName
 ) {
@@ -11,11 +11,11 @@ public record PractitionerModel(
     }
 
     public static class Builder {
-        private QualifiedId id;
+        private QualifiedId.PractitionerId id;
         private String givenName;
         private String familyName;
 
-        public void setId(QualifiedId id) {
+        public void setId(QualifiedId.PractitionerId id) {
             this.id = id;
         }
 

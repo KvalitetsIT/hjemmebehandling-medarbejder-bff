@@ -8,12 +8,8 @@ import java.util.Optional;
 /**
  * Generic client interface for managing FHIR-based entities such as CarePlans, PlanDefinitions,
  * Practitioners, Patients, Questionnaires, and related resources.
- *
- * @param <Organization> Type representing an organization.
- *
  */
-public interface Client<Organization>  {
-
+public interface Client  {
 
     /**
      * Performs a value set lookup (e.g. for coding systems or terminology).

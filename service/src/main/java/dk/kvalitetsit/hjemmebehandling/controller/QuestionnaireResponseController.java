@@ -1,11 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
@@ -27,11 +28,11 @@ import java.util.Optional;
 public class QuestionnaireResponseController extends BaseController implements QuestionnaireResponseApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
-    private final QuestionnaireResponseService questionnaireResponseService;
+    private final ConcreteQuestionnaireResponseService questionnaireResponseService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
 
-    public QuestionnaireResponseController(QuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public QuestionnaireResponseController(ConcreteQuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
         this.questionnaireResponseService = questionnaireResponseService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
@@ -52,7 +53,10 @@ public class QuestionnaireResponseController extends BaseController implements Q
         try {
             Pagination pagination = new Pagination(pageNumber, pageSize);
 
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(
+                    new QualifiedId.CarePlanId(carePlanId),
+                    questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList()
+            );
 
             auditLoggingService.log("GET /v1/questionnaireresponse/" + carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
 
@@ -96,7 +100,11 @@ public class QuestionnaireResponseController extends BaseController implements Q
                     .map(dtoMapper::mapExaminationStatusDto)
                     .orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE));
 
-            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, examinationStatus);
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(
+                    new QualifiedId.QuestionnaireResponseId(id),
+                    examinationStatus
+            );
+
             auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.patient());
 
             return ResponseEntity.ok().build();

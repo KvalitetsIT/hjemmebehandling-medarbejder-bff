@@ -1,15 +1,16 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -32,11 +33,11 @@ import java.util.stream.Stream;
 public class QuestionnaireController extends BaseController implements QuestionnaireApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireController.class);
 
-    private final QuestionnaireService questionnaireService;
+    private final ConcreteQuestionnaireService questionnaireService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
 
-    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public QuestionnaireController(ConcreteQuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.questionnaireService = questionnaireService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -48,8 +49,8 @@ public class QuestionnaireController extends BaseController implements Questionn
 
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(createQuestionnaireRequest.getQuestionnaire());
         try {
-            String questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
-            URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
+            QualifiedId.QuestionnaireId questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
+            URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId.unQualifiedId());
             return ResponseEntity.created(location).build();
         } catch (ServiceException e) {
             logger.error("Could not create questionnaire");
@@ -63,7 +64,7 @@ public class QuestionnaireController extends BaseController implements Questionn
         Optional<QuestionnaireModel> questionnaire = Optional.empty();
 
         try {
-            String questionnaireId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+            QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId(id);
             questionnaire = questionnaireService.getQuestionnaireById(questionnaireId);
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
@@ -97,10 +98,9 @@ public class QuestionnaireController extends BaseController implements Questionn
 
     @Override
     public ResponseEntity<Boolean> isQuestionnaireInUse(String id) {
-        System.out.printf("id: %s\n", id);
         boolean isQuestionnaireInUse;
         try {
-            isQuestionnaireInUse = !questionnaireService.getPlanDefinitionsThatIncludes(id).isEmpty();
+            isQuestionnaireInUse = !questionnaireService.getPlanDefinitionsThatIncludes(new QualifiedId.QuestionnaireId(id)).isEmpty();
         } catch (ServiceException se) {
             throw toStatusCodeException(se);
         }
@@ -120,7 +120,7 @@ public class QuestionnaireController extends BaseController implements Questionn
 
             QuestionModel callToAction = dtoMapper.mapQuestion(patchQuestionnaireRequest.getCallToAction());
 
-            questionnaireService.updateQuestionnaire(questionnaireId, patchQuestionnaireRequest.getTitle(), patchQuestionnaireRequest.getDescription(), patchQuestionnaireRequest.getStatus(), questions, callToAction);
+            questionnaireService.updateQuestionnaire(new QualifiedId.QuestionnaireId(questionnaireId), patchQuestionnaireRequest.getTitle(), patchQuestionnaireRequest.getDescription(), patchQuestionnaireRequest.getStatus(), questions, callToAction);
             return ResponseEntity.ok().build();
 
 
@@ -132,7 +132,7 @@ public class QuestionnaireController extends BaseController implements Questionn
     @Override
     public ResponseEntity<Void> retireQuestionnaire(String id) {
         try {
-            questionnaireService.retireQuestionnaire(id);
+            questionnaireService.retireQuestionnaire(new QualifiedId.QuestionnaireId(id));
         } catch (ServiceException se) {
             throw toStatusCodeException(se);
         }

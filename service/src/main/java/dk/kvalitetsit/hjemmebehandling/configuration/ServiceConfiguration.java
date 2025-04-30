@@ -3,18 +3,19 @@ package dk.kvalitetsit.hjemmebehandling.configuration;
 import ca.uhn.fhir.context.FhirContext;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.context.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.repository.*;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.CarePlanRepositoryAdaptor;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.ConcreteCarePlanRepository;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation.CarePlanRepositoryAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation.PatientRepositoryAdaptor;
+import dk.kvalitetsit.hjemmebehandling.fhir.repository.implementation.ConcreteCarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
-import dk.kvalitetsit.hjemmebehandling.service.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.*;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.hl7.fhir.r4.model.Organization;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,25 +71,26 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository(FhirClient fhirClient){
+    public CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository(FhirClient fhirClient) {
         var repository = new ConcreteCarePlanRepository(fhirClient);
         var mapper = new FhirMapper();
         return new CarePlanRepositoryAdaptor(repository, mapper);
     }
 
     @Bean
-    public CarePlanService getCarePlanService(
+    public ConcreteCarePlanService getCarePlanService(
             @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
             @Autowired PatientRepository<PatientModel, CarePlanStatus> patientRepository,
             @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
             @Autowired PlanDefinitionRepository<PlanDefinitionModel> plaDefinitinRepository,
             @Autowired QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
+            @Autowired OrganizationRepository<Organization> organizationRepository,
             @Autowired DateProvider dateProvider,
             @Autowired AccessValidator accessValidator,
             @Autowired DtoMapper dtoMapper,
             @Autowired CustomUserClient customUserService
     ) {
-        return new CarePlanService(
+        return new ConcreteCarePlanService(
                 dateProvider,
                 accessValidator,
                 carePlanRepository,
@@ -96,27 +98,28 @@ public class ServiceConfiguration {
                 customUserService,
                 questionnaireRepository,
                 plaDefinitinRepository,
-                questionnaireResponseRepository
+                questionnaireResponseRepository,
+                organizationRepository
         );
     }
 
     @Bean
-    public PatientService getPatientService(@Autowired ClientAdaptor client, @Autowired FhirMapper mapper, @Autowired AccessValidator accessValidator) {
-        return new PatientService(client, mapper, accessValidator);
+    public ConcretePatientService getPatientService(@Autowired PatientRepositoryAdaptor patientRepository, @Autowired AccessValidator accessValidator) {
+        return new ConcretePatientService(accessValidator, patientRepository);
     }
 
     @Bean
-    public PersonService getPersonService() {
-        return new PersonService(new RestTemplate());
+    public ConcretePersonService getPersonService() {
+        return new ConcretePersonService(new RestTemplate());
     }
 
     @Bean
-    public QuestionnaireService getQuestionnaireService(@Autowired AccessValidator accessValidator,
-                                                        @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
-                                                        @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
-                                                        @Autowired PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository
+    public ConcreteQuestionnaireService getQuestionnaireService(@Autowired AccessValidator accessValidator,
+                                                                @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+                                                                @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
+                                                                @Autowired PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository
     ) {
-        return new QuestionnaireService(accessValidator, questionnaireRepository, carePlanRepository, planDefinitionRepository);
+        return new ConcreteQuestionnaireService(accessValidator, questionnaireRepository, carePlanRepository, planDefinitionRepository);
     }
 
     @Bean
@@ -125,12 +128,16 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public QuestionnaireResponseService getQuestionnaireResponseService(@Autowired ClientAdaptor client,
-                                                                        @Autowired Comparator<QuestionnaireResponseModel> priorityComparator,
-                                                                        @Autowired AccessValidator accessValidator
+    public ConcreteQuestionnaireResponseService getQuestionnaireResponseService(@Autowired Comparator<QuestionnaireResponseModel> priorityComparator,
+                                                                                @Autowired AccessValidator accessValidator,
+                                                                                @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+                                                                                @Autowired QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
+                                                                                @Autowired PractitionerRepository<PractitionerModel> practitionerRepository,
+                                                                                @Autowired OrganizationRepository<Organization> organizationRepository
+
     ) {
         // Reverse the comporator: We want responses by descending priority.
-        return new QuestionnaireResponseService(client, priorityComparator, accessValidator);
+        return new ConcreteQuestionnaireResponseService(priorityComparator, accessValidator, questionnaireRepository, questionnaireResponseRepository, practitionerRepository, organizationRepository);
     }
 
     @Bean
@@ -163,8 +170,4 @@ public class ServiceConfiguration {
         };
     }
 
-    @Bean
-    public ValueSetService getValueSetService(@Autowired ClientAdaptor client) {
-        return new ValueSetService(client);
-    }
 }
