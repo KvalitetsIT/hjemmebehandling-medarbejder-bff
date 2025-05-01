@@ -1,7 +1,7 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation;
+package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.PractitionerRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.model.PractitionerModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;

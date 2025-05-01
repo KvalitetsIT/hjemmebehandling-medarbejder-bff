@@ -2,9 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.Client;
+import dk.kvalitetsit.hjemmebehandling.repository.Client;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;

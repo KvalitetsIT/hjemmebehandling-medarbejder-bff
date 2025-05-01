@@ -1,15 +1,14 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation;
+package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 
 
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 

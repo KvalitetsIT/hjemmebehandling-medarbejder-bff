@@ -3,8 +3,8 @@ package dk.kvalitetsit.hjemmebehandling.service.implementation;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.repository.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -97,14 +97,12 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
     private void validateReferences(PlanDefinitionModel planDefinition) throws AccessValidationException, ServiceException {
         // Validate questionnaires
         if (planDefinition.questionnaires() != null && !planDefinition.questionnaires().isEmpty()) {
-
-            var questionnaireWrappers = planDefinition.questionnaires().stream().map(qw -> qw.questionnaire().id()).toList();
-
-            planDefinitionRepository.fetch(questionnaireWrappers);
+            var ids = planDefinition.questionnaires().stream().map(qw -> qw.questionnaire().id()).toList();
+            questionnaireRepository.fetch(ids);
         }
     }
 
-    // TODO: Breakdown this method into multiple methods
+    // TODO: Breakdown this method into multiple methods it is way too long
     public void updatePlanDefinition(
             QualifiedId.PlanDefinitionId id,
             String name,
@@ -207,10 +205,11 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
             List<CarePlanModel> carePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
             var orgId = organizationRepository.getOrganizationId();
 
-            carePlans.forEach(carePlan -> {
-                var result = carePlan.questionnaires().stream().filter(qw -> removedQuestionnaireIds.contains(qw.questionnaire().id())).toList();
+            for (var carePlan : carePlans) {
+                var result = carePlan.questionnaires().stream()
+                        .filter(qw -> removedQuestionnaireIds.contains(qw.questionnaire().id())).toList();
                 carePlanRepository.update(CarePlanModel.Builder.from(carePlan).questionnaires(result).build());
-            });
+            }
         }
 
         // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
@@ -222,10 +221,8 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
             List<CarePlanModel> carePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
             var orgId = organizationRepository.getOrganizationId();
 
-            carePlans.forEach(model -> {
-
+            for (var model : carePlans){
                 List<QuestionnaireWrapperModel> updatedQuestionnaires = getQuestionnaireWrapperModels(thresholds, model, newQuestionnaireModels);
-
                 CarePlanModel updatedModel = new CarePlanModel(
                         model.id(),
                         model.organizationId(),
@@ -242,7 +239,7 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
                 );
 
                 carePlanRepository.update(updatedModel);
-            });
+            }
         }
     }
 

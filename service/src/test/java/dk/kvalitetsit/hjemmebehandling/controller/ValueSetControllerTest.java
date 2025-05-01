@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
-import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteValueSetService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ public class ValueSetControllerTest {
     private ValueSetController subject;
 
     @Mock
-    private ValueSetService valueSetService;
+    private ConcreteValueSetService valueSetService;
 
     @Mock
     private DtoMapper dtoMapper;

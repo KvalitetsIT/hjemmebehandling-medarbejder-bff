@@ -1,12 +1,11 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.implementation;
+package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.QuestionnaireResponseRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;

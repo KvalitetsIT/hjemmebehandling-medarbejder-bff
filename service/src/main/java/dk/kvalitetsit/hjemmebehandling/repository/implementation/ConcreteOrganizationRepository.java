@@ -1,8 +1,8 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.implementation;
+package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;

@@ -1,13 +1,10 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation;
+package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.PractitionerRepository;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.QuestionnaireRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.apache.commons.lang3.NotImplementedException;
-import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Questionnaire;
 
 import java.util.Collection;

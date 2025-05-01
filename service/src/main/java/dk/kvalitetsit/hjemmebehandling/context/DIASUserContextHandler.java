@@ -2,8 +2,8 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 import org.openapitools.model.UserContext;

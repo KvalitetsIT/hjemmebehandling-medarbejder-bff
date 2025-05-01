@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository;
+package dk.kvalitetsit.hjemmebehandling.repository;
 
 
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;

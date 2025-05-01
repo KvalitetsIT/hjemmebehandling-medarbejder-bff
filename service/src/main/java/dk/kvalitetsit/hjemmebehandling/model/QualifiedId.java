@@ -4,7 +4,7 @@ package dk.kvalitetsit.hjemmebehandling.model;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 
-public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId {
+public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId, QualifiedId.ValueSetId{
 
     static void validateUnqualifiedId(String unqualifiedId) throws IllegalArgumentException {
         if (!FhirUtils.isPlainId(unqualifiedId)) {
@@ -24,6 +24,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
             case QuestionnaireResponse -> new QuestionnaireResponseId(id);
             case Practitioner -> new PractitionerId(id);
             case CarePlan -> new CarePlanId(id);
+            case ValueSet -> new ValueSetId(id);
             default -> throw new IllegalStateException("Unexpected value: " + qualifier);
         };
 
@@ -155,6 +156,18 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
         @Override
         public ResourceType qualifier() {
             return ResourceType.Organization;
+        }
+    }
+
+    record ValueSetId(String id) implements QualifiedId {
+
+        public ValueSetId {
+            validateUnqualifiedId(id);
+        }
+
+        @Override
+        public ResourceType qualifier() {
+            return ResourceType.ValueSet;
         }
     }
 }

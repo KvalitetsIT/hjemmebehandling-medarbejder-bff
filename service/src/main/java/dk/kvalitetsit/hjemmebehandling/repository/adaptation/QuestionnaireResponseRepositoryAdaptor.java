@@ -1,7 +1,7 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.adaptation;
+package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.QuestionnaireResponseRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;

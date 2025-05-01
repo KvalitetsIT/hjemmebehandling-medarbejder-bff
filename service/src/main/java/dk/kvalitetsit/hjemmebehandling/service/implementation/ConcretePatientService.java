@@ -6,7 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;

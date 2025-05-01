@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository;
+package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.api.Include;
@@ -8,9 +8,6 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -45,10 +42,6 @@ public class FhirClient {
         return questionnaireResponses.stream().map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension())).filter(Objects::nonNull).distinct().toList();
     }
 
-    public FhirLookupResult lookupValueSet() throws ServiceException {
-        var organizationCriterion = dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils.buildOrganizationCriterion();
-        return lookupByCriteria(ValueSet.class, List.of(organizationCriterion));
-    }
 
     public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
         var query = client.search().forResource(resourceClass);

@@ -1,10 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -13,9 +15,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.validation.AccessValidatingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.PrimitiveType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

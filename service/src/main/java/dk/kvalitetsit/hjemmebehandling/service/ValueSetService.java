@@ -1,55 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.Client;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
-import dk.kvalitetsit.hjemmebehandling.model.ValueSetModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.ValueSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Component
-public class ValueSetService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ValueSetService.class);
-    private final ValueSetRepository<ValueSetModel> repository;
-
-    public ValueSetService(ValueSetRepository<ValueSetModel> repository) {
-        this.repository = repository;
-    }
-
-    public List<MeasurementTypeModel> getMeasurementTypes() throws ServiceException {
-        // as of now we only have one ValueSet in the system which holds the measurement type codes, so no special search handling is needed.
-        FhirLookupResult lookupResult = repository.lookupValueSet();
-
-        List<MeasurementTypeModel> result = new ArrayList<>();
-        lookupResult.getValueSets()
-                .forEach(vs -> {
-                    var list = extractMeasurementTypes(vs);
-                    result.addAll(list);
-                });
-
-        return result;
-    }
-
-    private List<MeasurementTypeModel> extractMeasurementTypes(ValueSetModel valueSet) {
-        return valueSet.getCompose().getInclude()
-                .stream()
-                .flatMap(csc -> csc.getConcept()
-                        .stream()
-                        .map(crc -> mapCodingConcept(csc.getSystem(), crc))).toList();
-
-
-    }
-
-    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
-        return new MeasurementTypeModel(system, concept.getCode(), concept.getDisplay());
-    }
-
+public interface ValueSetService {
+    List<MeasurementTypeModel> getMeasurementTypes() throws ServiceException;
 }

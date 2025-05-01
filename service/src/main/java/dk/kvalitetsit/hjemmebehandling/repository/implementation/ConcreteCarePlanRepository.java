@@ -1,14 +1,13 @@
-package dk.kvalitetsit.hjemmebehandling.fhir.repository.implementation;
+package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.api.SortOrderEnum;
 import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.CarePlanRepository;
-import dk.kvalitetsit.hjemmebehandling.fhir.repository.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.fhir.BundleBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
