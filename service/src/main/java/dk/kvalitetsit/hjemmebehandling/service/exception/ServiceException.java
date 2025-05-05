@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.service.exception;
 
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 
 public class ServiceException extends Exception {
     private final ErrorKind errorKind;

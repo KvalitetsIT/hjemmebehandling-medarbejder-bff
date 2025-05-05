@@ -1,22 +1,30 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PersonIdentifierModel {
-    private String id;
-    private String system;
+public record PersonIdentifierModel(
+        String id,
+        String system
+) {
 
-    public String getId() {
-        return id;
+    public static Builder builder(){
+        return new Builder();
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public static class Builder{
+        private String id;
+        private String system;
 
-    public String getSystem() {
-        return system;
-    }
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
 
-    public void setSystem(String system) {
-        this.system = system;
+        public Builder system(String system) {
+            this.system = system;
+            return this;
+        }
+
+        public PersonIdentifierModel build(){
+            return new PersonIdentifierModel(id, system);
+        }
     }
 }

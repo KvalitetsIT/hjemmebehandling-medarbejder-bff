@@ -21,6 +21,7 @@ public class BundleBuilder {
     }
 
     public Bundle buildUpdateCarePlanBundle(CarePlan carePlan, Patient patient) {
+
         // Build the CarePlan entry.
         var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.PUT);
 

@@ -5,9 +5,10 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -40,7 +41,7 @@ public class QuestionnaireControllerTest {
     private QuestionnaireController subject;
 
     @Mock
-    private QuestionnaireService questionnaireService;
+    private ConcreteQuestionnaireService questionnaireService;
 
     @Mock
     private DtoMapper dtoMapper;
@@ -50,8 +51,8 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaire_questionnairesPresent_200() throws Exception {
-        QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel1 = QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel2 = QuestionnaireModel.builder().build();
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
 
@@ -69,9 +70,9 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void getQuestionnaires_sorting() throws ServiceException {
-        QuestionnaireModel questionnaireModel1 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel2 = new QuestionnaireModel();
-        QuestionnaireModel questionnaireModel3 = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel1 =  QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel2 =  QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaireModel3 =  QuestionnaireModel.builder().build();
         QuestionnaireDto questionnaireDto1 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto2 = new QuestionnaireDto();
         QuestionnaireDto questionnaireDto3 = new QuestionnaireDto();
@@ -113,7 +114,7 @@ public class QuestionnaireControllerTest {
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
-        Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(new QuestionnaireModel());
+        Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(QuestionnaireModel.builder().build());
 
         ResponseEntity<Void> result = subject.createQuestionnaire(request);
 
@@ -127,9 +128,9 @@ public class QuestionnaireControllerTest {
         questionnaireDto.setQuestions(List.of(buildQuestionDto()));
         request.setQuestionnaire(questionnaireDto);
 
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
+        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
-        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn("questionnaire-1");
+        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(new QualifiedId.QuestionnaireId("questionnaire-1"));
 
         String location = "http://localhost:8080/api/v1/questionnaire/questionnaire-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("questionnaire-1")).thenReturn(URI.create(location));
@@ -152,37 +153,37 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void patchQuestionnaire_nullQuestions_throwsBadRequestException() throws Exception {
-        String id = "questionnaire-1";
+        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(null);
 
-        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id.unqualified(), request));
     }
 
     @Test
     public void patchQuestionnaire_emptyQuestions_throwsBadRequestException() throws Exception {
-        String id = "questionnaire-1";
+        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(List.of());
 
-        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id, request));
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaire(id.unqualified(), request));
     }
 
     @Test
     public void patchQuestionnaire_accessViolation() throws Exception {
-        String id = "questionnaire-1";
-        String qualifyId = FhirUtils.qualifyId(id, ResourceType.Questionnaire);
+        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
+
 
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         QuestionDto questionDto = buildQuestionDto();
         request.setQuestions(List.of(questionDto));
 
-        QuestionModel questionModel = new QuestionModel();
-        Mockito.when(dtoMapper.mapQuestionDto(questionDto)).thenReturn(questionModel);
+        QuestionModel questionModel = QuestionModel.builder().build();
+        Mockito.when(dtoMapper.mapQuestion(questionDto)).thenReturn(questionModel);
 
-        Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(qualifyId, null, null, null, List.of(questionModel), null);
+        Mockito.doThrow(AccessValidationException.class).when(questionnaireService).updateQuestionnaire(id, null, null, null, List.of(questionModel), null);
 
-        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id, request));
+        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaire(id.unqualified(), request));
     }
 
 

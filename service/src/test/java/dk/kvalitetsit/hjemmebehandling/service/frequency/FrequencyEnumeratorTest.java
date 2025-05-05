@@ -186,12 +186,7 @@ public class FrequencyEnumeratorTest {
     }
 
     private static FrequencyModel buildFrequency(List<Weekday> weekdays, LocalTime timeOfDay) {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        frequencyModel.setWeekdays(weekdays);
-        frequencyModel.setTimeOfDay(timeOfDay);
-
-        return frequencyModel;
+        return new FrequencyModel(weekdays, timeOfDay);
     }
 
     @Test
@@ -224,7 +219,7 @@ public class FrequencyEnumeratorTest {
         // TODO: FIX "assert" below. It periodically fails
         //assertNotEquals(winterTimeNext.atZone(ZoneOffset.UTC).getHour(), daylightSavingTimeNext.atZone(ZoneOffset.UTC).getHour());
         assertEquals(winterTimeNext.atZone(zoneId).getHour(), daylightSavingTimeNext.atZone(zoneId).getHour());
-        assertEquals(fm.getTimeOfDay().getHour(), winterTimeNext.atZone(zoneId).getHour());
+        assertEquals(fm.timeOfDay().getHour(), winterTimeNext.atZone(zoneId).getHour());
 
     }
 

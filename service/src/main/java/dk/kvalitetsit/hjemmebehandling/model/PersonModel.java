@@ -1,78 +1,71 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PersonModel {
-    private String resourceType;
-    private PersonIdentifierModel identifier;
-    private boolean active;
-    private PersonNameModel name;
-    private String gender;
-    private String birthDate;
-    private boolean deceasedBoolean;
-    private PersonAddressModel address;
-
-    public String getResourceType() {
-        return resourceType;
+public record PersonModel(
+        String resourceType,
+        PersonIdentifierModel identifier,
+        Boolean active,
+        PersonNameModel name,
+        String gender,
+        String birthDate,
+        Boolean deceasedBoolean,
+        PersonAddressModel address
+) {
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public void setResourceType(String resourceType) {
-        this.resourceType = resourceType;
+    public static class Builder {
+        private String resourceType;
+        private PersonIdentifierModel identifier;
+        private Boolean active;
+        private PersonNameModel name;
+        private String gender;
+        private String birthDate;
+        private Boolean deceasedBoolean;
+        private PersonAddressModel address;
+
+        public Builder resourceType(String resourceType) {
+            this.resourceType = resourceType;
+            return this;
+        }
+
+        public Builder identifier(PersonIdentifierModel identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder active(Boolean active) {
+            this.active = active;
+            return this;
+        }
+
+        public Builder name(PersonNameModel name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder gender(String gender) {
+            this.gender = gender;
+            return this;
+        }
+
+        public Builder birthDate(String birthDate) {
+            this.birthDate = birthDate;
+            return this;
+        }
+
+        public Builder deceasedBoolean(Boolean deceasedBoolean) {
+            this.deceasedBoolean = deceasedBoolean;
+            return this;
+        }
+
+        public Builder address(PersonAddressModel address) {
+            this.address = address;
+            return this;
+        }
+
+        public PersonModel build() {
+            return new PersonModel(resourceType, identifier, active, name, gender, birthDate, deceasedBoolean, address);
+        }
     }
-
-    public PersonIdentifierModel getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(PersonIdentifierModel identifier) {
-        this.identifier = identifier;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public PersonNameModel getName() {
-        return name;
-    }
-
-    public void setName(PersonNameModel name) {
-        this.name = name;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(String birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public boolean isDeceasedBoolean() {
-        return deceasedBoolean;
-    }
-
-    public void setDeceasedBoolean(boolean deceasedBoolean) {
-        this.deceasedBoolean = deceasedBoolean;
-    }
-
-    public PersonAddressModel getAddress() {
-        return address;
-    }
-
-    public void setAddress(PersonAddressModel address) {
-        this.address = address;
-    }
-
-
 }

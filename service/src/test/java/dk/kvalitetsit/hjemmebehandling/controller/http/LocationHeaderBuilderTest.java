@@ -20,7 +20,6 @@ public class LocationHeaderBuilderTest {
 
     @Test
     public void buildLocationHeader_appendsToRequestUri() {
-
         String id = "123";
 
         int port = 8787;
@@ -31,9 +30,7 @@ public class LocationHeaderBuilderTest {
         request.setRequestURI(requestUri);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-
         URI result = subject.buildLocationHeader(id);
-
 
         URI expected = URI.create("http://localhost:" + port + requestUri + "/" + id);
         assertEquals(expected, result);

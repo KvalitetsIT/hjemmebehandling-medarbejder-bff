@@ -1,13 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -38,7 +39,7 @@ public class PlanDefinitionControllerTest {
     private PlanDefinitionController subject;
 
     @Mock
-    private PlanDefinitionService planDefinitionService;
+    private ConcretePlanDefinitionService planDefinitionService;
 
     @Mock
     private DtoMapper dtoMapper;
@@ -48,8 +49,8 @@ public class PlanDefinitionControllerTest {
 
     @Test
     public void getPlanDefinitions_planDefinitionsPresent_200() throws Exception {
-        PlanDefinitionModel planDefinitionModel1 = new PlanDefinitionModel();
-        PlanDefinitionModel planDefinitionModel2 = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel1 = PlanDefinitionModel.builder().build();
+        PlanDefinitionModel planDefinitionModel2 = PlanDefinitionModel.builder().build();
         PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto2 = new PlanDefinitionDto();
 
@@ -89,9 +90,9 @@ public class PlanDefinitionControllerTest {
 
     @Test
     public void getPlandefinitions_sorting() throws ServiceException {
-        PlanDefinitionModel planDefinitionModel1 = new PlanDefinitionModel();
-        PlanDefinitionModel planDefinitionModel2 = new PlanDefinitionModel();
-        PlanDefinitionModel planDefinitionModel3 = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel1 = PlanDefinitionModel.builder().build();
+        PlanDefinitionModel planDefinitionModel2 = PlanDefinitionModel.builder().build();
+        PlanDefinitionModel planDefinitionModel3 = PlanDefinitionModel.builder().build();
         PlanDefinitionDto planDefinitionDto1 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto2 = new PlanDefinitionDto();
         PlanDefinitionDto planDefinitionDto3 = new PlanDefinitionDto();
@@ -118,7 +119,7 @@ public class PlanDefinitionControllerTest {
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
-        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(new PlanDefinitionModel());
+        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(PlanDefinitionModel.builder().build());
 
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 
@@ -131,9 +132,9 @@ public class PlanDefinitionControllerTest {
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
-        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn("plandefinition-1");
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(new QualifiedId.PlanDefinitionId("plandefinition-1"));
 
         String location = "http://localhost:8080/api/v1/plandefinition/plandefinition-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("plandefinition-1")).thenReturn(URI.create(location));
@@ -149,7 +150,7 @@ public class PlanDefinitionControllerTest {
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+        PlanDefinitionModel planDefinitionModel =  PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
 
         Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenThrow(AccessValidationException.class);

@@ -36,8 +36,8 @@ public class FrequencyEnumerator {
 
     public FrequencyEnumerator(FrequencyModel frequency) {
         //currentPointInTime = seed;
-        this.deadlineTime = frequency.getTimeOfDay();
-        this.weekDays = frequency.getWeekdays().stream().map(d -> toDayOfWeek(d)).sorted(Comparator.naturalOrder()).toList();
+        this.deadlineTime = frequency.timeOfDay();
+        this.weekDays = frequency.weekdays().stream().map(this::toDayOfWeek).sorted(Comparator.naturalOrder()).toList();
     }
 
     public Instant getSatisfiedUntilForFrequencyChange(Instant pointInTime) {

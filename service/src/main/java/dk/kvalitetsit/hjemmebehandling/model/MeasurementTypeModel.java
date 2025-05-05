@@ -1,31 +1,32 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class MeasurementTypeModel {
-    private String system;
-    private String code;
-    private String display;
-
-    public String getSystem() {
-        return system;
+public record MeasurementTypeModel(
+        String system,
+        String code,
+        String display
+        ) {
+    public static MeasurementTypeModel.Builder builder() {
+        return new Builder();
     }
 
-    public void setSystem(String system) {
-        this.system = system;
-    }
+    public static class Builder {
+        private String system;
+        private String code;
+        private String display;
 
-    public String getCode() {
-        return code;
-    }
+        public Builder system(String system) {
+            this.system = system;
+            return this;
+        }
+        public Builder code(String code) {
+            this.code = code;return this;
+        }
+        public Builder display(String display) {
+            this.display = display;return this;
+        }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getDisplay() {
-        return display;
-    }
-
-    public void setDisplay(String display) {
-        this.display = display;
+        public MeasurementTypeModel build() {
+            return new MeasurementTypeModel(this.system, this.code, this.display);
+        }
     }
 }

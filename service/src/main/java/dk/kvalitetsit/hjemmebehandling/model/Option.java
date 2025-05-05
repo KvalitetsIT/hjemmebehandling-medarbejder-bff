@@ -1,31 +1,29 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class Option {
-    private String option;
-    private String comment;
-
-    public Option() {
+public record Option(
+         String option,
+         String comment
+) {
+    public static Option.Builder builder() {
+        return new Option.Builder();
     }
 
-    public Option(String option, String comment) {
-        this.option = option;
-        this.comment = comment;
-    }
+    public static class Builder {
+        private String option;
+        private String comment;
 
-    public String getOption() {
-        return option;
-    }
+        public Builder option(String option) {
+            this.option = option;
+            return this;
+        }
 
-    public void setOption(String option) {
-        this.option = option;
-    }
+        public Builder comment(String comment) {
+            this.comment = comment;
+            return this;
+        }
 
-    public String getComment() {
-        return comment;
+        public Option build(){
+            return new Option(this.option, this.comment);
+        }
     }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
 }

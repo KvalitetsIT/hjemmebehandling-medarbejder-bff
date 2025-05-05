@@ -1,11 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
@@ -27,11 +28,11 @@ import java.util.Optional;
 public class QuestionnaireResponseController extends BaseController implements QuestionnaireResponseApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
-    private final QuestionnaireResponseService questionnaireResponseService;
+    private final ConcreteQuestionnaireResponseService questionnaireResponseService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
 
-    public QuestionnaireResponseController(QuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public QuestionnaireResponseController(ConcreteQuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
         this.questionnaireResponseService = questionnaireResponseService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
@@ -52,17 +53,20 @@ public class QuestionnaireResponseController extends BaseController implements Q
         try {
             Pagination pagination = new Pagination(pageNumber, pageSize);
 
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds);
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(
+                    new QualifiedId.CarePlanId(carePlanId),
+                    questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList()
+            );
 
-            auditLoggingService.log("GET /v1/questionnaireresponse/" + carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).toList());
+            auditLoggingService.log("GET /v1/questionnaireresponse/" + carePlanId, questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
 
             var dtos = questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList();
 
             var response = new PaginatedListQuestionnaireResponseDto();
 
             response.setList(dtos);
-            response.setLimit(Optional.of(pagination.getLimit()));
-            response.setOffset(Optional.of(pagination.getOffset()));
+            response.setLimit(Optional.of(pagination.limit()));
+            response.setOffset(Optional.of(pagination.offset()));
             response.setTotal(Optional.of(dtos.size()));
 
             return ResponseEntity.ok(response);
@@ -79,7 +83,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
         }
         try {
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(status.stream().map(dtoMapper::mapExaminationStatusDto).toList(), new Pagination(pageNumber, pageSize));
-            auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::getPatient).toList());
+            auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
             return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList());
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not look up questionnaire responses by status", e);
@@ -91,12 +95,23 @@ public class QuestionnaireResponseController extends BaseController implements Q
     @Override
     public ResponseEntity<Void> patchQuestionnaireResponse(String id, PartialUpdateQuestionnaireResponseRequest partialUpdateQuestionnaireResponseRequest) {
         try {
-            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(id, dtoMapper.mapExaminationStatusDto(partialUpdateQuestionnaireResponseRequest.getExaminationStatus().orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE))));
-            auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.getPatient());
+            var examinationStatus = partialUpdateQuestionnaireResponseRequest
+                    .getExaminationStatus()
+                    .map(dtoMapper::mapExaminationStatusDto)
+                    .orElseThrow(() -> new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE));
+
+            QuestionnaireResponseModel questionnaireResponse = questionnaireResponseService.updateExaminationStatus(
+                    new QualifiedId.QuestionnaireResponseId(id),
+                    examinationStatus
+            );
+
+            auditLoggingService.log("PATCH /v1/questionnaireresponse/" + id, questionnaireResponse.patient());
+
+            return ResponseEntity.ok().build();
+
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not update questionnaire response", e);
             throw toStatusCodeException(e);
         }
-        return ResponseEntity.ok().build();
     }
 }

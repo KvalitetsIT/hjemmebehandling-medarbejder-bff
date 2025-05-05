@@ -4,38 +4,39 @@ import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Objects;
 
-public class FrequencyModel {
-    private List<Weekday> weekdays;
-    private LocalTime timeOfDay;
 
-    public List<Weekday> getWeekdays() {
-        return weekdays;
+public record FrequencyModel(
+        List<Weekday> weekdays,
+        LocalTime timeOfDay
+) {
+    public FrequencyModel {
+        // Ensure weekdays is never null
+        weekdays = (weekdays != null) ? List.copyOf(weekdays) : List.of();
     }
 
-    public void setWeekdays(List<Weekday> weekdays) {
-        this.weekdays = weekdays;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public LocalTime getTimeOfDay() {
-        return timeOfDay;
+    public static class Builder {
+        private List<Weekday> weekdays;
+        private LocalTime timeOfDay;
+
+        public Builder weekdays(List<Weekday> weekdays) {
+            this.weekdays = (weekdays != null) ? List.copyOf(weekdays) : List.of();
+            return this;
+        }
+
+        public Builder timeOfDay(LocalTime timeOfDay) {
+            this.timeOfDay = timeOfDay;
+            return this;
+        }
+
+        public FrequencyModel build() {
+            return new FrequencyModel(weekdays, timeOfDay);
+        }
     }
 
-    public void setTimeOfDay(LocalTime timeOfDay) {
-        this.timeOfDay = timeOfDay;
-    }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FrequencyModel that = (FrequencyModel) o;
-        return weekdays.equals(that.weekdays) && timeOfDay.equals(that.timeOfDay);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(weekdays, timeOfDay);
-    }
 }
