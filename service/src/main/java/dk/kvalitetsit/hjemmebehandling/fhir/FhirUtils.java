@@ -33,10 +33,10 @@ public class FhirUtils {
     }
 
     public static ICriterion<?> buildOrganizationCriterion(QualifiedId.OrganizationId organizationId) throws ServiceException {
-        return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId.unQualifiedId());
+        return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId.unqualified());
     }
 
     public static ICriterion<ReferenceClientParam> buildPlanDefinitionCriterion(QualifiedId.PlanDefinitionId plandefinitionId) {
-        return CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId.id());
+        return CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId.unqualified());
     }
 }

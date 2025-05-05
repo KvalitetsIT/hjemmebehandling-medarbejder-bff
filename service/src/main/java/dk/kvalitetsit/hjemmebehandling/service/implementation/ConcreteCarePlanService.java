@@ -257,9 +257,9 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         // Map and sort the resources
 
         return careplans.stream()
-                .sorted((careplan1, careplan2) -> {
-                    String name1 = String.join(" ", careplan1.patient().name().given().getFirst(), careplan1.patient().name().family());
-                    String name2 = String.join(" ", careplan2.patient().name().given().getFirst(), careplan2.patient().name().family());
+                .sorted((carePlan1, carePlan2) -> {
+                    String name1 = String.join(" ", carePlan1.patient().name().given().getFirst(), carePlan1.patient().name().family());
+                    String name2 = String.join(" ", carePlan2.patient().name().given().getFirst(), carePlan2.patient().name().family());
                     return name1.compareTo(name2);
                 })
                 .toList();
@@ -267,10 +267,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
 
     public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
         Instant pointInTime = dateProvider.now();
-
         Optional<PatientModel> patient = patientRepository.fetch(cpr);
-
-
         List<CarePlanModel> lookupResult = carePlanRepository.fetch(patient.get().id(), pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
         if (lookupResult.isEmpty()) {
             return List.of();
@@ -329,7 +326,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
     public CarePlanModel updateCarePlan(QualifiedId.CarePlanId carePlanId,
                                         List<QualifiedId.PlanDefinitionId> planDefinitionIds,
                                         List<QualifiedId.QuestionnaireId> questionnaireIds,
-                                        Map<String, FrequencyModel> frequencies,
+                                        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies,
                                         PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         List<PlanDefinitionModel> planDefinitionResult = planDefinitionRepository.fetch(planDefinitionIds);
@@ -402,8 +399,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         );
 
 
-        var orgId = organizationRepository.getOrganizationId();
-        // Update carePlan
 
         carePlan = updateCarePlanModel(carePlan, questionnaireIds, frequencies, planDefinitionResult);
 
@@ -429,7 +424,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         return carePlan; // for auditlogging
     }
 
-    private CarePlanModel updateCarePlanModel(CarePlanModel carePlanModel, List<QualifiedId.QuestionnaireId> questionnaireIds, Map<String, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
+    private CarePlanModel updateCarePlanModel(CarePlanModel carePlanModel, List<QualifiedId.QuestionnaireId> questionnaireIds, Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
         var updatedQuestionnaires = planDefinitions.stream()
                 .flatMap(pd -> pd.questionnaires().stream())
                 .toList();
@@ -480,7 +475,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
     }
 
     public TimeType getDefaultDeadlineTime() throws ServiceException {
-        Organization organization = organizationRepository.getCurrentUsersOrganization();
+        Organization organization = organizationRepository.fetchCurrentUsersOrganization();
         return ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension());
     }
 
@@ -508,7 +503,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
     private List<QuestionnaireWrapperModel> buildQuestionnaireWrapperModels(
             CarePlanModel carePlan,
             List<QuestionnaireWrapperModel> updatedQuestionnaires,
-            Map<String, FrequencyModel> updatedQuestionnaireIdFrequencies) {
+            Map<QualifiedId.QuestionnaireId, FrequencyModel> updatedQuestionnaireIdFrequencies) {
 
         List<QuestionnaireWrapperModel> currentQuestionnaires = carePlan.questionnaires();
 
@@ -517,7 +512,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                     .filter(q -> q.questionnaire().id().equals(wrapper.questionnaire().id()))
                     .findFirst();
 
-            FrequencyModel updatedFrequency = updatedQuestionnaireIdFrequencies.get(wrapper.questionnaire().id().toString());
+            FrequencyModel updatedFrequency = updatedQuestionnaireIdFrequencies.get(wrapper.questionnaire().id());
             FrequencyEnumerator frequencyEnumerator = new FrequencyEnumerator(updatedFrequency);
 
             var builder = QuestionnaireWrapperModel.Builder

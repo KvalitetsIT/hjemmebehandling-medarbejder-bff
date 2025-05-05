@@ -2,19 +2,28 @@ package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
-import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
+import org.hl7.fhir.r4.model.Questionnaire;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A concrete implementation of the {@link QuestionnaireResponseRepository} interface for managing
+ * {@link QuestionnaireResponse} entities.
+ * <p>
+ * This class provides the underlying logic to retrieve, store, and manipulate organization-related data
+ * within the domain, serving as the bridge between the domain model and data source.
+ */
 public class ConcreteQuestionnaireResponseRepository implements QuestionnaireResponseRepository<QuestionnaireResponse> {
 
     private final FhirClient client;
@@ -35,8 +44,8 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
 
     @Override
     public Optional<QuestionnaireResponse> fetch(QualifiedId.QuestionnaireResponseId id) throws ServiceException {
-        var idCriterion = QuestionnaireResponse.RES_ID.exactly().code(id.id());
-        var result =  lookupQuestionnaireResponseByCriteria(List.of(idCriterion));
+        var idCriterion = QuestionnaireResponse.RES_ID.exactly().code(id.unqualified());
+        var result = lookupQuestionnaireResponseByCriteria(List.of(idCriterion));
         if (result.size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", org.hl7.fhir.r4.model.QuestionnaireResponse.class));
         }
@@ -54,9 +63,9 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
     }
 
 
-    public List<QuestionnaireResponse> fetchByStatus(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) {
-        var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds.stream().map(QualifiedId::id).toList());
-        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId.id());
+    public List<QuestionnaireResponse> fetchByStatus(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
+        var questionnaireCriterion = QuestionnaireResponse.QUESTIONNAIRE.hasAnyOfIds(questionnaireIds.stream().map(QualifiedId::unqualified).toList());
+        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId.unqualified());
         return lookupQuestionnaireResponseByCriteria(List.of(questionnaireCriterion, basedOnCriterion));
     }
 
@@ -68,7 +77,8 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
     @Override
     public List<QuestionnaireResponse> fetchByStatus(List<ExaminationStatus> statuses) throws ServiceException {
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(statuses.stream().map(Enum::toString).toArray(String[]::new));
-        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion));
+
+        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion));
     }
 
     @Override
@@ -78,9 +88,8 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
 
     public List<QuestionnaireResponse> fetchByStatus(List<ExaminationStatus> statuses, QualifiedId.CarePlanId carePlanId) throws ServiceException {
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(statuses.stream().map(Enum::toString).toArray(String[]::new));
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
-        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId.id());
-        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, organizationCriterion, basedOnCriterion));
+        var basedOnCriterion = QuestionnaireResponse.BASED_ON.hasId(carePlanId.unqualified());
+        return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion, basedOnCriterion));
     }
 
     @Override
@@ -88,14 +97,14 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
         return fetchByStatus(List.of(status));
     }
 
-    private List<QuestionnaireResponse> lookupQuestionnaireResponseByCriteria(List<ICriterion<?>> criteria) {
+    private List<QuestionnaireResponse> lookupQuestionnaireResponseByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
         return client.lookupByCriteria(
                 QuestionnaireResponse.class,
                 criteria,
                 List.of(QuestionnaireResponse.INCLUDE_BASED_ON,
                         QuestionnaireResponse.INCLUDE_QUESTIONNAIRE,
-                        QuestionnaireResponse.INCLUDE_SUBJECT)
-        ).getQuestionnaireResponses();
+                        QuestionnaireResponse.INCLUDE_SUBJECT
+                )).getQuestionnaireResponses();
     }
 
 

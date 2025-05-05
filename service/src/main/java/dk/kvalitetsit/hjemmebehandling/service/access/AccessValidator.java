@@ -4,22 +4,24 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class AccessValidator {
     private final UserContextProvider userContextProvider;
+    private final OrganizationRepository<Organization> organizationRepository;
 
-    public AccessValidator(UserContextProvider userContextProvider, FhirClient fhirClient) {
+    public AccessValidator(UserContextProvider userContextProvider, OrganizationRepository<Organization> organizationRepository) {
         this.userContextProvider = userContextProvider;
-        this.fhirClient = fhirClient;
+        this.organizationRepository = organizationRepository;
     }
-
 
     // TODO: Might return the resources if valid otherwise it throws the exception
     public void validateAccess(BaseModel resource) throws AccessValidationException, ServiceException {
@@ -32,7 +34,7 @@ public class AccessValidator {
         QualifiedId.OrganizationId userOrganizationId = getOrganizationIdForUser();
 
         for (var resource : resources) {
-            QualifiedId.OrganizationId resourceOrganizationId = getOrganizationIdForResource(resource);
+            QualifiedId.OrganizationId resourceOrganizationId = resource.organizationId();
 
             if (!userOrganizationId.equals(resourceOrganizationId)) {
                 throw new AccessValidationException(String.format(
@@ -46,20 +48,13 @@ public class AccessValidator {
     }
 
     private QualifiedId.OrganizationId getOrganizationIdForUser() throws AccessValidationException, ServiceException {
-        var context = userContextProvider.getUserContext();
-        if (context == null) {
-            throw new IllegalStateException("UserContext was not initialized!");
-        }
-        var SOR = context.getOrgId().orElseThrow(() -> new AccessValidationException("No SOR code was present"));
+        var context = Optional.ofNullable(userContextProvider.getUserContext()).orElseThrow(() -> new IllegalStateException("UserContext was not initialized!"));
 
-        Organization organization = fhirClient.lookupOrganizationBySorCode(SOR)
-                .orElseThrow(() -> new AccessValidationException(
-                        String.format("No organization was present for sorCode %s!", context.getOrgId())));
+        var SOR = context.orgId().orElseThrow(() -> new AccessValidationException("No SOR code was present"));
+
+        Organization organization = organizationRepository.lookupOrganizationBySorCode(SOR)
+                .orElseThrow(() -> new AccessValidationException(String.format("No organization was present for sorCode %s!", context.orgId())));
 
         return new QualifiedId.OrganizationId(organization.getIdElement().toUnqualifiedVersionless().getValue());
-    }
-
-    private QualifiedId.OrganizationId getOrganizationIdForResource(BaseModel resource) {
-        return  resource.organizationId();
     }
 }

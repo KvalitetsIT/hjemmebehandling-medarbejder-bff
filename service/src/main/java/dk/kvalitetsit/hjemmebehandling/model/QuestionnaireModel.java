@@ -8,7 +8,7 @@ import java.util.List;
 
 public record QuestionnaireModel(
         QualifiedId.QuestionnaireId id,
-        String organizationId,
+        QualifiedId.OrganizationId organizationId,
         String title,
         String description,
         QuestionnaireStatus status,
@@ -23,14 +23,12 @@ public record QuestionnaireModel(
         questions = questions != null ? questions : List.of();
     }
 
-
-
     public static Builder builder() {
         return new Builder();
     }
 
     @Override
-    public String organizationId() {
+    public QualifiedId.OrganizationId organizationId() {
         return this.organizationId;
     }
 
@@ -57,11 +55,11 @@ public record QuestionnaireModel(
             );
         }
 
-        public void organizationId(String organizationId) {
+        public void organizationId(QualifiedId.OrganizationId organizationId) {
             this.organizationId = organizationId;
         }
 
-        private String organizationId;
+        private QualifiedId.OrganizationId organizationId;
 
         public Builder(QualifiedId.QuestionnaireId id, String title, String description, QuestionnaireStatus status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
             this.id = id;

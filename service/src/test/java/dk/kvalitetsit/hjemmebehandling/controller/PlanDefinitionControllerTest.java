@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
@@ -133,7 +134,7 @@ public class PlanDefinitionControllerTest {
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
-        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn("plandefinition-1");
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(new QualifiedId.PlanDefinitionId("plandefinition-1"));
 
         String location = "http://localhost:8080/api/v1/plandefinition/plandefinition-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("plandefinition-1")).thenReturn(URI.create(location));

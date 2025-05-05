@@ -14,7 +14,6 @@ import java.util.Optional;
 
 public class ValidatedCarePlanService implements CarePlanService {
 
-
     private final CarePlanService service;
     private final AccessValidatingService accessValidatingService;
 

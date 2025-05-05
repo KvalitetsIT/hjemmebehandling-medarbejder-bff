@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DtoMapperTest {
-    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
-    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
-    private static final String PATIENT_ID_1 = "Patient/patient-1";
-    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
-    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
-    private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private static final QualifiedId.CarePlanId CAREPLAN_ID_1 = new QualifiedId.CarePlanId("careplan-1");
+    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("organization-1");
+    private static final QualifiedId.PatientId PATIENT_ID_1 = new QualifiedId.PatientId("patient-1");
+    private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_1 = new QualifiedId.PlanDefinitionId("plandefinition-1");
+    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
+    private static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRERESPONSE_ID_1 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
     private final DtoMapper subject = new DtoMapper();
     QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
 
@@ -40,7 +40,7 @@ public class DtoMapperTest {
 
         PlanDefinitionDto result = subject.mapPlanDefinitionModel(planDefinitionModel);
 
-        assertEquals(planDefinitionModel.id().toString(), result.getId().get());
+        assertEquals(planDefinitionModel.id().unqualified(), result.getId().get());
     }
 
     @Test
@@ -49,7 +49,7 @@ public class DtoMapperTest {
 
         CarePlanModel result = subject.mapCarePlanDto(carePlanDto);
 
-        assertEquals(carePlanDto.getId().get(), result.id().toString());
+        assertEquals(carePlanDto.getId().get(), result.id().unqualified());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class DtoMapperTest {
 
         CarePlanDto result = subject.mapCarePlanModel(carePlanModel);
 
-        assertEquals(Optional.ofNullable(carePlanModel.id().toString()), result.getId());
+        assertEquals(Optional.ofNullable(carePlanModel.id().unqualified()), result.getId());
     }
 
     @Test
@@ -86,15 +86,13 @@ public class DtoMapperTest {
         PersonDto result = subject.mapPersonModel(personModel);
 
         assertEquals(personModel.identifier().id(), result.getCpr().get());
-        assertEquals("Arthur A.", result.getGivenName().get());
+        assertEquals("Arthur A.", result.getName().get().getGiven().get());
     }
 
     @Test
     public void mapQuestionnaireResponseModel_success() {
         QuestionnaireResponseModel questionnaireResponseModel = buildQuestionnaireResponseModel();
-
         QuestionnaireResponseDto result = subject.mapQuestionnaireResponseModel(questionnaireResponseModel);
-
         assertEquals(questionnaireResponseModel.id().toString(), result.getId());
     }
 
@@ -107,10 +105,7 @@ public class DtoMapperTest {
 
     @Test
     public void mapQuestionnaireModel_enableWhen() {
-
         QuestionModel questionModel = buildQuestionModel(List.of(new QuestionModel.EnableWhen(null, null)));
-
-
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(List.of(questionModel));
 
         QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
@@ -219,7 +214,7 @@ public class DtoMapperTest {
     private CarePlanDto buildCarePlanDto() {
         CarePlanDto carePlanDto = new CarePlanDto();
 
-        carePlanDto.setId(Optional.of(CAREPLAN_ID_1));
+        carePlanDto.setId(Optional.of(CAREPLAN_ID_1.unqualified()));
         carePlanDto.setStatus(Optional.of("ACTIVE"));
         carePlanDto.setPatientDto(Optional.of(buildPatientDto()));
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
@@ -230,7 +225,7 @@ public class DtoMapperTest {
 
     private CarePlanModel buildCarePlanModel() {
         return CarePlanModel.builder()
-                .id(new QualifiedId(CAREPLAN_ID_1))
+                .id(CAREPLAN_ID_1)
                 .status(CarePlanStatus.ACTIVE)
                 .patient(buildPatientModel())
                 .questionnaires(List.of(buildQuestionnaireWrapperModel()))
@@ -267,7 +262,7 @@ public class DtoMapperTest {
 
     private PatientModel buildPatientModel() {
         return PatientModel.builder()
-                .cpr("0101010101")
+                .cpr(new CPR("0101010101"))
                 .contactDetails(buildContactDetailsModel())
                 .primaryContact(PrimaryContactModel.builder()
                         .contactDetails(buildContactDetailsModel())
@@ -297,14 +292,14 @@ public class DtoMapperTest {
 
     private PlanDefinitionDto buildPlanDefinitionDto() {
         return new PlanDefinitionDto()
-                .id(PLANDEFINITION_ID_1)
-                .status("ACTIVE")
+                .id(PLANDEFINITION_ID_1.unqualified())
+                .status(PlanDefinitionStatusDto.ACTIVE)
                 .questionnaires(List.of(buildQuestionnaireWrapperDto()));
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
         return PlanDefinitionModel.builder()
-                .id(new QualifiedId(PLANDEFINITION_ID_1))
+                .id(PLANDEFINITION_ID_1)
                 .status(PlanDefinitionStatus.ACTIVE)
                 .questionnaires(List.of(buildQuestionnaireWrapperModel()))
                 .build();
@@ -340,7 +335,7 @@ public class DtoMapperTest {
 
     private QuestionnaireModel buildQuestionnaireModel() {
         return QuestionnaireModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
                 .status(QuestionnaireStatus.DRAFT)
                 .build();
@@ -348,7 +343,7 @@ public class DtoMapperTest {
 
     private QuestionnaireModel buildQuestionnaireModel(QuestionModel callToAction) {
         return QuestionnaireModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
                 .status(QuestionnaireStatus.DRAFT)
                 .callToAction(callToAction)
@@ -358,7 +353,7 @@ public class DtoMapperTest {
 
     private QuestionnaireModel buildQuestionnaireModel(List<QuestionModel> questions) {
         return QuestionnaireModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
                 .status(QuestionnaireStatus.DRAFT)
                 .questions(questions)
@@ -368,9 +363,9 @@ public class DtoMapperTest {
 
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
         return QuestionnaireResponseModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1))
-                .questionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1))
-                .carePlanId(new QualifiedId(CAREPLAN_ID_1))
+                .id(QUESTIONNAIRERESPONSE_ID_1)
+                .questionnaireId(QUESTIONNAIRE_ID_1)
+                .carePlanId(CAREPLAN_ID_1)
                 .questionAnswerPairs(List.of(buildQuestionAnswerPairModel()))
                 .patient(buildPatientModel())
                 .build();

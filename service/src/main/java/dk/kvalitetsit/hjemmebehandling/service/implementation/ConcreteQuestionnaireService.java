@@ -43,7 +43,7 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
     }
 
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
-        return questionnaireRepository.lookupQuestionnairesByStatus(statusesToInclude);
+        return questionnaireRepository.fetch(statusesToInclude);
     }
 
     public QualifiedId.QuestionnaireId createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException {
@@ -161,7 +161,7 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
             throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", id), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
 
-        var activeCarePlansWithQuestionnaire = careplanRepository.fetchActiveCarePlansWithQuestionnaire(id);
+        var activeCarePlansWithQuestionnaire = careplanRepository.fetchActiveCarePlansByQuestionnaireId(id);
         if (!activeCarePlansWithQuestionnaire.isEmpty()) {
             throw new ServiceException(String.format("Questionnaire with id %s if used by active careplans!", id), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN);
         }

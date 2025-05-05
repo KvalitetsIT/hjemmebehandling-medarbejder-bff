@@ -1,17 +1,18 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,38 +46,37 @@ public class QuestionnaireResponseControllerTest {
     @Mock
     private DtoMapper dtoMapper;
 
+    private static final QualifiedId.CarePlanId CARE_PLAN_ID = new QualifiedId.CarePlanId("careplan-1");
+    private static final List<QualifiedId.QuestionnaireId> QUESTIONNAIRE_IDS = List.of(new QualifiedId.QuestionnaireId("questionnaire-1"));
+    private static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRE_RESPONSE_ID = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
+
     @Test
     public void getQuestionnaireResponsesByCpr_cprParameterMissing_400() {
-        String carePlanId = null;
-        List<String> questionnaireIds = List.of("questionnaire-1");
-
-        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
+        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(new QualifiedId.QuestionnaireId("questionnaire-1"));
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(null, questionnaireIds.stream().map(QualifiedId::unqualified).toList(), 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_questionnaireIdsParameterMissing_400() {
-        String carePlanId = "careplan-1";
-        List<String> questionnaireIds = null;
-
-        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
+        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId.unqualified(), null, 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_responsesPresent_200() throws Exception {
-        String carePlanId = "careplan-1";
-        List<String> questionnaireIds = List.of("questionnaire-1");
+        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(new QualifiedId.QuestionnaireId("questionnaire-1"));
 
         QuestionnaireResponseModel responseModel1 = QuestionnaireResponseModel.builder().build();
         QuestionnaireResponseModel responseModel2 = QuestionnaireResponseModel.builder().build();
         QuestionnaireResponseDto responseDto1 = new QuestionnaireResponseDto();
         QuestionnaireResponseDto responseDto2 = new QuestionnaireResponseDto();
 
-        Pagination pagination = new Pagination(1, 5);
         Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of(responseModel1, responseModel2));
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
 
-        ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5);
+        ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId.unqualified(), questionnaireIds.stream().map(QualifiedId.QuestionnaireId::unqualified).toList(), 1, 5);
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, result.getBody().getList().size());
@@ -86,12 +86,12 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByCpr_responsesMissing_200() throws Exception {
-        String carePlanId = "careplan-1";
-        List<String> questionnaireIds = List.of("questionnaire-1");
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(CARE_PLAN_ID, QUESTIONNAIRE_IDS)).thenReturn(List.of());
 
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenReturn(List.of());
-
-        ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5);
+        ResponseEntity<PaginatedListQuestionnaireResponseDto> result = subject.getQuestionnaireResponsesByCarePlanId(
+                CARE_PLAN_ID.unqualified(),
+                QUESTIONNAIRE_IDS.stream().map(QualifiedId::unqualified).toList(),
+                1, 5);
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(result.getBody().getList().isEmpty());
@@ -99,31 +99,22 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void getQuestionnaireResponsesByCpr_accessViolation_403() throws Exception {
-        String carePlanId = "careplan-1";
-        List<String> questionnaireIds = List.of("questionnaire-1");
-
         Pagination pagination = new Pagination(1, 5);
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(AccessValidationException.class);
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(CARE_PLAN_ID, QUESTIONNAIRE_IDS)).thenThrow(AccessValidationException.class);
 
-        assertThrows(ForbiddenException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
+        assertThrows(ForbiddenException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(CARE_PLAN_ID.unqualified(), QUESTIONNAIRE_IDS.stream().map(QualifiedId::unqualified).toList(), 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByCpr_failureToFetch_500() throws Exception {
-        String carePlanId = "careplan-1";
-        List<String> questionnaireIds = List.of("questionnaire-1");
-
-        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(carePlanId, questionnaireIds)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
-
-        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(carePlanId, questionnaireIds, 1, 5));
+        Mockito.when(questionnaireResponseService.getQuestionnaireResponses(CARE_PLAN_ID, QUESTIONNAIRE_IDS))
+                .thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
+        assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByCarePlanId(CARE_PLAN_ID.unqualified(), QUESTIONNAIRE_IDS.stream().map(QualifiedId::unqualified).toList(), 1, 5));
     }
 
     @Test
     public void getQuestionnaireResponsesByStatus_parameterMissing_400() {
-        List<ExaminationStatusDto> statuses = null;
-        Pagination pagination = null;
-
-        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByStatus(statuses, 1, 10));
+        assertThrows(BadRequestException.class, () -> subject.getQuestionnaireResponsesByStatus(null, 1, 10));
     }
 
     @Test
@@ -181,46 +172,44 @@ public class QuestionnaireResponseControllerTest {
 
     @Test
     public void patchQuestionnaireResponse_malformedRequest_400() {
-        String id = "questionnaireresponse-1";
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-
-        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaireResponse(id, request));
+        assertThrows(BadRequestException.class, () -> subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID.unqualified(), request));
     }
 
     @Test
     public void patchQuestionnaireResponse_accessViolation_403() throws Exception {
-        String id = "questionnaireresponse-1";
+
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID, ExaminationStatus.UNDER_EXAMINATION);
 
-        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaireResponse(id, request));
+        assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID.unqualified(), request));
     }
 
     @Test
     public void patchQuestionnaireResponse_failureToUpdate_500() throws Exception {
-        String id = "questionnaireresponse-1";
+
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(questionnaireResponseService).updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(questionnaireResponseService).updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID, ExaminationStatus.UNDER_EXAMINATION);
 
-        assertThrows(InternalServerErrorException.class, () -> subject.patchQuestionnaireResponse(id, request));
+        assertThrows(InternalServerErrorException.class, () -> subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID.unqualified(), request));
     }
 
     @Test
     public void patchQuestionnaireResponse_success_200() throws Exception {
-        String id = "questionnaireresponse-1";
+        QualifiedId.QuestionnaireResponseId id = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
         request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
 
         Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        Mockito.when(questionnaireResponseService.updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION)).thenReturn( QuestionnaireResponseModel.builder().build());
+        Mockito.when(questionnaireResponseService.updateExaminationStatus(id, ExaminationStatus.UNDER_EXAMINATION)).thenReturn(QuestionnaireResponseModel.builder().build());
 
-        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id, request);
+        ResponseEntity<Void> result = subject.patchQuestionnaireResponse(id.unqualified(), request);
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }

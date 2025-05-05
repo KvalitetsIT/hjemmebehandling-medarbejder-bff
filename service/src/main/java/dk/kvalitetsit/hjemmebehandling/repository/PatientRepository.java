@@ -35,7 +35,7 @@ public interface PatientRepository<Patient, CarePlanStatus> extends Repository<P
      * @return List of matching patients.
      * @throws ServiceException If the operation fails.
      */
-    List<Patient> getPatientsByStatus(CarePlanStatus status) throws ServiceException;
+    List<Patient> fetchByStatus(CarePlanStatus status) throws ServiceException;
 
 
 

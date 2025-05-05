@@ -1,26 +1,41 @@
 package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 
+import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
+import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Questionnaire;
 
 import java.util.*;
 
+/**
+ * A concrete implementation of the {@link QuestionnaireRepository} interface for managing
+ * {@link Questionnaire} entities.
+ * <p>
+ * This class provides the underlying logic to retrieve, store, and manipulate organization-related data
+ * within the domain, serving as the bridge between the domain model and data source.
+ */
 public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<Questionnaire> {
 
 
     private final FhirClient client;
+    private final UserContextProvider userContextProvider;
 
-    public ConcreteQuestionnaireRepository(FhirClient client) {
+    public ConcreteQuestionnaireRepository(FhirClient client, UserContextProvider userContextProvider) {
         this.client = client;
+        this.userContextProvider = userContextProvider;
     }
 
     @Override
@@ -63,18 +78,14 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
 
     @Override
     public List<Questionnaire> lookupVersionsOfQuestionnaireById(List<QualifiedId.QuestionnaireId> ids) {
-        List<Questionnaire> resources = new LinkedList<>();
-        ids.forEach(id -> {
-            Bundle bundle = client.history().onInstance(new IdType("Questionnaire", id.id())).returnBundle(Bundle.class).execute();
-            bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
-        });
-        return resources;
+        return client.lookupHistorical(ids, Questionnaire.class);
     }
 
     @Override
-    public List<Questionnaire> lookupQuestionnairesByStatus(Collection<String> statusesToInclude) throws ServiceException {
+    public List<Questionnaire> fetch(Collection<String> statusesToInclude) throws ServiceException {
         var criterias = new ArrayList<ICriterion<?>>();
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Could not fetch questionnaires - Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
         criterias.add(organizationCriterion);
 
         if (!statusesToInclude.isEmpty()) {
@@ -86,14 +97,16 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
     }
 
     private List<Questionnaire> getQuestionnairesById(List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
-        var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds.stream().map(QualifiedId.QuestionnaireId::id).toList());
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
+        var idCriterion = Questionnaire.RES_ID.exactly().codes(questionnaireIds.stream().map(QualifiedId.QuestionnaireId::unqualified).toList());
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Could not fetch questionnaires - Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
         return client.lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion)).getQuestionnaires();
     }
 
     private List<Questionnaire> getQuestionnairesById(QualifiedId.QuestionnaireId questionnaireIds) throws ServiceException {
-        var idCriterion = org.hl7.fhir.r4.model.Questionnaire.RES_ID.exactly().codes(questionnaireIds.id());
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
+        var idCriterion = org.hl7.fhir.r4.model.Questionnaire.RES_ID.exactly().codes(questionnaireIds.unqualified());
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Could not fetch questionnaires - Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
         return client.lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion)).getQuestionnaires();
     }
 }

@@ -4,6 +4,8 @@ import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
@@ -23,13 +25,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class AccessValidatorTest {
-    private static final String ORGANIZATION_ID_1 = "organization-1";
-    private static final String ORGANIZATION_ID_2 = "organization-2";
+    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("organization-1");
+    private static final QualifiedId.OrganizationId ORGANIZATION_ID_2 = new QualifiedId.OrganizationId("organization-2");
     private static final String SOR_CODE_1 = "123456";
+
     @InjectMocks
     private AccessValidator subject;
+
     @Mock
     private UserContextProvider userContextProvider;
+
     @Mock
     private FhirClient fhirClient;
 
@@ -92,7 +97,7 @@ public class AccessValidatorTest {
     @Test
     public void whenGettingOrganisationGivenNoSorCodeThenReturnError() {
         var resource1 = buildResource(ORGANIZATION_ID_1);
-        var context = new UserContext().orgId("");
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId("")).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource1));
     }
@@ -101,7 +106,7 @@ public class AccessValidatorTest {
     public void validateAccess_conjunction_success() throws ServiceException {
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_1);
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
         Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
@@ -112,7 +117,7 @@ public class AccessValidatorTest {
         return buildResource(null);
     }
 
-    private BaseModel buildResource(String organizationId) {
+    private BaseModel buildResource(QualifiedId.OrganizationId organizationId) {
         var resource = CarePlanModel.builder();
         if (organizationId != null) {
             resource.organizationId(organizationId);
@@ -122,7 +127,7 @@ public class AccessValidatorTest {
 
     private Organization buildOrganization() {
         var organization = new Organization();
-        organization.setId(AccessValidatorTest.ORGANIZATION_ID_1);
+        organization.setId(AccessValidatorTest.ORGANIZATION_ID_1.unqualified());
         return organization;
     }
 }

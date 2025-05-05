@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
@@ -105,8 +106,8 @@ public class ExtensionMapper {
         return extractStringFromExtensions(extensions, Systems.EXAMINATION_AUTHOR);
     }
 
-    public static String extractOrganizationId(List<Extension> extensions) {
-        return extractReferenceFromExtensions(extensions);
+    public static QualifiedId.OrganizationId extractOrganizationId(List<Extension> extensions) {
+        return new QualifiedId.OrganizationId(extractReferenceFromExtensions(extensions));
     }
 
     public static TimeType extractOrganizationDeadlineTimeDefault(List<Extension> extensions) {

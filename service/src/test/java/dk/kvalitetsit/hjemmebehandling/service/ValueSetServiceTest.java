@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteValueSetService;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.junit.jupiter.api.Test;
@@ -21,14 +22,14 @@ public class ValueSetServiceTest {
     private ConcreteValueSetService subject;
 
     @Mock
-    private ClientAdaptor fhirClient;
+    private ValueSetRepository<ValueSet> repository;
 
     @Test
     public void getPlanDefinitions_sucecss() throws Exception {
         ValueSet valueSet = new ValueSet();
         MeasurementTypeModel measurementTypeModel = MeasurementTypeModel.builder().build();
-        FhirLookupResult lookupResult = FhirLookupResult.fromResource(valueSet);
-        Mockito.when(fhirClient.lookupValueSet()).thenReturn(lookupResult);
+        List<ValueSet> lookupResult = List.of(valueSet);
+        Mockito.when(repository.fetch()).thenReturn(lookupResult);
 
         List<MeasurementTypeModel> result = subject.getMeasurementTypes();
 

@@ -2,33 +2,30 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import org.openapitools.model.UserContext;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
+import org.openapitools.model.NameDto;
 
 import java.util.List;
-import java.util.Optional;
 
 public class MockContextHandler implements IUserContextHandler {
-    private final String orgId;
+    private final QualifiedId.OrganizationId orgId;
     private final List<String> entitlements;
 
-    public MockContextHandler(String orgId, List<String> entitlements) {
+    public MockContextHandler(QualifiedId.OrganizationId orgId, List<String> entitlements) {
         this.orgId = orgId;
         this.entitlements = entitlements;
     }
 
     @Override
-    public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) {
-        var context = new UserContext();
-
-        context.setFullName(Optional.of("Test Testsen"));
-        context.setFirstName(Optional.of("Test"));
-        context.setLastName(Optional.of("Testsen"));
-        context.setOrgId(Optional.ofNullable(orgId));
-        context.setUserId(Optional.of("TesTes"));
-        context.setEmail(Optional.of("test@rm.dk"));
-        context.setEntitlements(entitlements);
-        context.setAuthorizationIds(List.of("1234"));
-
-        return context;
+    public UserContextModel mapTokenToUserContext(FhirClient client, DecodedJWT jwt) {
+        return UserContextModel.builder()
+                .name(new NameDto().given("Test").family("Testsen"))
+                .orgId(orgId)
+                .userId("TesTes")
+                .email("test@rm.dk")
+                .entitlements(entitlements)
+                .authorizationIds(List.of("1234"))
+                .build();
     }
 }

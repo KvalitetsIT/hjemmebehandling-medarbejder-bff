@@ -29,10 +29,10 @@ import java.util.stream.Stream;
 public class ConcretePlanDefinitionService extends AccessValidatingService {
     private static final Logger logger = LoggerFactory.getLogger(ConcretePlanDefinitionService.class);
 
-    private final PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository;
-
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
+
+    private final PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository;
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository;
     private final QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;

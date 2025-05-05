@@ -11,7 +11,7 @@ public record PatientModel(
         List<ContactDetailsModel> additionalRelativeContactDetails,
         String customUserId,
         String customUserName
-) {
+)  {
 
     public static Builder builder() {
         return new PatientModel.Builder();

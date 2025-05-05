@@ -122,7 +122,7 @@ public class FhirMapperTest {
 
     private CarePlanModel buildCarePlanModel() {
         return CarePlanModel.builder()
-                .id(new QualifiedId(CAREPLAN_ID_1))
+                .id(new QualifiedId.CarePlanId(CAREPLAN_ID_1))
                 .status(CarePlanStatus.ACTIVE)
                 .created(Instant.parse("2021-12-07T10:11:12.124Z"))
                 .patient(buildPatientModel())
@@ -193,8 +193,8 @@ public class FhirMapperTest {
 
     private PatientModel buildPatientModel() {
         return PatientModel.builder()
-                .id(new QualifiedId(PATIENT_ID_1))
-                .cpr("0101010101")
+                .id(new QualifiedId.PatientId(PATIENT_ID_1))
+                .cpr(new CPR("0101010101"))
                 .contactDetails(buildContactDetailsModel())
                 .primaryContact(PrimaryContactModel.builder().contactDetails(buildContactDetailsModel()).build())
                 .additionalRelativeContactDetails(List.of(buildContactDetailsModel()))
@@ -232,7 +232,7 @@ public class FhirMapperTest {
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
         return PlanDefinitionModel.builder()
-                .id(new QualifiedId(PLANDEFINITION_ID_1))
+                .id(new QualifiedId.PlanDefinitionId(PLANDEFINITION_ID_1))
                 .questionnaires(List.of(buildQuestionnaireWrapperModel()))
                 .build();
     }
@@ -285,14 +285,14 @@ public class FhirMapperTest {
         QuestionModel question = buildQuestionModel();
         AnswerModel answer = new AnswerModel(null, "2", AnswerType.INTEGER, null);
         return QuestionnaireResponseModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1))
-                .questionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1))
-                .carePlanId(new QualifiedId(CAREPLAN_ID_1))
-                .authorId(new QualifiedId(PATIENT_ID_1))
-                .sourceId(new QualifiedId(PATIENT_ID_1))
+                .id(new QualifiedId.QuestionnaireResponseId(QUESTIONNAIRERESPONSE_ID_1))
+                .questionnaireId(new QualifiedId.QuestionnaireId(QUESTIONNAIRE_ID_1))
+                .carePlanId(new QualifiedId.CarePlanId(CAREPLAN_ID_1))
+                .authorId(new QualifiedId.PractitionerId(PATIENT_ID_1))
+                .sourceId(new QualifiedId.QuestionnaireId(PATIENT_ID_1))
                 .answered(Instant.parse("2021-11-03T00:00:00Z"))
                 .questionAnswerPairs(new ArrayList<>())
-                .patient(PatientModel.builder().id(new QualifiedId(PATIENT_ID_1)).build())
+                .patient(PatientModel.builder().id(new QualifiedId.PatientId(PATIENT_ID_1)).build())
                 .examinationStatus(ExaminationStatus.NOT_EXAMINED)
                 .triagingCategory(TriagingCategory.GREEN)
                 .questionAnswerPairs(List.of(new QuestionAnswerPairModel(question, answer)))
@@ -346,7 +346,7 @@ public class FhirMapperTest {
 
     private QuestionnaireModel buildQuestionnaireModel() {
         return QuestionnaireModel.builder()
-                .id(new QualifiedId(QUESTIONNAIRE_ID_1))
+                .id(new QualifiedId.QuestionnaireId(QUESTIONNAIRE_ID_1))
                 .status(QuestionnaireStatus.ACTIVE)
                 .questions(List.of(buildQuestionModel())).build();
     }

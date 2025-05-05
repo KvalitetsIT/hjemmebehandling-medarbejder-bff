@@ -58,13 +58,13 @@ public class ConcretePatientService extends AccessValidatingService implements P
 
         var patients = new ArrayList<PatientModel>();
 
-        var patientsWithActiveCarePlan = patientRepository.getPatientsByStatus(CarePlanStatus.ACTIVE);
+        var patientsWithActiveCarePlan = patientRepository.fetchByStatus(CarePlanStatus.ACTIVE);
 
         if (includeActive)
             patients.addAll(patientsWithActiveCarePlan);
 
         if (includeCompleted) {
-            var patientsWithInactiveCarePlan = patientRepository.getPatientsByStatus(CarePlanStatus.COMPLETED).stream()
+            var patientsWithInactiveCarePlan = patientRepository.fetchByStatus(CarePlanStatus.COMPLETED).stream()
                     .filter(potentialPatient -> patientsWithActiveCarePlan.stream().anyMatch(p -> p.cpr().equals(potentialPatient.cpr())))
                     .toList();
 

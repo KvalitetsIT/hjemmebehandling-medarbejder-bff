@@ -16,7 +16,7 @@ public interface QuestionnaireRepository<Questionnaire> extends Repository<Quest
      * @return List of matching questionnaires.
      * @throws ServiceException If the operation fails.
      */
-    List<Questionnaire> lookupQuestionnairesByStatus(Collection<String> statusesToInclude) throws ServiceException;
+    List<Questionnaire> fetch(Collection<String> statusesToInclude) throws ServiceException;
 
     /**
      * Looks up all versions of questionnaires by their IDs.

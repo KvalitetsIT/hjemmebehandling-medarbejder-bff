@@ -14,7 +14,7 @@ public interface OrganizationRepository<Organization> extends Repository<Organiz
      * @return An optional organization.
      * @throws ServiceException If the operation fails.
      */
-    Optional<Organization> lookupOrganizationBySorCode(String sorCode) throws ServiceException;
+    Optional<Organization> lookupOrganizationBySorCode(QualifiedId.OrganizationId sorCode) throws ServiceException;
 
 
     /**
@@ -31,6 +31,6 @@ public interface OrganizationRepository<Organization> extends Repository<Organiz
      * @return The user's organization.
      * @throws ServiceException If the operation fails.
      */
-    Organization getCurrentUsersOrganization() throws ServiceException;
+    Organization fetchCurrentUsersOrganization() throws ServiceException;
 
 }

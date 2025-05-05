@@ -6,12 +6,12 @@ import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.context.*;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
 import dk.kvalitetsit.hjemmebehandling.repository.adaptation.CarePlanRepositoryAdaptor;
 import dk.kvalitetsit.hjemmebehandling.repository.adaptation.PatientRepositoryAdaptor;
 import dk.kvalitetsit.hjemmebehandling.repository.implementation.ConcreteCarePlanRepository;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.security.RoleValidationInterceptor;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.*;
@@ -115,12 +115,11 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public ConcreteQuestionnaireService getQuestionnaireService(@Autowired AccessValidator accessValidator,
-                                                                @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+    public ConcreteQuestionnaireService getQuestionnaireService(@Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
                                                                 @Autowired CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
                                                                 @Autowired PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository
     ) {
-        return new ConcreteQuestionnaireService(accessValidator, questionnaireRepository, carePlanRepository, planDefinitionRepository);
+        return new ConcreteQuestionnaireService(questionnaireRepository, carePlanRepository, planDefinitionRepository);
     }
 
     @Bean
@@ -162,10 +161,11 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public IUserContextHandler userContextHandler(@Value("${user.context.handler}") String userContextHandler) {
+    public IUserContextHandler userContextHandler(@Value("${user.context.handler}") String userContextHandler, OrganizationRepository<Organization> organizationRepository) {
         return switch (userContextHandler) {
-            case "DIAS" -> new DIASUserContextHandler();
-            case "MOCK" -> new MockContextHandler(mockContextOrganizationId, parseAsList(mockContextEntitlements));
+            case "DIAS" -> new DIASUserContextHandler(organizationRepository);
+            case "MOCK" ->
+                    new MockContextHandler(new QualifiedId.OrganizationId(mockContextOrganizationId), parseAsList(mockContextEntitlements));
             default ->
                     throw new IllegalArgumentException(String.format("Unknown userContextHandler value: %s", userContextHandler));
         };

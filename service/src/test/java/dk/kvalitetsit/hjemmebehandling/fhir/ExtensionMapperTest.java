@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
@@ -112,8 +113,8 @@ public class ExtensionMapperTest {
     @Test
     public void extractOrganizationId_success() {
         Extension extension = new Extension(Systems.ORGANIZATION, new Reference("Organization/organization-1"));
-        String result = ExtensionMapper.extractOrganizationId(List.of(extension));
-        assertEquals("Organization/organization-1", result);
+        QualifiedId.OrganizationId result = ExtensionMapper.extractOrganizationId(List.of(extension));
+        assertEquals("Organization/organization-1", result.qualified());
     }
 
     @Test

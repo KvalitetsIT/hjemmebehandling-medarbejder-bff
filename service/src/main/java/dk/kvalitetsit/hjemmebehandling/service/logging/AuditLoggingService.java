@@ -27,7 +27,9 @@ public class AuditLoggingService {
 
     private void auditLog(String message, Map<String, String> citizenCprToFullNameMap) {
         // TODO: Handle 'Optional.get()' without 'isPresent()' check below
-        var employee = new AuditModel.Employee(userContextProvider.getUserContext().getUserId().get(), userContextProvider.getUserContext().getFullName().get());
+        // TODO: Introduce userContextModel with a .fullName() method return .given() + .family()
+        var fullName = userContextProvider.getUserContext().name().get().getGiven().get() + " "+ userContextProvider.getUserContext().name().get().getFamily().get();
+        var employee = new AuditModel.Employee(userContextProvider.getUserContext().userId().get(), fullName);
 
         for (String citizenCpr : citizenCprToFullNameMap.keySet()) {
             String citizenFullName = citizenCprToFullNameMap.get(citizenCpr);

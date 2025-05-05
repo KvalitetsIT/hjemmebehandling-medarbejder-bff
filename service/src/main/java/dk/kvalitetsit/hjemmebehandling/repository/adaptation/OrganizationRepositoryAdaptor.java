@@ -10,9 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * An adapter whose responsibility is to adapt between FHIR and the domain logic.
- * This primarily covers mapping from business models and calling further into the stack with the expected arguments
- * For now, it implements the OrganizationRepository interface, but this might change in the future
+ * Adapter responsible for translating between FHIR resources and domain-specific logic.
+ * <p>
+ * This class primarily handles the mapping of business models to domain representations
+ * and delegates calls deeper into the application stack with the appropriate arguments.
+ * <p>
+ * Currently, it implements the {@link OrganizationRepository} interface for {@link Organization} entities.
+ * Note that this implementation detail may change in the future.
  */
 public class OrganizationRepositoryAdaptor implements OrganizationRepository<Organization> {
 
@@ -25,7 +29,7 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Optional<Organization> lookupOrganizationBySorCode(String sorCode) throws ServiceException {
+    public Optional<Organization> lookupOrganizationBySorCode(QualifiedId.OrganizationId sorCode) throws ServiceException {
         return this.repository.lookupOrganizationBySorCode(sorCode);
     }
 
@@ -35,8 +39,8 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Organization getCurrentUsersOrganization() throws ServiceException {
-        return repository.getCurrentUsersOrganization();
+    public Organization fetchCurrentUsersOrganization() throws ServiceException {
+        return repository.fetchCurrentUsersOrganization();
     }
 
     @Override

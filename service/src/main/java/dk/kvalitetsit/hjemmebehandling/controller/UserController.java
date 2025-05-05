@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import org.openapitools.api.UserApi;
 import org.openapitools.model.UserContext;
@@ -14,15 +15,17 @@ public class UserController extends BaseController implements UserApi {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final UserContextProvider userContextProvider;
+    private final DtoMapper mapper;
 
-    public UserController(UserContextProvider userContextProvider) {
+    public UserController(UserContextProvider userContextProvider, DtoMapper mapper) {
         this.userContextProvider = userContextProvider;
+        this.mapper = mapper;
     }
 
     @Override
     public ResponseEntity<UserContext> getUser() {
         logger.info("Getting user context information");
-        return ResponseEntity.ok(userContextProvider.getUserContext());
+        return ResponseEntity.ok(mapper.mapUserContext(userContextProvider.getUserContext()));
     }
 
 }

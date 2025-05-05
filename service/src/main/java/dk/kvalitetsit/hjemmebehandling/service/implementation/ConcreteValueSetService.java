@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.implementation.ConcreteValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.ValueSet;
@@ -25,7 +26,7 @@ public class ConcreteValueSetService implements ValueSetService {
     @Override
     public List<MeasurementTypeModel> getMeasurementTypes() throws ServiceException {
         // as of now we only have one ValueSet in the system which holds the measurement type codes, so no special search handling is needed.
-        List<ValueSet> lookupResult = repository.lookupValueSet();
+        List<ValueSet> lookupResult = repository.fetch();
 
         List<MeasurementTypeModel> result = new ArrayList<>();
         lookupResult.forEach(vs -> {

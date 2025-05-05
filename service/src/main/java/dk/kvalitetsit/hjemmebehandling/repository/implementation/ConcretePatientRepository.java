@@ -5,18 +5,29 @@ import ca.uhn.fhir.rest.gclient.StringClientParam;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+/**
+ * A concrete implementation of the {@link PatientRepository} interface for handling
+ * {@link Patient} entities associated with {@link CarePlan} resources.
+ * <p>
+ * This repository encapsulates the logic for accessing, storing, and managing CarePlan data,
+ * bridging the domain layer and the underlying data sources.
+ */
 public class ConcretePatientRepository implements PatientRepository<Patient, CarePlan.CarePlanStatus> {
 
     private final FhirClient client;
@@ -31,20 +42,19 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
         // so we have to do that in two seperate queries
         var cprCriterion = CarePlan.PATIENT.hasChainedProperty(new StringClientParam("patient_identifier_cpr").matches().values(searchStrings));
         var nameCriterion = CarePlan.PATIENT.hasChainedProperty(Patient.NAME.matches().values(searchStrings));
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-
-        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
-        fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));
+//
+//        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
+//        fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));
 
         throw new NotImplementedException();
     }
 
     @Override
-    public List<Patient> getPatientsByStatus(CarePlan.CarePlanStatus status) throws ServiceException {
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
+    public List<Patient> fetchByStatus(CarePlan.CarePlanStatus status) throws ServiceException {
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-        return lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion)).getPatients();
+        //return lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion)).getPatients();
+        throw new NotImplementedException();
     }
 
     @Override
@@ -77,7 +87,7 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
         throw new NotImplementedException();
     }
     
-    private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) {
+    private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) throws ServiceException {
         var lookupResult = client.lookupByCriteria(Patient.class, criterion);
 
         if (lookupResult.getPatients().isEmpty()) {

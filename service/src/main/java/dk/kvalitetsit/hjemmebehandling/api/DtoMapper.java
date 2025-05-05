@@ -172,7 +172,7 @@ public class DtoMapper {
     }
 
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto().id(planDefinitionModel.id().unQualifiedId())
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto().id(planDefinitionModel.id().unqualified())
                 .name(planDefinitionModel.name())
                 .title(planDefinitionModel.title());
 
@@ -544,6 +544,28 @@ public class DtoMapper {
         };
     }
 
+    public UserContext mapUserContext(UserContextModel userContext) {
+        return new UserContext()
+                .name(userContext.name().orElse(null))
+                .userId(userContext.userId().orElse(null))
+                .email(userContext.email().orElse(null))
+                .entitlements(userContext.entitlements())
+                .authorizationIds(userContext.authorizationIds())
+                .authorizationIds(userContext.authorizationIds())
+                .orgName(userContext.orgName().orElse(null))
+                .orgId(userContext.orgId().map(QualifiedId.OrganizationId::unqualified).orElse(null));
+    }
+
+    public PatientDetails mapUpdateCarePlanRequest(UpdateCareplanRequest request) {
+        return new PatientDetails(
+                request.getPatientPrimaryPhone().orElse(null),
+                request.getPatientSecondaryPhone().orElse(null),
+                request.getPrimaryRelativeName().orElse(null),
+                request.getPrimaryRelativeAffiliation().orElse(null),
+                request.getPrimaryRelativePrimaryPhone().orElse(null),
+                request.getPrimaryRelativeSecondaryPhone().orElse(null)
+        );
+    }
 }
 
 

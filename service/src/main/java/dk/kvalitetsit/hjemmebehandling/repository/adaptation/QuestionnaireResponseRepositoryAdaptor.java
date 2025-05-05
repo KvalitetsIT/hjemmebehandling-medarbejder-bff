@@ -1,6 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
@@ -12,9 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * An adapter whose responsibility is to adapt between FHIR and the domain logic.
- * This primarily covers mapping from business models and calling further into the stack with the expected arguments
- * For now, it implements the QuestionnaireResponseRepository interface, but this might change in the future
+ * Adapter responsible for translating between FHIR resources and domain-specific logic.
+ * <p>
+ * This class primarily handles the mapping of business models to domain representations
+ * and delegates calls deeper into the application stack with the appropriate arguments.
+ * <p>
+ * Currently, it implements the {@link QuestionnaireResponseRepository} interface for {@link QuestionnaireResponseModel} entities.
+ * Note that this implementation detail may change in the future.
  */
 public class QuestionnaireResponseRepositoryAdaptor implements QuestionnaireResponseRepository<QuestionnaireResponseModel> {
 

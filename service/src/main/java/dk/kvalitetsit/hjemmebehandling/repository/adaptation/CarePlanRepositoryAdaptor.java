@@ -14,9 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * An adapter whose responsibility is to adapt between FHIR and the domain logic.
- * This primarily covers mapping from business models and calling further into the stack with the expected arguments
- * For now, it implements the CarePlanRepository interface, but this might change in the future
+ * Adapter responsible for translating between FHIR resources and domain-specific logic.
+ * <p>
+ * This class primarily handles the mapping of business models to domain representations
+ * and delegates calls deeper into the application stack with the appropriate arguments.
+ * <p>
+ * Currently, it implements the {@link CarePlanRepositoryAdaptor} interface for {@link CarePlanModel} entities.
+ * Note that this implementation detail may change in the future.
  */
 public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanModel, PatientModel> {
 
@@ -54,8 +58,8 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansWithQuestionnaire(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
-        return client.fetchActiveCarePlansWithQuestionnaire(questionnaireId).stream().map(mapper::mapCarePlan).toList();
+    public List<CarePlanModel> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
+        return client.fetchActiveCarePlansByQuestionnaireId(questionnaireId).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
@@ -88,7 +92,7 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public void update(CarePlanModel carePlanModel, PatientModel patientModel) {
+    public void update(CarePlanModel carePlanModel, PatientModel patientModel) throws ServiceException {
         this.client.update(mapper.mapCarePlanModel(carePlanModel), mapper.mapPatientModel(patientModel));
     }
 

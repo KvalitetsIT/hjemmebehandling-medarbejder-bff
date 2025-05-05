@@ -2203,12 +2203,8 @@ components:
       properties:
         orgId:
           $ref: '#/components/schemas/SORCodeDto'
-        firstName:
-          type: string
-        lastName:
-          type: string
-        fullName:
-          type: string
+        name:
+          $ref: '#/components/schemas/NameDto'
         authorizationIds:
           type: array
           items:

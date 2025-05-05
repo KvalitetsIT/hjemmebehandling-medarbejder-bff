@@ -7,11 +7,11 @@ import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.TimeType;
@@ -74,7 +74,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
 
-            carePlanId = carePlanService.createCarePlan(carePlan).unQualifiedId();
+            carePlanId = carePlanService.createCarePlan(carePlan).unqualified();
 
             auditLoggingService.log("POST /v1/careplan", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
@@ -110,7 +110,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map( x -> x.stream().map(dtoMapper::mapPlandefinitionStatus).toList()).orElse(List.of()));
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map(x -> x.stream().map(dtoMapper::mapPlandefinitionStatus).toList()).orElse(List.of()));
 
             // todo: 'Optional.get()' without 'isPresent()' check
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());
@@ -125,7 +125,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
         try {
             List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(new QualifiedId.CarePlanId(id));
-            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.id().id()).toList();
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.id().unqualified()).toList();
             return ResponseEntity.ok(ids);
         } catch (ServiceException e) {
             logger.error("Unresolved questionnaires could not be fetched due to:  %s", e);
@@ -141,14 +141,14 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
         try {
-            List<String> questionnaireIds = getQuestionnaireIds(request.getQuestionnaires());
-            Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
-            PatientDetails patientDetails = getPatientDetails(request);
+            List<QualifiedId.QuestionnaireId> questionnaireIds = getQuestionnaireIds(request.getQuestionnaires());
+            Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
+            PatientDetails patientDetails = dtoMapper.mapUpdateCarePlanRequest(request);
 
             CarePlanModel carePlanModel = carePlanService.updateCarePlan(
                     new QualifiedId.CarePlanId(id),
                     request.getPlanDefinitionIds().stream().map(QualifiedId.PlanDefinitionId::new).toList(),
-                    questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList(),
+                    questionnaireIds,
                     frequencies,
                     patientDetails
             );
@@ -207,31 +207,21 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         throw new UnsupportedOperationException();
     }
 
-    private List<String> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
+    private List<QualifiedId.QuestionnaireId> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
         // todo: 'Optional.get()' without 'isPresent()' check
-        return questionnaireFrequencyPairs.stream().map(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire)).toList();
+        return questionnaireFrequencyPairs.stream().map(pair -> new QualifiedId.QuestionnaireId(pair.getId().get())).toList();
     }
 
-    private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
+    private Map<QualifiedId.QuestionnaireId, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
         // force time for deadline to organization configured default.
         TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
         // todo: 'Optional.get()' without 'isPresent()' check
         questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().get().setTimeOfDay(Optional.of(defaultDeadlineTime.getValue())));
 
         // todo: 'Optional.get()' without 'isPresent()' check
-        return questionnaireFrequencyPairs.stream().collect(Collectors.toMap(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire), pair -> dtoMapper.mapFrequencyDto(pair.getFrequency().get())));
+        return questionnaireFrequencyPairs.stream().collect(Collectors.toMap(pair -> new QualifiedId.QuestionnaireId(pair.getId().get()), pair -> dtoMapper.mapFrequencyDto(pair.getFrequency().get())));
     }
 
-    private PatientDetails getPatientDetails(UpdateCareplanRequest request) {
-        PatientDetails patientDetails = new PatientDetails(
-                request.getPatientPrimaryPhone().orElse(null),
-                request.getPatientSecondaryPhone().orElse(null),
-                request.getPrimaryRelativeName().orElse(null),
-                request.getPrimaryRelativeAffiliation().orElse(null),
-                request.getPrimaryRelativePrimaryPhone().orElse(null),
-                request.getPrimaryRelativeSecondaryPhone().orElse(null)
-        );
-        return patientDetails;
-    }
+
 
 }

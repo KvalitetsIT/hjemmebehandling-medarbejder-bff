@@ -1,18 +1,20 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
-import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
-import org.openapitools.model.UserContext;
+import org.openapitools.model.NameDto;
 
 import java.util.List;
 import java.util.Optional;
 
 public class DIASUserContextHandler implements IUserContextHandler {
 
+    // TODO: Might be put into a enum
     private static final String FULL_NAME = "FullName";
     private static final String FIRST_NAME = "FirstName";
     private static final String SUR_NAME = "SurName";
@@ -29,31 +31,41 @@ public class DIASUserContextHandler implements IUserContextHandler {
     }
 
     @Override
-    public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) throws ServiceException {
-        var context = new UserContext();
-        if (jwt == null) {
-            return context;
-        }
-        context.setFullName(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.FULL_NAME)).map(Object::toString));
-        context.setFirstName(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.FIRST_NAME)).map(Object::toString));
-        context.setLastName(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.SUR_NAME)).map(Object::toString));
+    public UserContextModel mapTokenToUserContext(FhirClient client, DecodedJWT jwt) throws ServiceException {
+        Optional.ofNullable(jwt).orElseThrow(() -> new IllegalArgumentException("Expected a JSON Web token, but it is missing"));
 
-        // set sorid and lookup name
-        if (jwt.getClaim(DIASUserContextHandler.SOR_ID) != null) {
-            String sorid = jwt.getClaim(DIASUserContextHandler.SOR_ID).asString();
-            context.setOrgId(Optional.ofNullable(sorid));
-            Optional<Organization> organization = organizationRepository.lookupOrganizationBySorCode(sorid);
-            organization.ifPresent(value -> context.setOrgName(Optional.ofNullable(value.getName())));
-        }
+        var builder = UserContextModel.builder();
 
-        context.setUserId(Optional.of(jwt.getClaim(DIASUserContextHandler.REGIONS_ID)).map(Claim::asString));
-        context.setEmail(Optional.of(jwt.getClaim(DIASUserContextHandler.EMAIL)).map(Claim::asString));
-
-        context.setEntitlements(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS) != null ? List.of(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS).toString()) : null);
-        context.setAuthorizationIds(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS) != null ? List.of(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS).toString()) : null);
+        Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.SOR_ID))
+                .map(Object::toString)
+                .map(QualifiedId.OrganizationId::new)
+                .ifPresent(SOR -> {
+                    builder.orgId(SOR);
+                    try {
+                        Optional<Organization> organization = organizationRepository.lookupOrganizationBySorCode(SOR);
+                        organization.ifPresent(value -> builder.orgName(value.getName()));
+                    } catch (ServiceException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 
 
-        return context;
+        // The fullname is ignored since this may be derived from the first/lastname
+        //context.setFullName(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.FULL_NAME)).map(Object::toString));
+
+
+        var name = new NameDto()
+                .family(jwt.getClaim(DIASUserContextHandler.SUR_NAME).toString())
+                .given(jwt.getClaim(DIASUserContextHandler.FIRST_NAME).toString());
+
+        return builder
+                .name(name)
+                .userId(jwt.getClaim(DIASUserContextHandler.REGIONS_ID).asString())
+                .email(jwt.getClaim(DIASUserContextHandler.EMAIL).asString())
+                .entitlements(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.BSK_DIAS_ENTITLEMENTS)).map(x -> List.of(x.toString())).orElse(null))
+                .authorizationIds(Optional.ofNullable(jwt.getClaim(DIASUserContextHandler.AUTORISATIONS_IDS)).map(x -> List.of(x.toString())).orElse(null))
+                .build();
+
     }
 
 }

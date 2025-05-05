@@ -15,7 +15,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @param carePlan The care plan to update.
      * @param patient  The patient associated with the care plan.
      */
-    void update(CarePlan carePlan, Patient patient);
+    void update(CarePlan carePlan, Patient patient) throws ServiceException;
 
     /**
      * Saves a care plan and optionally associates it with a patient.
@@ -44,7 +44,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansWithQuestionnaire(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException;
+    List<CarePlan> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException;
 
     /**
      * Fetches care plans for a specific patient.

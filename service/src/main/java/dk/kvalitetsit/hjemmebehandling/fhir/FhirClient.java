@@ -8,8 +8,11 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.*;
 import org.jetbrains.annotations.NotNull;
@@ -18,10 +21,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Concrete client implementation which covers the communication with the fhir server
@@ -38,14 +40,21 @@ public class FhirClient {
         this.client = context.newRestfulGenericClient(endpoint);
     }
 
+    // TODO: Below is unused consider deleting
     public static List<String> getPractitionerIds(List<QuestionnaireResponse> questionnaireResponses) {
         return questionnaireResponses.stream().map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension())).filter(Objects::nonNull).distinct().toList();
     }
 
+    public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) throws ServiceException {
 
-    public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) {
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
+
+        // Adding organizationCriterion in order to avoid doing this in repositories
+        criteria = Stream.concat(Stream.of(organizationCriterion),criteria.stream()).toList();
+
         var query = client.search().forResource(resourceClass);
-        if (criteria != null && !criteria.isEmpty()) {
+        if (!criteria.isEmpty()) {
             query = query.where(criteria.getFirst());
             for (int i = 1; i < criteria.size(); i++) {
                 query = query.and(criteria.get(i));
@@ -71,19 +80,25 @@ public class FhirClient {
         if (withOrganizations) {
             List<String> organizationIds = lookupResult.values().stream().map(r -> ExtensionMapper.tryExtractOrganizationId(r.getExtension())).filter(Optional::isPresent).map(Optional::get).distinct().toList();
 
-            lookupResult = lookupResult.merge(lookupOrganizations(organizationIds));
+            // TODO: Uncomment below
+            // lookupResult = lookupResult.merge(lookupOrganizations(organizationIds));
         }
         return lookupResult;
     }
 
-    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) {
+    public  <T extends Resource> FhirLookupResult lookup(Class<T> resourceClass) throws ServiceException {
+        return lookupByCriteria(resourceClass,null, null);
+    }
+
+    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
         return lookupByCriteria(resourceClass, criteria, null);
     }
 
-    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) {
+    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
         boolean withOrganizations = true;
         return lookupByCriteria(resourceClass, criteria, includes, withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
+
 
     public Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
 
@@ -125,7 +140,8 @@ public class FhirClient {
 
     @NotNull
     public ArrayList<ICriterion<?>> createCriteria(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        var organizationCriterion = FhirUtils.buildOrganizationCriterion();
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
         var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
         // The criterion expresses that the careplan must no longer be satisfied at the given point in time.
@@ -163,8 +179,8 @@ public class FhirClient {
         if (extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
             throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present! - %S", extendable.getId()));
         }
-
-        extendable.addExtension(Systems.ORGANIZATION, new Reference(getOrganizationId()));
+        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        extendable.addExtension(Systems.ORGANIZATION, new Reference(organizationId.unqualified()));
     }
 
     private boolean excludeFromOrganizationTagging(DomainResource extendable) {
@@ -172,4 +188,12 @@ public class FhirClient {
     }
 
 
+    public List<Questionnaire> lookupHistorical(List<QualifiedId.QuestionnaireId> ids, Class<Questionnaire> questionnaireClass) {
+        List<Questionnaire> resources = new LinkedList<>();
+        ids.forEach(id -> {
+            Bundle bundle = client.history().onInstance(new IdType(questionnaireClass.getTypeName(), id.unqualified())).returnBundle(Bundle.class).execute();
+            bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
+        });
+        return resources;
+    }
 }

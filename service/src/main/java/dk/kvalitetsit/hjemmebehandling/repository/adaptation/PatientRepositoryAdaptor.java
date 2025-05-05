@@ -16,9 +16,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * An adapter whose responsibility is to adapt between FHIR and the domain logic.
- * This primarily covers mapping from business models and calling further into the stack with the expected arguments
- * For now, it implements the PatientRepository interface, but this might change in the future
+ * Adapter responsible for translating between FHIR resources and domain-specific logic.
+ * <p>
+ * This class primarily handles the mapping of business models to domain representations
+ * and delegates calls deeper into the application stack with the appropriate arguments.
+ * <p>
+ * Currently, it implements the {@link PatientRepository} interface for {@link PatientModel} entities.
+ * Note that this implementation detail may change in the future.
  */
 public class PatientRepositoryAdaptor implements PatientRepository<PatientModel, CarePlanStatus> {
 
@@ -46,8 +50,8 @@ public class PatientRepositoryAdaptor implements PatientRepository<PatientModel,
     }
 
     @Override
-    public List<PatientModel> getPatientsByStatus(CarePlanStatus carePlanStatus) throws ServiceException {
-        return repository.getPatientsByStatus(mapper.mapCarePlanStatus(carePlanStatus)).stream().map(mapper::mapPatient).toList();
+    public List<PatientModel> fetchByStatus(CarePlanStatus carePlanStatus) throws ServiceException {
+        return repository.fetchByStatus(mapper.mapCarePlanStatus(carePlanStatus)).stream().map(mapper::mapPatient).toList();
     }
 
     @Override
