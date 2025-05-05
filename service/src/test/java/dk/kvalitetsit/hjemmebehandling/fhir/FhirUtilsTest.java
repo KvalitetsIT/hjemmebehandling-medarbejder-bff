@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 
@@ -9,67 +10,60 @@ public class FhirUtilsTest {
 
     @Test
     public void qualifyId_qualifiedId_returnsId() {
+        String id = "4";
+        QualifiedId result = QualifiedId.from(ResourceType.CarePlan, id);
+        assertEquals(id, result.unqualified());
+        assertEquals("CarePlan/4", result.qualified());
+    }
+
+    @Test
+    public void qualifiedId_from_qualified_id_returnsId() {
         String id = "CarePlan/4";
-        String result = FhirUtils.qualifyId(id, ResourceType.CarePlan);
-        assertEquals(id, result);
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(ResourceType.CarePlan, id));
     }
 
     @Test
     public void qualifyId_qualifierMismatch_throwsException() {
         String id = "CarePlan/4";
-        assertThrows(IllegalArgumentException.class, () -> FhirUtils.qualifyId(id, ResourceType.Questionnaire));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(ResourceType.Questionnaire, id));
     }
 
     @Test
-    public void qualifyId_malformedId_throwsException() {
+    public void qualifiedId_from_malformedId_throwsException() {
         String id = "Patient/()";
-        assertThrows(IllegalArgumentException.class, () -> FhirUtils.qualifyId(id, ResourceType.Patient));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(ResourceType.Patient, id));
     }
 
     @Test
-    public void qualifyId_plainId_success() {
+    public void qualifiedId_from_patient_success() {
         String id = "2";
-        String result = FhirUtils.qualifyId(id, ResourceType.Patient);
-        assertEquals("Patient/2", result);
+        QualifiedId result = QualifiedId.from(ResourceType.Patient, id);
+        assertEquals("Patient/2", result.qualified());
+        assertEquals("2", result.unqualified());
     }
 
-    @Test
-    public void isPlainId_plainId_success() {
-        String id = "2";
-        assertTrue(FhirUtils.isPlainId(id));
-    }
 
     @Test
-    public void isPlainId_slashes_failure() {
-        String id = "CarePlan/2";
-        assertFalse(FhirUtils.isPlainId(id));
-    }
-
-    @Test
-    public void isQualifiedId_qualifiedId_success() {
+    public void qualifiedId_from_success() {
         String qualifiedId = "CarePlan/2";
-        ResourceType qualifier = ResourceType.CarePlan;
-        assertTrue(FhirUtils.isQualifiedId(qualifiedId, qualifier));
+        assertDoesNotThrow(() -> QualifiedId.from(qualifiedId));
     }
 
     @Test
-    public void isQualifiedId_multipleSlashes_failure() {
+    public void qualifiedId_from_multipleSlashes_failure() {
         String qualifiedId = "Patient/2/3";
-        ResourceType qualifier = ResourceType.Patient;
-        assertFalse(FhirUtils.isQualifiedId(qualifiedId, qualifier));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(qualifiedId));
     }
 
     @Test
-    public void isQualifiedId_illegalQualifier_failure() {
+    public void qualifiedId_from_illegalQualifier_failure() {
         String qualifiedId = "Car/2";
-        ResourceType qualifier = ResourceType.Patient;
-        assertFalse(FhirUtils.isQualifiedId(qualifiedId, qualifier));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(qualifiedId));
     }
 
     @Test
-    public void isQualifiedId_illegalId_failure() {
+    public void qualifiedId_from_illegalId_failure() {
         String qualifiedId = "Questionnaire/###";
-        ResourceType qualifier = ResourceType.Questionnaire;
-        assertFalse(FhirUtils.isQualifiedId(qualifiedId, qualifier));
+        assertThrows(IllegalArgumentException.class, () -> QualifiedId.from(qualifiedId));
     }
 }

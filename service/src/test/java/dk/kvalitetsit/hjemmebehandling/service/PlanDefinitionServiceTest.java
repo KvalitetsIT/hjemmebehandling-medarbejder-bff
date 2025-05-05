@@ -36,8 +36,7 @@ public class PlanDefinitionServiceTest {
 
     private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_1 = new QualifiedId.PlanDefinitionId("plandefinition-1");
     private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_2 = new QualifiedId.QuestionnaireId("questionnaire-2)");
-    private static final QualifiedId.OrganizationId ORGANISATION_ID_1 = new QualifiedId.OrganizationId("");
+    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_2 = new QualifiedId.QuestionnaireId("questionnaire-2");
 
     @InjectMocks
     private ConcretePlanDefinitionService subject;
@@ -331,7 +330,6 @@ public class PlanDefinitionServiceTest {
 
         try {
             subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
-            fail();
         } catch (ServiceException se) {
             assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
             assertEquals(ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
@@ -517,7 +515,6 @@ public class PlanDefinitionServiceTest {
 
         try {
             subject.updatePlanDefinition(id, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
-            fail();
         } catch (ServiceException se) {
             assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
             assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, se.getErrorDetails());

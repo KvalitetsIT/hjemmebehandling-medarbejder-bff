@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.repository.validation;
 
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;

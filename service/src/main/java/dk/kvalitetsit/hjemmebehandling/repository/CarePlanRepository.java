@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
 
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
@@ -78,5 +79,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @throws ServiceException If the operation fails.
      */
     List<CarePlan> fetch(QualifiedId.PatientId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException;
+
+
 
 }

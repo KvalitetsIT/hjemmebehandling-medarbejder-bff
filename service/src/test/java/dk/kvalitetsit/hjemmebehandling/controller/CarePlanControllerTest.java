@@ -39,6 +39,8 @@ import static org.mockito.Mockito.times;
 @ExtendWith(MockitoExtension.class)
 public class CarePlanControllerTest {
     private static final String REQUEST_URI = "http://localhost:8080";
+    private final static QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+    private final static QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId("questionnaire-1");
     @InjectMocks
     private CarePlanController subject;
     @Mock
@@ -68,22 +70,24 @@ public class CarePlanControllerTest {
     }
 
     @Test
-    public void createCarePlan_success_201() {
+    public void createCarePlan_success_201() throws ServiceException, AccessValidationException {
         CreateCarePlanRequest request = new CreateCarePlanRequest();
         request.setCarePlan(new CarePlanDto());
-        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(CarePlanModel.builder().build());
+        CarePlanModel careplan = CarePlanModel.builder().build();
+        Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(careplan);
+
+        Mockito.when(carePlanService.createCarePlan(careplan)).thenReturn(carePlanId);
         ResponseEntity<Void> result = subject.createCarePlan(request);
         assertEquals(HttpStatus.CREATED, result.getStatusCode());
     }
 
     @Test
     public void ThrowErrorWhenCompleteCareplan_WhenThereAreUnhandledResponses() throws Exception {
-        var careplanId = new QualifiedId.CarePlanId("careplan-1");
         var toThrow = new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", "careplan-1"), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
-        Mockito.when(carePlanService.completeCarePlan(careplanId)).thenThrow(toThrow);
+        Mockito.when(carePlanService.completeCarePlan(carePlanId)).thenThrow(toThrow);
 
         try {
-            subject.completeCarePlan(careplanId.unqualified());
+            subject.completeCarePlan(carePlanId.unqualified());
             fail();
         } catch (BadRequestException badRequestException) {
             assertEquals(ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES, badRequestException.getErrorDetails());
@@ -97,7 +101,7 @@ public class CarePlanControllerTest {
 
         CarePlanModel carePlanModel = CarePlanModel.builder().build();
         Mockito.when(dtoMapper.mapCarePlanDto(request.getCarePlan())).thenReturn(carePlanModel);
-        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenReturn(new QualifiedId.CarePlanId("careplan-1"));
+        Mockito.when(carePlanService.createCarePlan(carePlanModel)).thenReturn(carePlanId);
 
         String location = "http://localhost:8080/api/v1/careplan/careplan-1";
         Mockito.when(locationHeaderBuilder.buildLocationHeader("careplan-1")).thenReturn(URI.create(location));
@@ -159,7 +163,6 @@ public class CarePlanControllerTest {
 
     @Test
     public void getCarePlanById_carePlanPresent_200() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
 
         CarePlanModel carePlanModel = CarePlanModel.builder().build();
         CarePlanDto carePlanDto = new CarePlanDto();
@@ -174,61 +177,44 @@ public class CarePlanControllerTest {
 
     @Test
     public void getCarePlanById_carePlanMissing_404() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+
         Mockito.when(carePlanService.getCarePlanById(carePlanId)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> subject.getCarePlanById(carePlanId.unqualified()));
     }
 
     @Test
     public void getCarePlanById_accessViolation_403() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
         Mockito.doThrow(AccessValidationException.class).when(carePlanService).getCarePlanById(carePlanId);
         assertThrows(ForbiddenException.class, () -> subject.getCarePlanById(carePlanId.unqualified()));
     }
 
     @Test
     public void getCarePlanById_failure_500() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
         Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(carePlanService).getCarePlanById(carePlanId);
         assertThrows(InternalServerErrorException.class, () -> subject.getCarePlanById(carePlanId.unqualified()));
     }
 
     @Test
     public void resolveAlarm_success_200() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId("questionnaire-1");
-
         Mockito.when(carePlanService.resolveAlarm(carePlanId, questionnaireId)).thenReturn(CarePlanModel.builder().build());
-
         ResponseEntity<Void> result = subject.resolveAlarm(carePlanId.unqualified(), questionnaireId.unqualified());
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
     public void resolveAlarm_badRequest_400() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId("questionnaire-1");
-        ;
-
         Mockito.doThrow(new ServiceException("error", ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_EXISTS)).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
-
         assertThrows(BadRequestException.class, () -> subject.resolveAlarm(carePlanId.unqualified(), questionnaireId.unqualified()));
     }
 
     @Test
     public void resolveAlarm_accessViolation_403() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId("questionnaire-1");
-        ;
         Mockito.doThrow(AccessValidationException.class).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
         assertThrows(ForbiddenException.class, () -> subject.resolveAlarm(carePlanId.unqualified(), questionnaireId.unqualified()));
     }
 
     @Test
     public void resolveAlarm_failureToUpdate_500() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        QualifiedId.QuestionnaireId questionnaireId = new QualifiedId.QuestionnaireId("questionnaire-1");
-        ;
         Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(carePlanService).resolveAlarm(carePlanId, questionnaireId);
         assertThrows(InternalServerErrorException.class, () -> subject.resolveAlarm(carePlanId.unqualified(), questionnaireId.unqualified()));
     }
@@ -246,7 +232,7 @@ public class CarePlanControllerTest {
     public void searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException {
         Pagination pagination = new Pagination(1, 10);
         assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
-        Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(cpr, expectedOnlyActive, expectedUnsatisfied, pagination);
+        Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(new CPR(cpr), expectedOnlyActive, expectedUnsatisfied, pagination);
     }
 
     @Test
@@ -265,7 +251,7 @@ public class CarePlanControllerTest {
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel1)).thenReturn(carePlanDto1);
         Mockito.when(dtoMapper.mapCarePlanModel(carePlanModel2)).thenReturn(carePlanDto2);
 
-        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit()));
+        ResponseEntity<List<CarePlanDto>> result = subject.searchCarePlans(Optional.of(cpr.value()), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit()));
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, Objects.requireNonNull(result.getBody()).size());
@@ -323,6 +309,6 @@ public class CarePlanControllerTest {
 
         Mockito.when(carePlanService.getCarePlansWithFilters(cpr, onlyActiveCarePlans, false, pagination)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
-        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(Optional.of(cpr), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
+        assertThrows(InternalServerErrorException.class, () -> subject.searchCarePlans(Optional.of(cpr.value()), Optional.empty(), Optional.of(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
     }
 }

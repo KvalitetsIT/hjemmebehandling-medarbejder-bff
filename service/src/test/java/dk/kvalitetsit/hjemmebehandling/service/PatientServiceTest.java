@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class PatientServiceTest {
-    private static final QualifiedId.OrganizationId ORGANISATION_ID_1 = new QualifiedId.OrganizationId("");
+
     private static final CPR CPR_1 = new CPR("0101010101");
     private static final QualifiedId.CarePlanId CAREPLAN_ID_1 = new QualifiedId.CarePlanId("careplan-1");
     private static final QualifiedId.CarePlanId CAREPLAN_ID_2 = new QualifiedId.CarePlanId("careplan-2");
@@ -56,11 +56,11 @@ public class PatientServiceTest {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1);
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        Mockito.when(patientRepository.searchPatients(List.of(CPR_1), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
+        Mockito.when(patientRepository.searchPatients(List.of(CPR_1.value()), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
 
         PatientModel patientModel = PatientModel.builder().build();
 
-        List<PatientModel> result = subject.searchPatients(List.of(CPR_1));
+        List<PatientModel> result = subject.searchPatients(List.of(CPR_1.value()));
 
 
         assertEquals(1, result.size());
@@ -135,7 +135,7 @@ public class PatientServiceTest {
     public void searchPatients_emptyResult() throws ServiceException {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
 //        Mockito.when(fhirClient.searchPatients(List.of(CPR_1), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
-        List<PatientModel> result = subject.searchPatients(List.of(CPR_1));
+        List<PatientModel> result = subject.searchPatients(List.of(CPR_1.value()));
         assertTrue(result.isEmpty());
     }
 

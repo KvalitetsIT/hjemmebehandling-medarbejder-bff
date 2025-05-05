@@ -1,13 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 
-public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId, QualifiedId.ValueSetId{
+import java.util.regex.Pattern;
+
+public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId, QualifiedId.ValueSetId {
+
 
     static void validateUnqualifiedId(String unqualified) throws IllegalArgumentException {
-        if (!FhirUtils.isPlainId (unqualified)) {
+        if (!isPlainId(unqualified)) {
             throw new IllegalArgumentException("Provided id was not a plain id: " + unqualified);
         }
     }
@@ -31,26 +33,25 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
 
     static QualifiedId from(ResourceType qualifier, String unqualified) throws IllegalArgumentException {
         return switch (qualifier) {
-            case Patient -> new PatientId (unqualified);
-            case Person -> new PersonId (unqualified);
-            case PlanDefinition -> new PlanDefinitionId (unqualified);
-            case Questionnaire -> new QuestionnaireId (unqualified);
-            case QuestionnaireResponse -> new QuestionnaireResponseId (unqualified);
-            case Practitioner -> new PractitionerId (unqualified);
-            case CarePlan -> new CarePlanId (unqualified);
-            case ValueSet -> new ValueSetId (unqualified);
+            case Patient -> new PatientId(unqualified);
+            case Person -> new PersonId(unqualified);
+            case PlanDefinition -> new PlanDefinitionId(unqualified);
+            case Questionnaire -> new QuestionnaireId(unqualified);
+            case QuestionnaireResponse -> new QuestionnaireResponseId(unqualified);
+            case Practitioner -> new PractitionerId(unqualified);
+            case CarePlan -> new CarePlanId(unqualified);
+            case ValueSet -> new ValueSetId(unqualified);
             default -> throw new IllegalStateException("Unexpected value: " + qualifier);
         };
 
     }
-
 
     private static String extractUnqualifiedId(String qualifiedId) {
         var parts = qualifiedId.split("/");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Cannot unqualify id: " + qualifiedId + "! Illegal format");
         }
-        if (!FhirUtils.isPlainId(parts[1])) {
+        if (!isPlainId(parts[1])) {
             throw new IllegalArgumentException("Cannot unqualify id: " + qualifiedId + "! Illegal id");
         }
         return parts[1];
@@ -61,6 +62,16 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
         return Enum.valueOf(ResourceType.class, parts[0]);
     }
 
+    private static boolean isPlainId(String id) {
+        Pattern plainIdPattern = Pattern.compile("^[a-z0-9\\-]+$");
+        return plainIdPattern.matcher(id).matches();
+    }
+
+    private static boolean isQualifiedId(String id, ResourceType qualifier) {
+        String prefix = qualifier.toString() + "/";
+        return id.startsWith(prefix) && isPlainId(id.substring(prefix.length()));
+    }
+
     String unqualified();
 
     ResourceType qualifier();
@@ -68,7 +79,6 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     default String qualified() {
         return qualifier() + "/" + unqualified();
     }
-
 
     record PatientId(String unqualified) implements QualifiedId {
 
@@ -85,7 +95,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record CarePlanId(String unqualified) implements QualifiedId {
 
         public CarePlanId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -98,7 +108,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record PersonId(String unqualified) implements QualifiedId {
 
         public PersonId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -111,7 +121,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record PlanDefinitionId(String unqualified) implements QualifiedId {
 
         public PlanDefinitionId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -124,7 +134,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record QuestionnaireId(String unqualified) implements QualifiedId {
 
         public QuestionnaireId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -137,7 +147,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record QuestionnaireResponseId(String unqualified) implements QualifiedId {
 
         public QuestionnaireResponseId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -149,7 +159,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record PractitionerId(String unqualified) implements QualifiedId {
 
         public PractitionerId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -162,7 +172,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record OrganizationId(String unqualified) implements QualifiedId {
 
         public OrganizationId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override
@@ -174,7 +184,7 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
     record ValueSetId(String unqualified) implements QualifiedId {
 
         public ValueSetId {
-            validateUnqualifiedId (unqualified);
+            validateUnqualifiedId(unqualified);
         }
 
         @Override

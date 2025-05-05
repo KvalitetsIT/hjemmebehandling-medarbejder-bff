@@ -262,7 +262,7 @@ public class CarePlanServiceTest {
         var unsatisfiedAt = Instant.now();
 
         Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
-        Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of(carePlan));
+        //Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of(carePlan));
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(CPR_1, onlyActiveCarePlans, onlyUnSatisfied, new Pagination(1, 10));
 
@@ -277,7 +277,7 @@ public class CarePlanServiceTest {
         var unsatisfiedAt = Instant.now();
 
         Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
-        Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of());
+        //Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of());
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(CPR_1, onlyActiveCarePlans, onlyUnSatisfied, new Pagination(1, 10));
 
@@ -461,7 +461,7 @@ public class CarePlanServiceTest {
         QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
         List<QualifiedId.PlanDefinitionId> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
         List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-        Map<String, FrequencyModel> frequencies = Map.of();
+        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = Map.of();
         PatientDetails patientDetails = buildPatientDetails();
 
         PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
@@ -644,7 +644,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
-        questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1); // unanswered response for questionnaire that is removed
+        questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1.unqualified()); // unanswered response for questionnaire that is removed
 //        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources(questionnaireResponse));
 
         try {

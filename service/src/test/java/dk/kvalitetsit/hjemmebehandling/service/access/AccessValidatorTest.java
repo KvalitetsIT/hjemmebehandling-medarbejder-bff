@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
@@ -36,7 +37,7 @@ public class AccessValidatorTest {
     private UserContextProvider userContextProvider;
 
     @Mock
-    private FhirClient fhirClient;
+    private OrganizationRepository<Organization> organisationRepository;
 
     @Test
     public void validateAccess_contextNotInitialized() {
@@ -47,39 +48,39 @@ public class AccessValidatorTest {
     @Test
     public void validateAccess_unknownOrganization() throws ServiceException {
         var resource = buildResource();
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.empty());
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.empty());
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_noOrganizationTag() throws ServiceException {
         var resource = buildResource();
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.of(organization));
         assertThrows(IllegalStateException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_wrongOrganization_accessViolation() throws ServiceException {
         var resource = buildResource(ORGANIZATION_ID_2);
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.of(organization));
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource));
     }
 
     @Test
     public void validateAccess_correctOrganization_success() throws ServiceException {
         var resource = buildResource(ORGANIZATION_ID_1);
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.of(organization));
         assertDoesNotThrow(() -> subject.validateAccess(resource));
     }
 
@@ -87,10 +88,10 @@ public class AccessValidatorTest {
     public void validateAccess_conjunction_failure() throws ServiceException {
         var resource1 = buildResource(ORGANIZATION_ID_1);
         var resource2 = buildResource(ORGANIZATION_ID_2);
-        var context = new UserContext().orgId(SOR_CODE_1);
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.of(organization));
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
@@ -109,7 +110,7 @@ public class AccessValidatorTest {
         var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId(SOR_CODE_1)).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         var organization = buildOrganization();
-        Mockito.when(fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())).thenReturn(Optional.of(organization));
+        Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.orgId().get())).thenReturn(Optional.of(organization));
         assertDoesNotThrow(() -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
