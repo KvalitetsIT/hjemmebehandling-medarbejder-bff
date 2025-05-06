@@ -14,7 +14,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.6</version>
+		<version>3.4.5</version>
 	</parent>
 	<groupId>dk.kvalitetsit.hjemmebehandling-medarbejder-bff</groupId>
 	<artifactId>hjemmebehandling-medarbejder-bff</artifactId>
@@ -27,7 +27,7 @@
 		<testcontainers.version>1.20.4</testcontainers.version>
 		<spring-prometheus-app-info-version>2.0.3</spring-prometheus-app-info-version>
         <hapi-fhir.version>7.4.5</hapi-fhir.version>
-		<springdoc.version>2.2.0</springdoc.version>
+		<springdoc.version>2.8.5</springdoc.version>
 	</properties>
 
 	<dependencyManagement>
