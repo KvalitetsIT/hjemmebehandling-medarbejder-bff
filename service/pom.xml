@@ -42,7 +42,7 @@
          <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
-            <version>0.9.0</version>
+            <version>0.22.1</version>
          </dependency>
 
         <!-- Actuator so it possible to get metrics -->

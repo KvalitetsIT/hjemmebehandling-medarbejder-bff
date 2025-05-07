@@ -79,6 +79,14 @@
                 <version>${hapi-fhir.version}</version>
             </dependency>
 
+			<!-- This has been added in order to cover the CVE below -->
+			<!-- CVE-2024-47554 -->
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.14.0</version>
+			</dependency>
+
 			<dependency>
 				<groupId>jakarta.annotation</groupId>
 				<artifactId>jakarta.annotation-api</artifactId>
@@ -90,6 +98,19 @@
                 <artifactId>hapi-fhir-structures-r4</artifactId>
                 <version>${hapi-fhir.version}</version>
             </dependency>
+
+
+			<dependency>
+				<groupId>ca.uhn.hapi.fhir</groupId>
+				<artifactId>org.hl7.fhir.utilities</artifactId>
+				<version>6.4.4</version>
+			</dependency>
+
+			<dependency>
+				<groupId>ca.uhn.hapi.fhir</groupId>
+				<artifactId>org.hl7.fhir.r4</artifactId>
+				<version>6.4.4</version>
+			</dependency>
 
             <dependency>
                 <groupId>org.springdoc</groupId>
