@@ -1,9 +1,8 @@
-FROM ibm-semeru-runtimes:open-21-jre
+FROM eclipse-temurin:21.0.7_6-jre-alpine-3.21
 
-RUN apt-get update && apt-get install -y tzdata
+RUN apk update && apk upgrade && apk add --no-cache tzdata && apk --no-cache add bash
 
-RUN groupadd --gid 11000 appuser && \
-    useradd --gid 11000 --uid 11001 -m appuser
+RUN addgroup -g 11000 appuser && adduser -D -u 11001 -G appuser -h /home/appuser appuser
 
 WORKDIR /home/appuser
 COPY entrypoint.sh .
