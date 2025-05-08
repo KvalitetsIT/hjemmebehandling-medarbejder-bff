@@ -8,7 +8,6 @@ public class QuestionAnswerPairModel {
     private AnswerModel answer;
 
 
-
     public QuestionAnswerPairModel(QuestionModel question, AnswerModel answer) {
         this.question = question;
         this.answer = answer;

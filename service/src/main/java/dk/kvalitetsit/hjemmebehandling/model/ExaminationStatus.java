@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.constants;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 public enum ExaminationStatus {
     NOT_EXAMINED(2), UNDER_EXAMINATION(1), EXAMINED(3);

@@ -2,7 +2,6 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import org.hl7.fhir.r4.model.Base;
 
 import java.util.Date;
 import java.util.List;
