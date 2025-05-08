@@ -44,11 +44,9 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class CarePlanServiceTest {
-    private static final QualifiedId.OrganizationId ORGANISATION_ID_1 = new QualifiedId.OrganizationId("");
-    private static final QualifiedId.OrganizationId ORGANISATION_ID_2 = new QualifiedId.OrganizationId("");
     private static final CPR CPR_1 = new CPR("0101010101");
     private static final CPR CPR_2 = new CPR("0202020202");
-    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("Infektionsmedicinsk");
+    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("infektionsmedicinsk");
     private static final QualifiedId.CarePlanId CAREPLAN_ID_1 = new QualifiedId.CarePlanId("careplan-1");
     private static final QualifiedId.CarePlanId CAREPLAN_ID_2 = new QualifiedId.CarePlanId("careplan-2");
     private static final QualifiedId.PatientId PATIENT_ID_1 = new QualifiedId.PatientId("patient-1");

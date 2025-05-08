@@ -98,7 +98,7 @@ public class AccessValidatorTest {
     @Test
     public void whenGettingOrganisationGivenNoSorCodeThenReturnError() {
         var resource1 = buildResource(ORGANIZATION_ID_1);
-        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId("")).build();
+        var context = UserContextModel.builder().orgId(new QualifiedId.OrganizationId("organization")).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         assertThrows(AccessValidationException.class, () -> subject.validateAccess(resource1));
     }
