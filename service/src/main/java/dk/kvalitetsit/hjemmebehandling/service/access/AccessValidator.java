@@ -49,10 +49,8 @@ public class AccessValidator {
         if (context == null) {
             throw new IllegalStateException("UserContext was not initialized!");
         }
-
-
-
-        Organization organization = fhirClient.lookupOrganizationBySorCode(context.getOrgId())
+        // TODO: Handle 'Optional.get()' without 'isPresent()' check below
+        Organization organization = fhirClient.lookupOrganizationBySorCode(context.getOrgId().get())
                 .orElseThrow(() -> new AccessValidationException(
                         String.format("No organization was present for sorCode %s!", context.getOrgId())));
 

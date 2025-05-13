@@ -1,61 +1,44 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.api.*;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
-import org.hl7.fhir.r4.model.ResourceType;
-import org.hl7.fhir.r4.model.TimeType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.headers.Header;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.TimeType;
+import org.openapitools.api.CarePlanApi;
+import org.openapitools.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@Tag(name = "CarePlan", description = "API for manipulating and retrieving CarePlans.")
-public class CarePlanController extends BaseController {
+public class CarePlanController extends BaseController implements CarePlanApi {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
     private final CarePlanService carePlanService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
-
     private final PlanDefinitionService planDefinitionService;
-
-    private enum SearchType {
-        CPR, UNSATISFIED_CAREPLANS,ACTIVE
-    }
 
     public CarePlanController(PlanDefinitionService planDefinitionService, CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
@@ -65,87 +48,34 @@ public class CarePlanController extends BaseController {
         this.planDefinitionService = planDefinitionService;
     }
 
-    @GetMapping(value = "/v1/careplan")
-    public ResponseEntity<List<CarePlanDto>> searchCarePlans(
-                @RequestParam("cpr")
-                Optional<String> cpr,
-                @RequestParam("only_unsatisfied_schedules")
-                Optional<Boolean> onlyUnsatisfiedSchedules,
-                @RequestParam("only_active_careplans")
-                Optional<Boolean> onlyActiveCarePlans,
-                @RequestParam("page_number")
-                Optional<Integer> pageNumber,
-                @RequestParam("page_size")
-                Optional<Integer> pageSize
-    ) {
-
-        // TODO: Validate the request params
+    @Override
+    public ResponseEntity<Void> completeCarePlan(String id) {
         try {
-            Pagination pagination = null;
-            if (pageNumber.isPresent() && pageSize.isPresent()) {
-                pagination = new Pagination(pageNumber.get(), pageSize.get());
-            }
-
-            List<CarePlanModel> carePlans = carePlanService.getCarePlansWithFilters(cpr,onlyActiveCarePlans.orElse(false),onlyUnsatisfiedSchedules.orElse(false), pagination);
-
-            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).collect(Collectors.toList()));
-            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).collect(Collectors.toList()));
-        }
-        catch(ServiceException e) {
-            logger.error("Could not look up careplans by cpr", e);
-            throw toStatusCodeException(e);
-        }
-    }
-
-    @Operation(summary = "Get CarePlan by id.", description = "Retrieves a CarePlan by its id.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successful operation.", content = @Content(schema = @Schema(implementation = CarePlanDto.class))),
-            @ApiResponse(responseCode = "404", description = "CarePlan not found.", content = @Content)
-    })
-    @GetMapping(value = "/v1/careplan/{id}", produces = { "application/json" })
-    public ResponseEntity<CarePlanDto> getCarePlanById(
-            @PathVariable
-            @Parameter(description = "Id of the CarePlan to be retrieved.")
-            String id
-    ) {
-        // Look up the CarePlan
-        Optional<CarePlanModel> carePlan = Optional.empty();
-
-        try {
-            carePlan = carePlanService.getCarePlanById(id);
-        }
-        catch(AccessValidationException | ServiceException e) {
-            logger.error("Could not update questionnaire response", e);
+            CarePlanModel carePlan = carePlanService.completeCarePlan(id);
+            auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.getPatient());
+        } catch (ServiceException e) {
+            logger.error("completeCarePlan({}) error:", id, e);
             throw toStatusCodeException(e);
         }
 
-        if(!carePlan.isPresent()) {
-            throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
-        }
-        auditLoggingService.log("GET /v1/careplan/"+id, carePlan.get().getPatient());
-        return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
+        return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Create a new CarePlan for a patient.", description = "Create a CarePlan for a patient, based on a PlanDefinition.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Successful operation.", headers = { @Header(name = "Location", description = "URL pointing to the created CarePlan.")}, content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error during creation of CarePlan.", content = @Content(schema = @Schema(implementation = ErrorDto.class)))
-    })
-    @PostMapping(value = "/v1/careplan", consumes = { "application/json" })
-    public ResponseEntity<Void> createCarePlan(@RequestBody CreateCarePlanRequest request) {
-        String carePlanId = null;
+    @Override
+    public ResponseEntity<Void> createCarePlan(CreateCarePlanRequest request) {
+        String carePlanId;
         try {
             // force time for deadline to organization configured default.
             if (request.getCarePlan().getQuestionnaires() != null) {
                 TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
-                request.getCarePlan().getQuestionnaires().forEach(q -> q.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+                // todo: 'Optional.get()' without 'isPresent()' check
+                request.getCarePlan().getQuestionnaires().forEach(q -> q.getFrequency().get().setTimeOfDay(Optional.of(defaultDeadlineTime.getValue())));
             }
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
             carePlanId = carePlanService.createCarePlan(carePlan);
             auditLoggingService.log("POST /v1/careplan", carePlan.getPatient());
-        }
-        catch(AccessValidationException | ServiceException e) {
+        } catch (AccessValidationException | ServiceException e) {
             logger.error("Error creating CarePlan", e);
             throw toStatusCodeException(e);
         }
@@ -154,14 +84,57 @@ public class CarePlanController extends BaseController {
         return ResponseEntity.created(location).build();
     }
 
-    @PutMapping(value = "/v1/careplan")
-    public void updateCarePlan(CarePlanDto carePlanDto) {
-        throw new UnsupportedOperationException();
+    @Override
+    public ResponseEntity<CarePlanDto> getCarePlanById(String id) {
+        try {
+            Optional<CarePlanModel> carePlan = carePlanService.getCarePlanById(id);
+
+            if (carePlan.isEmpty()) {
+                throw new ResourceNotFoundException(String.format("CarePlan with id %s not found.", id), ErrorDetails.CAREPLAN_DOES_NOT_EXIST);
+            }
+            auditLoggingService.log("GET /v1/careplan/" + id, carePlan.get().getPatient());
+            return ResponseEntity.ok(dtoMapper.mapCarePlanModel(carePlan.get()));
+        } catch (AccessValidationException | ServiceException e) {
+            logger.error("Could not update questionnaire response", e);
+            throw toStatusCodeException(e);
+        }
     }
 
-    @PatchMapping(value = "/v1/careplan/{id}")
-    public ResponseEntity<Void> patchCarePlan(@PathVariable String id, @RequestBody UpdateCareplanRequest request) {
-        if(request.getPlanDefinitionIds() == null || request.getQuestionnaires() == null ) {
+    @Override
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<String>> statusesToInclude) {
+        try {
+            if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
+                var details = ErrorDetails.PARAMETERS_INCOMPLETE;
+                details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
+                throw new BadRequestException(details);
+            }
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.orElse(List.of()));
+
+            // todo: 'Optional.get()' without 'isPresent()' check
+            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());
+        } catch (ServiceException e) {
+            logger.error("Could not look up plandefinitions", e);
+            throw toStatusCodeException(e);
+        }
+    }
+
+    @Override
+    public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
+        try {
+            List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
+            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).toList();
+            return ResponseEntity.ok(ids);
+        } catch (ServiceException e) {
+            logger.error("Unresolved questionnaires could not be fetched due to:  %s", e);
+            throw toStatusCodeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Void> patchCarePlan(String id, UpdateCareplanRequest request) {
+        if (request.getPlanDefinitionIds() == null || request.getQuestionnaires() == null) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
         try {
@@ -169,48 +142,21 @@ public class CarePlanController extends BaseController {
             Map<String, FrequencyModel> frequencies = getQuestionnaireFrequencies(request.getQuestionnaires());
             PatientDetails patientDetails = getPatientDetails(request);
 
-            CarePlanModel carePlanModel = carePlanService.updateCarePlan(
-                    id,
-                    request.getPlanDefinitionIds(),
-                    questionnaireIds,
-                    frequencies,
-                    patientDetails
-            );
+            CarePlanModel carePlanModel = carePlanService.updateCarePlan(id, request.getPlanDefinitionIds(), questionnaireIds, frequencies, patientDetails);
 
-            auditLoggingService.log("PATCH /v1/careplan/"+id, carePlanModel.getPatient());
-        }
-        catch(AccessValidationException | ServiceException e) {
+            auditLoggingService.log("PATCH /v1/careplan/" + id, carePlanModel.getPatient());
+        } catch (AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
         return ResponseEntity.ok().build();
     }
 
-
-    /**
-     * Returns unresolved questionnaires
-     * The questionnaires which still have unanswered questions
-     */
-    @GetMapping(value = "/v1/careplan/{id}/questionnaires/unresolved")
-    public ResponseEntity<List<String>> getUnresolvedQuestionnaires(@PathVariable String id){
-        try {
-            List<QuestionnaireModel> questionnaires = carePlanService.getUnresolvedQuestionnaires(id);
-            List<String> ids = questionnaires.stream().map(questionnaire -> questionnaire.getId().getId()).collect(Collectors.toList());
-            return ResponseEntity.ok(ids);
-        }catch (ServiceException e){
-            logger.error(String.format("Unresolved questionnaires could not be fetched due to:  %s", e ));
-            throw toStatusCodeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @PutMapping(value = "/v1/careplan/{id}/resolve-alarm/{questionnaireId}")
-    public ResponseEntity<Void> resolveAlarm(@PathVariable String id, @PathVariable String questionnaireId) {
+    @Override
+    public ResponseEntity<Void> resolveAlarm(String id, String questionnaireId) {
         try {
             CarePlanModel carePlan = carePlanService.resolveAlarm(id, questionnaireId);
-            auditLoggingService.log("PUT /v1/careplan/"+id+"/resolve-alarm", carePlan.getPatient());
-        }
-        catch(AccessValidationException | ServiceException e) {
+            auditLoggingService.log("PUT /v1/careplan/" + id + "/resolve-alarm", carePlan.getPatient());
+        } catch (AccessValidationException | ServiceException e) {
             logger.error(String.format("resolveAlarm(%s, %s) error:", id, questionnaireId), e);
             throw toStatusCodeException(e);
         }
@@ -218,74 +164,66 @@ public class CarePlanController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping(value = "/v1/careplan/{id}/complete")
-    public ResponseEntity<Void> completeCarePlan(@PathVariable String id) {
+    @Override
+    public ResponseEntity<List<CarePlanDto>> searchCarePlans(Optional<String> cpr, Optional<Boolean> onlyUnsatisfiedSchedules, Optional<Boolean> onlyActiveCareplans, Optional<Integer> pageNumber, Optional<Integer> pageSize) {
         try {
-            CarePlanModel carePlan = carePlanService.completeCarePlan(id);
-            auditLoggingService.log("PUT /v1/careplan/"+id+"/complete", carePlan.getPatient());
-        }
-        catch(ServiceException e) {
-            logger.error(String.format("completeCarePlan(%s) error:", id), e);
+            List<CarePlanModel> carePlans;
+
+            if (pageNumber.isPresent() && pageSize.isPresent()) {
+                Pagination pagination = new Pagination(pageNumber.get(), pageSize.get());
+
+                if (cpr.isPresent()) {
+                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
+                } else {
+                    carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false), pagination);
+                }
+
+            } else {
+                if (cpr.isPresent()) {
+                    carePlans = carePlanService.getCarePlansWithFilters(cpr.get(), onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
+                } else {
+                    carePlans = carePlanService.getCarePlansWithFilters(onlyActiveCareplans.orElse(false), onlyUnsatisfiedSchedules.orElse(false));
+                }
+            }
+            auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::getPatient).toList());
+            return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).toList());
+        } catch (ServiceException e) {
+            logger.error("Could not look up careplans by cpr", e);
             throw toStatusCodeException(e);
         }
-
-        return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/v1/careplan/plandefinition")
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(@RequestParam("statusesToInclude") Optional<Collection<String>> statusesToInclude) {
-        try {
-            if(statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()){
-                var details = ErrorDetails.PARAMETERS_INCOMPLETE;
-                details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
-                throw new BadRequestException(details);
-            }
-
-            Collection<String> nonOptionalStatusesToInclude = statusesToInclude.orElseGet(List::of);
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(nonOptionalStatusesToInclude);
-
-
-            return ResponseEntity.ok(planDefinitions.stream()
-                    .map(dtoMapper::mapPlanDefinitionModel)
-                    .sorted(Comparator.comparing(PlanDefinitionDto::getLastUpdated, Comparator.nullsFirst(Instant::compareTo).reversed()))
-                    .collect(Collectors.toList()));
-        }
-        catch(ServiceException e) {
-            logger.error("Could not look up plandefinitions", e);
-            throw toStatusCodeException(e);
-        }
+    @Override
+    public ResponseEntity<Void> updateCarePlan(CarePlanDto carePlanDto) {
+        throw new UnsupportedOperationException();
     }
 
     private List<String> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {
-        return questionnaireFrequencyPairs
-                .stream()
-                .map(pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire))
-                .collect(Collectors.toList());
+        // todo: 'Optional.get()' without 'isPresent()' check
+        return questionnaireFrequencyPairs.stream().map(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire)).toList();
     }
 
     private Map<String, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
         // force time for deadline to organization configured default.
         TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
-        questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().setTimeOfDay(defaultDeadlineTime.getValue()));
+        // todo: 'Optional.get()' without 'isPresent()' check
+        questionnaireFrequencyPairs.forEach(pair -> pair.getFrequency().get().setTimeOfDay(Optional.of(defaultDeadlineTime.getValue())));
 
-        return questionnaireFrequencyPairs
-                .stream()
-                .collect(Collectors.toMap(
-                        pair -> FhirUtils.qualifyId(pair.getId(), ResourceType.Questionnaire),
-                        pair -> dtoMapper.mapFrequencyDto(pair.getFrequency()))
-                );
+        // todo: 'Optional.get()' without 'isPresent()' check
+        return questionnaireFrequencyPairs.stream().collect(Collectors.toMap(pair -> FhirUtils.qualifyId(pair.getId().get(), ResourceType.Questionnaire), pair -> dtoMapper.mapFrequencyDto(pair.getFrequency().get())));
     }
 
     private PatientDetails getPatientDetails(UpdateCareplanRequest request) {
         PatientDetails patientDetails = new PatientDetails();
 
-        patientDetails.setPatientPrimaryPhone(request.getPatientPrimaryPhone());
-        patientDetails.setPatientSecondaryPhone(request.getPatientSecondaryPhone());
-        patientDetails.setPrimaryRelativeName(request.getPrimaryRelativeName());
-        patientDetails.setPrimaryRelativeAffiliation(request.getPrimaryRelativeAffiliation());
-        patientDetails.setPrimaryRelativePrimaryPhone(request.getPrimaryRelativePrimaryPhone());
-        patientDetails.setPrimaryRelativeSecondaryPhone(request.getPrimaryRelativeSecondaryPhone());
+        request.getPatientPrimaryPhone().ifPresent(patientDetails::setPatientPrimaryPhone);
+        request.getPatientSecondaryPhone().ifPresent(patientDetails::setPatientSecondaryPhone);
+        request.getPrimaryRelativeName().ifPresent(patientDetails::setPrimaryRelativeName);
+        request.getPrimaryRelativeAffiliation().ifPresent(patientDetails::setPrimaryRelativeAffiliation);
+        request.getPrimaryRelativePrimaryPhone().ifPresent(patientDetails::setPrimaryRelativePrimaryPhone);
+        request.getPrimaryRelativeSecondaryPhone().ifPresent(patientDetails::setPrimaryRelativeSecondaryPhone);
 
         return patientDetails;
     }
+
 }

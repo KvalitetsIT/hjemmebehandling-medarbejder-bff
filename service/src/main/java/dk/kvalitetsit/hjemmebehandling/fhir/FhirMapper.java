@@ -1,29 +1,19 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.api.question.Option;
-import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.*;
-
-import org.hl7.fhir.r4.model.Enumeration;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
 import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Enumeration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class FhirMapper {
@@ -38,37 +28,37 @@ public class FhirMapper {
         carePlan.setTitle(carePlanModel.getTitle());
         carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.getStatus().toString()));
         carePlan.setCreated(Date.from(carePlanModel.getCreated()));
-        if(carePlanModel.getStartDate() != null) {
+        if (carePlanModel.getStartDate() != null) {
             carePlan.setPeriod(new Period());
             carePlan.getPeriod().setStart(Date.from(carePlanModel.getStartDate()));
         }
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
 
         // Set the subject
-        if(carePlanModel.getPatient().getId() != null) {
+        if (carePlanModel.getPatient().getId() != null) {
             carePlan.setSubject(new Reference(carePlanModel.getPatient().getId().toString()));
         }
 
         // Map questionnaires to activities
-        if(carePlanModel.getQuestionnaires() != null) {
+        if (carePlanModel.getQuestionnaires() != null) {
             carePlan.setActivity(carePlanModel.getQuestionnaires()
                     .stream()
                     .map(this::buildCarePlanActivity)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
-        if(carePlanModel.getPlanDefinitions() != null) {
+        if (carePlanModel.getPlanDefinitions() != null) {
             // Add references to planDefinitions
             carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
                     .stream()
                     .map(pd -> new CanonicalType(pd.getId().toString()))
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult, String organisationId)  {
+    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult, String organisationId) {
         CarePlanModel carePlanModel = new CarePlanModel();
 
         mapBaseAttributesToModel(carePlanModel, carePlan);
@@ -77,7 +67,7 @@ public class FhirMapper {
         carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlan.getStatus().toString()));
         carePlanModel.setCreated(carePlan.getCreated().toInstant());
         carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
-        if(carePlan.getPeriod().getEnd() != null) {
+        if (carePlan.getPeriod().getEnd() != null) {
             carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
         }
 
@@ -87,16 +77,16 @@ public class FhirMapper {
         carePlanModel.setPatient(mapPatient(patient, organisationId));
 
         carePlanModel.setPlanDefinitions(new ArrayList<>());
-        for(var ic : carePlan.getInstantiatesCanonical()) {
+        for (var ic : carePlan.getInstantiatesCanonical()) {
             var planDefinition = lookupResult
-                .getPlanDefinition(ic.getValue())
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
-            carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
+                    .getPlanDefinition(ic.getValue())
+                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
+            carePlanModel.getPlanDefinitions().add(mapPlanDefinitionResult(planDefinition, lookupResult));
         }
 
         carePlanModel.setQuestionnaires(new ArrayList<>());
-        for(var activity : carePlan.getActivity()) {
-            String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
+        for (var activity : carePlan.getActivity()) {
+            String questionnaireId = activity.getDetail().getInstantiatesCanonical().getFirst().getValue();
             var questionnaire = lookupResult
                     .getQuestionnaire(questionnaireId)
                     .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire for CarePlan %s!", carePlanModel.getId())));
@@ -111,18 +101,18 @@ public class FhirMapper {
 
             // get thresholds from questionnaire
             List<ThresholdModel> questionnaireThresholds = ExtensionMapper.extractThresholds(
-                questionnaire.getItem().stream()
-                    .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
-                    .collect(Collectors.toList())
+                    questionnaire.getItem().stream()
+                            .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
+                            .toList()
             );
             wrapper.getThresholds().addAll(questionnaireThresholds);
 
             // find thresholds from plandefinition
             Optional<List<ThresholdModel>> thresholds = carePlanModel.getPlanDefinitions().stream()
-                .flatMap(p -> p.getQuestionnaires().stream())
-                .filter(q -> q.getQuestionnaire().getId().equals(questionnaireModel.getId()))
-                .findFirst()
-                .map(QuestionnaireWrapperModel::getThresholds);
+                    .flatMap(p -> p.getQuestionnaires().stream())
+                    .filter(q -> q.getQuestionnaire().getId().equals(questionnaireModel.getId()))
+                    .findFirst()
+                    .map(QuestionnaireWrapperModel::getThresholds);
             thresholds.ifPresent(thresholdModels -> wrapper.getThresholds().addAll(thresholdModels));
 
             carePlanModel.getQuestionnaires().add(wrapper);
@@ -145,7 +135,7 @@ public class FhirMapper {
         Timing.TimingRepeatComponent repeat = new Timing.TimingRepeatComponent();
 
         EnumFactory<Timing.DayOfWeek> factory = new Timing.DayOfWeekEnumFactory();
-        repeat.setDayOfWeek(frequencyModel.getWeekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).collect(Collectors.toList()));
+        repeat.setDayOfWeek(frequencyModel.getWeekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).toList());
         repeat.setTimeOfDay(List.of(new TimeType(frequencyModel.getTimeOfDay().toString())));
         timing.setRepeat(repeat);
 
@@ -156,7 +146,7 @@ public class FhirMapper {
         Patient patient = new Patient();
 
         // Id may be null, in case we are creating the patient.
-        if(patientModel.getId() != null) {
+        if (patientModel.getId() != null) {
             patient.setId(patientModel.getId().toString());
         }
 
@@ -164,28 +154,28 @@ public class FhirMapper {
         patient.addName(name);
 
         patient.getIdentifier().add(makeCprIdentifier(patientModel.getCpr()));
-        
+
         patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.getCustomUserId()));
         patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.getCustomUserName()));
 
-        if(patientModel.getContactDetails() != null) {
+        if (patientModel.getContactDetails() != null) {
             var contactDetails = patientModel.getContactDetails();
 
             var address = buildAddress(contactDetails);
             patient.addAddress(address);
 
-            if(contactDetails.getPrimaryPhone() != null) {
+            if (contactDetails.getPrimaryPhone() != null) {
                 var primaryContactPoint = buildContactPoint(contactDetails.getPrimaryPhone(), 1);
                 patient.addTelecom(primaryContactPoint);
             }
 
-            if(contactDetails.getSecondaryPhone() != null) {
+            if (contactDetails.getSecondaryPhone() != null) {
                 var secondaryContactPoint = buildContactPoint(contactDetails.getSecondaryPhone(), 2);
                 patient.addTelecom(secondaryContactPoint);
             }
         }
 
-        if(patientModel.getPrimaryContact().getName() != null) {
+        if (patientModel.getPrimaryContact().getName() != null) {
             var contact = new Patient.ContactComponent();
 
             var contactName = buildName(patientModel.getPrimaryContact().getName());
@@ -194,21 +184,21 @@ public class FhirMapper {
             organisation.setReference(patientModel.getPrimaryContact().getOrganisation());
             contact.setOrganization(organisation);
 
-            if(patientModel.getPrimaryContact().getAffiliation() != null) {
+            if (patientModel.getPrimaryContact().getAffiliation() != null) {
 
                 var codeableConcept = new CodeableConcept();
                 codeableConcept.setText(patientModel.getPrimaryContact().getAffiliation());
                 contact.setRelationship(List.of(codeableConcept));
             }
 
-            if(patientModel.getPrimaryContact().getContactDetails() != null) {
+            if (patientModel.getPrimaryContact().getContactDetails() != null) {
                 var primaryRelativeContactDetails = patientModel.getPrimaryContact().getContactDetails();
-                if(primaryRelativeContactDetails.getPrimaryPhone() != null) {
+                if (primaryRelativeContactDetails.getPrimaryPhone() != null) {
                     var relativePrimaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getPrimaryPhone(), 1);
                     contact.addTelecom(relativePrimaryContactPoint);
                 }
 
-                if(primaryRelativeContactDetails.getSecondaryPhone() != null) {
+                if (primaryRelativeContactDetails.getSecondaryPhone() != null) {
                     var relativeSecondaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getSecondaryPhone(), 2);
                     contact.addTelecom(relativeSecondaryContactPoint);
                 }
@@ -231,29 +221,30 @@ public class FhirMapper {
         patientModel.setCpr(extractCpr(patient));
         patientModel.setContactDetails(extractPatientContactDetails(patient));
 
-        if(patient.getContact() != null && !patient.getContact().isEmpty()) {
+        if (patient.getContact() != null && !patient.getContact().isEmpty()) {
 
-            if(organizationId == null) throw new IllegalStateException("Mapping contact is only possible while the organization id is known");
+            if (organizationId == null)
+                throw new IllegalStateException("Mapping contact is only possible while the organization id is known");
 
             var optionalContact = patient.getContact().stream()
                     .filter(c -> c.getOrganization().getReference().equals(organizationId))
                     .findFirst();
 
-            if (optionalContact.isPresent()){
+            if (optionalContact.isPresent()) {
                 var contact = optionalContact.get();
                 patientModel.getPrimaryContact().setName(contact.getName().getText());
                 patientModel.getPrimaryContact().setOrganisation(contact.getOrganization().getReference());
-                patientModel.getPrimaryContact().setAffiliation( contact.getRelationshipFirstRep().getText() );
+                patientModel.getPrimaryContact().setAffiliation(contact.getRelationshipFirstRep().getText());
 
                 // Extract phone numbers
-                if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
+                if (contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
                     var primaryRelativeContactDetails = new ContactDetailsModel();
 
-                    for(var telecom : contact.getTelecom()) {
-                        if(telecom.getRank() == 1) {
+                    for (var telecom : contact.getTelecom()) {
+                        if (telecom.getRank() == 1) {
                             primaryRelativeContactDetails.setPrimaryPhone(telecom.getValue());
                         }
-                        if(telecom.getRank() == 2) {
+                        if (telecom.getRank() == 2) {
                             primaryRelativeContactDetails.setSecondaryPhone(telecom.getValue());
                         }
                     }
@@ -267,7 +258,7 @@ public class FhirMapper {
         return patientModel;
     }
 
-    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
+    public PlanDefinitionModel mapPlanDefinitionResult(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
         PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
 
         mapBaseAttributesToModel(planDefinitionModel, planDefinition);
@@ -275,14 +266,14 @@ public class FhirMapper {
         planDefinitionModel.setName(planDefinition.getName());
         planDefinitionModel.setTitle(planDefinition.getTitle());
         planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()));
-        if(planDefinition.getDate() != null)
+        if (planDefinition.getDate() != null)
             planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
 
-        if(planDefinition.getMeta().getLastUpdated() != null)
+        if (planDefinition.getMeta().getLastUpdated() != null)
             planDefinitionModel.setLastUpdated(planDefinition.getMeta().getLastUpdated().toInstant());
 
         // Map actions to questionnaires, along with their thresholds
-        planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
+        planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).toList());
 
         return planDefinitionModel;
     }
@@ -293,10 +284,10 @@ public class FhirMapper {
         mapBaseAttributesToFhir(questionnaire, questionnaireModel);
 
         questionnaire.setTitle(questionnaireModel.getTitle());
-        questionnaire.setStatus( mapQuestionnaireStatus(questionnaireModel.getStatus()) );
+        questionnaire.setStatus(mapQuestionnaireStatus(questionnaireModel.getStatus()));
         questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
-            .map(this::mapQuestionnaireItem)
-            .collect(Collectors.toList()));
+                .map(this::mapQuestionnaireItem)
+                .toList());
         if (questionnaireModel.getCallToAction() != null) {
             questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.getCallToAction()));
         }
@@ -306,17 +297,16 @@ public class FhirMapper {
     }
 
 
-
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
         QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
         mapBaseAttributesToModel(questionnaireModel, questionnaire);
         questionnaireModel.setLastUpdated(questionnaire.getMeta().getLastUpdated());
         questionnaireModel.setTitle(questionnaire.getTitle());
-        questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
+        questionnaireModel.setStatus(mapQuestionnaireStatus(questionnaire.getStatus()));
         questionnaireModel.setQuestions(questionnaire.getItem().stream()
-            .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
-            .map(this::mapQuestionnaireItem).collect(Collectors.toList()));
+                .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
+                .map(this::mapQuestionnaireItem).toList());
         questionnaireModel.setCallToAction(questionnaire.getItem().stream()
                 .filter(q -> q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // process call-to-action's
                 .findFirst()
@@ -327,29 +317,23 @@ public class FhirMapper {
     }
 
     private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return Enumerations.PublicationStatus.ACTIVE;
-            case DRAFT:
-                return Enumerations.PublicationStatus.DRAFT;
-            case RETIRED:
-                return Enumerations.PublicationStatus.RETIRED;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireStatus %s", status.toString()));
-        }
+        return switch (status) {
+            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
+            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
+            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireStatus %s", status));
+        };
     }
 
     private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return QuestionnaireStatus.ACTIVE;
-            case DRAFT:
-                return QuestionnaireStatus.DRAFT;
-            case RETIRED:
-                return QuestionnaireStatus.RETIRED;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status.toString()));
-        }
+        return switch (status) {
+            case ACTIVE -> QuestionnaireStatus.ACTIVE;
+            case DRAFT -> QuestionnaireStatus.DRAFT;
+            case RETIRED -> QuestionnaireStatus.RETIRED;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
+        };
     }
 
     public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
@@ -358,7 +342,7 @@ public class FhirMapper {
         mapBaseAttributesToFhir(questionnaireResponse, questionnaireResponseModel);
 
         questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId().toString());
-        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
+        for (var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
             questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
         }
         questionnaireResponse.setBasedOn(List.of(new Reference(questionnaireResponseModel.getCarePlanId().toString())));
@@ -385,11 +369,11 @@ public class FhirMapper {
         // Populate questionAnswerMap
         List<QuestionAnswerPairModel> answers = new ArrayList<>();
 
-        for(var item : questionnaireResponse.getItem()) {
+        for (var item : questionnaireResponse.getItem()) {
             QuestionModel question;
             try {
                 question = getQuestion(questionnaire, item.getLinkId());
-            }   catch (IllegalStateException e) {
+            } catch (IllegalStateException e) {
                 // Corresponding question could not be found in the current/newest questionnaire
                 // ignore
                 // Or use the overloaded version which runs thought historical versions as well
@@ -397,20 +381,22 @@ public class FhirMapper {
                 question = null;
             }
             AnswerModel answer = getAnswer(item);
-            answers.add( new QuestionAnswerPairModel(question, answer));
+            answers.add(new QuestionAnswerPairModel(question, answer));
         }
 
         questionnaireResponseModel.setQuestionAnswerPairs(answers);
 
         return questionnaireResponseModel;
     }
+
     public QuestionnaireResponseModel mapQuestionnaireResponse(
             QuestionnaireResponse questionnaireResponse,
             FhirLookupResult lookupResult,
             List<Questionnaire> historicalQuestionnaires,
             String organisationId
     ) {
-        if (historicalQuestionnaires == null) return mapQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
+        if (historicalQuestionnaires == null)
+            return mapQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
 
         QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
 
@@ -418,7 +404,7 @@ public class FhirMapper {
         List<QuestionAnswerPairModel> answers = new ArrayList<>();
 
         //Look through all the given questionnaires
-        for(var item : questionnaireResponse.getItem()) {
+        for (var item : questionnaireResponse.getItem()) {
             QuestionModel question = null;
             boolean deprecated = false;
             int i = 0;
@@ -459,7 +445,6 @@ public class FhirMapper {
     }
 
 
-
     private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
         QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
 
@@ -473,24 +458,24 @@ public class FhirMapper {
         questionnaireResponseModel.setQuestionnaireId(extractId(questionnaire));
 
 
-        if(questionnaireResponse.getBasedOn() == null || questionnaireResponse.getBasedOn().size() != 1) {
+        if (questionnaireResponse.getBasedOn() == null || questionnaireResponse.getBasedOn().size() != 1) {
             throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: Expected exactly one BasedOn-attribute!", questionnaireResponseModel.getId().toString()));
         }
-        questionnaireResponseModel.setCarePlanId(new QualifiedId(questionnaireResponse.getBasedOn().get(0).getReference()));
+        questionnaireResponseModel.setCarePlanId(new QualifiedId(questionnaireResponse.getBasedOn().getFirst().getReference()));
 
-        if(questionnaireResponse.getAuthor() == null) {
+        if (questionnaireResponse.getAuthor() == null) {
             throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", questionnaireResponseModel.getId().toString()));
         }
         questionnaireResponseModel.setAuthorId(new QualifiedId(questionnaireResponse.getAuthor().getReference()));
 
-        if(questionnaireResponse.getSource() == null) {
+        if (questionnaireResponse.getSource() == null) {
             throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", questionnaireResponseModel.getId().toString()));
         }
         questionnaireResponseModel.setSourceId(new QualifiedId(questionnaireResponse.getSource().getReference()));
 
         questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
         questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
-        questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));
+        questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategory(questionnaireResponse.getExtension()));
 
         String practitionerId = ExtensionMapper.tryExtractExaminationAuthorPractitionerId(questionnaireResponse.getExtension());
         Optional<Practitioner> practitioner = lookupResult.getPractitioner(practitionerId);
@@ -532,11 +517,11 @@ public class FhirMapper {
     public FrequencyModel mapTiming(Timing timing) {
         FrequencyModel frequencyModel = new FrequencyModel();
 
-        if(timing.getRepeat() != null) {
+        if (timing.getRepeat() != null) {
             Timing.TimingRepeatComponent repeat = timing.getRepeat();
-            frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).collect(Collectors.toList()));
-            if(!repeat.getTimeOfDay().isEmpty())
-                frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
+            frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).toList());
+            if (!repeat.getTimeOfDay().isEmpty())
+                frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().getFirst().getValue()));
         }
 
         return frequencyModel;
@@ -549,23 +534,21 @@ public class FhirMapper {
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
-        if(source.getId() != null) {
+        if (source.getId() != null) {
             target.setId(source.getId().toString());
         }
-        if(source.getOrganizationId() != null) {
+        if (source.getOrganizationId() != null) {
             target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
         }
     }
 
     private QualifiedId extractId(DomainResource resource) {
         String unqualifiedVersionless = resource.getIdElement().toUnqualifiedVersionless().getValue();
-        if(FhirUtils.isPlainId(unqualifiedVersionless)) {
+        if (FhirUtils.isPlainId(unqualifiedVersionless)) {
             return new QualifiedId(unqualifiedVersionless, resource.getResourceType());
-        }
-        else if (FhirUtils.isQualifiedId(unqualifiedVersionless, resource.getResourceType())) {
+        } else if (FhirUtils.isQualifiedId(unqualifiedVersionless, resource.getResourceType())) {
             return new QualifiedId(unqualifiedVersionless);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException(String.format("Illegal id for resource of type %s: %s!", resource.getResourceType(), unqualifiedVersionless));
         }
     }
@@ -580,7 +563,7 @@ public class FhirMapper {
     }
 
     public String extractCpr(Patient patient) {
-        return patient.getIdentifier().get(0).getValue();
+        return patient.getIdentifier().getFirst().getValue();
     }
 
     private HumanName buildName(String givenName, String familyName) {
@@ -622,24 +605,24 @@ public class FhirMapper {
     }
 
     private String extractFamilyName(Patient patient) {
-        if(patient.getName() == null || patient.getName().isEmpty()) {
+        if (patient.getName() == null || patient.getName().isEmpty()) {
             return null;
         }
-        return patient.getName().get(0).getFamily();
+        return patient.getName().getFirst().getFamily();
     }
 
     private String extractGivenNames(Patient patient) {
-        if(patient.getName() == null || patient.getName().isEmpty()) {
+        if (patient.getName() == null || patient.getName().isEmpty()) {
             return null;
         }
-        return patient.getName().get(0).getGivenAsSingleString();
+        return patient.getName().getFirst().getGivenAsSingleString();
     }
 
     private ContactDetailsModel extractPatientContactDetails(Patient patient) {
         ContactDetailsModel contactDetails = new ContactDetailsModel();
 
         var lines = patient.getAddressFirstRep().getLine();
-        if(lines != null && !lines.isEmpty()) {
+        if (lines != null && !lines.isEmpty()) {
             contactDetails.setStreet(lines.stream().map(PrimitiveType::getValue).collect(Collectors.joining(", ")));
         }
         contactDetails.setCity(patient.getAddressFirstRep().getCity());
@@ -653,7 +636,7 @@ public class FhirMapper {
 
     private String extractCountry(Patient patient) {
         var country = patient.getAddressFirstRep().getCountry();
-        if(country == null || country.isEmpty()) {
+        if (country == null || country.isEmpty()) {
             return null;
         }
         return country;
@@ -668,11 +651,11 @@ public class FhirMapper {
     }
 
     private String extractPhone(List<ContactPoint> contactPoints, int rank) {
-        if(contactPoints == null || contactPoints.isEmpty()) {
+        if (contactPoints == null || contactPoints.isEmpty()) {
             return null;
         }
-        for(ContactPoint cp : contactPoints) {
-            if(cp.getSystem().equals(ContactPoint.ContactPointSystem.PHONE) && cp.getRank() == rank) {
+        for (ContactPoint cp : contactPoints) {
+            if (cp.getSystem().equals(ContactPoint.ContactPointSystem.PHONE) && cp.getRank() == rank) {
                 return cp.getValue();
             }
         }
@@ -681,7 +664,7 @@ public class FhirMapper {
 
     private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
         var item = getQuestionnaireItem(questionnaire, linkId);
-        if(item == null) {
+        if (item == null) {
             throw new IllegalStateException(String.format("Malformed QuestionnaireResponse: Question for linkId %s not found in Questionnaire %s!", linkId, questionnaire.getId()));
         }
 
@@ -689,8 +672,8 @@ public class FhirMapper {
     }
 
     private Questionnaire.QuestionnaireItemComponent getQuestionnaireItem(Questionnaire questionnaire, String linkId) {
-        for(var item : questionnaire.getItem()) {
-            if(item != null && item.getLinkId() != null && item.getLinkId().equals(linkId)) {
+        for (var item : questionnaire.getItem()) {
+            if (item != null && item.getLinkId() != null && item.getLinkId().equals(linkId)) {
                 return item;
             }
         }
@@ -713,14 +696,14 @@ public class FhirMapper {
         }
         item.setRequired(question.isRequired());
         if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+            item.setAnswerOption(mapAnswerOptions(question.getOptions()));
         }
-        item.setType( mapQuestionType(question.getQuestionType()) );
+        item.setType(mapQuestionType(question.getQuestionType()));
         if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+            item.setEnableWhen(mapEnableWhens(question.getEnableWhens()));
         }
 
-        if (question.getMeasurementType() != null ) {
+        if (question.getMeasurementType() != null) {
             item.getCodeFirstRep()
                     .setCode(question.getMeasurementType().getCode())
                     .setDisplay(question.getMeasurementType().getDisplay())
@@ -729,7 +712,7 @@ public class FhirMapper {
 
         if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
             question.getSubQuestions().forEach(questionModel -> {
-                item.addItem( this.mapQuestionnaireItem(questionModel) );
+                item.addItem(this.mapQuestionnaireItem(questionModel));
             });
         }
         return item;
@@ -741,22 +724,22 @@ public class FhirMapper {
         question.setLinkId(item.getLinkId());
         question.setText(item.getText());
         question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
-        question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
+        question.setHelperText(mapQuestionnaireItemHelperText(item.getItem()));
         question.setRequired(item.getRequired());
-        if(item.getAnswerOption() != null) {
+        if (item.getAnswerOption() != null) {
             // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
+            question.setOptions(mapAnswerOptionComponents(item.getAnswerOption()));
         }
-        question.setQuestionType( mapQuestionType(item.getType()) );
+        question.setQuestionType(mapQuestionType(item.getType()));
         if (item.hasEnableWhen()) {
-            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
+            question.setEnableWhens(mapEnableWhenComponents(item.getEnableWhen()));
         }
         if (item.hasCode()) {
             question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
         }
 
         if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
-            question.setSubQuestions( mapQuestionnaireItemGroupQuestions(item.getItem()) );
+            question.setSubQuestions(mapQuestionnaireItemGroupQuestions(item.getItem()));
         }
         question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
 
@@ -767,25 +750,25 @@ public class FhirMapper {
         return item.stream()
                 .filter(i -> i.getType() != Questionnaire.QuestionnaireItemType.DISPLAY)
                 .map(this::mapQuestionnaireItem)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {
         return item.stream()
-            .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
-            .map(Questionnaire.QuestionnaireItemComponent::getText)
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElse(null)
-            ;
+                .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
+                .map(Questionnaire.QuestionnaireItemComponent::getText)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null)
+                ;
 
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionHelperText(String text) {
         Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
         item.setLinkId(IdType.newRandomUuid().getValueAsString())
-            .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
-            .setText(text);
+                .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
+                .setText(text);
 
         return item;
     }
@@ -806,26 +789,26 @@ public class FhirMapper {
         item.setRequired(question.isRequired());
 //        if (question.getOptions() != null) {
 //             TODO: Fix the line below - it has to include comment and triage
-//            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
+//            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).toList()) );
 //        }
-        item.setType( mapQuestionType(question.getQuestionType()) );
+        item.setType(mapQuestionType(question.getQuestionType()));
         if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+            item.setEnableWhen(mapEnableWhens(question.getEnableWhens()));
         }
         return item;
     }
 
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
         return enableWhens
-            .stream()
-            .map(this::mapEnableWhen)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::mapEnableWhen)
+                .toList();
     }
 
     private Questionnaire.QuestionnaireItemEnableWhenComponent mapEnableWhen(QuestionModel.EnableWhen enableWhen) {
         Questionnaire.QuestionnaireItemEnableWhenComponent enableWhenComponent = new Questionnaire.QuestionnaireItemEnableWhenComponent();
 
-        enableWhenComponent.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
+        enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
         enableWhenComponent.setQuestion(enableWhen.getAnswer().getLinkId());
         enableWhenComponent.setAnswer(getValue(enableWhen.getAnswer()));
         enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
@@ -835,16 +818,16 @@ public class FhirMapper {
 
     private List<QuestionModel.EnableWhen> mapEnableWhenComponents(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
         return enableWhen
-            .stream()
-            .map(this::mapEnableWhenComponent)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::mapEnableWhenComponent)
+                .toList();
     }
 
     private QuestionModel.EnableWhen mapEnableWhenComponent(Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen) {
         QuestionModel.EnableWhen newEnableWhen = new QuestionModel.EnableWhen();
 
-        newEnableWhen.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
-        newEnableWhen.setAnswer( mapAnswer(enableWhen.getQuestion(), enableWhen.getAnswer()) );
+        newEnableWhen.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
+        newEnableWhen.setAnswer(mapAnswer(enableWhen.getQuestion(), enableWhen.getAnswer()));
 
         return newEnableWhen;
     }
@@ -853,119 +836,94 @@ public class FhirMapper {
         AnswerModel answerModel = new AnswerModel();
         answerModel.setLinkId(question);
 
-        if (answer instanceof StringType) {
-            answerModel.setAnswerType(AnswerType.STRING);
-            answerModel.setValue( ((StringType)answer).asStringValue() );
-        }
-        else if (answer instanceof BooleanType) {
-            answerModel.setAnswerType(AnswerType.BOOLEAN);
-            answerModel.setValue(((BooleanType) answer).asStringValue() );
-        }
-        else if (answer instanceof Quantity) {
-            answerModel.setAnswerType(AnswerType.QUANTITY);
-            answerModel.setValue(((Quantity) answer).getValueElement().asStringValue() );
-        }
-        else if (answer instanceof IntegerType) {
-            answerModel.setAnswerType(AnswerType.INTEGER);
-            answerModel.setValue(((IntegerType) answer).asStringValue() );
-        }
-        else {
-            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
+        switch (answer) {
+            case StringType stringType -> {
+                answerModel.setAnswerType(AnswerType.STRING);
+                answerModel.setValue(stringType.asStringValue());
+            }
+            case BooleanType booleanType -> {
+                answerModel.setAnswerType(AnswerType.BOOLEAN);
+                answerModel.setValue(booleanType.asStringValue());
+            }
+            case Quantity quantity -> {
+                answerModel.setAnswerType(AnswerType.QUANTITY);
+                answerModel.setValue(quantity.getValueElement().asStringValue());
+            }
+            case IntegerType integerType -> {
+                answerModel.setAnswerType(AnswerType.INTEGER);
+                answerModel.setValue(integerType.asStringValue());
+            }
+            case null, default ->
+                    throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
         }
 
         return answerModel;
     }
 
     private Questionnaire.QuestionnaireItemOperator mapEnableWhenOperator(EnableWhenOperator operator) {
-        switch (operator) {
-            case EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.EQUAL;
-            case LESS_THAN:
-                return Questionnaire.QuestionnaireItemOperator.LESS_THAN;
-            case LESS_OR_EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.LESS_OR_EQUAL;
-            case GREATER_THAN:
-                return Questionnaire.QuestionnaireItemOperator.GREATER_THAN;
-            case GREATER_OR_EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.GREATER_OR_EQUAL;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.QuestionnaireItemOperator %s", operator.toString()));
-        }
+        return switch (operator) {
+            case EQUAL -> Questionnaire.QuestionnaireItemOperator.EQUAL;
+            case LESS_THAN -> Questionnaire.QuestionnaireItemOperator.LESS_THAN;
+            case LESS_OR_EQUAL -> Questionnaire.QuestionnaireItemOperator.LESS_OR_EQUAL;
+            case GREATER_THAN -> Questionnaire.QuestionnaireItemOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL -> Questionnaire.QuestionnaireItemOperator.GREATER_OR_EQUAL;
+        };
     }
 
     private EnableWhenOperator mapEnableWhenOperator(Questionnaire.QuestionnaireItemOperator operator) {
-        switch (operator) {
-            case EQUAL:
-                return EnableWhenOperator.EQUAL;
-            case LESS_THAN:
-                return EnableWhenOperator.LESS_THAN;
-            case LESS_OR_EQUAL:
-                return EnableWhenOperator.LESS_OR_EQUAL;
-            case GREATER_THAN:
-                return EnableWhenOperator.GREATER_THAN;
-            case GREATER_OR_EQUAL:
-                return EnableWhenOperator.GREATER_OR_EQUAL;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemOperator %s", operator.toString()));
-        }
+        return switch (operator) {
+            case EQUAL -> EnableWhenOperator.EQUAL;
+            case LESS_THAN -> EnableWhenOperator.LESS_THAN;
+            case LESS_OR_EQUAL -> EnableWhenOperator.LESS_OR_EQUAL;
+            case GREATER_THAN -> EnableWhenOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL -> EnableWhenOperator.GREATER_OR_EQUAL;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemOperator %s", operator));
+        };
     }
 
     private List<Questionnaire.QuestionnaireItemAnswerOptionComponent> mapAnswerOptions(List<Option> answerOptions) {
         return answerOptions
-            .stream()
-            .map(oc -> (Questionnaire.QuestionnaireItemAnswerOptionComponent) new Questionnaire.QuestionnaireItemAnswerOptionComponent()
-                    .setValue(new StringType(oc.getOption()))
-                    .addExtension(ExtensionMapper.mapAnswerOptionComment(oc.getComment())))
-            .collect(Collectors.toList());
+                .stream()
+                .map(oc -> (Questionnaire.QuestionnaireItemAnswerOptionComponent) new Questionnaire.QuestionnaireItemAnswerOptionComponent()
+                        .setValue(new StringType(oc.getOption()))
+                        .addExtension(ExtensionMapper.mapAnswerOptionComment(oc.getComment())))
+                .toList();
     }
 
     private List<Option> mapAnswerOptionComponents(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
         return optionComponents
                 .stream()
                 .map(oc -> new Option(oc.getValue().primitiveValue(), ExtensionMapper.extractAnswerOptionComment(oc.getExtension())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private QuestionType mapQuestionType(Questionnaire.QuestionnaireItemType type) {
-        switch(type) {
-            case CHOICE:
-                return QuestionType.CHOICE;
-            case INTEGER:
-                return QuestionType.INTEGER;
-            case QUANTITY:
-                return QuestionType.QUANTITY;
-            case STRING:
-                return QuestionType.STRING;
-            case BOOLEAN:
-                return QuestionType.BOOLEAN;
-            case DISPLAY:
-                return QuestionType.DISPLAY;
-            case GROUP:
-                return QuestionType.GROUP;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
-        }
+        return switch (type) {
+            case CHOICE -> QuestionType.CHOICE;
+            case INTEGER -> QuestionType.INTEGER;
+            case QUANTITY -> QuestionType.QUANTITY;
+            case STRING -> QuestionType.STRING;
+            case BOOLEAN -> QuestionType.BOOLEAN;
+            case DISPLAY -> QuestionType.DISPLAY;
+            case GROUP -> QuestionType.GROUP;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type));
+        };
     }
 
     private Questionnaire.QuestionnaireItemType mapQuestionType(QuestionType type) {
-        switch(type) {
-            case CHOICE:
-                return Questionnaire.QuestionnaireItemType.CHOICE;
-            case INTEGER:
-                return Questionnaire.QuestionnaireItemType.INTEGER;
-            case QUANTITY:
-                return Questionnaire.QuestionnaireItemType.QUANTITY;
-            case STRING:
-                return Questionnaire.QuestionnaireItemType.STRING;
-            case BOOLEAN:
-                return Questionnaire.QuestionnaireItemType.BOOLEAN;
-            case DISPLAY:
-                return Questionnaire.QuestionnaireItemType.DISPLAY;
-            case GROUP:
-                return Questionnaire.QuestionnaireItemType.GROUP;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s", type.toString()));
-        }
+        return switch (type) {
+            case CHOICE -> Questionnaire.QuestionnaireItemType.CHOICE;
+            case INTEGER -> Questionnaire.QuestionnaireItemType.INTEGER;
+            case QUANTITY -> Questionnaire.QuestionnaireItemType.QUANTITY;
+            case STRING -> Questionnaire.QuestionnaireItemType.STRING;
+            case BOOLEAN -> Questionnaire.QuestionnaireItemType.BOOLEAN;
+            case DISPLAY -> Questionnaire.QuestionnaireItemType.DISPLAY;
+            case GROUP -> Questionnaire.QuestionnaireItemType.GROUP;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s", type));
+        };
     }
 
     private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
@@ -977,9 +935,8 @@ public class FhirMapper {
         if (emptyAnswer && hasSubAnswers) {
             // group answer with sub-answers
             answer.setAnswerType(AnswerType.GROUP);
-            answer.setSubAnswers(item.getItem().stream().map(this::getAnswer).collect(Collectors.toList()));
-        }
-        else {
+            answer.setSubAnswers(item.getItem().stream().map(this::getAnswer).toList());
+        } else {
 
             var answerItem = extractAnswerItem(item);
 
@@ -999,10 +956,10 @@ public class FhirMapper {
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent extractAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
-        if(item.getAnswer() == null || item.getAnswer().size() != 1) {
+        if (item.getAnswer() == null || item.getAnswer().size() != 1) {
             throw new IllegalStateException("Expected exactly one answer!");
         }
-        return item.getAnswer().get(0);
+        return item.getAnswer().getFirst();
     }
 
     private AnswerType getAnswerType(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
@@ -1016,14 +973,11 @@ public class FhirMapper {
         }
         if (answerType instanceof BooleanType) {
             return AnswerType.BOOLEAN;
-        }
-        else if (answerType instanceof Quantity) {
+        } else if (answerType instanceof Quantity) {
             return AnswerType.QUANTITY;
-        }
-        else if (answerType instanceof IntegerType) {
+        } else if (answerType instanceof IntegerType) {
             return AnswerType.INTEGER;
-        }
-        else {
+        } else {
             throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
         }
     }
@@ -1062,7 +1016,7 @@ public class FhirMapper {
         item.getAnswer().add(getAnswerItem(answer));
 
         if (answer.getAnswerType() == AnswerType.GROUP && answer.getSubAnswers() != null) {
-            item.setItem(answer.getSubAnswers().stream().map(this::getQuestionnaireResponseItem).collect(Collectors.toList()));
+            item.setItem(answer.getSubAnswers().stream().map(this::getQuestionnaireResponseItem).toList());
         }
 
         return item;
@@ -1078,7 +1032,7 @@ public class FhirMapper {
 
     private Type getValue(AnswerModel answer) {
         Type value = null;
-        switch(answer.getAnswerType()) {
+        switch (answer.getAnswerType()) {
             case INTEGER:
                 value = new IntegerType(answer.getValue());
                 break;
@@ -1109,7 +1063,7 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
         wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
 
-        wrapper.setThresholds( ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD)) );
+        wrapper.setThresholds(ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD)));
 
         // initialize timeofday from responsible organization
         String organizationId = ExtensionMapper.extractOrganizationId(questionnaire.getExtension());
@@ -1142,13 +1096,13 @@ public class FhirMapper {
         List<MeasurementTypeModel> result = new ArrayList<>();
 
         valueSet.getCompose().getInclude()
-            .forEach(csc -> {
-                var measurementTypes = csc.getConcept().stream()
-                    .map(crc -> mapCodingConcept(csc.getSystem(), crc))
-                    .collect(Collectors.toList());
+                .forEach(csc -> {
+                    var measurementTypes = csc.getConcept().stream()
+                            .map(crc -> mapCodingConcept(csc.getSystem(), crc))
+                            .toList();
 
-                result.addAll(measurementTypes);
-            });
+                    result.addAll(measurementTypes);
+                });
 
         return result;
     }
@@ -1176,11 +1130,11 @@ public class FhirMapper {
         planDefinition.setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.getStatus().toString()));
 
         // Map questionnaires to actions
-        if(planDefinitionModel.getQuestionnaires() != null) {
+        if (planDefinitionModel.getQuestionnaires() != null) {
             planDefinition.setAction(planDefinitionModel.getQuestionnaires()
-                .stream()
-                .map(this::buildPlanDefinitionAction)
-                .collect(Collectors.toList()));
+                    .stream()
+                    .map(this::buildPlanDefinitionAction)
+                    .toList());
         }
 
         return planDefinition;

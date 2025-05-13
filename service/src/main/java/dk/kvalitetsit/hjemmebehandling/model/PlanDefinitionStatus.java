@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.constants;
+package dk.kvalitetsit.hjemmebehandling.model;
 
 public enum PlanDefinitionStatus {
     DRAFT, ACTIVE, RETIRED

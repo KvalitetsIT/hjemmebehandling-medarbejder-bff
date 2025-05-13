@@ -31,10 +31,10 @@ public class ValueSetService {
 
         List<MeasurementTypeModel> result = new ArrayList<>();
         lookupResult.getValueSets()
-            .forEach(vs -> {
-                var list = fhirMapper.extractMeasurementTypes(vs);
-                result.addAll(list);
-            });
+                .forEach(vs -> {
+                    var list = fhirMapper.extractMeasurementTypes(vs);
+                    result.addAll(list);
+                });
 
         return result;
     }
