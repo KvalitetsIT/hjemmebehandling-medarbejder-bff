@@ -1,14 +1,11 @@
-package dk.kvalitetsit.hjemmebehandling.service;
+package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
@@ -16,7 +13,8 @@ import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanSe
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,9 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
-
 import java.time.Instant;
-import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
@@ -39,23 +35,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class CarePlanServiceTest {
-    private static final CPR CPR_1 = new CPR("0101010101");
-    private static final CPR CPR_2 = new CPR("0202020202");
-    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("infektionsmedicinsk");
-    private static final QualifiedId.CarePlanId CAREPLAN_ID_1 = new QualifiedId.CarePlanId("careplan-1");
-    private static final QualifiedId.CarePlanId CAREPLAN_ID_2 = new QualifiedId.CarePlanId("careplan-2");
-    private static final QualifiedId.PatientId PATIENT_ID_1 = new QualifiedId.PatientId("patient-1");
-    private static final QualifiedId.PatientId PATIENT_ID_2 = new QualifiedId.PatientId("patient-2");
-    private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_1 = new QualifiedId.PlanDefinitionId("plandefinition-1");
-    private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_2 = new QualifiedId.PlanDefinitionId("plandefinition-2");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_2 = new QualifiedId.QuestionnaireId("questionnaire-2");
-    private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T10:00:00.000Z");
+
 
     @InjectMocks
     private ConcreteCarePlanService subject;
@@ -77,16 +64,14 @@ public class CarePlanServiceTest {
     @Mock
     private DateProvider dateProvider;
     @Mock
-    private AccessValidator accessValidator;
-    @Mock
     private CustomUserClient customUserService;
 
 
     private static Stream<Arguments> getCarePlansWithUnsatisfiedSchedules_sortCareplans_byPatientName() {
-        HumanName a_a = new HumanName().addGiven("a").setFamily("a");
-        HumanName a_b = new HumanName().addGiven("a").setFamily("b");
-        HumanName b_a = new HumanName().addGiven("b").setFamily("a");
-        HumanName b_b = new HumanName().addGiven("b").setFamily("b");
+        PersonNameModel a_a = new PersonNameModel("a", List.of("a"));
+        PersonNameModel a_b = new PersonNameModel("b", List.of("a"));
+        PersonNameModel b_a = new PersonNameModel("a", List.of("b"));
+        PersonNameModel b_b = new PersonNameModel("b", List.of("b"));
         return Stream.of(
                 //getPointInTime_initializedWithSeed
                 Arguments.of(a_a, a_b, List.of(a_a, a_b)),
@@ -98,7 +83,7 @@ public class CarePlanServiceTest {
 
     @Test
     @MockitoSettings(strictness = Strictness.LENIENT)
-    public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws ServiceException, AccessValidationException, JsonProcessingException {
+    public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws JsonProcessingException {
         ReflectionTestUtils.setField(subject, "patientidpApiUrl", "http://foo");
         Mockito.when(customUserService.createUser(any())).thenThrow(JsonProcessingException.class);
 
@@ -150,15 +135,7 @@ public class CarePlanServiceTest {
         assertThrows(ServiceException.class, () -> subject.createCarePlan(carePlanModel));
     }
 
-    @Test
-    public void createCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
-        CarePlanModel carePlanModel = buildCarePlanModel(List.of(), List.of(QUESTIONNAIRE_ID_1));
-        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-        Mockito.when(patientRepository.fetch(CPR_1)).thenReturn(Optional.empty());
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
-        assertThrows(AccessValidationException.class, () -> subject.createCarePlan(carePlanModel));
-    }
+
 
     /*
     @Test
@@ -327,11 +304,27 @@ public class CarePlanServiceTest {
 
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void getCarePlansWithUnsatisfiedSchedules_sortCareplans_byPatientName(HumanName name1, HumanName name2, List<HumanName> expectedOrder) throws Exception {
+    public void getCarePlansWithUnsatisfiedSchedules_sortCareplans_byPatientName(PersonNameModel name1, PersonNameModel name2, List<PersonNameModel> expectedOrder) throws Exception {
         boolean onlyActiveCarePlans = true;
         boolean unsatisfied = true;
-        CarePlanModel carePlan1 = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        CarePlanModel carePlan2 = buildCarePlan(CAREPLAN_ID_2, PATIENT_ID_2);
+        CarePlanModel carePlan1 = CarePlanModel.builder()
+                .id(CAREPLAN_ID_1)
+                .patient(PatientModel.builder()
+                        .id(PATIENT_ID_1)
+                        .name(name1)
+                        .build())
+                .satisfiedUntil(POINT_IN_TIME)
+                .build();
+
+        CarePlanModel carePlan2 = CarePlanModel.builder()
+                .id(CAREPLAN_ID_2)
+                .patient(PatientModel.builder()
+                        .id(PATIENT_ID_2)
+                        .name(name2)
+                        .build())
+                .satisfiedUntil(POINT_IN_TIME)
+                .build();
+
 
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         Mockito.when(carePlanRepository.fetch(POINT_IN_TIME, onlyActiveCarePlans, unsatisfied)).thenReturn(List.of(carePlan1, carePlan2));
@@ -339,10 +332,10 @@ public class CarePlanServiceTest {
         List<CarePlanModel> result = subject.getCarePlansWithFilters(onlyActiveCarePlans, unsatisfied);
 
         assertEquals(2, result.size());
-        assertEquals(expectedOrder.get(0).getGivenAsSingleString(), result.get(0).patient().name().given().getFirst());
-        assertEquals(expectedOrder.get(0).getFamily(), result.get(0).patient().name().family());
-        assertEquals(expectedOrder.get(1).getGivenAsSingleString(), result.get(1).patient().name().given().getFirst());
-        assertEquals(expectedOrder.get(1).getFamily(), result.get(1).patient().name().family());
+        assertEquals(expectedOrder.get(0).given().getFirst(), result.get(0).patient().name().given().getFirst());
+        assertEquals(expectedOrder.get(0).family(), result.get(0).patient().name().family());
+        assertEquals(expectedOrder.get(1).given().getFirst(), result.get(1).patient().name().given().getFirst());
+        assertEquals(expectedOrder.get(1).family(), result.get(1).patient().name().family());
     }
 
     @Test
@@ -353,15 +346,6 @@ public class CarePlanServiceTest {
         assertEquals(carePlanModel, result.get());
     }
 
-    @Test
-    public void getCarePlanById_carePlanForDifferentOrganization_throwsException() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        QualifiedId.PatientId patientId = new QualifiedId.PatientId("patient-1");
-        CarePlanModel carePlan = buildCarePlan(carePlanId, patientId);
-        Mockito.when(carePlanRepository.fetch(carePlan.id())).thenReturn(Optional.of(carePlan));
-        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
-        assertThrows(AccessValidationException.class, () -> subject.getCarePlanById(carePlanId));
-    }
 
     @Test
     public void getCarePlanById_carePlanMissing_returnsEmpty() throws Exception {
@@ -377,13 +361,6 @@ public class CarePlanServiceTest {
         assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
     }
 
-    @Test
-    public void resolveAlarm_accessViolation_throwsException() throws Exception {
-        CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
-        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
-        assertThrows(AccessValidationException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
-    }
 
     @Test
     public void resolveAlarm_carePlanSatisfiedIntoTheFuture_throwsException() throws Exception {
@@ -445,6 +422,7 @@ public class CarePlanServiceTest {
 
     @Test
     public void completeCareplan_unsatisfiedSchedule_ShouldThrowError() throws ServiceException {
+        Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1)));
         try {
             subject.completeCarePlan(CAREPLAN_ID_1);
             fail("Careplan should be failing due to questionnaireresponses on careplan");
@@ -454,45 +432,6 @@ public class CarePlanServiceTest {
         }
     }
 
-    @Test
-    public void updateCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        List<QualifiedId.PlanDefinitionId> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
-        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = Map.of();
-        PatientDetails patientDetails = buildPatientDetails();
-
-        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
-        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-
-        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of(planDefinition));
-        Mockito.when(questionnaireRepository.fetch(questionnaireIds)).thenReturn(List.of(questionnaire));
-        Mockito.doNothing().when(accessValidator).validateAccess(List.of(planDefinition));
-        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
-
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
-    }
-
-    @Test
-    public void updateCarePlan_carePlanAccessViolation_throwsException() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
-        List<QualifiedId.PlanDefinitionId> planDefinitionIds = List.of();
-        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of();
-        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = Map.of();
-        PatientDetails patientDetails = buildPatientDetails();
-
-        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of());
-        Mockito.when(questionnaireRepository.fetch(questionnaireIds)).thenReturn(List.of());
-
-        CarePlanModel carePlan = CarePlanModel.builder()
-                .id(carePlanId)
-                .build();
-
-        Mockito.when(carePlanRepository.fetch(carePlanId)).thenReturn(Optional.of(carePlan));
-        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
-
-        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
-    }
 
     // TODO: May be moved since it depends on fhir resources and not only models
     @Test
@@ -553,8 +492,8 @@ public class CarePlanServiceTest {
         PatientDetails patientDetails = buildPatientDetails();
         PatientModel patientModel = PatientModel
                 .builder()
-                .id(CarePlanServiceTest.PATIENT_ID_1)
-                .contactDetails(this.buildContactDetails())
+                .id(PATIENT_ID_1)
+                .contactDetails(buildContactDetails())
                 .primaryContact(PrimaryContactModel.builder().organisation(new QualifiedId.OrganizationId("infektionsmedicinsk")).build())
                 .build();
 
@@ -654,183 +593,7 @@ public class CarePlanServiceTest {
     }
 
 
-    private CarePlanModel buildCarePlanModel() {
-        return buildCarePlanModel(null, null);
-    }
 
-    private CarePlanModel buildCarePlanModel(List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds) {
-        return buildCarePlanModel(null, planDefinitionIds, questionnaireIds, null);
-    }
-
-    private CarePlanModel buildCarePlanModel(List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, PatientModel patient) {
-        return buildCarePlanModel(null, planDefinitionIds, questionnaireIds, patient);
-
-    }
-
-    private CarePlanModel buildCarePlanModel(QualifiedId.CarePlanId id, List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, PatientModel patient) {
-        return CarePlanModel.builder()
-                .id(id)
-                .patient(patient)
-                .planDefinitions(List.of())
-                .planDefinitions(Optional.ofNullable(planDefinitionIds).map(x1 -> x1.stream().map(this::buildPlanDefinitionModel).toList()).orElse(null))
-                .questionnaires(questionnaireIds != null ? questionnaireIds.stream().map(this::buildQuestionnaireWrapperModel).toList() : List.of())
-                .build();
-    }
-
-
-    private PatientModel buildPatientModel() {
-        return PatientModel
-                .builder()
-                .id(CarePlanServiceTest.PATIENT_ID_1)
-                .contactDetails(this.buildContactDetails())
-                .primaryContact(this.buildPrimaryContact())
-                .build();
-    }
-
-    private PrimaryContactModel buildPrimaryContact() {
-        return PrimaryContactModel.builder()
-                .name("Poul")
-                .organisation(new QualifiedId.OrganizationId("infektionsmedicinsk"))
-                .affiliation("Onkel")
-                .build();
-    }
-
-    private ContactDetailsModel buildContactDetails() {
-        return ContactDetailsModel.builder().build();
-    }
-
-    private PatientModel buildPatientModel(QualifiedId.PatientId patientId, String givenName, String familyName) {
-        return PatientModel.builder()
-                .id(patientId)
-                .contactDetails(ContactDetailsModel.builder().build())
-                .name(new PersonNameModel(familyName, List.of(givenName)))
-                .build();
-    }
-
-    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(QualifiedId.QuestionnaireId questionnaireId) {
-        return buildQuestionnaireWrapperModel(questionnaireId, POINT_IN_TIME);
-    }
-
-    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(QualifiedId.QuestionnaireId questionnaireId, Instant satisfiedUntil) {
-        return QuestionnaireWrapperModel.builder()
-                .questionnaire(QuestionnaireModel.builder()
-                        .id(questionnaireId)
-                        .build())
-                .frequency(FrequencyModel.builder()
-                        .weekdays(List.of(Weekday.TUE))
-                        .timeOfDay(LocalTime.parse("04:00")).build())
-                .satisfiedUntil(satisfiedUntil).build();
-    }
-
-    private PlanDefinitionModel buildPlanDefinitionModel(QualifiedId.PlanDefinitionId planDefinitionId) {
-        return PlanDefinitionModel.builder().id(planDefinitionId).build();
-    }
-
-
-    private CarePlanModel buildCarePlan(QualifiedId.CarePlanId carePlanId, QualifiedId.PatientId patientId) {
-        return buildCarePlan(carePlanId, patientId, null);
-    }
-
-    private CarePlanModel buildCarePlan(QualifiedId.CarePlanId carePlanId, QualifiedId.PatientId patientId, QualifiedId.QuestionnaireId questionnaireId) {
-        CarePlanModel.Builder builder = CarePlanModel.builder()
-                .id(carePlanId)
-                .patient(PatientModel.builder().id(patientId).build());
-
-
-        if (questionnaireId != null) {
-            CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
-            detail.setInstantiatesCanonical(List.of(new CanonicalType(questionnaireId.unqualified())));
-            detail.setScheduled(new Timing());
-            detail.addExtension(ExtensionMapper.mapActivitySatisfiedUntil(POINT_IN_TIME));
-//            carePlan.addActivity().setDetail(detail);
-//            carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(POINT_IN_TIME));
-        }
-
-        return builder.build();
-    }
-
-    private FrequencyModel buildFrequencyModel(List<Weekday> weekdays, String timeOfDay) {
-        return FrequencyModel.builder()
-                .weekdays(weekdays)
-                .timeOfDay(LocalTime.parse(timeOfDay)).build();
-    }
-
-    private PatientModel buildPatient(QualifiedId.PatientId patientId, CPR cpr) {
-
-        return PatientModel.builder()
-                .id(patientId)
-                .name(PersonNameModel.builder().given(List.of("Yvonne")).build())
-                .primaryContact(PrimaryContactModel.builder()
-                        .name("Yvonne")
-                        .affiliation("Moster")
-                        .organisation(new QualifiedId.OrganizationId("infektionsmedicinsk"))
-                        .build())
-                .build();
-
-
-//        var identifier = new Identifier();
-//        identifier.setSystem(Systems.CPR);
-//        identifier.setValue(cpr);
-//        patient.setIdentifier(List.of(identifier));
-//        var contact = new Patient.ContactComponent();
-//
-//        var name = new HumanName();
-//        name.setGiven(List.of(new StringType("Yvonne")));
-//        contact.setName(name);
-//
-//        var affiliation = List.of(new CodeableConcept().setText("Moster"));
-//        contact.setRelationship(affiliation);
-//        contact.setOrganization(buildReference());
-//
-//        patient.setContact(new ArrayList<>(List.of(contact)));
-//        return patient;
-    }
-
-
-
-    private PatientModel buildPatient(QualifiedId.PatientId patientId, CPR cpr, String givenName, String familyName) {
-        PatientModel patient = buildPatient(patientId, cpr);
-
-        return PatientModel.Builder.from(patient)
-                .name(PersonNameModel.builder()
-                        .given(List.of(givenName))
-                        .family(familyName)
-                        .build()
-                )
-                .build();
-    }
-
-    private PatientDetails buildPatientDetails() {
-        return PatientDetails.builder()
-                .patientPrimaryPhone("11223344")
-                .patientSecondaryPhone("44332211")
-                .primaryRelativeName("Dronning Margrethe")
-                .primaryRelativeAffiliation("Ven")
-                .primaryRelativePrimaryPhone("98798798")
-                .primaryRelativeSecondaryPhone("78978978").build();
-    }
-
-    private PlanDefinitionModel buildPlanDefinition() {
-        return PlanDefinitionModel.builder()
-                .id(CarePlanServiceTest.PLANDEFINITION_ID_1)
-                .build();
-
-    }
-
-    private PlanDefinitionModel buildPlanDefinitionModel(QualifiedId.QuestionnaireId questionnaireId, ThresholdModel questionnaireThreshold) {
-        return PlanDefinitionModel.builder()
-                .questionnaires(List.of(QuestionnaireWrapperModel
-                        .builder()
-                        .questionnaire(QuestionnaireModel.builder().id(questionnaireId).build())
-                        .thresholds(List.of(questionnaireThreshold))
-                        .build())).build();
-    }
-
-    private QuestionnaireModel buildQuestionnaire() {
-        return QuestionnaireModel.builder()
-                .id(CarePlanServiceTest.QUESTIONNAIRE_ID_1)
-                .build();
-    }
 
 
 }

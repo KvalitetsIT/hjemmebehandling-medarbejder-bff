@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.service.validation;
+package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
@@ -14,11 +14,11 @@ import java.util.List;
 public class ValidatedQuestionnaireResponseService implements QuestionnaireResponseService {
 
     private final QuestionnaireResponseService service;
-    private final AccessValidatingService accessValidatingService;
+    private final AccessValidator accessValidator;
 
-    public ValidatedQuestionnaireResponseService(QuestionnaireResponseService service, AccessValidatingService accessValidatingService) {
+    public ValidatedQuestionnaireResponseService(QuestionnaireResponseService service, AccessValidator accessValidator) {
         this.service = service;
-        this.accessValidatingService = accessValidatingService;
+        this.accessValidator = accessValidator;
     }
 
     @Override

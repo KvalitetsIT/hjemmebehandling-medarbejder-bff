@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
@@ -23,7 +24,7 @@ public interface QuestionnaireService {
             QualifiedId.QuestionnaireId questionnaireId,
             String updatedTitle,
             String updatedDescription,
-            String updatedStatus,
+            Status updatedStatus,
             List<QuestionModel> updatedQuestions,
             QuestionModel updatedCallToAction
     ) throws ServiceException, AccessValidationException;

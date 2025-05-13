@@ -1,5 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.model.constants;
 
-public enum QuestionnaireStatus {
+public enum Status {
     DRAFT, ACTIVE, RETIRED
 }

@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.service.validation;
+package dk.kvalitetsit.hjemmebehandling.service.access;
 
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
@@ -15,11 +15,11 @@ import java.util.Optional;
 public class ValidatedCarePlanService implements CarePlanService {
 
     private final CarePlanService service;
-    private final AccessValidatingService accessValidatingService;
+    private final AccessValidator accessValidator;
 
-    public ValidatedCarePlanService(CarePlanService service, AccessValidatingService accessValidatingService) {
+    public ValidatedCarePlanService(CarePlanService service, AccessValidator accessValidator) {
         this.service = service;
-        this.accessValidatingService = accessValidatingService;
+        this.accessValidator = accessValidator;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class ValidatedCarePlanService implements CarePlanService {
     }
 
     @Override
-    public CarePlanModel updateCarePlan(QualifiedId.CarePlanId carePlanId, List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, Map<String, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
+    public CarePlanModel updateCarePlan(QualifiedId.CarePlanId carePlanId, List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies, PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         throw new NotImplementedException();
     }
 

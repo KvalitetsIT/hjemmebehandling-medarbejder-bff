@@ -1,6 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -9,7 +11,7 @@ public record PlanDefinitionModel(
         QualifiedId.OrganizationId organizationId,
         String name,
         String title,
-        PlanDefinitionStatus status,
+        Status status,
         Instant created,
         Instant lastUpdated,
         List<QuestionnaireWrapperModel> questionnaires
@@ -40,7 +42,7 @@ public record PlanDefinitionModel(
         private QualifiedId.PlanDefinitionId id;
         private String name;
         private String title;
-        private PlanDefinitionStatus status;
+        private Status status;
         private Instant created;
         private Instant lastUpdated;
         private List<QuestionnaireWrapperModel> questionnaires;
@@ -68,7 +70,7 @@ public record PlanDefinitionModel(
             return this;
         }
 
-        public Builder status(PlanDefinitionStatus status) {
+        public Builder status(Status status) {
             this.status = status;
             return this;
         }

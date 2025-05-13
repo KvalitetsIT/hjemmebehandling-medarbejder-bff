@@ -4,14 +4,12 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,6 +35,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class QuestionnaireControllerTest {
+
+    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID = new QualifiedId.QuestionnaireId("questionnaire-1");
+
     @InjectMocks
     private QuestionnaireController subject;
 
@@ -132,8 +133,8 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
         Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(new QualifiedId.QuestionnaireId("questionnaire-1"));
 
-        String location = "http://localhost:8080/api/v1/questionnaire/questionnaire-1";
-        Mockito.when(locationHeaderBuilder.buildLocationHeader("questionnaire-1")).thenReturn(URI.create(location));
+        String location = "http://localhost:8080/api/v1/questionnaire/" + QUESTIONNAIRE_ID.unqualified();
+        Mockito.when(locationHeaderBuilder.buildLocationHeader(QUESTIONNAIRE_ID)).thenReturn(URI.create(location));
 
         ResponseEntity<Void> result = subject.createQuestionnaire(request);
 

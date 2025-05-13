@@ -1,31 +1,24 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
-import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
-import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus.RETIRED;
+import static dk.kvalitetsit.hjemmebehandling.model.constants.Status.RETIRED;
 
 public class ConcreteQuestionnaireService implements QuestionnaireService {
-    private static final Logger logger = LoggerFactory.getLogger(ConcreteQuestionnaireService.class);
-
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final CarePlanRepository<CarePlanModel, PatientModel> careplanRepository;
     private final PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository;
@@ -36,10 +29,8 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
         this.plandefinitionRepository = plandefinitionRepository;
     }
 
-    public Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
+    public Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
         return questionnaireRepository.fetch(questionnaireId);
-        // Validate that the user is allowed to access the careplan.
-        //validateAccess(questionnaire.get());
     }
 
     public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
@@ -71,85 +62,57 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
                 .build()
         ).orElse(null);
 
-
         return QuestionnaireModel.builder()
-                .id(null)
                 .questions(updatedQuestions)
                 .callToAction(callToAction)
                 .build();
     }
 
-
-    public void updateQuestionnaire(QualifiedId.QuestionnaireId questionnaireId, String updatedTitle, String updatedDescription, String updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException, AccessValidationException {
+    @Override
+    public void updateQuestionnaire(QualifiedId.QuestionnaireId questionnaireId, String updatedTitle, String updatedDescription, Status updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
-        Optional<QuestionnaireModel> result = questionnaireRepository.fetch(questionnaireId);
+        QuestionnaireModel questionnaire = questionnaireRepository.fetch(questionnaireId).orElseThrow(() -> new ServiceException(
+                String.format("Could not lookup questionnaire with id %s!", questionnaireId),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST
+        ));
 
-        if (result.isEmpty()) {
-            throw new ServiceException(String.format("Could not lookup questionnaire with id %s!", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
-        }
-        QuestionnaireModel questionnaire = result.get();
-
-        // Validate that the client is allowed to update the questionnaire.
-        //validateAccess(questionnaire);
 
         // Validate that status change is legal
-        //validateStatusChangeIsLegal(questionnaire, updatedStatus);
+        validateStatusChangeIsLegal(questionnaire, updatedStatus);
 
+        // Ensure all questions have a unique ID
+        List<QuestionModel> processedQuestions = Optional.ofNullable(updatedQuestions)
+                .map(x -> x.stream().map(q -> q.linkId() == null ? QuestionModel.Builder.from(q).linkId(IdType.newRandomUuid().getValueAsString()).build() : q).toList())
+                .orElse(List.of());
 
-        var updateQuestionnaireModel = updateQuestionnaireModel(questionnaire, updatedTitle, updatedDescription, updatedStatus, updatedQuestions, updatedCallToAction);
+        // Ensure call-to-action has a unique ID
+        QuestionModel processedCallToAction = updatedCallToAction.linkId() == null ? QuestionModel.Builder.from(updatedCallToAction).linkId(Systems.CALL_TO_ACTION_LINK_ID).build() : updatedCallToAction;
+
+        var updateQuestionnaireModel = QuestionnaireModel.Builder
+                .from(questionnaire)
+                .title(updatedTitle)
+                .description(updatedDescription)
+                .status(updatedStatus)
+                .questions(processedQuestions)
+                .callToAction(processedCallToAction)
+                .build();
 
         // Save the updated Questionnaire
         questionnaireRepository.update(updateQuestionnaireModel);
     }
 
-    private QuestionnaireModel updateQuestionnaireModel(
-            QuestionnaireModel questionnaireModel,
-            String updatedTitle,
-            String updatedDescription,
-            String updatedStatus,
-            List<QuestionModel> updatedQuestions,
-            QuestionModel updatedCallToAction
-    ) {
-        // Ensure all questions have a unique ID
-        List<QuestionModel> processedQuestions = updatedQuestions.stream()
-                .map(q -> q.linkId() == null
-                                ? new QuestionModel(
-                                IdType.newRandomUuid().getValueAsString(), q.text(), q.abbreviation(), q.helperText(),
-                                q.required(), q.questionType(), q.measurementType(), q.options(),
-                                q.enableWhens(), q.thresholds(), q.subQuestions(), q.deprecated()
-                        ) : q
-                ).toList();
 
-        // Ensure call-to-action has a unique ID
-        QuestionModel processedCallToAction = updatedCallToAction.linkId() == null
-                ? new QuestionModel(
-                Systems.CALL_TO_ACTION_LINK_ID, updatedCallToAction.text(), updatedCallToAction.abbreviation(),
-                updatedCallToAction.helperText(), updatedCallToAction.required(), updatedCallToAction.questionType(),
-                updatedCallToAction.measurementType(), updatedCallToAction.options(), updatedCallToAction.enableWhens(),
-                updatedCallToAction.thresholds(), updatedCallToAction.subQuestions(), updatedCallToAction.deprecated()
-        ) : updatedCallToAction;
-
-
-        return QuestionnaireModel.Builder
-                .from(questionnaireModel)
-                .title(updatedTitle)
-                .description(updatedDescription)
-                .status(QuestionnaireStatus.valueOf(updatedStatus))
-                .questions(processedQuestions)
-                .callToAction(processedCallToAction)
-                .build();
-    }
-
-    private void validateStatusChangeIsLegal(Questionnaire questionnaire, String updatedStatus) throws ServiceException {
-        List<Enumerations.PublicationStatus> validStatuses = switch (questionnaire.getStatus()) {
-            case ACTIVE -> List.of(Enumerations.PublicationStatus.ACTIVE, Enumerations.PublicationStatus.RETIRED);
-            case DRAFT -> List.of(Enumerations.PublicationStatus.DRAFT, Enumerations.PublicationStatus.ACTIVE);
+    private void validateStatusChangeIsLegal(QuestionnaireModel questionnaire, Status updatedStatus) throws ServiceException {
+        List<Status> validStatuses = switch (questionnaire.status()) {
+            case ACTIVE -> List.of(Status.ACTIVE, Status.RETIRED);
+            case DRAFT -> List.of(Status.DRAFT, Status.ACTIVE);
             default -> List.of();
         };
 
-        if (!validStatuses.contains(Enumerations.PublicationStatus.valueOf(updatedStatus))) {
-            throw new ServiceException(String.format("Could not change status for questionnaire with id %s!", questionnaire.getId()), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
+        if (!validStatuses.contains(updatedStatus)) {
+            throw new ServiceException(String.format("Could not change status for questionnaire with id %s!", questionnaire.id()), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
     }
 

@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
+import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePersonService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -18,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PersonController extends BaseController implements PersonApi {
     private static final Logger logger = LoggerFactory.getLogger(PersonController.class);
 
-    private final ConcretePersonService personService;
+    private final PersonService personService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
 
-    public PersonController(ConcretePersonService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public PersonController(PersonService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
         this.personService = patientService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;

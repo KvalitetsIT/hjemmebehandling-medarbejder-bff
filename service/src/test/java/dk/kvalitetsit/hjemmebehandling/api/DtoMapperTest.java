@@ -2,7 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.api;
 
 import dk.kvalitetsit.hjemmebehandling.model.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
@@ -31,7 +31,7 @@ public class DtoMapperTest {
         PlanDefinitionDto planDefinitionDto = buildPlanDefinitionDto();
         PlanDefinitionModel result = subject.mapPlanDefinitionDto(planDefinitionDto);
 
-        assertEquals(planDefinitionDto.getId().get(), result.id().toString());
+        assertEquals(planDefinitionDto.getId().get(), result.id().unqualified());
     }
 
     @Test
@@ -55,28 +55,22 @@ public class DtoMapperTest {
     @Test
     public void mapCarePlanModel_success() {
         CarePlanModel carePlanModel = buildCarePlanModel();
-
         CarePlanDto result = subject.mapCarePlanModel(carePlanModel);
-
-        assertEquals(Optional.ofNullable(carePlanModel.id().unqualified()), result.getId());
+        assertEquals(carePlanModel.id().unqualified(), result.getId().get());
     }
 
     @Test
     public void mapPatientDto_success() {
         PatientDto patientDto = buildPatientDto();
-
         PatientModel result = subject.mapPatientDto(patientDto);
-
-        assertEquals(patientDto.getCpr().get(), result.cpr());
+        assertEquals(patientDto.getCpr().get(), result.cpr().toString());
     }
 
     @Test
     public void mapPatientModel_success() {
         PatientModel patientModel = buildPatientModel();
-
         PatientDto result = subject.mapPatientModel(patientModel);
-
-        assertEquals(patientModel.cpr(), result.getCpr().get());
+        assertEquals(patientModel.cpr().toString(), result.getCpr().get());
     }
 
     @Test
@@ -264,6 +258,7 @@ public class DtoMapperTest {
         return PatientModel.builder()
                 .cpr(new CPR("0101010101"))
                 .contactDetails(buildContactDetailsModel())
+                .name(new PersonNameModel("Madsen", List.of("Bob")))
                 .primaryContact(PrimaryContactModel.builder()
                         .contactDetails(buildContactDetailsModel())
                         .build())
@@ -293,14 +288,14 @@ public class DtoMapperTest {
     private PlanDefinitionDto buildPlanDefinitionDto() {
         return new PlanDefinitionDto()
                 .id(PLANDEFINITION_ID_1.unqualified())
-                .status(PlanDefinitionStatusDto.ACTIVE)
+                .status(StatusDto.ACTIVE)
                 .questionnaires(List.of(buildQuestionnaireWrapperDto()));
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
         return PlanDefinitionModel.builder()
                 .id(PLANDEFINITION_ID_1)
-                .status(PlanDefinitionStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .questionnaires(List.of(buildQuestionnaireWrapperModel()))
                 .build();
     }
@@ -337,7 +332,7 @@ public class DtoMapperTest {
         return QuestionnaireModel.builder()
                 .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
-                .status(QuestionnaireStatus.DRAFT)
+                .status(Status.DRAFT)
                 .build();
     }
 
@@ -345,7 +340,7 @@ public class DtoMapperTest {
         return QuestionnaireModel.builder()
                 .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
-                .status(QuestionnaireStatus.DRAFT)
+                .status(Status.DRAFT)
                 .callToAction(callToAction)
                 .build();
     }
@@ -355,7 +350,7 @@ public class DtoMapperTest {
         return QuestionnaireModel.builder()
                 .id(QUESTIONNAIRE_ID_1)
                 .questions(List.of(buildQuestionModel()))
-                .status(QuestionnaireStatus.DRAFT)
+                .status(Status.DRAFT)
                 .questions(questions)
                 .build();
     }

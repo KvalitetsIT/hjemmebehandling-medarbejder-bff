@@ -45,6 +45,7 @@ public class FhirClient {
         return questionnaireResponses.stream().map(qr -> ExtensionMapper.tryExtractExaminationAuthorPractitionerId(qr.getExtension())).filter(Objects::nonNull).distinct().toList();
     }
 
+    // TODO: This should not return fhirLookupResult But "T"
     public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) throws ServiceException {
 
         var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));

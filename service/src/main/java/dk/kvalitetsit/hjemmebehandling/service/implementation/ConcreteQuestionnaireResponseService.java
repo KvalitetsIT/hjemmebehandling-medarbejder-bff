@@ -1,6 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
-
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
@@ -8,23 +7,16 @@ import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.validation.AccessValidatingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hl7.fhir.r4.model.Organization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ConcreteQuestionnaireResponseService extends AccessValidatingService implements QuestionnaireResponseService {
-    private static final Logger logger = LoggerFactory.getLogger(ConcreteQuestionnaireResponseService.class);
+public class ConcreteQuestionnaireResponseService implements QuestionnaireResponseService {
 
     private final QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
@@ -34,12 +26,11 @@ public class ConcreteQuestionnaireResponseService extends AccessValidatingServic
     private final Comparator<QuestionnaireResponseModel> priorityComparator;
 
     public ConcreteQuestionnaireResponseService(Comparator<QuestionnaireResponseModel> priorityComparator,
-                                                AccessValidator accessValidator,
                                                 QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
                                                 QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
                                                 PractitionerRepository<PractitionerModel> practitionerRepository, OrganizationRepository<Organization> organizationRepository
     ) {
-        super(accessValidator);
+
         this.priorityComparator = priorityComparator;
         this.questionnaireResponseRepository = questionnaireResponseRepository;
         this.questionnaireRepository = questionnaireRepository;
@@ -56,7 +47,7 @@ public class ConcreteQuestionnaireResponseService extends AccessValidatingServic
                 .toList();
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
 
         List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.lookupVersionsOfQuestionnaireById(questionnaireIds);
 
@@ -72,17 +63,17 @@ public class ConcreteQuestionnaireResponseService extends AccessValidatingServic
                 .toList();
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds, Pagination pagination) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds, Pagination pagination) throws ServiceException {
         return pageResponses(this.getQuestionnaireResponses(carePlanId, questionnaireIds), pagination);
     }
 
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException {
         var responses = getQuestionnaireResponsesByStatus(statuses);
         return pageResponses(responses, pagination);
     }
 
-    public QuestionnaireResponseModel updateExaminationStatus(QualifiedId.QuestionnaireResponseId questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
+    public QuestionnaireResponseModel updateExaminationStatus(QualifiedId.QuestionnaireResponseId questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException {
         // Look up the QuestionnaireResponse
         var questionnaireResponse = questionnaireResponseRepository
                 .fetch(questionnaireResponseId)
@@ -116,7 +107,7 @@ public class ConcreteQuestionnaireResponseService extends AccessValidatingServic
     }
 
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
 
         List<QuestionnaireResponseModel> responses = questionnaireResponseRepository.fetchByStatus(statuses);
 

@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionControllerTest {
+    private static final QualifiedId.PlanDefinitionId PLAN_DEFINITION_ID = new QualifiedId.PlanDefinitionId("plandefinition-1");
     @InjectMocks
     private PlanDefinitionController subject;
 
@@ -115,11 +116,13 @@ public class PlanDefinitionControllerTest {
     }
 
     @Test
-    public void createPlanDefinition_success_201() {
+    public void createPlanDefinition_success_201() throws ServiceException, AccessValidationException {
         CreatePlanDefinitionRequest request = new CreatePlanDefinitionRequest();
         request.setPlanDefinition(new PlanDefinitionDto());
 
-        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(PlanDefinitionModel.builder().build());
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
+        Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinition);
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinition)).thenReturn(PLAN_DEFINITION_ID);
 
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 
@@ -134,10 +137,11 @@ public class PlanDefinitionControllerTest {
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
-        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(new QualifiedId.PlanDefinitionId("plandefinition-1"));
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(PLAN_DEFINITION_ID);
 
-        String location = "http://localhost:8080/api/v1/plandefinition/plandefinition-1";
-        Mockito.when(locationHeaderBuilder.buildLocationHeader("plandefinition-1")).thenReturn(URI.create(location));
+
+        String location = "http://localhost:8080/api/v1/plandefinition/"+ PLAN_DEFINITION_ID.unqualified();
+        Mockito.when(locationHeaderBuilder.buildLocationHeader(PLAN_DEFINITION_ID)).thenReturn(URI.create(location));
 
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 

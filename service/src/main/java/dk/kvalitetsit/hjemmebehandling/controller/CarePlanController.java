@@ -4,16 +4,16 @@ import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.openapitools.api.CarePlanApi;
 import org.openapitools.model.*;
@@ -34,13 +34,13 @@ import java.util.stream.Collectors;
 public class CarePlanController extends BaseController implements CarePlanApi {
     private static final Logger logger = LoggerFactory.getLogger(CarePlanController.class);
 
-    private final ConcreteCarePlanService carePlanService;
+    private final CarePlanService carePlanService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
-    private final ConcretePlanDefinitionService planDefinitionService;
+    private final PlanDefinitionService planDefinitionService;
 
-    public CarePlanController(ConcretePlanDefinitionService planDefinitionService, ConcreteCarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public CarePlanController(PlanDefinitionService planDefinitionService, CarePlanService carePlanService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.carePlanService = carePlanService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;
@@ -63,7 +63,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
     @Override
     public ResponseEntity<Void> createCarePlan(CreateCarePlanRequest request) {
-        String carePlanId;
+        QualifiedId.CarePlanId carePlanId;
         try {
             // force time for deadline to organization configured default.
             if (request.getCarePlan().getQuestionnaires() != null) {
@@ -74,7 +74,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             CarePlanModel carePlan = dtoMapper.mapCarePlanDto(request.getCarePlan());
 
-            carePlanId = carePlanService.createCarePlan(carePlan).unqualified();
+            carePlanId = carePlanService.createCarePlan(carePlan);
 
             auditLoggingService.log("POST /v1/careplan", carePlan.patient());
         } catch (AccessValidationException | ServiceException e) {
@@ -103,14 +103,14 @@ public class CarePlanController extends BaseController implements CarePlanApi {
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<PlanDefinitionStatusDto>> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(Optional<List<StatusDto>> statusesToInclude) {
         try {
             if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map(x -> x.stream().map(dtoMapper::mapPlandefinitionStatus).toList()).orElse(List.of()));
+            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map(x -> x.stream().map(dtoMapper::mapStatus).toList()).orElse(List.of()));
 
             // todo: 'Optional.get()' without 'isPresent()' check
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());

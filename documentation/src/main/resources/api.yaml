@@ -270,7 +270,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/PlanDefinitionStatusDto'
+              $ref: '#/components/schemas/StatusDto'
       responses:
         "400":
           description: Bad Request
@@ -1713,7 +1713,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/PlanDefinitionStatusDto'
+              $ref: '#/components/schemas/StatusDto'
       responses:
         "400":
           description: Bad Request
@@ -1929,7 +1929,7 @@ components:
             title:
               type: string
             status:
-              $ref: "#/components/schemas/PlanDefinitionStatusDto"
+              $ref: "#/components/schemas/StatusDto"
             created:
               type: string
               format: date-time
@@ -1941,7 +1941,7 @@ components:
               items:
                 $ref: '#/components/schemas/QuestionnaireWrapperDto'
 
-    PlanDefinitionStatusDto:
+    StatusDto:
       type: string
       enum:
         - DRAFT
@@ -2142,7 +2142,7 @@ components:
         description:
           type: string
         status:
-          type: string
+          $ref: '#/components/schemas/StatusDto'
         questions:
           type: array
           items:
@@ -2166,7 +2166,7 @@ components:
           items:
             $ref: '#/components/schemas/ThresholdDto'
         status:
-          $ref: '#/components/schemas/PlanDefinitionStatusDto'
+          $ref: '#/components/schemas/StatusDto'
 
     QuestionnaireFrequencyPairDto:
       type: object

@@ -1,8 +1,11 @@
-package dk.kvalitetsit.hjemmebehandling.service.validation;
+package dk.kvalitetsit.hjemmebehandling.service.access;
 
-import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
+import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
@@ -21,7 +24,7 @@ public class ValidatedPlanDefinitionService implements PlanDefinitionService {
     }
 
     @Override
-    public List<PlanDefinitionModel> getPlanDefinitions(Collection<PlanDefinitionStatus> statusesToInclude) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitions(Collection<Status> statusesToInclude) throws ServiceException {
         throw new NotImplementedException();
     }
 
@@ -31,7 +34,7 @@ public class ValidatedPlanDefinitionService implements PlanDefinitionService {
     }
 
     @Override
-    public void updatePlanDefinition(QualifiedId.PlanDefinitionId id, String name, PlanDefinitionStatus status, List<QualifiedId.QuestionnaireId> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
+    public void updatePlanDefinition(QualifiedId.PlanDefinitionId id, String name, Status status, List<QualifiedId.QuestionnaireId> questionnaireIds, List<ThresholdModel> thresholds) throws ServiceException, AccessValidationException {
         throw new NotImplementedException();
     }
 

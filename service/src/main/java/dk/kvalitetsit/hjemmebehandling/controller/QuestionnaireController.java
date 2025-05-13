@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -33,11 +34,11 @@ import java.util.stream.Stream;
 public class QuestionnaireController extends BaseController implements QuestionnaireApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireController.class);
 
-    private final ConcreteQuestionnaireService questionnaireService;
+    private final QuestionnaireService questionnaireService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
 
-    public QuestionnaireController(ConcreteQuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public QuestionnaireController(QuestionnaireService questionnaireService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.questionnaireService = questionnaireService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -50,7 +51,7 @@ public class QuestionnaireController extends BaseController implements Questionn
         QuestionnaireModel questionnaire = dtoMapper.mapQuestionnaireDto(createQuestionnaireRequest.getQuestionnaire());
         try {
             QualifiedId.QuestionnaireId questionnaireId = questionnaireService.createQuestionnaire(questionnaire);
-            URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId.unqualified());
+            URI location = locationHeaderBuilder.buildLocationHeader(questionnaireId);
             return ResponseEntity.created(location).build();
         } catch (ServiceException e) {
             logger.error("Could not create questionnaire");
@@ -120,7 +121,7 @@ public class QuestionnaireController extends BaseController implements Questionn
 
             QuestionModel callToAction = dtoMapper.mapQuestion(patchQuestionnaireRequest.getCallToAction());
 
-            questionnaireService.updateQuestionnaire(questionnaireId, patchQuestionnaireRequest.getTitle(), patchQuestionnaireRequest.getDescription(), patchQuestionnaireRequest.getStatus(), questions, callToAction);
+            questionnaireService.updateQuestionnaire(questionnaireId, patchQuestionnaireRequest.getTitle(), patchQuestionnaireRequest.getDescription(), dtoMapper.mapStatus(patchQuestionnaireRequest.getStatus()), questions, callToAction);
             return ResponseEntity.ok().build();
 
 

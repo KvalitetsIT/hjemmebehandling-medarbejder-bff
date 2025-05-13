@@ -1,12 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.PractitionerModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
+import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.*;
 
@@ -107,7 +107,7 @@ public class ExtensionMapper {
     }
 
     public static QualifiedId.OrganizationId extractOrganizationId(List<Extension> extensions) {
-        return new QualifiedId.OrganizationId(extractReferenceFromExtensions(extensions));
+        return QualifiedId.OrganizationId.from(extractReferenceFromExtensions(extensions));
     }
 
     public static TimeType extractOrganizationDeadlineTimeDefault(List<Extension> extensions) {
@@ -242,8 +242,7 @@ public class ExtensionMapper {
     }
 
     private static <T> T extractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
-        return tryExtractFromExtensions(extensions, url, extractor)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url)));
+        return tryExtractFromExtensions(extensions, url, extractor).orElseThrow(() -> new IllegalStateException(String.format("Could not look up url %s among the candidate extensions!", url)));
     }
 
     private static <T> T extractFromOptionalExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
@@ -251,12 +250,10 @@ public class ExtensionMapper {
     }
 
     private static <T> Optional<T> tryExtractFromExtensions(List<Extension> extensions, String url, Function<Type, T> extractor) {
-        for (Extension extension : extensions) {
-            if (extension.getUrl().equals(url)) {
-                return Optional.of(extractor.apply(extension.getValue()));
-            }
-        }
-        return Optional.empty();
+        return extensions.stream()
+                .filter(x -> x.getUrl().equals(url))
+                .findFirst()
+                .map(x -> extractor.apply(x.getValue()));
     }
 
 }

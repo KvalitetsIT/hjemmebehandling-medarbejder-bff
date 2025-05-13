@@ -96,23 +96,14 @@ public class FrequencyEnumerator {
     }
 
     private DayOfWeek toDayOfWeek(Weekday weekday) {
-        switch (weekday) {
-            case MON:
-                return DayOfWeek.MONDAY;
-            case TUE:
-                return DayOfWeek.TUESDAY;
-            case WED:
-                return DayOfWeek.WEDNESDAY;
-            case THU:
-                return DayOfWeek.THURSDAY;
-            case FRI:
-                return DayOfWeek.FRIDAY;
-            case SAT:
-                return DayOfWeek.SATURDAY;
-            case SUN:
-                return DayOfWeek.SUNDAY;
-            default:
-                throw new IllegalArgumentException(String.format("Can't map Weekday: %s", weekday));
-        }
+        return switch (weekday) {
+            case MON -> DayOfWeek.MONDAY;
+            case TUE -> DayOfWeek.TUESDAY;
+            case WED -> DayOfWeek.WEDNESDAY;
+            case THU -> DayOfWeek.THURSDAY;
+            case FRI -> DayOfWeek.FRIDAY;
+            case SAT -> DayOfWeek.SATURDAY;
+            case SUN -> DayOfWeek.SUNDAY;
+        };
     }
 }

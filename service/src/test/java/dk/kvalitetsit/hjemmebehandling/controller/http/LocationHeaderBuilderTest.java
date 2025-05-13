@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller.http;
 
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -20,7 +21,7 @@ public class LocationHeaderBuilderTest {
 
     @Test
     public void buildLocationHeader_appendsToRequestUri() {
-        String id = "123";
+        QualifiedId.OrganizationId id = new QualifiedId.OrganizationId("123");
 
         int port = 8787;
         String requestUri = "/api/v1/careplan";

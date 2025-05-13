@@ -347,7 +347,7 @@ public class FhirMapperTest {
     private QuestionnaireModel buildQuestionnaireModel() {
         return QuestionnaireModel.builder()
                 .id(new QualifiedId.QuestionnaireId(QUESTIONNAIRE_ID_1))
-                .status(QuestionnaireStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .questions(List.of(buildQuestionModel())).build();
     }
 

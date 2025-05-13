@@ -76,7 +76,7 @@ public class QualifiedIdTest {
     public void toString_success() {
         String id = "2";
         ResourceType qualifier = ResourceType.Patient;
-        String result = QualifiedId.from(qualifier, id).toString();
+        String result = QualifiedId.from(qualifier, id).qualified();
         assertEquals("Patient/2", result);
     }
 }

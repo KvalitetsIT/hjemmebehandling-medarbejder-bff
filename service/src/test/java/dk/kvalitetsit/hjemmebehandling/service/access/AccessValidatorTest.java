@@ -21,14 +21,15 @@ import org.openapitools.model.UserContext;
 import java.util.List;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.buildOrganization;
+import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.buildResource;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class AccessValidatorTest {
-    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("organization-1");
-    private static final QualifiedId.OrganizationId ORGANIZATION_ID_2 = new QualifiedId.OrganizationId("organization-2");
-    private static final String SOR_CODE_1 = "123456";
+
 
     @InjectMocks
     private AccessValidator subject;
@@ -114,21 +115,5 @@ public class AccessValidatorTest {
         assertDoesNotThrow(() -> subject.validateAccess(List.of(resource1, resource2)));
     }
 
-    private BaseModel buildResource() {
-        return buildResource(null);
-    }
 
-    private BaseModel buildResource(QualifiedId.OrganizationId organizationId) {
-        var resource = CarePlanModel.builder();
-        if (organizationId != null) {
-            resource.organizationId(organizationId);
-        }
-        return resource.build();
-    }
-
-    private Organization buildOrganization() {
-        var organization = new Organization();
-        organization.setId(AccessValidatorTest.ORGANIZATION_ID_1.unqualified());
-        return organization;
-    }
 }

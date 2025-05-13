@@ -1,8 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
 
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.Collection;
@@ -17,7 +17,7 @@ public interface PlanDefinitionRepository<PlanDefinition> extends Repository<Pla
      * @return List of matching plan definitions.
      * @throws ServiceException If the operation fails.
      */
-    List<PlanDefinition> lookupPlanDefinitionsByStatus(Collection<PlanDefinitionStatus> statusesToInclude) throws ServiceException;
+    List<PlanDefinition> lookupPlanDefinitionsByStatus(Collection<Status> statusesToInclude) throws ServiceException;
 
     /**
      * Fetches active plan definitions that reference the specified questionnaire.

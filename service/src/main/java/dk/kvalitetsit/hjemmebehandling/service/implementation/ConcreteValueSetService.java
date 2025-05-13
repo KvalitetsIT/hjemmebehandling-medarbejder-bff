@@ -16,7 +16,6 @@ import java.util.List;
 @Component
 public class ConcreteValueSetService implements ValueSetService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConcreteValueSetService.class);
     private final ValueSetRepository<ValueSet> repository;
 
     public ConcreteValueSetService(ValueSetRepository<ValueSet> repository) {

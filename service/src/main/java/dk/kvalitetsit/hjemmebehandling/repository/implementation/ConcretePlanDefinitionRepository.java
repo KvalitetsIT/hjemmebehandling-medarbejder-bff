@@ -2,15 +2,12 @@ package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PlanDefinition;
 
 import java.util.ArrayList;
@@ -68,7 +65,7 @@ public class ConcretePlanDefinitionRepository implements PlanDefinitionRepositor
     }
 
     @Override
-    public List<PlanDefinition> lookupPlanDefinitionsByStatus(Collection<PlanDefinitionStatus> statusesToInclude) throws ServiceException {
+    public List<PlanDefinition> lookupPlanDefinitionsByStatus(Collection<Status> statusesToInclude) throws ServiceException {
         var criterias = new ArrayList<ICriterion<?>>();
 
         if (!statusesToInclude.isEmpty()) {

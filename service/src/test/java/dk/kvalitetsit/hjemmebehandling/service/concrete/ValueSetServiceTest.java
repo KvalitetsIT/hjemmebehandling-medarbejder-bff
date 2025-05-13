@@ -1,6 +1,5 @@
-package dk.kvalitetsit.hjemmebehandling.service;
+package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteValueSetService;

@@ -7,6 +7,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -29,11 +30,11 @@ import java.util.stream.Stream;
 public class PlanDefinitionController extends BaseController implements PlanDefinitionApi {
     private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionController.class);
 
-    private final ConcretePlanDefinitionService planDefinitionService;
+    private final PlanDefinitionService planDefinitionService;
     private final DtoMapper dtoMapper;
     private final LocationHeaderBuilder locationHeaderBuilder;
 
-    public PlanDefinitionController(ConcretePlanDefinitionService planDefinitionService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
+    public PlanDefinitionController(PlanDefinitionService planDefinitionService, DtoMapper dtoMapper, LocationHeaderBuilder locationHeaderBuilder) {
         this.planDefinitionService = planDefinitionService;
         this.dtoMapper = dtoMapper;
         this.locationHeaderBuilder = locationHeaderBuilder;
@@ -44,7 +45,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     public ResponseEntity<Void> createPlanDefinition(CreatePlanDefinitionRequest createPlanDefinitionRequest) {
         try {
             PlanDefinitionModel planDefinition = dtoMapper.mapPlanDefinitionDto(createPlanDefinitionRequest.getPlanDefinition());
-            String planDefinitionId = planDefinitionId = planDefinitionService.createPlanDefinition(planDefinition).toString();
+            QualifiedId.PlanDefinitionId planDefinitionId = planDefinitionService.createPlanDefinition(planDefinition);
 
             URI location = locationHeaderBuilder.buildLocationHeader(planDefinitionId);
             return ResponseEntity.created(location).build();
@@ -56,14 +57,14 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(Optional<List<PlanDefinitionStatusDto>> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(Optional<List<StatusDto>> statusesToInclude) {
         try {
             if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
                 var details = ErrorDetails.PARAMETERS_INCOMPLETE;
                 details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
                 throw new BadRequestException(details);
             }
-            var statuses = statusesToInclude.map(x -> x.stream().map(dtoMapper::mapPlandefinitionStatus)).map(Stream::toList).orElse(List.of());
+            var statuses = statusesToInclude.map(x -> x.stream().map(dtoMapper::mapStatus)).map(Stream::toList).orElse(List.of());
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statuses);
 
@@ -93,7 +94,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
             List<QualifiedId.QuestionnaireId> questionnaireIds = getQuestionnaireIds(request.getQuestionnaireIds());
             List<ThresholdModel> thresholds = getThresholds(request.getThresholds());
 
-            var status = dtoMapper.mapPlandefinitionStatus(request.getStatus());
+            var status = dtoMapper.mapStatus(request.getStatus());
 
             planDefinitionService.updatePlanDefinition(new QualifiedId.PlanDefinitionId(id), name, status, questionnaireIds, thresholds);
         } catch (Exception e) {

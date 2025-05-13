@@ -1,9 +1,9 @@
-package dk.kvalitetsit.hjemmebehandling.service;
+package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
-import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
@@ -11,7 +11,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
-import org.hl7.fhir.r4.model.Enumerations;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,13 +25,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.QUESTIONNAIRE_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.buildQuestionModel;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class QuestionnaireServiceTest {
-
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
 
     @InjectMocks
     private ConcreteQuestionnaireService subject;
@@ -48,17 +48,15 @@ public class QuestionnaireServiceTest {
 
 
     private static Stream<Arguments> updateQuestionnaire_illegalStatusChange_throwsException() {
-        Map<QuestionnaireStatus, List<QuestionnaireStatus>> valid = new HashMap<>();
-        valid.put(QuestionnaireStatus.ACTIVE, List.of(QuestionnaireStatus.ACTIVE, QuestionnaireStatus.RETIRED));
-        valid.put(QuestionnaireStatus.DRAFT, List.of(QuestionnaireStatus.DRAFT, QuestionnaireStatus.ACTIVE));
+        Map<Status, List<Status>> valid = new HashMap<>();
+        valid.put(Status.ACTIVE, List.of(Status.ACTIVE, Status.RETIRED));
+        valid.put(Status.DRAFT, List.of(Status.DRAFT, Status.ACTIVE));
 
         // compute and add illegal status changes
         Stream.Builder<Arguments> argumentBuilder = Stream.builder();
-        for (Enumerations.PublicationStatus currentStatus : Enumerations.PublicationStatus.values()) {
-            for (Enumerations.PublicationStatus newStatus : Enumerations.PublicationStatus.values()) {
-                if (valid.containsKey(currentStatus) && valid.get(currentStatus).contains(newStatus)) {
-                    continue;
-                } else {
+        for (Status currentStatus : Status.values()) {
+            for (Status newStatus : Status.values()) {
+                if (!(valid.containsKey(currentStatus) && valid.get(currentStatus).contains(newStatus))) {
                     argumentBuilder.add(Arguments.of(currentStatus, newStatus));
                 }
             }
@@ -69,22 +67,18 @@ public class QuestionnaireServiceTest {
     @Test
     public void getQuestionnairesById_success() throws Exception {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder()
-                .id(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1)
-                .status(QuestionnaireStatus.ACTIVE)
+                .id(QUESTIONNAIRE_ID_1)
+                .status(Status.ACTIVE)
                 .build();
-
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-
-        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
-
         assertTrue(result.isPresent());
-        assertEquals(questionnaireModel, result.get());
+        assertEquals(questionnaire, result.get());
     }
 
     @Test
     public void getQuestionnairesById_notFound() throws Exception {
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of());
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.empty());
         Optional<QuestionnaireModel> result = subject.getQuestionnaireById(QUESTIONNAIRE_ID_1);
         assertTrue(result.isEmpty());
     }
@@ -125,7 +119,7 @@ public class QuestionnaireServiceTest {
 
         // Assert
         ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
-
+        verify(questionnaireRepository, times(1)).save(captor.capture());
         questionnaireModel = captor.getValue();
 
         assertEquals(2, questionnaireModel.questions().size());
@@ -142,95 +136,112 @@ public class QuestionnaireServiceTest {
     public void updateQuestionnaire_success() throws Exception {
         String newTitle = "new title";
         String newDescription = "new description";
-        String newStatus = "ACTIVE";
+        Status newStatus = Status.ACTIVE;
         List<QuestionModel> newQuestions = List.of(buildQuestionModel());
         QuestionModel newCallToAction = buildQuestionModel();
 
-        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        QuestionnaireModel questionnaire = QuestionnaireModel
+                .builder()
+                .status(Status.ACTIVE)
+                .build();
 
-        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, newTitle, newDescription, newStatus, newQuestions, newCallToAction);
 
-        assertEquals(newTitle, questionnaireModel.title());
-        assertEquals(newDescription, questionnaireModel.description());
-        assertEquals(newStatus, questionnaireModel.status().toString());
-        assertEquals(newQuestions.size(), questionnaireModel.questions().size());
-        assertEquals(newQuestions.getFirst(), questionnaireModel.questions().getFirst());
-        assertEquals(newCallToAction, questionnaireModel.callToAction());
+        ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
+        verify(questionnaireRepository, times(1)).update(captor.capture());
+
+        questionnaire = captor.getValue();
+
+        assertEquals(newTitle, questionnaire.title());
+        assertEquals(newDescription, questionnaire.description());
+        assertEquals(newStatus, questionnaire.status());
+        assertEquals(newQuestions.size(), questionnaire.questions().size());
+        assertEquals(newQuestions.getFirst(), questionnaire.questions().getFirst());
+        assertEquals(newCallToAction, questionnaire.callToAction());
     }
 
     @Test
     public void updateQuestionnaire_questionLinkId_isSetToRandomUuid() throws Exception {
         String linkId = null; // The system will generate a new random uuid with prefix 'urn:uuid' as linkId";
-        String newStatus = "ACTIVE";
+        Status newStatus = Status.ACTIVE;
         List<QuestionModel> newQuestions = List.of(buildQuestionModel(linkId));
         QuestionModel newCallToAction = buildQuestionModel(linkId);
-        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder().status(Status.ACTIVE).build();
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
 
         subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, newQuestions, newCallToAction);
 
-        assertEquals(1, questionnaireModel.questions().size());
-        assertNotNull(questionnaireModel.questions().getFirst().linkId());
-        assertTrue(questionnaireModel.questions().getFirst().linkId().startsWith("urn:uuid"));
-        assertNotNull(questionnaireModel.callToAction());
-        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, questionnaireModel.callToAction().linkId());
+        ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
+
+        verify(questionnaireRepository, times(1)).update(captor.capture());
+
+        questionnaire = captor.getValue();
+
+        assertEquals(1, questionnaire.questions().size());
+        assertNotNull(captor.getValue().questions().getFirst().linkId());
+        assertTrue(captor.getValue().questions().getFirst().linkId().startsWith("urn:uuid"));
+        assertNotNull(captor.getValue().callToAction());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, captor.getValue().callToAction().linkId());
     }
 
     // TODO: May be moved into another test suite since this refers to accessibility
     @Test
     public void updateQuestionnaire_accessViolation_throwsException() throws Exception {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
         assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, null, null, null));
     }
 
     @Test
     public void updateQuestionnaire_questionnaireNotFound_throwsException() throws Exception {
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of());
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.empty());
         assertThrows(ServiceException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, null, null, null));
     }
 
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void updateQuestionnaire_illegalStatusChange_throwsException(QuestionnaireStatus currentStatus, Enumerations.PublicationStatus newStatus) throws Exception {
-        String newStatusParam = newStatus.toString();
+    public void updateQuestionnaire_illegalStatusChange_throwsException(Status currentStatus, Status newStatus) throws Exception {
         QuestionnaireModel questionnaire = QuestionnaireModel
                 .builder()
                 .status(currentStatus)
                 .build();
-
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        assertThrows(ServiceException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatusParam, null, null));
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
+        assertThrows(ServiceException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, newStatus, null, null));
     }
 
     @Test
     public void retireQuestionnaire_noActiveCarePlanReferences_isRetired() throws ServiceException {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder()
-                .id(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1)
-                .status(QuestionnaireStatus.ACTIVE)
+                .id(QUESTIONNAIRE_ID_1)
+                .status(Status.ACTIVE)
                 .build();
 
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
         Mockito.when(careplanRepository.fetchActiveCarePlansByQuestionnaireId(QUESTIONNAIRE_ID_1)).thenReturn(List.of());
+
         subject.retireQuestionnaire(QUESTIONNAIRE_ID_1);
-        assertEquals(QuestionnaireStatus.RETIRED, questionnaire.status());
+
+        ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
+
+        verify(questionnaireRepository, times(1)).update(captor.capture());
+
+        var retiredQuestionnaire = captor.getValue();
+
+        assertEquals(Status.RETIRED, retiredQuestionnaire.status());
     }
 
     @Test
     public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder()
-                .id(QuestionnaireServiceTest.QUESTIONNAIRE_ID_1)
-                .status(QuestionnaireStatus.ACTIVE)
+                .id(QUESTIONNAIRE_ID_1)
+                .status(Status.ACTIVE)
                 .build();
 
         CarePlanModel activeCarePlan = CarePlanModel.builder().build();
 
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
         Mockito.when(careplanRepository.fetchActiveCarePlansByQuestionnaireId(QUESTIONNAIRE_ID_1)).thenReturn(List.of(activeCarePlan));
         try {
             subject.retireQuestionnaire(QUESTIONNAIRE_ID_1);
@@ -239,21 +250,6 @@ public class QuestionnaireServiceTest {
             assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
             assertEquals(ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN, se.getErrorDetails());
         }
-    }
-
-
-
-
-
-    private QuestionModel buildQuestionModel(String linkId) {
-        var builder = QuestionModel.builder();
-        builder.linkId(linkId);
-        return builder.build();
-    }
-
-    private QuestionModel buildQuestionModel() {
-        var builder = QuestionModel.builder();
-        return builder.build();
     }
 
 }

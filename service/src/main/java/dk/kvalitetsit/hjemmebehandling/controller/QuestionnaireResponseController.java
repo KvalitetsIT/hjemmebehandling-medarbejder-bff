@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -24,15 +25,14 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-
 public class QuestionnaireResponseController extends BaseController implements QuestionnaireResponseApi {
     private static final Logger logger = LoggerFactory.getLogger(QuestionnaireResponseController.class);
 
-    private final ConcreteQuestionnaireResponseService questionnaireResponseService;
+    private final QuestionnaireResponseService questionnaireResponseService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
 
-    public QuestionnaireResponseController(ConcreteQuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
+    public QuestionnaireResponseController(QuestionnaireResponseService questionnaireResponseService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper) {
         this.questionnaireResponseService = questionnaireResponseService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;

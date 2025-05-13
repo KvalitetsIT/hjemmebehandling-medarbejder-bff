@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
+import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.slf4j.Logger;
@@ -14,12 +15,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-public class ConcretePersonService {
-    private static final Logger logger = LoggerFactory.getLogger(ConcretePersonService.class);
+public class ConcretePersonService implements PersonService {
     private final RestTemplate restTemplate;
     @Value("${cpr.url}")
     private String cprUrl;
-
 
     public ConcretePersonService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

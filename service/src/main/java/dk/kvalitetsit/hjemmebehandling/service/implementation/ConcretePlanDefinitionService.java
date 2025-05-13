@@ -1,23 +1,18 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.validation.AccessValidatingService;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Organization;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Collection;
@@ -26,8 +21,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 @Component
-public class ConcretePlanDefinitionService extends AccessValidatingService {
-    private static final Logger logger = LoggerFactory.getLogger(ConcretePlanDefinitionService.class);
+public class ConcretePlanDefinitionService  {
 
     private final FhirMapper fhirMapper;
     private final DateProvider dateProvider;
@@ -40,7 +34,6 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
 
     public ConcretePlanDefinitionService(
             FhirMapper fhirMapper,
-            AccessValidator accessValidator,
             PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository,
             DateProvider dateProvider,
             QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
@@ -48,7 +41,7 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
             QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
             OrganizationRepository<Organization> organizationRepository
     ) {
-        super(accessValidator);
+
         this.fhirMapper = fhirMapper;
         this.planDefinitionRepository = planDefinitionRepository;
         this.dateProvider = dateProvider;
@@ -72,11 +65,11 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
                 .toList();
     }
 
-    public List<PlanDefinitionModel> getPlanDefinitions(Collection<PlanDefinitionStatus> statusesToInclude) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitions(Collection<Status> statusesToInclude) throws ServiceException {
         return planDefinitionRepository.lookupPlanDefinitionsByStatus(statusesToInclude);
     }
 
-    public QualifiedId.PlanDefinitionId createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException, AccessValidationException {
+    public QualifiedId.PlanDefinitionId createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException {
 
         // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
         validateReferences(planDefinition);
@@ -94,7 +87,7 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
         }
     }
 
-    private void validateReferences(PlanDefinitionModel planDefinition) throws AccessValidationException, ServiceException {
+    private void validateReferences(PlanDefinitionModel planDefinition) throws  ServiceException {
         // Validate questionnaires
         if (planDefinition.questionnaires() != null && !planDefinition.questionnaires().isEmpty()) {
             var ids = planDefinition.questionnaires().stream().map(qw -> qw.questionnaire().id()).toList();
@@ -106,10 +99,10 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
     public void updatePlanDefinition(
             QualifiedId.PlanDefinitionId id,
             String name,
-            PlanDefinitionStatus status,
+            Status status,
             List<QualifiedId.QuestionnaireId> questionnaireIds,
             List<ThresholdModel> thresholds
-    ) throws ServiceException, AccessValidationException {
+    ) throws ServiceException {
 
         List<QuestionnaireModel> questionnaires = questionnaireRepository.fetch(questionnaireIds);
 
@@ -256,7 +249,7 @@ public class ConcretePlanDefinitionService extends AccessValidatingService {
             throw new ServiceException(String.format("Plandefinition with id %s if used by active careplans!", id), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN);
         }
 
-        PlanDefinitionModel retiredPlanDefinition = PlanDefinitionModel.Builder.from(result.get()).status(PlanDefinitionStatus.RETIRED).build();
+        PlanDefinitionModel retiredPlanDefinition = PlanDefinitionModel.Builder.from(result.get()).status(Status.RETIRED).build();
         planDefinitionRepository.update(retiredPlanDefinition);
     }
 

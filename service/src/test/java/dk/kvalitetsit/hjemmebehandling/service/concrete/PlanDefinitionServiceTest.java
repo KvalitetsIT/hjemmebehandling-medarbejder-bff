@@ -1,8 +1,8 @@
-package dk.kvalitetsit.hjemmebehandling.service;
+package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
 import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,9 +36,6 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionServiceTest {
 
-    private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_1 = new QualifiedId.PlanDefinitionId("plandefinition-1");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_2 = new QualifiedId.QuestionnaireId("questionnaire-2");
 
     @InjectMocks
     private ConcretePlanDefinitionService subject;
@@ -105,18 +104,18 @@ public class PlanDefinitionServiceTest {
         Mockito.when(questionnaireRepository.fetch(ids)).thenReturn(List.of());
         Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
-        subject.updatePlanDefinition(id, "", PlanDefinitionStatus.DRAFT, List.of(), List.of());
+        subject.updatePlanDefinition(id, "", Status.DRAFT, List.of(), List.of());
 
         ArgumentCaptor<PlanDefinitionModel> captor1 = ArgumentCaptor.forClass(PlanDefinitionModel.class);
         verify(planDefinitionRepository, times(1)).update(captor1.capture());
-        assertEquals(PlanDefinitionStatus.DRAFT, captor1.getValue().status());
+        assertEquals(Status.DRAFT, captor1.getValue().status());
 
 
-        subject.updatePlanDefinition(id, "", PlanDefinitionStatus.ACTIVE, List.of(), List.of());
+        subject.updatePlanDefinition(id, "", Status.ACTIVE, List.of(), List.of());
 
         ArgumentCaptor<PlanDefinitionModel> captor2 = ArgumentCaptor.forClass(PlanDefinitionModel.class);
         verify(planDefinitionRepository, times(2)).update(captor2.capture());
-        assertEquals(PlanDefinitionStatus.ACTIVE, captor2.getValue().status());
+        assertEquals(Status.ACTIVE, captor2.getValue().status());
     }
 
 
@@ -551,7 +550,7 @@ public class PlanDefinitionServiceTest {
         ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
         verify(planDefinitionRepository, times(1)).update(captor.capture());
 
-        assertEquals(PlanDefinitionStatus.RETIRED, captor.getValue().status());
+        assertEquals(Status.RETIRED, captor.getValue().status());
     }
 
     @Test
@@ -566,102 +565,7 @@ public class PlanDefinitionServiceTest {
         assertThrows(ServiceException.class, () -> subject.retirePlanDefinition(id));
     }
 
-    private QuestionnaireWrapperModel buildQuestionnaireWrapperModel(QualifiedId.QuestionnaireId questionnaireId) {
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel(questionnaireId);
-        return QuestionnaireWrapperModel.builder()
-                .questionnaire(questionnaireModel)
-                .thresholds(questionnaireModel.questions().stream()
-                        .flatMap(q -> q.thresholds().stream())
-                        .toList())
-                .build();
-    }
 
-    private QuestionnaireModel buildQuestionnaireModel(QualifiedId.QuestionnaireId questionnaireId) {
-        var builder = QuestionnaireModel.builder();
-        builder.questions(new ArrayList<>());
-        builder.id(questionnaireId);
-        var questionBuilder = QuestionModel.builder();
-        questionBuilder.linkId("question-1");
-        var question = questionBuilder.build();
-        builder.questions(List.of(question));
-        ThresholdModel thresholdModel = buildThresholdModel(question.linkId());
-        questionBuilder.thresholds(List.of(thresholdModel));
-        return builder.build();
-    }
-
-    private ThresholdModel buildThresholdModel(String questionnaireLinkId, Double valueQuantityLow) {
-        return new ThresholdModel(
-                questionnaireLinkId,
-                ThresholdType.NORMAL,
-                valueQuantityLow,
-                null,
-                Boolean.TRUE,
-                null
-        );
-    }
-
-    private ThresholdModel buildThresholdModel(String questionnaireLinkId) {
-        return new ThresholdModel(
-                questionnaireLinkId,
-                ThresholdType.NORMAL,
-                null,
-                null,
-                Boolean.TRUE,
-                null
-        );
-    }
-
-    private QuestionModel buildMeasurementQuestionModel() {
-        var builder = QuestionModel.builder();
-        builder.linkId(IdType.newRandomUuid().getValueAsString());
-        builder.text("Hvad er din temperatur?");
-        builder.questionType(QuestionType.QUANTITY);
-        return builder.build();
-    }
-
-    private ThresholdModel buildMeasurementThresholdModel(String questionnaireLinkId) {
-        return new ThresholdModel(
-                questionnaireLinkId,
-                ThresholdType.NORMAL,
-                Double.valueOf("36.5"),
-                Double.valueOf("37.5"),
-                null,
-                null
-        );
-    }
-
-    private PlanDefinitionModel buildPlanDefinition() {
-        return PlanDefinitionModel.builder()
-                .id(PlanDefinitionServiceTest.PLANDEFINITION_ID_1)
-                .status(PlanDefinitionStatus.ACTIVE)
-                .build();
-    }
-
-    private PlanDefinitionModel buildPlanDefinitionModel(QualifiedId.QuestionnaireId questionnaireId, ThresholdModel questionnaireThreshold) {
-        QuestionnaireWrapperModel questionnaireWrapperModel = QuestionnaireWrapperModel.builder()
-                .questionnaire(QuestionnaireModel.builder()
-                        .id(questionnaireId)
-                        .build()
-                )
-                .thresholds(List.of(questionnaireThreshold))
-                .build();
-
-        return PlanDefinitionModel.builder()
-                .questionnaires(List.of(questionnaireWrapperModel))
-                .build();
-    }
-
-    private QuestionnaireModel buildQuestionnaire(QualifiedId.QuestionnaireId questionnaireId) {
-        return QuestionnaireModel.builder()
-                .id(questionnaireId)
-                .build();
-    }
-
-    private Questionnaire.QuestionnaireItemComponent buildMeasurementQuestion() {
-        Questionnaire.QuestionnaireItemComponent question = new Questionnaire.QuestionnaireItemComponent();
-        question.setLinkId("temperature").setText("Hvad er din temperatur?").setType(Questionnaire.QuestionnaireItemType.QUANTITY);
-        return question;
-    }
 
 
 }

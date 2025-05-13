@@ -46,7 +46,7 @@ public class DtoMapper {
 
     public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
-        carePlanDto.setId(Optional.ofNullable(carePlan.id()).map(Object::toString));
+        carePlanDto.setId(Optional.ofNullable(carePlan.id()).map(QualifiedId.CarePlanId::unqualified));
         carePlanDto.setTitle(Optional.ofNullable(carePlan.title()));
         carePlanDto.setStatus(Optional.ofNullable(carePlan.status().toString()));
         carePlanDto.setCreated(Optional.ofNullable(carePlan.created()).map(this::mapInstant));
@@ -164,7 +164,7 @@ public class DtoMapper {
                 null, // Todo: organizationId was expected but is not defined by the api
                 planDefinitionDto.getName().orElse(null),
                 planDefinitionDto.getTitle().orElse(null),
-                planDefinitionDto.getStatus().map(this::mapPlandefinitionStatus).orElse(null),
+                planDefinitionDto.getStatus().map(this::mapStatus).orElse(null),
                 planDefinitionDto.getCreated().map(OffsetDateTime::toInstant).orElse(null),
                 planDefinitionDto.getLastUpdated().map(OffsetDateTime::toInstant).orElse(null),
                 Optional.ofNullable(planDefinitionDto.getQuestionnaires()).map(questionnaires -> questionnaires.stream().map(this::mapQuestionnaireWrapperDto).toList()).orElse(null)
@@ -176,7 +176,7 @@ public class DtoMapper {
                 .name(planDefinitionModel.name())
                 .title(planDefinitionModel.title());
 
-        planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.status()).map(this::mapPlandefinitionStatus));
+        planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.status()).map(this::mapStatus));
         planDefinitionDto.setCreated(Optional.ofNullable(planDefinitionModel.created()).map(this::mapInstant));
         planDefinitionDto.setLastUpdated(Optional.ofNullable(planDefinitionModel.lastUpdated()).map(this::mapInstant));
         Optional.ofNullable(planDefinitionModel.questionnaires())
@@ -247,7 +247,7 @@ public class DtoMapper {
                 null, // Todo: organizationId was expected but is not defined by the api
                 questionnaireDto.getTitle().orElse(null),
                 null, // Todo: Description was expected but is not defined by the api
-                questionnaireDto.getStatus().map(QuestionnaireStatus::valueOf).orElse(null),
+                questionnaireDto.getStatus().map(Status::valueOf).orElse(null),
                 Optional.ofNullable(questionnaireDto.getQuestions()).map((questions) -> questions.stream().map(this::mapQuestion).toList()).orElse(null),
                 questionnaireDto.getCallToAction().map(this::mapQuestion).orElse(null),
                 questionnaireDto.getVersion().orElse(null),
@@ -528,19 +528,19 @@ public class DtoMapper {
         };
     }
 
-    public PlanDefinitionStatus mapPlandefinitionStatus(@NotNull PlanDefinitionStatusDto planDefinitionStatus) {
+    public Status mapStatus(@NotNull StatusDto planDefinitionStatus) {
         return switch (planDefinitionStatus) {
-            case DRAFT -> PlanDefinitionStatus.DRAFT;
-            case ACTIVE -> PlanDefinitionStatus.ACTIVE;
-            case RETIRED -> PlanDefinitionStatus.RETIRED;
+            case DRAFT -> Status.DRAFT;
+            case ACTIVE -> Status.ACTIVE;
+            case RETIRED -> Status.RETIRED;
         };
     }
 
-    private PlanDefinitionStatusDto mapPlandefinitionStatus(@NotNull PlanDefinitionStatus planDefinitionStatus) {
+    private StatusDto mapStatus(@NotNull Status planDefinitionStatus) {
         return switch (planDefinitionStatus) {
-            case DRAFT -> PlanDefinitionStatusDto.DRAFT;
-            case ACTIVE -> PlanDefinitionStatusDto.ACTIVE;
-            case RETIRED -> PlanDefinitionStatusDto.RETIRED;
+            case DRAFT -> StatusDto.DRAFT;
+            case ACTIVE -> StatusDto.ACTIVE;
+            case RETIRED -> StatusDto.RETIRED;
         };
     }
 

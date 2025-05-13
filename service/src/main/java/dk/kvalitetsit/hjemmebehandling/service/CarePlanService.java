@@ -30,7 +30,7 @@ public interface CarePlanService {
     CarePlanModel updateCarePlan(QualifiedId.CarePlanId carePlanId,
                                  List<QualifiedId.PlanDefinitionId> planDefinitionIds,
                                  List<QualifiedId.QuestionnaireId> questionnaireIds,
-                                 Map<String, FrequencyModel> frequencies,
+                                 Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies,
                                  PatientDetails patientDetails) throws ServiceException, AccessValidationException;
 
     List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws AccessValidationException, ServiceException;

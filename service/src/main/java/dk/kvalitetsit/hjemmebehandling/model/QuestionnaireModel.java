@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionnaireStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,7 +11,7 @@ public record QuestionnaireModel(
         QualifiedId.OrganizationId organizationId,
         String title,
         String description,
-        QuestionnaireStatus status,
+        Status status,
         List<QuestionModel> questions,
         QuestionModel callToAction,
         String version,
@@ -36,7 +36,7 @@ public record QuestionnaireModel(
         private QualifiedId.QuestionnaireId id;
         private String title;
         private String description;
-        private QuestionnaireStatus status;
+        private Status status;
         private List<QuestionModel> questions = new ArrayList<>();
         private QuestionModel callToAction;
         private String version;
@@ -61,7 +61,7 @@ public record QuestionnaireModel(
 
         private QualifiedId.OrganizationId organizationId;
 
-        public Builder(QualifiedId.QuestionnaireId id, String title, String description, QuestionnaireStatus status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
+        public Builder(QualifiedId.QuestionnaireId id, String title, String description, Status status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
             this.id = id;
             this.title = title;
             this.description = description;
@@ -85,7 +85,7 @@ public record QuestionnaireModel(
             return this;
         }
 
-        public Builder status(QuestionnaireStatus status) {
+        public Builder status(Status status) {
             this.status = status;
             return this;
         }

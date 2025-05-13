@@ -93,7 +93,6 @@ public class ServiceConfiguration {
     ) {
         return new ConcreteCarePlanService(
                 dateProvider,
-                accessValidator,
                 carePlanRepository,
                 patientRepository,
                 customUserService,
@@ -105,8 +104,8 @@ public class ServiceConfiguration {
     }
 
     @Bean
-    public ConcretePatientService getPatientService(@Autowired PatientRepositoryAdaptor patientRepository, @Autowired AccessValidator accessValidator) {
-        return new ConcretePatientService(accessValidator, patientRepository);
+    public ConcretePatientService getPatientService(@Autowired PatientRepositoryAdaptor patientRepository) {
+        return new ConcretePatientService(patientRepository);
     }
 
     @Bean
@@ -129,7 +128,7 @@ public class ServiceConfiguration {
 
     @Bean
     public ConcreteQuestionnaireResponseService getQuestionnaireResponseService(@Autowired Comparator<QuestionnaireResponseModel> priorityComparator,
-                                                                                @Autowired AccessValidator accessValidator,
+
                                                                                 @Autowired QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
                                                                                 @Autowired QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
                                                                                 @Autowired PractitionerRepository<PractitionerModel> practitionerRepository,
@@ -137,7 +136,7 @@ public class ServiceConfiguration {
 
     ) {
         // Reverse the comporator: We want responses by descending priority.
-        return new ConcreteQuestionnaireResponseService(priorityComparator, accessValidator, questionnaireRepository, questionnaireResponseRepository, practitionerRepository, organizationRepository);
+        return new ConcreteQuestionnaireResponseService(priorityComparator, questionnaireRepository, questionnaireResponseRepository, practitionerRepository, organizationRepository);
     }
 
     @Bean

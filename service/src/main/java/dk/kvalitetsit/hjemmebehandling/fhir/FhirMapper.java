@@ -32,7 +32,7 @@ public class FhirMapper {
         return out.stream().toList();
     }
 
-    public Enumerations.PublicationStatus mapStatus(PlanDefinitionStatus status) {
+    public Enumerations.PublicationStatus mapStatus(Status status) {
         return switch (status) {
             case DRAFT -> Enumerations.PublicationStatus.DRAFT;
             case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
@@ -300,7 +300,7 @@ public class FhirMapper {
                 ExtensionMapper.extractOrganizationId(planDefinition.getExtension()),
                 planDefinition.getName(),
                 planDefinition.getTitle(),
-                Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()),
+                Enum.valueOf(Status.class, planDefinition.getStatus().toString()),
                 Optional.ofNullable(planDefinition.getDate()).map(Date::toInstant).orElse(null),
                 Optional.ofNullable(planDefinition.getMeta().getLastUpdated()).map(Date::toInstant).orElse(null),
                 planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, questionnaire, organization)).toList()
@@ -444,7 +444,7 @@ public class FhirMapper {
                 .setValue(cpr);
     }
 
-    private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
+    private Enumerations.PublicationStatus mapQuestionnaireStatus(Status status) {
         return switch (status) {
             case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
             case DRAFT -> Enumerations.PublicationStatus.DRAFT;
@@ -452,11 +452,11 @@ public class FhirMapper {
         };
     }
 
-    private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
+    private Status mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
         return switch (status) {
-            case ACTIVE -> QuestionnaireStatus.ACTIVE;
-            case DRAFT -> QuestionnaireStatus.DRAFT;
-            case RETIRED -> QuestionnaireStatus.RETIRED;
+            case ACTIVE -> Status.ACTIVE;
+            case DRAFT -> Status.DRAFT;
+            case RETIRED -> Status.RETIRED;
             default ->
                     throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
         };

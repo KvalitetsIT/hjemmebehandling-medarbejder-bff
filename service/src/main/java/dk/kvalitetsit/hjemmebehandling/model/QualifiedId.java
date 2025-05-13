@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 
 public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId, QualifiedId.ValueSetId {
 
-
     static void validateUnqualifiedId(String unqualified) throws IllegalArgumentException {
         if (!isPlainId(unqualified)) {
             throw new IllegalArgumentException("Provided id was not a plain id: " + unqualified);
@@ -173,6 +172,11 @@ public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.C
 
         public OrganizationId {
             validateUnqualifiedId(unqualified);
+        }
+
+        public static OrganizationId from(String qualifiedId) {
+            var id = extractUnqualifiedId(qualifiedId);
+            return new OrganizationId(id);
         }
 
         @Override

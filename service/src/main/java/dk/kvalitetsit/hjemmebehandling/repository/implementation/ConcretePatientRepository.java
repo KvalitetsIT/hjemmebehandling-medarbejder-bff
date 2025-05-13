@@ -2,19 +2,13 @@ package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.StringClientParam;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
-import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
+import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 
 import java.util.List;
@@ -53,8 +47,7 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
     @Override
     public List<Patient> fetchByStatus(CarePlan.CarePlanStatus status) throws ServiceException {
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-        //return lookupCarePlansByCriteria(List.of(statusCriterion, organizationCriterion)).getPatients();
-        throw new NotImplementedException();
+        return lookupPatients(List.of(statusCriterion));
     }
 
     @Override
@@ -86,22 +79,24 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
     public List<Patient> fetch() throws ServiceException {
         throw new NotImplementedException();
     }
-    
-    private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) throws ServiceException {
-        var lookupResult = client.lookupByCriteria(Patient.class, criterion);
 
-        if (lookupResult.getPatients().isEmpty()) {
+    private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) throws ServiceException {
+        var lookupResult = lookupPatients(criterion);
+
+        if (lookupResult.isEmpty()) {
             return Optional.empty();
         }
-        if (lookupResult.getPatients().size() > 1) {
+        if (lookupResult.size() > 1) {
             throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
         }
-        try{
-            return Optional.of(lookupResult.getPatients().getFirst());
-        }catch (NoSuchElementException e){
-            return Optional.empty();
-        }
+        return Optional.ofNullable(lookupResult.getFirst());
     }
+
+    private List<Patient> lookupPatients(List<ICriterion<?>> criterion) throws ServiceException {
+        var lookupResult = client.lookupByCriteria(Patient.class, criterion);
+        return lookupResult.getPatients();
+    }
+
 
 }
 

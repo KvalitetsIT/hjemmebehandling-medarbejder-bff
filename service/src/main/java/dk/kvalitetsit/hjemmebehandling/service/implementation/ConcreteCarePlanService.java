@@ -8,18 +8,16 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
-import dk.kvalitetsit.hjemmebehandling.service.validation.AccessValidatingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.apache.commons.lang3.NotImplementedException;
-import org.hl7.fhir.r4.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hl7.fhir.r4.model.CarePlan;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.TimeType;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Instant;
@@ -28,9 +26,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ConcreteCarePlanService extends AccessValidatingService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ConcreteCarePlanService.class);
+public class ConcreteCarePlanService {
 
     private final CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository;
     private final PatientRepository<PatientModel, CarePlanStatus> patientRepository;
@@ -48,14 +44,12 @@ public class ConcreteCarePlanService extends AccessValidatingService {
 
     public ConcreteCarePlanService(
             DateProvider dateProvider,
-            AccessValidator accessValidator,
             CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository,
             PatientRepository<PatientModel, CarePlanStatus> patientRepository,
             CustomUserClient customUserService,
             QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
             PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository, QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository, OrganizationRepository<Organization> organizationRepository
     ) {
-        super(accessValidator);
         this.carePlanRepository = carePlanRepository;
         this.dateProvider = dateProvider;
         this.patientRepository = patientRepository;
@@ -70,7 +64,21 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         throw new NotImplementedException();
     }
 
-    public QualifiedId.CarePlanId createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
+    private static List<QualifiedId.QuestionnaireId> extractQuestionnaireIdsFromCarePlan(List<CarePlanModel> carePlans) {
+        return carePlans
+                .stream()
+                .flatMap(cp -> cp.questionnaires().stream().map(a -> a.questionnaire().id()))
+                .toList();
+    }
+
+    private static List<QualifiedId.QuestionnaireId> extractQuestionnaireIdsFromPlanDefinition(List<PlanDefinitionModel> planDefinitions) {
+        return planDefinitions
+                .stream()
+                .flatMap(pd -> pd.questionnaires().stream().map(a -> a.questionnaire().id()))
+                .toList();
+    }
+
+    public QualifiedId.CarePlanId createCarePlan(CarePlanModel carePlan) throws ServiceException {
         CPR cpr = carePlan.patient().cpr();
         var patient = patientRepository.fetch(cpr);
 
@@ -117,7 +125,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                     .toList();
 
             List<QuestionnaireModel> questionnaires = questionnaireRepository.fetch(questionnaireIds);
-            validateAccess(questionnaires);
         }
 
         // Validate referenced plan definitions
@@ -127,7 +134,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                     .toList();
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionRepository.fetch(planDefinitionIds);
-            validateAccess(planDefinitions);
         }
 
         var now = dateProvider.now();
@@ -228,9 +234,9 @@ public class ConcreteCarePlanService extends AccessValidatingService {
             throw new ServiceException(String.format("Careplan with id %s still has unhandled questionnaire-responses!", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES);
         }
 
-//        if (ExtensionMapper.extractCarePlanSatisfiedUntil(result.get().extension()).isBefore(Instant.now())) {
-//            throw new ServiceException(String.format("Careplan with id %s is missing scheduled responses!", qualifiedId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
-//        }
+        if (result.get().satisfiedUntil().isBefore(Instant.now())) {
+            throw new ServiceException(String.format("Careplan with id %s is missing scheduled responses!", carePlanId.qualified()), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES);
+        }
 
         CarePlanModel completedCarePlan = CarePlanModel.Builder
                 .from(result.get())
@@ -292,11 +298,11 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         return pageResponses(getCarePlansWithFilters(cpr, onlyActiveCarePlans, onlyUnSatisfied), pagination);
     }
 
-    public Optional<CarePlanModel> getCarePlanById(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
+    public Optional<CarePlanModel> getCarePlanById(QualifiedId.CarePlanId carePlanId) throws ServiceException {
         return carePlanRepository.fetch(carePlanId);
     }
 
-    public CarePlanModel resolveAlarm(QualifiedId.CarePlanId carePlanId, QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
+    public CarePlanModel resolveAlarm(QualifiedId.CarePlanId carePlanId, QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
         // Get the careplan
         Optional<CarePlanModel> carePlanResult = carePlanRepository.fetch(carePlanId);
 
@@ -327,7 +333,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                                         List<QualifiedId.PlanDefinitionId> planDefinitionIds,
                                         List<QualifiedId.QuestionnaireId> questionnaireIds,
                                         Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies,
-                                        PatientDetails patientDetails) throws ServiceException, AccessValidationException {
+                                        PatientDetails patientDetails) throws ServiceException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         List<PlanDefinitionModel> planDefinitionResult = planDefinitionRepository.fetch(planDefinitionIds);
         if (planDefinitionResult.size() != planDefinitionIds.size()) throw new ServiceException(
@@ -366,7 +372,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
         var carePlan = careplanResult.get();
 
         // Validate that the client is allowed to update the carePlan.
-        validateAccess(carePlan);
 
 
         if (!questionnairesAllowedByPlanDefinitions(planDefinitionResult, questionnaireIds)) throw new ServiceException(
@@ -397,7 +402,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
         );
-
 
 
         carePlan = updateCarePlanModel(carePlan, questionnaireIds, frequencies, planDefinitionResult);
@@ -463,7 +467,7 @@ public class ConcreteCarePlanService extends AccessValidatingService {
                 .build();
     }
 
-    public List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws AccessValidationException, ServiceException {
+    public List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException {
         Optional<CarePlanModel> optional = getCarePlanById(carePlanId);
         if (optional.isEmpty()) throw new ServiceException(
                 "Careplan was not found",
@@ -643,21 +647,6 @@ public class ConcreteCarePlanService extends AccessValidatingService {
             }
         }
         return oldContacts;
-    }
-
-
-    private static List<QualifiedId.QuestionnaireId> extractQuestionnaireIdsFromCarePlan(List<CarePlanModel> carePlans) {
-        return carePlans
-                .stream()
-                .flatMap(cp -> cp.questionnaires().stream().map(a -> a.questionnaire().id()))
-                .toList();
-    }
-
-    private static List<QualifiedId.QuestionnaireId> extractQuestionnaireIdsFromPlanDefinition(List<PlanDefinitionModel> planDefinitions) {
-        return planDefinitions
-                .stream()
-                .flatMap(pd -> pd.questionnaires().stream().map(a -> a.questionnaire().id()))
-                .toList();
     }
 
 
