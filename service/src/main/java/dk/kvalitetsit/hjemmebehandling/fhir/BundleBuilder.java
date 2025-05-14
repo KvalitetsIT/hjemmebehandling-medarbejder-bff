@@ -21,6 +21,7 @@ public class BundleBuilder {
     }
 
     public Bundle buildUpdateCarePlanBundle(CarePlan carePlan, Patient patient) {
+
         // Build the CarePlan entry.
         var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.PUT);
 
@@ -35,7 +36,7 @@ public class BundleBuilder {
         var bundle = new Bundle();
 
         bundle.setType(Bundle.BundleType.TRANSACTION);
-        for(var entry : entries) {
+        for (var entry : entries) {
             bundle.addEntry(entry);
         }
 

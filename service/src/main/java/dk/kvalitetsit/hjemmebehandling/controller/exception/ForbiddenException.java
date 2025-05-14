@@ -1,6 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.controller.exception;
 
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 
 public class ForbiddenException extends RuntimeException {
     private final ErrorDetails errorDetails;
