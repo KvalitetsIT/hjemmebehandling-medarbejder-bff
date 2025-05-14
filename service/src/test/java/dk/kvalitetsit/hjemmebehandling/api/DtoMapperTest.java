@@ -1,9 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
+import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.AnswerType;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
-import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;

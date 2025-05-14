@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.repository;
 
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @param questionnaireIds The questionnaire IDs.
      * @return List of matching responses.
      */
-    List<QuestionnaireResponse> fetch(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds);
+    List<QuestionnaireResponse> fetch(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException;
 
 
     /**
@@ -26,7 +27,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @return List of responses.
      * @throws ServiceException If the operation fails.
      */
-    List<QuestionnaireResponse> fetchByStatus(List<ExaminationStatus> statuses) throws ServiceException;
+    List<QuestionnaireResponse> fetchByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException;
 
     /**
      * Looks up questionnaire responses by status and care plan ID.
@@ -36,7 +37,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @return List of responses.
      * @throws ServiceException If the operation fails.
      */
-    List<QuestionnaireResponse> fetch(List<ExaminationStatus> statuses, QualifiedId.CarePlanId carePlanId) throws ServiceException;
+    List<QuestionnaireResponse> fetch(List<ExaminationStatus> statuses, QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException;
 
     /**
      * Looks up questionnaire responses by a single status.
@@ -45,7 +46,7 @@ public interface QuestionnaireResponseRepository<QuestionnaireResponse> extends 
      * @return List of responses.
      * @throws ServiceException If the operation fails.
      */
-    List<QuestionnaireResponse> fetchByStatus(ExaminationStatus status) throws ServiceException;
+    List<QuestionnaireResponse> fetchByStatus(ExaminationStatus status) throws ServiceException, AccessValidationException;
 
 
 }

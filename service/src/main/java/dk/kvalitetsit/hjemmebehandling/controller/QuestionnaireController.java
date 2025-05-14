@@ -1,20 +1,17 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionModel;
+import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
-import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.ResourceType;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import org.openapitools.api.QuestionnaireApi;
 import org.openapitools.model.CreateQuestionnaireRequest;
 import org.openapitools.model.PatchQuestionnaireRequest;
@@ -89,10 +86,14 @@ public class QuestionnaireController extends BaseController implements Questionn
         try {
             List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElse(List.of()));
 
-            return ResponseEntity.ok(questionnaires.stream().map(dtoMapper::mapQuestionnaireModel).sorted(Comparator.comparing(x -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed())).toList());
+            var response = questionnaires.stream()
+                    .map(dtoMapper::mapQuestionnaireModel)
+                    .sorted(Comparator.comparing(x -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed()))
+                    .toList();
 
+            return ResponseEntity.ok(response);
 
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             throw toStatusCodeException(e);
         }
     }
@@ -102,7 +103,7 @@ public class QuestionnaireController extends BaseController implements Questionn
         boolean isQuestionnaireInUse;
         try {
             isQuestionnaireInUse = !questionnaireService.getPlanDefinitionsThatIncludes(new QualifiedId.QuestionnaireId(id)).isEmpty();
-        } catch (ServiceException se) {
+        } catch (ServiceException | AccessValidationException se) {
             throw toStatusCodeException(se);
         }
 
@@ -134,7 +135,7 @@ public class QuestionnaireController extends BaseController implements Questionn
     public ResponseEntity<Void> retireQuestionnaire(String id) {
         try {
             questionnaireService.retireQuestionnaire(new QualifiedId.QuestionnaireId(id));
-        } catch (ServiceException se) {
+        } catch (ServiceException | AccessValidationException se) {
             throw toStatusCodeException(se);
         }
 

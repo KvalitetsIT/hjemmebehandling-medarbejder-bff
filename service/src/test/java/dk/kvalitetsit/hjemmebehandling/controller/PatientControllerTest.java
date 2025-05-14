@@ -6,10 +6,10 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorE
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
+import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,16 +24,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.CPR_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class PatientControllerTest {
+
     @InjectMocks
     private PatientController subject;
-
     @Mock
-    private ConcretePatientService patientService;
+    private PatientService patientService;
     @Mock
     private AuditLoggingService auditLoggingService;
     @Mock
@@ -78,20 +79,20 @@ public class PatientControllerTest {
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
-        PatientDto result = subject.getPatient(Mockito.anyString()).getBody();
+        PatientDto result = subject.getPatient(CPR_1.toString()).getBody();
 
         assertEquals(patientDto, result);
     }
 
     @Test
-    public void searchPatient() throws ServiceException {
+    public void searchPatient() throws ServiceException, AccessValidationException {
         PatientModel patientModel = PatientModel.builder().build();
-        Mockito.when(patientService.searchPatients(Mockito.anyList())).thenReturn(List.of(patientModel));
 
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
-
-        PatientListResponse result = subject.searchPatients(Mockito.anyString()).getBody();
+        String searchString = "searchString";
+        Mockito.when(patientService.searchPatients(List.of(searchString))).thenReturn(List.of(patientModel));
+        PatientListResponse result = subject.searchPatients(searchString).getBody();
 
         assertEquals(1, Objects.requireNonNull(result).getPatients().size());
         assertEquals(patientDto, result.getPatients().getFirst());

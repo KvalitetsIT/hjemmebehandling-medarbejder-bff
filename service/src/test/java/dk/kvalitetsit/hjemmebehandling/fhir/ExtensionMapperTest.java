@@ -1,10 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;

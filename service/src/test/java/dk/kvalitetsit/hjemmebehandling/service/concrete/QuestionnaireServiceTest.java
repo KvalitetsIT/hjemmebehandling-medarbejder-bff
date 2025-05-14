@@ -43,9 +43,6 @@ public class QuestionnaireServiceTest {
     @Mock
     private CarePlanRepository<CarePlanModel, PatientModel> careplanRepository;
 
-    @Mock
-    private PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository;
-
 
     private static Stream<Arguments> updateQuestionnaire_illegalStatusChange_throwsException() {
         Map<Status, List<Status>> valid = new HashMap<>();
@@ -212,7 +209,7 @@ public class QuestionnaireServiceTest {
     }
 
     @Test
-    public void retireQuestionnaire_noActiveCarePlanReferences_isRetired() throws ServiceException {
+    public void retireQuestionnaire_noActiveCarePlanReferences_isRetired() throws ServiceException, AccessValidationException {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder()
                 .id(QUESTIONNAIRE_ID_1)
                 .status(Status.ACTIVE)
@@ -233,7 +230,7 @@ public class QuestionnaireServiceTest {
     }
 
     @Test
-    public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException {
+    public void retirePlanDefinition_activeCarePlanReferences_throwsError() throws ServiceException, AccessValidationException {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder()
                 .id(QUESTIONNAIRE_ID_1)
                 .status(Status.ACTIVE)

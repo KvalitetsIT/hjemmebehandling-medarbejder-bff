@@ -125,11 +125,11 @@ public class MockFactory {
 
     }
 
-    public static BaseModel buildResource() {
+    public static CarePlanModel buildResource() {
         return buildResource(null);
     }
 
-    public static BaseModel buildResource(QualifiedId.OrganizationId organizationId) {
+    public static CarePlanModel buildResource(QualifiedId.OrganizationId organizationId) {
         var resource = CarePlanModel.builder();
         if (organizationId != null) {
             resource.organizationId(organizationId);

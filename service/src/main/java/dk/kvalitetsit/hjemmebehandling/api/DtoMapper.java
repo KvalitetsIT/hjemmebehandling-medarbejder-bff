@@ -545,6 +545,9 @@ public class DtoMapper {
     }
 
     public UserContext mapUserContext(UserContextModel userContext) {
+
+        var organization = userContext.organization();
+
         return new UserContext()
                 .name(userContext.name().orElse(null))
                 .userId(userContext.userId().orElse(null))
@@ -552,8 +555,8 @@ public class DtoMapper {
                 .entitlements(userContext.entitlements())
                 .authorizationIds(userContext.authorizationIds())
                 .authorizationIds(userContext.authorizationIds())
-                .orgName(userContext.orgName().orElse(null))
-                .orgId(userContext.orgId().map(QualifiedId.OrganizationId::unqualified).orElse(null));
+                .orgName(organization.map(OrganizationModel::name).orElse(null))
+                .orgId(organization.map(OrganizationModel::id).map(QualifiedId.OrganizationId::unqualified).orElse(null));
     }
 
     public PatientDetails mapUpdateCarePlanRequest(UpdateCareplanRequest request) {

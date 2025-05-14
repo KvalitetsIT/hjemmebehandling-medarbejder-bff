@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.IdType;
@@ -29,11 +30,11 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
         this.plandefinitionRepository = plandefinitionRepository;
     }
 
-    public Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
+    public Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
         return questionnaireRepository.fetch(questionnaireId);
     }
 
-    public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException {
+    public List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException, AccessValidationException {
         return questionnaireRepository.fetch(statusesToInclude);
     }
 
@@ -69,7 +70,9 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
     }
 
     @Override
-    public void updateQuestionnaire(QualifiedId.QuestionnaireId questionnaireId, String updatedTitle, String updatedDescription, Status updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction) throws ServiceException {
+    public void updateQuestionnaire(
+            QualifiedId.QuestionnaireId questionnaireId, String updatedTitle, String updatedDescription, Status updatedStatus, List<QuestionModel> updatedQuestions, QuestionModel updatedCallToAction)
+            throws ServiceException, AccessValidationException {
 
         // Look up the Questionnaire, throw an exception in case it does not exist.
         QuestionnaireModel questionnaire = questionnaireRepository.fetch(questionnaireId).orElseThrow(() -> new ServiceException(
@@ -116,7 +119,7 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
         }
     }
 
-    public void retireQuestionnaire(QualifiedId.QuestionnaireId id) throws ServiceException {
+    public void retireQuestionnaire(QualifiedId.QuestionnaireId id) throws ServiceException, AccessValidationException {
 
         Optional<QuestionnaireModel> questionnaire = questionnaireRepository.fetch(id);
 
@@ -138,7 +141,7 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
     }
 
 
-    public List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
         Optional<QuestionnaireModel> result = questionnaireRepository.fetch(questionnaireId);
         if (result.isEmpty()) {
             throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);

@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
-import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public interface Repository<R, ID extends QualifiedId> {
      * @return an {@code Optional} containing the resource if found, or empty if not
      * @throws ServiceException if the fetch operation fails
      */
-    Optional<R> fetch(ID id) throws ServiceException;
+    Optional<R> fetch(ID id) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches multiple resources by their identifiers.
@@ -52,7 +52,7 @@ public interface Repository<R, ID extends QualifiedId> {
      * @return a list of resources that match the given identifiers
      * @throws ServiceException if the fetch operation fails
      */
-    List<R> fetch(List<ID> id) throws ServiceException;
+    List<R> fetch(List<ID> id) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches all resources from the repository.
@@ -60,5 +60,24 @@ public interface Repository<R, ID extends QualifiedId> {
      * @return a list of all resources
      * @throws ServiceException if the fetch operation fails
      */
-    List<R> fetch() throws ServiceException;
+    List<R> fetch() throws ServiceException, AccessValidationException;
+
+    /**
+     * Fetches historical entries of a certain resource.
+     *
+     * @return a list historical entries
+     * @throws ServiceException if the fetch operation fails
+     */
+    List<R> history(ID id) throws ServiceException, AccessValidationException;
+
+    /**
+     * Fetches historical entries of multiple resources.
+     *
+     * @return a list of historical entries
+     * @throws ServiceException if the fetch operation fails
+     */
+    List<R> history(List<ID> ids) throws ServiceException, AccessValidationException;
+
+
+
 }

@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
@@ -14,7 +15,6 @@ import java.util.Optional;
 
 public class DIASUserContextHandler implements IUserContextHandler {
 
-    // TODO: Might be put into a enum
     private static final String FULL_NAME = "FullName";
     private static final String FIRST_NAME = "FirstName";
     private static final String SUR_NAME = "SurName";
@@ -40,10 +40,10 @@ public class DIASUserContextHandler implements IUserContextHandler {
                 .map(Object::toString)
                 .map(QualifiedId.OrganizationId::new)
                 .ifPresent(SOR -> {
-                    builder.orgId(SOR);
                     try {
                         Optional<Organization> organization = organizationRepository.lookupOrganizationBySorCode(SOR);
-                        organization.ifPresent(value -> builder.orgName(value.getName()));
+                        var orgName = organization.map(Organization::getName).orElse(null);
+                        builder.organization(new OrganizationModel(SOR, orgName));
                     } catch (ServiceException e) {
                         throw new RuntimeException(e);
                     }

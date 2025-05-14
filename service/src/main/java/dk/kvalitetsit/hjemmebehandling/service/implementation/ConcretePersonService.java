@@ -2,13 +2,11 @@ package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.PersonService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;

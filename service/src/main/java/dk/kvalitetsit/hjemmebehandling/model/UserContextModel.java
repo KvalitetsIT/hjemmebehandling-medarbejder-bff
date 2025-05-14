@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.Optional;
 
 public record UserContextModel(
-        Optional<QualifiedId.OrganizationId> orgId,
+        Optional<OrganizationModel> organization,
         Optional<NameDto> name,
         List<String> authorizationIds,
         Optional<String> userId,
         Optional<String> email,
-        List<String> entitlements,
-        Optional<String> orgName
+        List<String> entitlements
 ) {
     public UserContextModel {
         // Ensure lists are never null
@@ -26,27 +25,26 @@ public record UserContextModel(
 
     public static class Builder {
 
-        private QualifiedId.OrganizationId orgId;
+        private OrganizationModel organization;
         private NameDto name;
         private List<String> authorizationIds;
         private String userId;
         private String email;
         private List<String> entitlements;
-        private String orgName;
+
 
         public static UserContextModel.Builder from(UserContextModel source) {
             return new Builder()
-                    .orgId(source.orgId.orElse(null))
+                    .organization(source.organization.orElse(null))
                     .name(source.name.orElse(null))
                     .userId(source.userId.orElse(null))
                     .email(source.email.orElse(null))
-                    .orgName(source.orgName.orElse(null))
                     .authorizationIds(source.authorizationIds)
                     .entitlements(source.entitlements);
         }
 
-        public UserContextModel.Builder orgId(QualifiedId.OrganizationId orgId) {
-            this.orgId = orgId;
+        public UserContextModel.Builder organization(OrganizationModel organization) {
+            this.organization = organization;
             return this;
         }
 
@@ -75,13 +73,11 @@ public record UserContextModel(
             return this;
         }
 
-        public UserContextModel.Builder orgName(String orgName) {
-            this.orgName = orgName;
-            return this;
-        }
+
+
 
         public UserContextModel build() {
-            return new UserContextModel(Optional.ofNullable(orgId), Optional.ofNullable(name), authorizationIds, Optional.ofNullable(userId), Optional.ofNullable(email), entitlements, Optional.ofNullable(orgName));
+            return new UserContextModel(Optional.ofNullable(organization), Optional.ofNullable(name), authorizationIds, Optional.ofNullable(userId), Optional.ofNullable(email), entitlements);
         }
     }
 }

@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.repository;
 
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public interface PatientRepository<Patient, CarePlanStatus> extends Repository<P
      * @return List of matching patients.
      * @throws ServiceException If the operation fails.
      */
-    List<Patient> searchPatients(List<String> searchStrings, CarePlanStatus status) throws ServiceException;
+    List<Patient> searchPatients(List<String> searchStrings, CarePlanStatus status) throws ServiceException, AccessValidationException;
 
     /**
      * Retrieves patients by care plan status.
@@ -35,7 +36,7 @@ public interface PatientRepository<Patient, CarePlanStatus> extends Repository<P
      * @return List of matching patients.
      * @throws ServiceException If the operation fails.
      */
-    List<Patient> fetchByStatus(CarePlanStatus status) throws ServiceException;
+    List<Patient> fetchByStatus(CarePlanStatus status) throws ServiceException, AccessValidationException;
 
 
 

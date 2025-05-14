@@ -1,88 +1,79 @@
-package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
+package dk.kvalitetsit.hjemmebehandling.repository.access;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Adapter responsible for translating between FHIR resources and domain-specific logic.
- * <p>
- * This class primarily handles the mapping of business models to domain representations
- * and delegates calls deeper into the application stack with the appropriate arguments.
- * <p>
- * Currently, it implements the {@link QuestionnaireResponseRepository} interface for {@link QuestionnaireResponseModel} entities.
- * Note that this implementation detail may change in the future.
- */
-public class QuestionnaireResponseRepositoryAdaptor implements QuestionnaireResponseRepository<QuestionnaireResponseModel> {
+public class ValidatedQuestionnaireResponseRepository implements QuestionnaireResponseRepository<QuestionnaireResponseModel> {
 
-    private final QuestionnaireResponseRepository<QuestionnaireResponse> repository;
-    private final FhirMapper mapper;
+    private final QuestionnaireResponseRepository<QuestionnaireResponseModel> repository;
+    private final AccessValidator<QuestionnaireResponseModel> accessValidator;
 
-    public QuestionnaireResponseRepositoryAdaptor(QuestionnaireResponseRepository<QuestionnaireResponse> repository, FhirMapper mapper) {
+    public ValidatedQuestionnaireResponseRepository(QuestionnaireResponseRepository<QuestionnaireResponseModel> repository, AccessValidator<QuestionnaireResponseModel> accessValidator) {
         this.repository = repository;
-        this.mapper = mapper;
+        this.accessValidator = accessValidator;
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetch(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
-        return repository.fetch(carePlanId, questionnaireIds).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetch(carePlanId, questionnaireIds));
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetchByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException {
-        return repository.fetchByStatus(statuses).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetchByStatus(statuses));
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetch(List<ExaminationStatus> statuses, QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
-        return repository.fetch(statuses, carePlanId).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetch(statuses, carePlanId));
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetchByStatus(ExaminationStatus status) throws ServiceException, AccessValidationException {
-        return repository.fetchByStatus(status).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetchByStatus(status));
     }
 
     @Override
     public void update(QuestionnaireResponseModel resource) throws ServiceException {
-        repository.update(mapper.mapQuestionnaireResponseModel(resource));
+        repository.update(resource);
     }
 
     @Override
     public QualifiedId.QuestionnaireResponseId save(QuestionnaireResponseModel resource) throws ServiceException {
-        return repository.save(mapper.mapQuestionnaireResponseModel(resource));
+        return repository.save(resource);
     }
 
     @Override
     public Optional<QuestionnaireResponseModel> fetch(QualifiedId.QuestionnaireResponseId id) throws ServiceException, AccessValidationException {
-        return repository.fetch(id).map(mapper::mapQuestionnaireResponse);
+        var result = repository.fetch(id);
+        if (result.isPresent()) return Optional.of(accessValidator.validateAccess(result.get()));
+        return result;
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetch(List<QualifiedId.QuestionnaireResponseId> id) throws ServiceException, AccessValidationException {
-        return repository.fetch(id).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetch(id));
     }
 
     @Override
     public List<QuestionnaireResponseModel> fetch() throws ServiceException, AccessValidationException {
-        return repository.fetch().stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.fetch());
     }
 
     @Override
     public List<QuestionnaireResponseModel> history(QualifiedId.QuestionnaireResponseId id) throws ServiceException, AccessValidationException {
-        return repository.history(id).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.history(id));
     }
 
     @Override
     public List<QuestionnaireResponseModel> history(List<QualifiedId.QuestionnaireResponseId> ids) throws ServiceException, AccessValidationException {
-        return repository.history(ids).stream().map(mapper::mapQuestionnaireResponse).toList();
+        return accessValidator.validateAccess(repository.history(ids));
     }
 }

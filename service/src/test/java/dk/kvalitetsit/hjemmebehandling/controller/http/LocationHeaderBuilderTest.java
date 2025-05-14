@@ -33,7 +33,7 @@ public class LocationHeaderBuilderTest {
 
         URI result = subject.buildLocationHeader(id);
 
-        URI expected = URI.create("http://localhost:" + port + requestUri + "/" + id);
+        URI expected = URI.create("http://localhost:" + port + requestUri + "/" + id.unqualified());
         assertEquals(expected, result);
     }
 }

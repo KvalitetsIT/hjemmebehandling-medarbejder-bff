@@ -1,8 +1,8 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
 
-import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.time.Instant;
@@ -36,7 +36,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException;
+    List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches active care plans that include a specific questionnaire.
@@ -45,7 +45,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException;
+    List<CarePlan> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches care plans for a specific patient.
@@ -55,7 +55,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchCarePlansByPatientId(QualifiedId.PatientId patientId, boolean onlyActiveCarePlans) throws ServiceException;
+    List<CarePlan> fetchCarePlansByPatientId(QualifiedId.PatientId patientId, boolean onlyActiveCarePlans) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches care plans based on satisfaction state and creation date.
@@ -66,7 +66,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
+    List<CarePlan> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches care plans based on CPR and optional filters.
@@ -78,8 +78,7 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
      * @return List of matching care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetch(QualifiedId.PatientId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException;
-
+    List<CarePlan> fetch(QualifiedId.PatientId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException, AccessValidationException;
 
 
 }

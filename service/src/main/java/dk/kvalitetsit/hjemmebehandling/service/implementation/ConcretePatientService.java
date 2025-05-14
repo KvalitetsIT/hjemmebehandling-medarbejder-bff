@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
 import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
@@ -18,7 +19,6 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ConcretePatientService implements PatientService {
-
 
     // TODO: Should be split into one which is only concerned about patient
     private final PatientRepository<PatientModel, CarePlanStatus> patientRepository;
@@ -36,7 +36,6 @@ public class ConcretePatientService implements PatientService {
                     .from(patientModel)
                     .customUserId(customerUserLinkId)
                     .build();
-
             patientRepository.save(modifiedPatient);
         } catch (Exception e) {
             throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
@@ -49,7 +48,7 @@ public class ConcretePatientService implements PatientService {
     }
 
     // TODO: Bad Practice... replace 'includeActive' and 'includeCompleted' with 'CarePlanStatus...  status'
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException, AccessValidationException {
         var patients = new ArrayList<PatientModel>();
 
         if (includeActive) {
@@ -74,13 +73,12 @@ public class ConcretePatientService implements PatientService {
                 .toList();
     }
 
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException {
+    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException, AccessValidationException {
         List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
         return new PaginatedList<>(patients, pagination).getList();
     }
 
-
-    public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {
+    public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException, AccessValidationException {
         return patientRepository.searchPatients(searchStrings, CarePlanStatus.ACTIVE);
     }
 }

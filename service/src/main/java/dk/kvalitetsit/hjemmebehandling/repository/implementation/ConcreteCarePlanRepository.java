@@ -9,6 +9,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
@@ -127,6 +128,16 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
 
     @Override
     public List<CarePlan> fetch() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<CarePlan> history(QualifiedId.CarePlanId id) throws ServiceException, AccessValidationException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<CarePlan> history(List<QualifiedId.CarePlanId> carePlanIds) throws ServiceException, AccessValidationException {
         throw new NotImplementedException();
     }
 

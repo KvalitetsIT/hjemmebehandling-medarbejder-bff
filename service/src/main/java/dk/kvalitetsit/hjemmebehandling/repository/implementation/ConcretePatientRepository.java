@@ -6,13 +6,13 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -77,6 +77,16 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
 
     @Override
     public List<Patient> fetch() throws ServiceException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<Patient> history(QualifiedId.PatientId id) throws ServiceException, AccessValidationException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<Patient> history(List<QualifiedId.PatientId> patientIds) throws ServiceException, AccessValidationException {
         throw new NotImplementedException();
     }
 

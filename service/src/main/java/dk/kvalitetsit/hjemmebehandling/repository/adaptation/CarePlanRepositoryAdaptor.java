@@ -1,10 +1,11 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
@@ -43,32 +44,42 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public Optional<CarePlanModel> fetch(QualifiedId.CarePlanId id) throws ServiceException {
+    public Optional<CarePlanModel> fetch(QualifiedId.CarePlanId id) throws ServiceException, AccessValidationException {
         return this.client.fetch(id).map(mapper::mapCarePlan);
     }
 
     @Override
-    public List<CarePlanModel> fetch(List<QualifiedId.CarePlanId> ids) throws ServiceException {
+    public List<CarePlanModel> fetch(List<QualifiedId.CarePlanId> ids) throws ServiceException, AccessValidationException {
         return this.client.fetch(ids).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
-    public List<CarePlanModel> fetch() throws ServiceException {
+    public List<CarePlanModel> fetch() throws ServiceException, AccessValidationException {
         return this.client.fetch().stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
+    public List<CarePlanModel> history(QualifiedId.CarePlanId id) throws ServiceException, AccessValidationException {
+        return this.client.history(id).stream().map(mapper::mapCarePlan).toList();
+    }
+
+    @Override
+    public List<CarePlanModel> history(List<QualifiedId.CarePlanId> carePlanIds) throws ServiceException, AccessValidationException {
+        return this.client.history(carePlanIds).stream().map(mapper::mapCarePlan).toList();
+    }
+
+    @Override
+    public List<CarePlanModel> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
         return client.fetchActiveCarePlansByQuestionnaireId(questionnaireId).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException {
+    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException, AccessValidationException {
         return client.fetchActiveCarePlansByPlanDefinitionId(plandefinitionId).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override
-    public List<CarePlanModel> fetchCarePlansByPatientId(QualifiedId.PatientId patientId, boolean onlyActiveCarePlans) throws ServiceException {
+    public List<CarePlanModel> fetchCarePlansByPatientId(QualifiedId.PatientId patientId, boolean onlyActiveCarePlans) throws ServiceException, AccessValidationException {
         return client.fetchCarePlansByPatientId(patientId, onlyActiveCarePlans)
                 .stream()
                 .map(mapper::mapCarePlan)
@@ -76,7 +87,7 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public List<CarePlanModel> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+    public List<CarePlanModel> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException {
         return client.fetch(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied)
                 .stream()
                 .map(mapper::mapCarePlan)
@@ -84,7 +95,7 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public List<CarePlanModel> fetch(QualifiedId.PatientId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException {
+    public List<CarePlanModel> fetch(QualifiedId.PatientId patientId, Instant unsatisfiedToDate, boolean onlyUnSatisfied, boolean onlyActiveCarePlans) throws ServiceException, AccessValidationException {
         return client.fetch(patientId, unsatisfiedToDate, onlyUnSatisfied, onlyActiveCarePlans)
                 .stream()
                 .map(mapper::mapCarePlan)
@@ -100,5 +111,7 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     public QualifiedId.CarePlanId save(CarePlanModel carePlan, PatientModel patient) throws ServiceException {
         return client.save(this.mapper.mapCarePlanModel(carePlan), this.mapper.mapPatientModel(patient));
     }
+
+
 
 }

@@ -7,11 +7,13 @@ import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireResponseService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hl7.fhir.r4.model.Organization;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,14 +49,9 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
                 .toList();
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
 
-        List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.lookupVersionsOfQuestionnaireById(questionnaireIds);
-
-        // Validate that the user is allowed to retrieve the QuestionnaireResponses.
-        //validateAccess(responses);
-
-        var orgId = organizationRepository.getOrganizationId();
+        List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.history(questionnaireIds);
 
         return questionnaireResponseRepository.fetch(carePlanId, questionnaireIds)
                 .stream()
@@ -63,27 +60,21 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
                 .toList();
     }
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds, Pagination pagination) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds, Pagination pagination) throws ServiceException, AccessValidationException {
         return pageResponses(this.getQuestionnaireResponses(carePlanId, questionnaireIds), pagination);
     }
 
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses, Pagination pagination) throws ServiceException, AccessValidationException {
         var responses = getQuestionnaireResponsesByStatus(statuses);
         return pageResponses(responses, pagination);
     }
 
-    public QuestionnaireResponseModel updateExaminationStatus(QualifiedId.QuestionnaireResponseId questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException {
+    public QuestionnaireResponseModel updateExaminationStatus(QualifiedId.QuestionnaireResponseId questionnaireResponseId, ExaminationStatus examinationStatus) throws ServiceException, AccessValidationException {
         // Look up the QuestionnaireResponse
         var questionnaireResponse = questionnaireResponseRepository
                 .fetch(questionnaireResponseId)
                 .orElseThrow(() -> new ServiceException(String.format("Could not look up QuestionnaireResponse by id %s!", questionnaireResponseId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_RESPONSE_DOES_NOT_EXIST));
-
-        
-        // Validate that the user is allowed to update the QuestionnaireResponse.
-        //validateAccess(questionnaireResponse);
-
-        var orgId = organizationRepository.getOrganizationId();
 
         PractitionerModel user = practitionerRepository.getOrCreateUserAsPractitioner();
 
@@ -107,7 +98,7 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
     }
 
 
-    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException {
+    public List<QuestionnaireResponseModel> getQuestionnaireResponsesByStatus(List<ExaminationStatus> statuses) throws ServiceException, AccessValidationException {
 
         List<QuestionnaireResponseModel> responses = questionnaireResponseRepository.fetchByStatus(statuses);
 
@@ -117,9 +108,9 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
                 .map(QuestionnaireResponseModel::questionnaireId)
                 .toList();
 
-        List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.lookupVersionsOfQuestionnaireById(ids);
+        List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.history(ids);
 
-        var orgId = organizationRepository.getOrganizationId();
+
 
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
         // and in case of multiple entries, we want the 'most important' one.

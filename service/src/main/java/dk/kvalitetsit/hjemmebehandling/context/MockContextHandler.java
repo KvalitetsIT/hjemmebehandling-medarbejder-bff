@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import org.openapitools.model.NameDto;
@@ -19,9 +20,12 @@ public class MockContextHandler implements IUserContextHandler {
 
     @Override
     public UserContextModel mapTokenToUserContext(FhirClient client, DecodedJWT jwt) {
+
+        var organization = new OrganizationModel(orgId, null);
+
         return UserContextModel.builder()
                 .name(new NameDto().given("Test").family("Testsen"))
-                .orgId(orgId)
+                .organization(organization)
                 .userId("TesTes")
                 .email("test@rm.dk")
                 .entitlements(entitlements)

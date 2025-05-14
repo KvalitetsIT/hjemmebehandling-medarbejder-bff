@@ -7,25 +7,20 @@ import ca.uhn.fhir.rest.api.SortSpec;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
-import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.openapitools.model.UserContext;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_NAME;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirClientTest {
@@ -550,7 +545,7 @@ public class FhirClientTest {
     }
 
     private void setupUserContext(String sorCode) {
-        Mockito.when(userContextProvider.getUserContext()).thenReturn(UserContextModel.builder().orgId(new QualifiedId.OrganizationId(sorCode)).build());
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(UserContextModel.builder().organization(new OrganizationModel(new QualifiedId.OrganizationId(sorCode), ORGANIZATION_NAME)).build());
     }
 
     private void setupOrganization(String sorCode, String organizationId) {

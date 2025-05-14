@@ -1,12 +1,14 @@
 package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import ca.uhn.fhir.rest.gclient.ICriterion;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.PlanDefinition;
 
@@ -62,6 +64,16 @@ public class ConcretePlanDefinitionRepository implements PlanDefinitionRepositor
     @Override
     public List<PlanDefinition> fetch() throws ServiceException {
         return lookupPlanDefinitionsByCriteria(List.of()).getPlanDefinitions();
+    }
+
+    @Override
+    public List<PlanDefinition> history(QualifiedId.PlanDefinitionId id) throws ServiceException, AccessValidationException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<PlanDefinition> history(List<QualifiedId.PlanDefinitionId> planDefinitionIds) throws ServiceException, AccessValidationException {
+        throw new NotImplementedException();
     }
 
     @Override

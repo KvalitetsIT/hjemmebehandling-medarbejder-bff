@@ -8,6 +8,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
@@ -78,7 +79,7 @@ public class ConcreteCarePlanService {
                 .toList();
     }
 
-    public QualifiedId.CarePlanId createCarePlan(CarePlanModel carePlan) throws ServiceException {
+    public QualifiedId.CarePlanId createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException {
         CPR cpr = carePlan.patient().cpr();
         var patient = patientRepository.fetch(cpr);
 
@@ -221,7 +222,7 @@ public class ConcreteCarePlanService {
 
     }
 
-    public CarePlanModel completeCarePlan(QualifiedId.CarePlanId carePlanId) throws ServiceException {
+    public CarePlanModel completeCarePlan(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
         Optional<CarePlanModel> result = carePlanRepository.fetch(carePlanId);
 
         if (result.isEmpty()) {
@@ -249,7 +250,7 @@ public class ConcreteCarePlanService {
         return completedCarePlan; // for auditlog
     }
 
-    public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException {
         Instant pointInTime = dateProvider.now();
         List<CarePlanModel> careplans = carePlanRepository.fetch(pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
 
@@ -258,9 +259,6 @@ public class ConcreteCarePlanService {
         questionnaireIds.addAll(extractQuestionnaireIdsFromCarePlan(careplans));
         questionnaireIds.addAll(extractQuestionnaireIdsFromPlanDefinition(careplans.getFirst().planDefinitions()));
         List<QuestionnaireModel> questionnaireResult = questionnaireRepository.fetch(questionnaireIds);
-
-        var orgId = organizationRepository.getOrganizationId();
-        // Map and sort the resources
 
         return careplans.stream()
                 .sorted((carePlan1, carePlan2) -> {
@@ -271,14 +269,14 @@ public class ConcreteCarePlanService {
                 .toList();
     }
 
-    public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException {
         Instant pointInTime = dateProvider.now();
         Optional<PatientModel> patient = patientRepository.fetch(cpr);
         List<CarePlanModel> lookupResult = carePlanRepository.fetch(patient.get().id(), pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
         if (lookupResult.isEmpty()) {
             return List.of();
         }
-        var orgId = organizationRepository.getOrganizationId();
+
         // Map and sort the resources
 
         return lookupResult.stream()
@@ -290,26 +288,21 @@ public class ConcreteCarePlanService {
                 .toList();
     }
 
-    public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException, AccessValidationException {
         return pageResponses(getCarePlansWithFilters(onlyActiveCarePlans, onlyUnSatisfied), pagination);
     }
 
-    public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException {
+    public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException, AccessValidationException {
         return pageResponses(getCarePlansWithFilters(cpr, onlyActiveCarePlans, onlyUnSatisfied), pagination);
     }
 
-    public Optional<CarePlanModel> getCarePlanById(QualifiedId.CarePlanId carePlanId) throws ServiceException {
+    public Optional<CarePlanModel> getCarePlanById(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
         return carePlanRepository.fetch(carePlanId);
     }
 
-    public CarePlanModel resolveAlarm(QualifiedId.CarePlanId carePlanId, QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
-        // Get the careplan
+    public CarePlanModel resolveAlarm(QualifiedId.CarePlanId carePlanId, QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
         Optional<CarePlanModel> carePlanResult = carePlanRepository.fetch(carePlanId);
-
         CarePlanModel carePlan = carePlanResult.orElseThrow(() -> new ServiceException(String.format("Could not look up careplan by id %s", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST));
-
-        // Validate access
-        //validateAccess(carePlan);
 
         // Check that the 'satisfiedUntil'-timestamp is indeed in the past, throw an exception if not.
         // CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan,null, fhirClient.getOrganizationId());
@@ -333,7 +326,7 @@ public class ConcreteCarePlanService {
                                         List<QualifiedId.PlanDefinitionId> planDefinitionIds,
                                         List<QualifiedId.QuestionnaireId> questionnaireIds,
                                         Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies,
-                                        PatientDetails patientDetails) throws ServiceException {
+                                        PatientDetails patientDetails) throws ServiceException, AccessValidationException {
         // Look up the plan definitions to verify that they exist, throw an exception in case they don't.
         List<PlanDefinitionModel> planDefinitionResult = planDefinitionRepository.fetch(planDefinitionIds);
         if (planDefinitionResult.size() != planDefinitionIds.size()) throw new ServiceException(
@@ -341,9 +334,6 @@ public class ConcreteCarePlanService {
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
         );
-
-        // Validate that the client is allowed to reference the plan definitions.
-        //validateAccess(planDefinitionResult);
 
         // Look up the questionnaires to verify that they exist, throw an exception in case they don't.
         List<QuestionnaireModel> questionnaireResult = questionnaireRepository.fetch(questionnaireIds);
@@ -354,26 +344,15 @@ public class ConcreteCarePlanService {
                 ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
         );
 
-
-        // Validate that the client is allowed to reference the questionnaires.
-        //validateAccess(questionnaireResult);
-
         // Look up the CarePlan, throw an exception in case it does not exist.
-        Optional<CarePlanModel> careplanResult = carePlanRepository.fetch(carePlanId);
-
-        if (careplanResult.isEmpty()) {
-            throw new ServiceException(
-                    String.format("Could not lookup careplan with id %s!", carePlanId),
-                    ErrorKind.BAD_REQUEST,
-                    ErrorDetails.CAREPLAN_DOES_NOT_EXIST
-            );
-        }
-
-        var carePlan = careplanResult.get();
+        CarePlanModel carePlan = carePlanRepository.fetch(carePlanId).orElseThrow(() -> new ServiceException(
+                        String.format("Could not lookup careplan with id %s!", carePlanId.qualified()),
+                        ErrorKind.BAD_REQUEST,
+                        ErrorDetails.CAREPLAN_DOES_NOT_EXIST
+                )
+        );
 
         // Validate that the client is allowed to update the carePlan.
-
-
         if (!questionnairesAllowedByPlanDefinitions(planDefinitionResult, questionnaireIds)) throw new ServiceException(
                 "Not every questionnaireId could be found in the provided plan definitions.",
                 ErrorKind.BAD_REQUEST,
@@ -406,17 +385,9 @@ public class ConcreteCarePlanService {
 
         carePlan = updateCarePlanModel(carePlan, questionnaireIds, frequencies, planDefinitionResult);
 
-
-        // Update patient
-        String patientId = carePlan.patient().id().toString();
-
-        var newPatient = carePlan.patient(); // .orElseThrow(() -> new IllegalStateException(String.format("Could not look up patient with id %s", patientId)));
-
-        //var contactDetails = mergeContacts(oldPatient.getContact(), newPatient.getContact());
-
-        newPatient = PatientModel.Builder.from(newPatient)
+        var newPatient = PatientModel.Builder.from(carePlan.patient())
                 .primaryContact(PrimaryContactModel.Builder
-                        .from(newPatient.primaryContact())
+                        .from(carePlan.patient().primaryContact())
                         .organisation(organizationRepository.getOrganizationId())
                         .build()
                 ).build();
@@ -467,7 +438,7 @@ public class ConcreteCarePlanService {
                 .build();
     }
 
-    public List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException {
+    public List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
         Optional<CarePlanModel> optional = getCarePlanById(carePlanId);
         if (optional.isEmpty()) throw new ServiceException(
                 "Careplan was not found",
@@ -478,7 +449,7 @@ public class ConcreteCarePlanService {
         throw new NotImplementedException();
     }
 
-    public TimeType getDefaultDeadlineTime() throws ServiceException {
+    public TimeType getDefaultDeadlineTime() throws ServiceException, AccessValidationException {
         Organization organization = organizationRepository.fetchCurrentUsersOrganization();
         return ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension());
     }
@@ -490,7 +461,7 @@ public class ConcreteCarePlanService {
         throw new NotImplementedException();
     }
 
-    private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
+    private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
         return questionnaireResponseRepository.fetch(statuses, carePlanId)
                 .stream()
@@ -537,7 +508,12 @@ public class ConcreteCarePlanService {
 
                 if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
                     QualifiedId.QuestionnaireId questionnaireId = existing.questionnaire().id();
-                    List<QuestionnaireResponseModel> result = questionnaireResponseRepository.fetch(carePlan.id(), List.of(questionnaireId));
+                    List<QuestionnaireResponseModel> result = null;
+                    try {
+                        result = questionnaireResponseRepository.fetch(carePlan.id(), List.of(questionnaireId));
+                    } catch (ServiceException | AccessValidationException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
 
@@ -622,7 +598,7 @@ public class ConcreteCarePlanService {
         throw new NotImplementedException();
     }
 
-    private List<String> getIdsOfUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException {
+    private List<String> getIdsOfUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
         List<QuestionnaireResponseModel> responses = questionnaireResponseRepository.fetch(statuses, carePlanId);
         return responses.stream()

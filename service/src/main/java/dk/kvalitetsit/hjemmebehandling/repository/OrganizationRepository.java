@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 import java.util.Optional;
@@ -31,6 +32,6 @@ public interface OrganizationRepository<Organization> extends Repository<Organiz
      * @return The user's organization.
      * @throws ServiceException If the operation fails.
      */
-    Organization fetchCurrentUsersOrganization() throws ServiceException;
+    Organization fetchCurrentUsersOrganization() throws ServiceException, AccessValidationException;
 
 }

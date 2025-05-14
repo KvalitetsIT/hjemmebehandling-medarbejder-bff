@@ -1,11 +1,5 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import ca.uhn.fhir.context.FhirContext;
-import org.hl7.fhir.r4.model.BooleanType;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.Questionnaire;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 

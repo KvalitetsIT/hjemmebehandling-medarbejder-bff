@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
@@ -49,7 +50,7 @@ public class PatientServiceTest {
     }
 
     @Test
-    public void searchPatients() throws ServiceException {
+    public void searchPatients() throws ServiceException, AccessValidationException {
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
         Mockito.when(patientRepository.searchPatients(List.of(CPR_1.value()), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
         List<PatientModel> result = subject.searchPatients(List.of(CPR_1.value()));
@@ -58,7 +59,7 @@ public class PatientServiceTest {
     }
 
     @Test
-    public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCarePlan() throws ServiceException {
+    public void getPatients_includeCompleted_notIncludeActive_patientWithActiveAndCompletedCarePlan() throws ServiceException, AccessValidationException {
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
         Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
@@ -70,7 +71,7 @@ public class PatientServiceTest {
     }
 
     @Test
-    public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() throws ServiceException {
+    public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCareplan() throws ServiceException, AccessValidationException {
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
         Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
@@ -84,7 +85,7 @@ public class PatientServiceTest {
     @ParameterizedTest
     @MockitoSettings(strictness = Strictness.LENIENT)
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void getPatients_TwoResponses_ReturnAlphabetically(List<String> names, List<String> namesInExpectedOrder, int page, int pageSize) throws ServiceException {
+    public void getPatients_TwoResponses_ReturnAlphabetically(List<String> names, List<String> namesInExpectedOrder, int page, int pageSize) throws ServiceException, AccessValidationException {
         List<PatientModel> patients = names.stream().map(name -> PatientModel.builder()
                 .name(PersonNameModel.builder()
                         .given(List.of(name))
@@ -102,7 +103,7 @@ public class PatientServiceTest {
     }
 
     @Test
-    public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() throws ServiceException {
+    public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCareplan() throws ServiceException, AccessValidationException {
         PatientModel patientModel = buildPatient(PATIENT_ID_1, CPR_1);
         Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(patientModel));
         List<PatientModel> result = subject.getPatients(true, false, PAGINATION);
@@ -111,7 +112,7 @@ public class PatientServiceTest {
 
 
     @Test
-    public void searchPatients_emptyResult() throws ServiceException {
+    public void searchPatients_emptyResult() throws ServiceException, AccessValidationException {
         FhirLookupResult lookupResult = FhirLookupResult.fromResources();
 //        Mockito.when(fhirClient.searchPatients(List.of(CPR_1), CarePlan.CarePlanStatus.ACTIVE)).thenReturn(lookupResult);
         List<PatientModel> result = subject.searchPatients(List.of(CPR_1.value()));

@@ -3,7 +3,7 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
 import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteValueSetService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.openapitools.api.ValueSetApi;
 import org.openapitools.model.MeasurementTypeDto;
@@ -32,7 +32,7 @@ public class ValueSetController extends BaseController implements ValueSetApi {
             List<MeasurementTypeModel> measurementTypes = valueSetService.getMeasurementTypes();
             return ResponseEntity.ok(measurementTypes.stream().map(dtoMapper::mapMeasurementTypeModel).toList());
 
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             logger.error("Could not get measurement types", e);
             throw toStatusCodeException(e);
         }

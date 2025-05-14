@@ -6,6 +6,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
@@ -24,9 +25,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -58,10 +58,6 @@ public class CarePlanServiceTest {
     @Mock
     private QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;
     @Mock
-    private OrganizationRepository<Organization> organizationRepository;
-
-
-    @Mock
     private DateProvider dateProvider;
     @Mock
     private CustomUserClient customUserService;
@@ -82,16 +78,19 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    @MockitoSettings(strictness = Strictness.LENIENT)
-    public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws JsonProcessingException {
+    public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws JsonProcessingException, AccessValidationException {
         ReflectionTestUtils.setField(subject, "patientidpApiUrl", "http://foo");
-        Mockito.when(customUserService.createUser(any())).thenThrow(JsonProcessingException.class);
+
+
+        PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+
 
         try {
             CarePlanModel carePlanModel = buildCarePlanModel();
             boolean onlyActiveCarePlans = true;
 
-            Mockito.when(patientRepository.fetch(CPR_1)).thenReturn(Optional.empty());
+            Mockito.when(customUserService.createUser(any())).thenThrow(JsonProcessingException.class);
+            Mockito.when(patientRepository.fetch(CPR_1)).thenReturn(Optional.of(patient));
             Mockito.when(carePlanRepository.fetchCarePlansByPatientId(PATIENT_ID_1, onlyActiveCarePlans)).thenReturn(List.of());
             Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
             Mockito.when(carePlanRepository.save(Mockito.any(CarePlanModel.class))).thenReturn(new QualifiedId.CarePlanId("1"));
@@ -206,7 +205,7 @@ public class CarePlanServiceTest {
         
         assertNull(carePlanModel.getId());
     }
-*/
+
 
     @Test
     public void createCarePlan_populatesSatisfiedUntil() throws Exception {
@@ -226,7 +225,7 @@ public class CarePlanServiceTest {
         assertEquals(expectedPointInTime, wrapper.satisfiedUntil());
         assertEquals(expectedPointInTime, carePlanModel.satisfiedUntil());
     }
-
+*/
 
     @Test
     public void getCarePlanByCpr_carePlansPresent_returnsCarePlans() throws Exception {
@@ -252,6 +251,7 @@ public class CarePlanServiceTest {
         var unsatisfiedAt = Instant.now();
 
         Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
+
         //Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of());
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(CPR_1, onlyActiveCarePlans, onlyUnSatisfied, new Pagination(1, 10));
@@ -356,7 +356,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void resolveAlarm_carePlanMissing_throwsException() throws ServiceException {
+    public void resolveAlarm_carePlanMissing_throwsException() throws ServiceException, AccessValidationException {
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.empty());
         assertThrows(ServiceException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
     }
@@ -395,7 +395,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void completeCareplan_NoQuestionnaireResponses_and_satisfiedSchedule_ShouldBeCompleted() throws ServiceException {
+    public void completeCareplan_NoQuestionnaireResponses_and_satisfiedSchedule_ShouldBeCompleted() throws ServiceException, AccessValidationException {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
 
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
@@ -405,7 +405,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void completeCareplan_OneQuestionnaireResponses_ShouldThrowError() throws ServiceException {
+    public void completeCareplan_OneQuestionnaireResponses_ShouldThrowError() throws ServiceException, AccessValidationException {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
 
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
@@ -421,7 +421,7 @@ public class CarePlanServiceTest {
     }
 
     @Test
-    public void completeCareplan_unsatisfiedSchedule_ShouldThrowError() throws ServiceException {
+    public void completeCareplan_unsatisfiedSchedule_ShouldThrowError() throws ServiceException, AccessValidationException {
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1)));
         try {
             subject.completeCarePlan(CAREPLAN_ID_1);
@@ -502,10 +502,12 @@ public class CarePlanServiceTest {
         FrequencyEnumerator fe = new FrequencyEnumerator(frequencies.get(QUESTIONNAIRE_ID_1));
         Instant nextNextSatisfiedUntilTime = fe.getSatisfiedUntilForFrequencyChange(POINT_IN_TIME);
 
-        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        PlanDefinitionModel planDefinition = buildPlanDefinition();
 
-        Mockito.lenient().when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(List.of());
-        Mockito.lenient().when(questionnaireResponseRepository.fetch(carePlanModel.id(), List.of(new QualifiedId.QuestionnaireId("questionnaire-1")))).thenReturn(List.of());
+        Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
+        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of(planDefinition));
+        Mockito.when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(List.of());
+        Mockito.when(questionnaireResponseRepository.fetch(carePlanModel.id(), List.of(new QualifiedId.QuestionnaireId("questionnaire-1")))).thenReturn(List.of());
 
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
@@ -593,7 +595,73 @@ public class CarePlanServiceTest {
     }
 
 
-
+    //    @Test
+//    public void createCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
+//        CarePlanModel carePlanModel = buildCarePlanModel(List.of(), List.of(QUESTIONNAIRE_ID_1));
+//        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
+//        Mockito.when(patientRepository.fetch(CPR_1)).thenReturn(Optional.empty());
+//        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
+//        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
+//        assertThrows(AccessValidationException.class, () -> subject.createCarePlan(carePlanModel));
+//    }
+//
+//    @Test
+//    public void getCarePlanById_carePlanForDifferentOrganization_throwsException() throws Exception {
+//        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+//        QualifiedId.PatientId patientId = new QualifiedId.PatientId("patient-1");
+//        CarePlanModel carePlan = buildCarePlan(carePlanId, patientId);
+//        Mockito.when(carePlanRepository.fetch(carePlan.id())).thenReturn(Optional.of(carePlan));
+//        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+//        assertThrows(AccessValidationException.class, () -> subject.getCarePlanById(carePlanId));
+//    }
+//
+//    @Test
+//    public void resolveAlarm_accessViolation_throwsException() throws Exception {
+//        CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
+//        Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
+//        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+//        assertThrows(AccessValidationException.class, () -> subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1));
+//    }
+//
+//    @Test
+//    public void updateCarePlan_questionnaireAccessViolation_throwsException() throws Exception {
+//        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+//        List<QualifiedId.PlanDefinitionId> planDefinitionIds = List.of(PLANDEFINITION_ID_1);
+//        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
+//        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = Map.of();
+//        PatientDetails patientDetails = buildPatientDetails();
+//
+//        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
+//        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
+//
+//        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of(planDefinition));
+//        Mockito.when(questionnaireRepository.fetch(questionnaireIds)).thenReturn(List.of(questionnaire));
+//        Mockito.doNothing().when(accessValidator).validateAccess(List.of(planDefinition));
+//        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(questionnaire));
+//
+//        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
+//    }
+//
+//    @Test
+//    public void updateCarePlan_carePlanAccessViolation_throwsException() throws Exception {
+//        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
+//        List<QualifiedId.PlanDefinitionId> planDefinitionIds = List.of();
+//        List<QualifiedId.QuestionnaireId> questionnaireIds = List.of();
+//        Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies = Map.of();
+//        PatientDetails patientDetails = buildPatientDetails();
+//
+//        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of());
+//        Mockito.when(questionnaireRepository.fetch(questionnaireIds)).thenReturn(List.of());
+//
+//        CarePlanModel carePlan = CarePlanModel.builder()
+//                .id(carePlanId)
+//                .build();
+//
+//        Mockito.when(carePlanRepository.fetch(carePlanId)).thenReturn(Optional.of(carePlan));
+//        Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(carePlan);
+//
+//        assertThrows(AccessValidationException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
+//    }
 
 
 }

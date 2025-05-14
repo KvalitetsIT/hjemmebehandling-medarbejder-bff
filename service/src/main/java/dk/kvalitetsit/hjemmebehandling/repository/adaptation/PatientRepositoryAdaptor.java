@@ -1,13 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 
-
-import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
-import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
@@ -45,12 +45,12 @@ public class PatientRepositoryAdaptor implements PatientRepository<PatientModel,
     }
 
     @Override
-    public List<PatientModel> searchPatients(List<String> searchStrings, CarePlanStatus carePlanStatus) throws ServiceException {
+    public List<PatientModel> searchPatients(List<String> searchStrings, CarePlanStatus carePlanStatus) throws ServiceException, AccessValidationException {
         return repository.searchPatients(searchStrings, mapper.mapCarePlanStatus(carePlanStatus)).stream().map(mapper::mapPatient).toList();
     }
 
     @Override
-    public List<PatientModel> fetchByStatus(CarePlanStatus carePlanStatus) throws ServiceException {
+    public List<PatientModel> fetchByStatus(CarePlanStatus carePlanStatus) throws ServiceException, AccessValidationException {
         return repository.fetchByStatus(mapper.mapCarePlanStatus(carePlanStatus)).stream().map(mapper::mapPatient).toList();
     }
 
@@ -60,17 +60,27 @@ public class PatientRepositoryAdaptor implements PatientRepository<PatientModel,
     }
 
     @Override
-    public Optional<PatientModel> fetch(QualifiedId.PatientId id) throws ServiceException {
+    public Optional<PatientModel> fetch(QualifiedId.PatientId id) throws ServiceException, AccessValidationException {
         return repository.fetch(id).map(mapper::mapPatient);
     }
 
     @Override
-    public List<PatientModel> fetch(List<QualifiedId.PatientId> id) throws ServiceException {
+    public List<PatientModel> fetch(List<QualifiedId.PatientId> id) throws ServiceException, AccessValidationException {
         return repository.fetch(id).stream().map(mapper::mapPatient).toList();
     }
 
     @Override
-    public List<PatientModel> fetch() throws ServiceException {
+    public List<PatientModel> fetch() throws ServiceException, AccessValidationException {
         return repository.fetch().stream().map(mapper::mapPatient).toList();
+    }
+
+    @Override
+    public List<PatientModel> history(QualifiedId.PatientId id) throws ServiceException, AccessValidationException {
+        return repository.history(id).stream().map(mapper::mapPatient).toList();
+    }
+
+    @Override
+    public List<PatientModel> history(List<QualifiedId.PatientId> ids) throws ServiceException, AccessValidationException {
+        return repository.history(ids).stream().map(mapper::mapPatient).toList();
     }
 }

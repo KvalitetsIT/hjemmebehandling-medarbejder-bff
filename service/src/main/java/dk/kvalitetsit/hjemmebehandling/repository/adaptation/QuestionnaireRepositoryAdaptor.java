@@ -1,9 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Questionnaire;
 
@@ -31,13 +32,8 @@ public class QuestionnaireRepositoryAdaptor implements QuestionnaireRepository<Q
     }
 
     @Override
-    public List<QuestionnaireModel> fetch(Collection<String> statusesToInclude) throws ServiceException {
+    public List<QuestionnaireModel> fetch(Collection<String> statusesToInclude) throws ServiceException, AccessValidationException {
         return repository.fetch(statusesToInclude).stream().map(mapper::mapQuestionnaire).toList();
-    }
-
-    @Override
-    public List<QuestionnaireModel> lookupVersionsOfQuestionnaireById(List<QualifiedId.QuestionnaireId> ids) {
-        return repository.lookupVersionsOfQuestionnaireById(ids).stream().map(mapper::mapQuestionnaire).toList();
     }
 
     @Override
@@ -51,17 +47,27 @@ public class QuestionnaireRepositoryAdaptor implements QuestionnaireRepository<Q
     }
 
     @Override
-    public Optional<QuestionnaireModel> fetch(QualifiedId.QuestionnaireId id) throws ServiceException {
+    public Optional<QuestionnaireModel> fetch(QualifiedId.QuestionnaireId id) throws ServiceException, AccessValidationException {
         return repository.fetch(id).map(mapper::mapQuestionnaire);
     }
 
     @Override
-    public List<QuestionnaireModel> fetch(List<QualifiedId.QuestionnaireId> id) throws ServiceException {
+    public List<QuestionnaireModel> fetch(List<QualifiedId.QuestionnaireId> id) throws ServiceException, AccessValidationException {
         return repository.fetch(id).stream().map(mapper::mapQuestionnaire).toList();
     }
 
     @Override
-    public List<QuestionnaireModel> fetch() throws ServiceException {
+    public List<QuestionnaireModel> fetch() throws ServiceException, AccessValidationException {
         return repository.fetch().stream().map(mapper::mapQuestionnaire).toList();
+    }
+
+    @Override
+    public List<QuestionnaireModel> history(QualifiedId.QuestionnaireId id) throws ServiceException, AccessValidationException {
+        return repository.history(id).stream().map(mapper::mapQuestionnaire).toList();
+    }
+
+    @Override
+    public List<QuestionnaireModel> history(List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
+        return repository.history(questionnaireIds).stream().map(mapper::mapQuestionnaire).toList();
     }
 }

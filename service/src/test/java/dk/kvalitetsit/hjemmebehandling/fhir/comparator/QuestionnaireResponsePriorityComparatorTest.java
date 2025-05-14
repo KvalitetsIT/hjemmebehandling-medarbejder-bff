@@ -1,8 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.fhir.comparator;
 
-import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
+import dk.kvalitetsit.hjemmebehandling.fhir.QuestionnaireResponsePriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

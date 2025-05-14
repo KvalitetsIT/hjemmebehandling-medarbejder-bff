@@ -11,10 +11,15 @@ public record PatientModel(
         List<ContactDetailsModel> additionalRelativeContactDetails,
         String customUserId,
         String customUserName
-)  {
+) implements BaseModel {
 
     public static Builder builder() {
         return new PatientModel.Builder();
+    }
+
+    @Override
+    public QualifiedId.OrganizationId organizationId() {
+        return null;
     }
 
     public static class Builder {

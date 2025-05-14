@@ -8,6 +8,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.DateClientParam;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
@@ -22,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -48,11 +48,11 @@ public class FhirClient {
     // TODO: This should not return fhirLookupResult But "T"
     public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, boolean withOrganizations, Optional<SortSpec> sortSpec, Optional<Integer> offset, Optional<Integer> count) throws ServiceException {
 
-        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationId = userContextProvider.getUserContext().organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
         var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
 
         // Adding organizationCriterion in order to avoid doing this in repositories
-        criteria = Stream.concat(Stream.of(organizationCriterion),criteria.stream()).toList();
+        criteria = Stream.concat(Stream.of(organizationCriterion), criteria.stream()).toList();
 
         var query = client.search().forResource(resourceClass);
         if (!criteria.isEmpty()) {
@@ -87,15 +87,15 @@ public class FhirClient {
         return lookupResult;
     }
 
-    public  <T extends Resource> FhirLookupResult lookup(Class<T> resourceClass) throws ServiceException {
-        return lookupByCriteria(resourceClass,null, null);
+    public <T extends Resource> FhirLookupResult lookup(Class<T> resourceClass) throws ServiceException {
+        return lookupByCriteria(resourceClass, null, null);
     }
 
-    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
+    public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
         return lookupByCriteria(resourceClass, criteria, null);
     }
 
-    public  <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
+    public <T extends Resource> FhirLookupResult lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
         boolean withOrganizations = true;
         return lookupByCriteria(resourceClass, criteria, includes, withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
     }
@@ -141,7 +141,7 @@ public class FhirClient {
 
     @NotNull
     public ArrayList<ICriterion<?>> createCriteria(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
-        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationId = userContextProvider.getUserContext().organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
         var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
         var criteria = new ArrayList<ICriterion<?>>(List.of(organizationCriterion));
 
@@ -158,7 +158,7 @@ public class FhirClient {
         return criteria;
     }
 
-    public  <T extends Resource> void updateResource(Resource resource) {
+    public <T extends Resource> void updateResource(Resource resource) {
         client.update().resource(resource).execute();
     }
 
@@ -180,7 +180,7 @@ public class FhirClient {
         if (extendable.getExtension().stream().anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION))) {
             throw new IllegalArgumentException(String.format("Trying to add organization tag to resource, but the tag was already present! - %S", extendable.getId()));
         }
-        var organizationId = userContextProvider.getUserContext().orgId().orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var organizationId = userContextProvider.getUserContext().organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
         extendable.addExtension(Systems.ORGANIZATION, new Reference(organizationId.unqualified()));
     }
 
@@ -188,13 +188,16 @@ public class FhirClient {
         return UNTAGGED_RESOURCE_TYPES.contains(extendable.getResourceType());
     }
 
-
     public List<Questionnaire> lookupHistorical(List<QualifiedId.QuestionnaireId> ids, Class<Questionnaire> questionnaireClass) {
         List<Questionnaire> resources = new LinkedList<>();
-        ids.forEach(id -> {
-            Bundle bundle = client.history().onInstance(new IdType(questionnaireClass.getTypeName(), id.unqualified())).returnBundle(Bundle.class).execute();
-            bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
-        });
+        ids.forEach(id -> resources.addAll(lookupHistorical(id, questionnaireClass)));
+        return resources;
+    }
+
+    public List<Questionnaire> lookupHistorical(QualifiedId.QuestionnaireId id, Class<Questionnaire> questionnaireClass) {
+        List<Questionnaire> resources = new LinkedList<>();
+        Bundle bundle = client.history().onInstance(new IdType(questionnaireClass.getTypeName(), id.unqualified())).returnBundle(Bundle.class).execute();
+        bundle.getEntry().stream().filter(bec -> bec.getResource() != null).forEach(x -> resources.add((Questionnaire) x.getResource()));
         return resources;
     }
 }

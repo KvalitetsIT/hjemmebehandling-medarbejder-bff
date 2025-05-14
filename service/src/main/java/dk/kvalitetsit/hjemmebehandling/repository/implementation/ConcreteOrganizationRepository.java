@@ -4,10 +4,12 @@ import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
@@ -50,7 +52,7 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
 
 
     public QualifiedId.OrganizationId getOrganizationId() throws ServiceException {
-        return userContextProvider.getUserContext().orgId()
+        return userContextProvider.getUserContext().organization().map(OrganizationModel::id)
                 .orElseThrow(() -> new ServiceException("No SOR code was present", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
 
 // The code below will eventually request the fhir server however the organisation id is already specified on the usercontext
@@ -64,7 +66,7 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
             throw new IllegalStateException("UserContext was not initialized!");
         }
 
-        var orgId = context.orgId().orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.orgId()), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        var orgId = context.organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.organization().map(OrganizationModel::id)), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
         return lookupOrganizationBySorCode(orgId).orElseThrow();
     }
 
@@ -90,6 +92,16 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
 
     @Override
     public List<Organization> fetch() throws ServiceException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<Organization> history(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<Organization> history(List<QualifiedId.OrganizationId> organizationIds) throws ServiceException, AccessValidationException {
         throw new NotImplementedException();
     }
 

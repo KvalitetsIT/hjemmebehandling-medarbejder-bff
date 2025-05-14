@@ -10,8 +10,6 @@ import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.r4.model.TimeType;
@@ -112,8 +110,13 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             }
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.map(x -> x.stream().map(dtoMapper::mapStatus).toList()).orElse(List.of()));
 
+            var response = planDefinitions.stream()
+                    .map(dtoMapper::mapPlanDefinitionModel)
+                    .sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed()))
+                    .toList();
+
             // todo: 'Optional.get()' without 'isPresent()' check
-            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed())).toList());
+            return ResponseEntity.ok(response);
         } catch (ServiceException e) {
             logger.error("Could not look up plandefinitions", e);
             throw toStatusCodeException(e);

@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface QuestionnaireService {
     Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException;
 
-    List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException;
+    List<QuestionnaireModel> getQuestionnaires(Collection<String> statusesToInclude) throws ServiceException, AccessValidationException;
 
     QualifiedId.QuestionnaireId createQuestionnaire(QuestionnaireModel questionnaire) throws ServiceException;
 
@@ -29,7 +29,7 @@ public interface QuestionnaireService {
             QuestionModel updatedCallToAction
     ) throws ServiceException, AccessValidationException;
 
-    void retireQuestionnaire(QualifiedId.QuestionnaireId id) throws ServiceException;
+    void retireQuestionnaire(QualifiedId.QuestionnaireId id) throws ServiceException, AccessValidationException;
 
-    List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException;
+    List<PlanDefinitionModel> getPlanDefinitionsThatIncludes(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException;
 }

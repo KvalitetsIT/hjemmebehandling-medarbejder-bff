@@ -1,11 +1,12 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
-import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
@@ -13,6 +14,7 @@ import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Organization;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
+
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Collection;
@@ -65,11 +67,11 @@ public class ConcretePlanDefinitionService  {
                 .toList();
     }
 
-    public List<PlanDefinitionModel> getPlanDefinitions(Collection<Status> statusesToInclude) throws ServiceException {
+    public List<PlanDefinitionModel> getPlanDefinitions(Collection<Status> statusesToInclude) throws ServiceException, AccessValidationException {
         return planDefinitionRepository.lookupPlanDefinitionsByStatus(statusesToInclude);
     }
 
-    public QualifiedId.PlanDefinitionId createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException {
+    public QualifiedId.PlanDefinitionId createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException, AccessValidationException {
 
         // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
         validateReferences(planDefinition);
@@ -87,7 +89,7 @@ public class ConcretePlanDefinitionService  {
         }
     }
 
-    private void validateReferences(PlanDefinitionModel planDefinition) throws  ServiceException {
+    private void validateReferences(PlanDefinitionModel planDefinition) throws ServiceException, AccessValidationException {
         // Validate questionnaires
         if (planDefinition.questionnaires() != null && !planDefinition.questionnaires().isEmpty()) {
             var ids = planDefinition.questionnaires().stream().map(qw -> qw.questionnaire().id()).toList();
@@ -102,7 +104,7 @@ public class ConcretePlanDefinitionService  {
             Status status,
             List<QualifiedId.QuestionnaireId> questionnaireIds,
             List<ThresholdModel> thresholds
-    ) throws ServiceException {
+    ) throws ServiceException, AccessValidationException {
 
         List<QuestionnaireModel> questionnaires = questionnaireRepository.fetch(questionnaireIds);
 
@@ -135,7 +137,7 @@ public class ConcretePlanDefinitionService  {
             for (CarePlanModel carePlan : activeCarePlans) {
                 QualifiedId.CarePlanId carePlanId = carePlan.id();
 
-                if (questionnaireHasExceededDeadline(fhirMapper.mapCarePlanModel(carePlan), removedQuestionnaireIds)) {
+                if (questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds)) {
                     throw new ServiceException(
                             String.format("Careplan with id %s has missing scheduled questionnaire-responses!", carePlanId),
                             ErrorKind.BAD_REQUEST,
@@ -237,7 +239,7 @@ public class ConcretePlanDefinitionService  {
     }
 
 
-    public void retirePlanDefinition(QualifiedId.PlanDefinitionId id) throws ServiceException {
+    public void retirePlanDefinition(QualifiedId.PlanDefinitionId id) throws ServiceException, AccessValidationException {
         Optional<PlanDefinitionModel> result = planDefinitionRepository.fetch(id);
 
         if (result.isEmpty()) {
@@ -254,7 +256,7 @@ public class ConcretePlanDefinitionService  {
     }
 
 
-    public List<CarePlanModel> getCarePlansThatIncludes(QualifiedId.PlanDefinitionId id) throws ServiceException {
+    public List<CarePlanModel> getCarePlansThatIncludes(QualifiedId.PlanDefinitionId id) throws ServiceException, AccessValidationException {
         Optional<PlanDefinitionModel> result = planDefinitionRepository.fetch(id);
 
         if (result.isEmpty()) {
@@ -275,7 +277,14 @@ public class ConcretePlanDefinitionService  {
                 .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
     }
 
-    private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
+
+    private boolean questionnaireHasExceededDeadline(CarePlanModel carePlan, List<QualifiedId.QuestionnaireId> questionnaireIds) {
+        return carePlan.questionnaires().stream()
+                .filter(wrapper -> questionnaireIds.contains(wrapper.questionnaire().id()))
+                .anyMatch(wrapper -> wrapper.satisfiedUntil().isBefore(dateProvider.now()));
+    }
+
+    private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
         return questionnaireResponseRepository.fetch(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), carePlanId)
                 .stream()
                 .anyMatch(questionnaireIds::contains);

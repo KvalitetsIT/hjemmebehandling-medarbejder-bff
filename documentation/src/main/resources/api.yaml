@@ -1609,8 +1609,7 @@ paths:
       tags:
         - ValueSet
       summary: Get measurement types.
-      description: Retrieves list of measurement types supported by the requestors
-        organization.
+      description: Retrieves list of measurement types supported by the requestors organization.
       operationId: getMeasurementTypes
       responses:
         "400":

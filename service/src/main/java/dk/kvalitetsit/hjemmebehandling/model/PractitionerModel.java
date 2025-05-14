@@ -5,9 +5,14 @@ public record PractitionerModel(
         QualifiedId.PractitionerId id,
         String givenName,
         String familyName
-) {
+) implements BaseModel {
     public static PractitionerModel.Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public QualifiedId.OrganizationId organizationId() {
+        return null;
     }
 
     public static class Builder {

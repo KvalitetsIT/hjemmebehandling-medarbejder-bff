@@ -3,8 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.repository;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
-import java.util.Optional;
-
 /**
  * Generic client interface for managing FHIR-based entities such as CarePlans, PlanDefinitions,
  * Practitioners, Patients, Questionnaires, and related resources.

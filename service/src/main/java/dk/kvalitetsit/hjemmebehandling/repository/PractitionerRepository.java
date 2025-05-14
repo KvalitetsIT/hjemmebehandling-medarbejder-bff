@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.repository;
 
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 
 public interface PractitionerRepository<Practitioner> extends Repository<Practitioner, QualifiedId.PractitionerId> {
@@ -11,6 +12,6 @@ public interface PractitionerRepository<Practitioner> extends Repository<Practit
      * @return The practitioner instance.
      * @throws ServiceException If the operation fails.
      */
-    Practitioner getOrCreateUserAsPractitioner() throws ServiceException;
+    Practitioner getOrCreateUserAsPractitioner() throws ServiceException, AccessValidationException;
 
 }

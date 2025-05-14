@@ -813,10 +813,10 @@ public class FhirMapper {
 
     private AnswerType getAnswerType(Type answerType) {
         return switch (answerType) {
-            case StringType stringType -> AnswerType.STRING;
-            case BooleanType booleanType -> AnswerType.BOOLEAN;
-            case Quantity quantity -> AnswerType.QUANTITY;
-            case IntegerType integerType -> AnswerType.INTEGER;
+            case StringType ignored -> AnswerType.STRING;
+            case BooleanType ignored -> AnswerType.BOOLEAN;
+            case Quantity ignored -> AnswerType.QUANTITY;
+            case IntegerType ignored -> AnswerType.INTEGER;
             case null, default ->
                     throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
         };
@@ -942,7 +942,7 @@ public class FhirMapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
 
         var id = new QualifiedId.QuestionnaireResponseId(questionnaireResponse.getId());
-        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension()) ;
+        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
 
         var authorId = Optional.ofNullable(questionnaireResponse.getAuthor())
                 .map(Reference::getReference)

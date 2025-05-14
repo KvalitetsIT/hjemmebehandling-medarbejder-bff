@@ -21,9 +21,11 @@ public class Constants {
     public static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_2 = new QualifiedId.PlanDefinitionId("plandefinition-2");
     public static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
     public static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_2 = new QualifiedId.QuestionnaireId("questionnaire-2");
+    public static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_3 = new QualifiedId.QuestionnaireId("questionnaire-3");
     public static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRE_RESPONSE_ID_1 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
     public static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRE_RESPONSE_ID_2 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-2");
     public static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRE_RESPONSE_ID_3 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-3");
 
+    public static final String ORGANIZATION_NAME = "infektionsmedicinsk afdeling";
 }
 

@@ -3,16 +3,16 @@ package dk.kvalitetsit.hjemmebehandling.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.model.CPR;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.checkerframework.checker.units.qual.C;
 import org.openapitools.api.PatientApi;
 import org.openapitools.model.CreatePatientRequest;
 import org.openapitools.model.PatientDto;
@@ -53,7 +53,10 @@ public class PatientController extends BaseController implements PatientApi {
 //         Create the patient
         try {
             // todo: handle 'Optional.get()' without 'isPresent()' check below
-            PatientModel patient = createPatientRequest.getPatient().map(dtoMapper::mapPatientDto).get();
+            PatientModel patient = createPatientRequest.getPatient()
+                    .map(dtoMapper::mapPatientDto)
+                    .get();
+
             patientService.createPatient(patient);
             auditLoggingService.log("POST /v1/patient", patient);
 
@@ -100,7 +103,7 @@ public class PatientController extends BaseController implements PatientApi {
             auditLoggingService.log("GET /v1/patients", patients);
 
             return ResponseEntity.ok(buildResponse(patients));
-        } catch (ServiceException e) {
+        } catch (AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
     }
@@ -126,7 +129,7 @@ public class PatientController extends BaseController implements PatientApi {
             List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
             auditLoggingService.log("GET /v1/patient/search", patients);
             return ResponseEntity.ok(buildResponse(patients));
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             throw toStatusCodeException(e);
         }
     }

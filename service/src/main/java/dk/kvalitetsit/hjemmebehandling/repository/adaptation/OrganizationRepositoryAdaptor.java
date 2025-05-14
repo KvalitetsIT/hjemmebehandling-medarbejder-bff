@@ -1,8 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.Organization;
 
@@ -39,7 +40,7 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Organization fetchCurrentUsersOrganization() throws ServiceException {
+    public Organization fetchCurrentUsersOrganization() throws ServiceException, AccessValidationException {
         return repository.fetchCurrentUsersOrganization();
     }
 
@@ -54,17 +55,27 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Optional<Organization> fetch(QualifiedId.OrganizationId id) throws ServiceException {
+    public Optional<Organization> fetch(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
         return repository.fetch(id);
     }
 
     @Override
-    public List<Organization> fetch(List<QualifiedId.OrganizationId> ids) throws ServiceException {
+    public List<Organization> fetch(List<QualifiedId.OrganizationId> ids) throws ServiceException, AccessValidationException {
         return repository.fetch(ids);
     }
 
     @Override
-    public List<Organization> fetch() throws ServiceException {
+    public List<Organization> fetch() throws ServiceException, AccessValidationException {
         return repository.fetch();
+    }
+
+    @Override
+    public List<Organization> history(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
+        return repository.history(id);
+    }
+
+    @Override
+    public List<Organization> history(List<QualifiedId.OrganizationId> organizationIds) throws ServiceException, AccessValidationException {
+        return repository.history(organizationIds);
     }
 }
