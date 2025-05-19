@@ -2,7 +2,6 @@ package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.QuestionnaireResponseModelPriorityComparator;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
@@ -11,7 +10,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteQuestionnaireResponseService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Questionnaire;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,8 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildQuestionnaireResponse;
 import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
-import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.buildQuestionnaireResponse;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +42,10 @@ public class QuestionnaireResponseServiceTest {
 
     @Mock
     private QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
+
+    @Mock
+    private PractitionerRepository<PractitionerModel> practitionerRepository;
+
 
     @Mock
     private QuestionnaireResponseModelPriorityComparator priorityComparator;
@@ -106,7 +108,7 @@ public class QuestionnaireResponseServiceTest {
                 .answered(new Date(4, Calendar.APRIL, 4).toInstant())
                 .build();
 
-        Mockito.when(questionnaireResponseRepository.fetch((QualifiedId.CarePlanId) null,  null)).thenReturn(List.of(response1, response3, response4, response2));
+        Mockito.when(questionnaireResponseRepository.fetch((QualifiedId.CarePlanId) null, null)).thenReturn(List.of(response1, response3, response4, response2));
         Mockito.when(questionnaireRepository.history((List<QualifiedId.QuestionnaireId>) null)).thenReturn(List.of());
 
         Pagination pagination1 = new Pagination(1, 2);
@@ -162,7 +164,6 @@ public class QuestionnaireResponseServiceTest {
     }
 
 
-
     @Test
     public void getQuestionnaireResponsesByStatus_responsesPresent_returnsResponses() throws Exception {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
@@ -202,7 +203,7 @@ public class QuestionnaireResponseServiceTest {
         List<Questionnaire> historicalQuestionnaires = null;
         QuestionnaireResponseModel model = QuestionnaireResponseModel.builder().build();
 
-       // Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(1);
+        // Mockito.when(priorityComparator.compare(firstResponse, secondResponse)).thenReturn(1);
 
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses);
 
@@ -251,12 +252,9 @@ public class QuestionnaireResponseServiceTest {
         QuestionnaireResponseModel response1 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1);
         QuestionnaireResponseModel response2 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_2, QUESTIONNAIRE_ID_2);
         QuestionnaireResponseModel response3 = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_3, QUESTIONNAIRE_ID_3);
-
         Mockito.when(questionnaireResponseRepository.fetchByStatus(statuses)).thenReturn(List.of(response1, response2, response3));
         Mockito.when(questionnaireRepository.history(List.of(response1.questionnaireId(), response2.questionnaireId(), response3.questionnaireId()))).thenReturn(List.of());
-
         List<QuestionnaireResponseModel> result = subject.getQuestionnaireResponsesByStatus(statuses, pagination);
-
         assertEquals(1, result.size());
     }
 
@@ -265,22 +263,15 @@ public class QuestionnaireResponseServiceTest {
         QualifiedId.QuestionnaireResponseId id = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
         Mockito.when(questionnaireResponseRepository.fetch(id)).thenReturn(Optional.empty());
-
         assertThrows(ServiceException.class, () -> subject.updateExaminationStatus(id, status));
     }
 
-
-
     @Test
     public void updateExaminationStatus_successfulUpdate() throws Exception {
-        QualifiedId.QuestionnaireResponseId id = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
         QuestionnaireResponseModel response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, ORGANIZATION_ID_1);
-
-        Mockito.when(questionnaireResponseRepository.fetch(id)).thenReturn(Optional.of(response));
-
-        subject.updateExaminationStatus(id, status);
-
+        Mockito.when(questionnaireResponseRepository.fetch(QUESTIONNAIRE_RESPONSE_ID_1)).thenReturn(Optional.of(response));
+        subject.updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID_1, status);
         ArgumentCaptor<QuestionnaireResponseModel> captor = ArgumentCaptor.forClass(QuestionnaireResponseModel.class);
         verify(questionnaireResponseRepository, times(1)).update(captor.capture());
         assertEquals(status, captor.getValue().examinationStatus());
@@ -288,32 +279,22 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void getQuestionnaireResponses_accessViolation_throwsException() throws Exception {
-        QualifiedId.CarePlanId carePlanId = CAREPLAN_ID_1;
         List<QualifiedId.QuestionnaireId> questionnaireIds = List.of(QUESTIONNAIRE_ID_1);
-
         QuestionnaireResponseModel response = QuestionnaireResponseModel.builder().build();
-
         Pagination pagination = new Pagination(1, 0);
-
-        Mockito.when(questionnaireResponseRepository.fetch(carePlanId, questionnaireIds)).thenReturn(List.of(response));
+        Mockito.when(questionnaireResponseRepository.fetch(CAREPLAN_ID_1, questionnaireIds)).thenReturn(List.of(response));
         Mockito.when(questionnaireRepository.history(questionnaireIds)).thenReturn(List.of());
-
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(List.of(response));
-
-        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(carePlanId, questionnaireIds, pagination));
+        assertThrows(AccessValidationException.class, () -> subject.getQuestionnaireResponses(CAREPLAN_ID_1, questionnaireIds, pagination));
     }
-
-//  TODO: THE CODE BELOW HAS TO BE INCLUDED!
 
     @Test
     public void updateExaminationStatus_accessViolation_throwsException() throws Exception {
         QualifiedId.QuestionnaireResponseId id = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
-
         QuestionnaireResponseModel response = buildQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1, QUESTIONNAIRE_ID_1, ORGANIZATION_ID_2);
         Mockito.when(questionnaireResponseRepository.fetch(id)).thenReturn(Optional.of(response));
         Mockito.doThrow(AccessValidationException.class).when(accessValidator).validateAccess(response);
-
         assertThrows(AccessValidationException.class, () -> subject.updateExaminationStatus(id, status));
     }
 

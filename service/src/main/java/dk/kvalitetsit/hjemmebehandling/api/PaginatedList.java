@@ -15,15 +15,15 @@ public class PaginatedList<T>  {
         this.pagination = pagination;
     }
 
+    public ArrayList<T> getList() {
+        return new ArrayList<>(this.paginate(original, this.pagination));
+    }
+
     private List<T> paginate(List<T> original, Pagination pagination) {
         return original
                 .stream()
                 .skip((long) (pagination.offset() - 1) * pagination.limit())
                 .limit(pagination.limit())
                 .toList();
-    }
-
-    public ArrayList<T> getList() {
-        return new ArrayList<>(this.paginate(original, this.pagination));
     }
 }

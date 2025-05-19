@@ -2,12 +2,10 @@ package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ValueSet;
 
 import java.util.List;
@@ -24,7 +22,7 @@ public class ConcreteValueSetRepository implements ValueSetRepository<ValueSet> 
 
     private final FhirClient fhirClient;
 
-    public ConcreteValueSetRepository(FhirClient fhirClient, OrganizationRepository<Organization> organizationRepository) {
+    public ConcreteValueSetRepository(FhirClient fhirClient) {
         this.fhirClient = fhirClient;
     }
 
@@ -50,7 +48,7 @@ public class ConcreteValueSetRepository implements ValueSetRepository<ValueSet> 
 
     @Override
     public List<ValueSet> fetch() throws ServiceException {
-        return fhirClient.lookup(ValueSet.class).getValueSets();
+        return fhirClient.lookup(ValueSet.class);
     }
 
     @Override

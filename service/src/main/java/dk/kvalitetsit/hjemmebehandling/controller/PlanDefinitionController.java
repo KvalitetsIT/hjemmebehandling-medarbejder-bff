@@ -68,7 +68,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statuses);
 
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing((x) -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed())).toList());
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             logger.error("Could not look up plandefinitions", e);
             throw toStatusCodeException(e);
         }
@@ -79,7 +79,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
         boolean isPlanDefinitionInUse;
         try {
             isPlanDefinitionInUse = !planDefinitionService.getCarePlansThatIncludes(new QualifiedId.PlanDefinitionId(id)).isEmpty();
-        } catch (ServiceException se) {
+        } catch (ServiceException | AccessValidationException se) {
             throw toStatusCodeException(se);
         }
         return ResponseEntity.ok().body(isPlanDefinitionInUse);
@@ -106,7 +106,7 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     public ResponseEntity<Void> retirePlanDefinition(String id) {
         try {
             planDefinitionService.retirePlanDefinition(new QualifiedId.PlanDefinitionId(id));
-        } catch (ServiceException se) {
+        } catch (ServiceException | AccessValidationException se) {
             throw toStatusCodeException(se);
         }
 

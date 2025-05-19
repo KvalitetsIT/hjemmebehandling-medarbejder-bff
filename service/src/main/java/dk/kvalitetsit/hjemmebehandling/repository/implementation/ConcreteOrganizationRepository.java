@@ -3,7 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.repository.implementation;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
 import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
@@ -36,37 +35,40 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
     }
 
     public Optional<Organization> lookupOrganizationBySorCode(QualifiedId.OrganizationId sorCode) throws ServiceException {
-        if (sorCode == null || sorCode.unqualified().isBlank() || sorCode.unqualified().isEmpty())
-            throw new ServiceException("The SOR-code was not specified", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE);
+        if (sorCode == null || sorCode.unqualified().isBlank()) throw new ServiceException(
+                "The SOR-code was not specified",
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.MISSING_SOR_CODE
+        );
+
         var sorCodeCriterion = Organization.IDENTIFIER.exactly().systemAndValues(Systems.SOR, sorCode.unqualified());
 
         var lookupResult = lookupOrganizationsByCriteria(List.of(sorCodeCriterion));
-        if (lookupResult.getOrganizations().isEmpty()) {
-            return Optional.empty();
-        }
-        if (lookupResult.getOrganizations().size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of %s!", Organization.class));
-        }
-        return Optional.of(lookupResult.getOrganizations().getFirst());
+        if (lookupResult.isEmpty()) return Optional.empty();
+
+        if (lookupResult.size() > 1) throw new IllegalStateException(
+                String.format("Could not lookup single resource of %s!", Organization.class)
+        );
+
+        return Optional.of(lookupResult.getFirst());
     }
 
-
     public QualifiedId.OrganizationId getOrganizationId() throws ServiceException {
-        return userContextProvider.getUserContext().organization().map(OrganizationModel::id)
+        return userContextProvider.getUserContext().organization()
+                .map(OrganizationModel::id)
                 .orElseThrow(() -> new ServiceException("No SOR code was present", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
-
-// The code below will eventually request the fhir server however the organisation id is already specified on the usercontext
-//        Organization organization = fetchCurrentUsersOrganization();
-//        return new QualifiedId.OrganizationId(organization.getIdElement().toUnqualifiedVersionless().getValue());
     }
 
     public Organization fetchCurrentUsersOrganization() throws ServiceException {
         var context = userContextProvider.getUserContext();
-        if (context == null) {
-            throw new IllegalStateException("UserContext was not initialized!");
-        }
-
-        var orgId = context.organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException(String.format("No Organization was present for sorCode %s!", context.organization().map(OrganizationModel::id)), ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
+        if (context == null) throw new IllegalStateException("UserContext was not initialized!");
+        var orgId = context.organization()
+                .map(OrganizationModel::id)
+                .orElseThrow(() -> new ServiceException(
+                        String.format("No Organization was present for sorCode %s!", context.organization().map(OrganizationModel::id)),
+                        ErrorKind.BAD_REQUEST,
+                        ErrorDetails.MISSING_SOR_CODE
+                ));
         return lookupOrganizationBySorCode(orgId).orElseThrow();
     }
 
@@ -107,13 +109,16 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
 
     private List<Organization> lookupOrganizations(List<String> organizationIds) throws ServiceException {
         var idCriterion = Organization.RES_ID.exactly().codes(organizationIds);
-        return lookupOrganizationsByCriteria(List.of(idCriterion)).getOrganizations();
+        return lookupOrganizationsByCriteria(List.of(idCriterion));
     }
 
-    private FhirLookupResult lookupOrganizationsByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
+    private List<Organization> lookupOrganizationsByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
         // Don't try to include Organization-resources when we are looking up organizations ...
-        boolean withOrganizations = false;
-        return client.lookupByCriteria(Organization.class, criteria, List.of(), withOrganizations, Optional.empty(), Optional.empty(), Optional.empty());
+        return client.lookupByCriteria(
+                Organization.class,
+                criteria,
+                List.of()
+        );
     }
 
 }

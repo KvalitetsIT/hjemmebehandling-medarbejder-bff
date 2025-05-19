@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service.concrete;
 
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.model.ValueSetModel;
 import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteValueSetService;
 import org.hl7.fhir.r4.model.ValueSet;
@@ -21,17 +22,15 @@ public class ValueSetServiceTest {
     private ConcreteValueSetService subject;
 
     @Mock
-    private ValueSetRepository<ValueSet> repository;
+    private ValueSetRepository<ValueSetModel> repository;
 
     @Test
-    public void getPlanDefinitions_sucecss() throws Exception {
-        ValueSet valueSet = new ValueSet();
+    public void getPlanDefinitions_success() throws Exception {
         MeasurementTypeModel measurementTypeModel = MeasurementTypeModel.builder().build();
-        List<ValueSet> lookupResult = List.of(valueSet);
-        Mockito.when(repository.fetch()).thenReturn(lookupResult);
+        ValueSetModel valueSet = new ValueSetModel(List.of(measurementTypeModel));
 
+        Mockito.when(repository.fetch()).thenReturn(List.of(valueSet));
         List<MeasurementTypeModel> result = subject.getMeasurementTypes();
-
         assertEquals(1, result.size());
         assertEquals(measurementTypeModel, result.getFirst());
     }

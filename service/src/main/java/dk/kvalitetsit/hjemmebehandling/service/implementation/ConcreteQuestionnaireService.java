@@ -11,6 +11,7 @@ import dk.kvalitetsit.hjemmebehandling.service.QuestionnaireService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import jakarta.validation.constraints.NotNull;
 import org.hl7.fhir.r4.model.IdType;
 
 import java.util.Collection;
@@ -107,7 +108,7 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
     }
 
 
-    private void validateStatusChangeIsLegal(QuestionnaireModel questionnaire, Status updatedStatus) throws ServiceException {
+    private void validateStatusChangeIsLegal(QuestionnaireModel questionnaire, @NotNull Status updatedStatus) throws ServiceException {
         List<Status> validStatuses = switch (questionnaire.status()) {
             case ACTIVE -> List.of(Status.ACTIVE, Status.RETIRED);
             case DRAFT -> List.of(Status.DRAFT, Status.ACTIVE);

@@ -8,8 +8,6 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
-import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import org.hl7.fhir.r4.model.*;
@@ -20,15 +18,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_NAME;
+import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildOrganization;
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.PLANDEFINITION_ID_1;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirClientTest {
-    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
-    private static final String ORGANIZATION_ID_2 = "Organization/organization-2";
-    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
-    private static final String QUESTIONNAIRE_RESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
     private static final String SOR_CODE_1 = "123456";
     private static final String SOR_CODE_2 = "654321";
     private final String endpoint = "http://foo";
@@ -46,7 +41,8 @@ public class FhirClientTest {
         subject = new FhirClient(context, endpoint, userContextProvider);
 
     }
-// TODO: FIX UNCOMMENT AND TEST BELOW
+
+//  Excluded because of refactor
 //
 //    @Test
 //    public void lookupCarePlanById_carePlanPresent_success() throws ServiceException {
@@ -449,7 +445,7 @@ public class FhirClientTest {
 
         if (questionnaireResponses.length > 0) {
             PlanDefinition planDefinition = new PlanDefinition();
-            planDefinition.setId(PLANDEFINITION_ID_1);
+            planDefinition.setId(PLANDEFINITION_ID_1.qualified());
             setupSearchPlanDefinitionClient(planDefinition);
         }
     }
@@ -499,7 +495,7 @@ public class FhirClientTest {
     }
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed) {
-        setupSaveClient(resource, shouldSucceed, SOR_CODE_1, ORGANIZATION_ID_1);
+        setupSaveClient(resource, shouldSucceed, SOR_CODE_1, ORGANIZATION_ID_1.qualified());
     }
 
     private void setupSaveClient(Resource resource, boolean shouldSucceed, String sorCode, String organizationId) {
@@ -535,7 +531,7 @@ public class FhirClientTest {
     }
 
     private void setupTransactionClient(Bundle responseBundle) {
-        setupTransactionClient(responseBundle, SOR_CODE_1, ORGANIZATION_ID_1);
+        setupTransactionClient(responseBundle, SOR_CODE_1, ORGANIZATION_ID_1.qualified());
     }
 
     private void setupTransactionClient(Bundle responseBundle, String sorCode, String organizationId) {
@@ -545,7 +541,7 @@ public class FhirClientTest {
     }
 
     private void setupUserContext(String sorCode) {
-        Mockito.when(userContextProvider.getUserContext()).thenReturn(UserContextModel.builder().organization(new OrganizationModel(new QualifiedId.OrganizationId(sorCode), ORGANIZATION_NAME)).build());
+        Mockito.when(userContextProvider.getUserContext()).thenReturn(UserContextModel.builder().organization(buildOrganization()).build());
     }
 
     private void setupOrganization(String sorCode, String organizationId) {
@@ -556,7 +552,7 @@ public class FhirClientTest {
     }
 
     private boolean isTagged(DomainResource resource) {
-        return resource.getExtension().stream().anyMatch(e -> isOrganizationTag(e));
+        return resource.getExtension().stream().anyMatch(this::isOrganizationTag);
     }
 
     private boolean isTaggedWithId(DomainResource resource, String organizationId) {

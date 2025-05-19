@@ -7,7 +7,6 @@ import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.Organization;
 import org.openapitools.model.NameDto;
 
 import java.util.List;
@@ -24,9 +23,9 @@ public class DIASUserContextHandler implements IUserContextHandler {
     private static final String REGIONS_ID = "RegionsID";
     private static final String EMAIL = "email";
     private static final String BSK_AUTORISATIONS_INFORMATION = "bSKAutorisationsInformation";
-    private final OrganizationRepository<Organization> organizationRepository;
+    private final OrganizationRepository<OrganizationModel> organizationRepository;
 
-    public DIASUserContextHandler(OrganizationRepository<Organization> organizationRepository) {
+    public DIASUserContextHandler(OrganizationRepository<OrganizationModel> organizationRepository) {
         this.organizationRepository = organizationRepository;
     }
 
@@ -41,9 +40,8 @@ public class DIASUserContextHandler implements IUserContextHandler {
                 .map(QualifiedId.OrganizationId::new)
                 .ifPresent(SOR -> {
                     try {
-                        Optional<Organization> organization = organizationRepository.lookupOrganizationBySorCode(SOR);
-                        var orgName = organization.map(Organization::getName).orElse(null);
-                        builder.organization(new OrganizationModel(SOR, orgName));
+                        Optional<OrganizationModel> organization = organizationRepository.lookupOrganizationBySorCode(SOR);
+                        organization.ifPresent(builder::organization);
                     } catch (ServiceException e) {
                         throw new RuntimeException(e);
                     }

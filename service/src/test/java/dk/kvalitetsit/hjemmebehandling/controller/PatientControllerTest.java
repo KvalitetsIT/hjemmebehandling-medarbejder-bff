@@ -10,6 +10,7 @@ import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -68,8 +69,15 @@ public class PatientControllerTest {
     @Test
     public void getPatient_error_notExist() throws ServiceException {
         Mockito.when(patientService.getPatient(Mockito.any(CPR.class))).thenReturn(null);
-        Exception e = assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(Mockito.anyString()));
+        assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(CPR_1.toString()));
     }
+
+    @Test
+    public void getPatient_error_malformed_CPR() throws ServiceException {
+        var malformed_cpr = "010101010101";
+        assertThrows(IllegalArgumentException.class, () -> subject.getPatient(malformed_cpr));
+    }
+
 
     @Test
     public void getPatient_success_201() throws ServiceException {

@@ -19,7 +19,7 @@ public interface OrganizationRepository<Organization> extends Repository<Organiz
 
 
     /**
-     * Retrieves the organization ID for the current context.
+     * Retrieves the organization ID from the current context.
      *
      * @return The organization ID.
      * @throws ServiceException If the operation fails.

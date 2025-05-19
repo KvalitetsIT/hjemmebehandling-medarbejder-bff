@@ -27,7 +27,6 @@ public class AuditLogServiceConfiguration {
         return new DiasAuditLogger(enabled);
     }
 
-
     @Bean(name = "threadPoolExecutor")
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

@@ -1,6 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.repository.adaptation;
 
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -19,7 +20,7 @@ import java.util.Optional;
  * Currently, it implements the {@link OrganizationRepository} interface for {@link Organization} entities.
  * Note that this implementation detail may change in the future.
  */
-public class OrganizationRepositoryAdaptor implements OrganizationRepository<Organization> {
+public class OrganizationRepositoryAdaptor implements OrganizationRepository<OrganizationModel> {
 
     private final OrganizationRepository<Organization> repository;
     private final FhirMapper mapper;
@@ -30,8 +31,8 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Optional<Organization> lookupOrganizationBySorCode(QualifiedId.OrganizationId sorCode) throws ServiceException {
-        return this.repository.lookupOrganizationBySorCode(sorCode);
+    public Optional<OrganizationModel> lookupOrganizationBySorCode(QualifiedId.OrganizationId sorCode) throws ServiceException {
+        return this.repository.lookupOrganizationBySorCode(sorCode).map(mapper::mapOrganization);
     }
 
     @Override
@@ -40,42 +41,42 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public Organization fetchCurrentUsersOrganization() throws ServiceException, AccessValidationException {
-        return repository.fetchCurrentUsersOrganization();
+    public OrganizationModel fetchCurrentUsersOrganization() throws ServiceException, AccessValidationException {
+        return mapper.mapOrganization(repository.fetchCurrentUsersOrganization());
     }
 
     @Override
-    public void update(Organization resource) throws ServiceException {
-        repository.update(resource);
+    public void update(OrganizationModel resource) throws ServiceException {
+        repository.update(mapper.mapOrganization(resource));
     }
 
     @Override
-    public QualifiedId.OrganizationId save(Organization resource) throws ServiceException {
-        return repository.save(resource);
+    public QualifiedId.OrganizationId save(OrganizationModel resource) throws ServiceException {
+        return repository.save(mapper.mapOrganization(resource));
     }
 
     @Override
-    public Optional<Organization> fetch(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
-        return repository.fetch(id);
+    public Optional<OrganizationModel> fetch(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
+        return repository.fetch(id).map(mapper::mapOrganization);
     }
 
     @Override
-    public List<Organization> fetch(List<QualifiedId.OrganizationId> ids) throws ServiceException, AccessValidationException {
-        return repository.fetch(ids);
+    public List<OrganizationModel> fetch(List<QualifiedId.OrganizationId> ids) throws ServiceException, AccessValidationException {
+        return repository.fetch(ids).stream().map(mapper::mapOrganization).toList();
     }
 
     @Override
-    public List<Organization> fetch() throws ServiceException, AccessValidationException {
-        return repository.fetch();
+    public List<OrganizationModel> fetch() throws ServiceException, AccessValidationException {
+        return repository.fetch().stream().map(mapper::mapOrganization).toList();
     }
 
     @Override
-    public List<Organization> history(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
-        return repository.history(id);
+    public List<OrganizationModel> history(QualifiedId.OrganizationId id) throws ServiceException, AccessValidationException {
+        return repository.history(id).stream().map(mapper::mapOrganization).toList();
     }
 
     @Override
-    public List<Organization> history(List<QualifiedId.OrganizationId> organizationIds) throws ServiceException, AccessValidationException {
-        return repository.history(organizationIds);
+    public List<OrganizationModel> history(List<QualifiedId.OrganizationId> organizationIds) throws ServiceException, AccessValidationException {
+        return repository.history(organizationIds).stream().map(mapper::mapOrganization).toList();
     }
 }

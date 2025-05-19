@@ -5,7 +5,6 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
-import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
@@ -25,8 +24,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildQuestionModel;
 import static dk.kvalitetsit.hjemmebehandling.service.Constants.QUESTIONNAIRE_ID_1;
-import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.buildQuestionModel;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -183,13 +182,13 @@ public class QuestionnaireServiceTest {
         assertEquals(Systems.CALL_TO_ACTION_LINK_ID, captor.getValue().callToAction().linkId());
     }
 
-    // TODO: May be moved into another test suite since this refers to accessibility
+
     @Test
     public void updateQuestionnaire_accessViolation_throwsException() throws Exception {
-        QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
-        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenReturn(Optional.of(questionnaire));
+        Mockito.when(questionnaireRepository.fetch(QUESTIONNAIRE_ID_1)).thenThrow(new AccessValidationException(""));
         assertThrows(AccessValidationException.class, () -> subject.updateQuestionnaire(QUESTIONNAIRE_ID_1, null, null, null, null, null));
     }
+
 
     @Test
     public void updateQuestionnaire_questionnaireNotFound_throwsException() throws Exception {

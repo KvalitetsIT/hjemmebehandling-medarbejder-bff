@@ -13,15 +13,15 @@ import java.util.Optional;
 public interface CarePlanService {
     QualifiedId.CarePlanId createCarePlan(CarePlanModel carePlan) throws ServiceException, AccessValidationException;
 
-    CarePlanModel completeCarePlan(QualifiedId.CarePlanId carePlanId) throws ServiceException;
+    CarePlanModel completeCarePlan(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException;
 
-    List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
+    List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException;
 
-    List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException;
+    List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException;
 
-    List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException;
+    List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException, AccessValidationException;
 
-    List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException;
+    List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied, Pagination pagination) throws ServiceException, AccessValidationException;
 
     Optional<CarePlanModel> getCarePlanById(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException;
 
@@ -35,5 +35,5 @@ public interface CarePlanService {
 
     List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws AccessValidationException, ServiceException;
 
-    TimeType getDefaultDeadlineTime() throws ServiceException;
+    TimeType getDefaultDeadlineTime() throws ServiceException, AccessValidationException;
 }

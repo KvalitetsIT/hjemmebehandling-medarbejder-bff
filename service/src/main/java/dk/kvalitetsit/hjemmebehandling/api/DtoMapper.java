@@ -23,16 +23,12 @@ import java.util.Optional;
 
 @Component
 public class DtoMapper {
-    private Option mapOptionModel(dk.kvalitetsit.hjemmebehandling.model.Option o) {
-        return new Option().option(o.option()).comment(o.comment());
-    }
-
     public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
         return new CarePlanModel(
                 carePlanDto.getId().map(QualifiedId.CarePlanId::new).orElse(null),
                 null, //Todo: organizationId was expected but is not defined by the api
                 carePlanDto.getTitle().orElse(null),
-                carePlanDto.getStatus().map(status -> Enum.valueOf(CarePlanStatus.class, status)).orElse(null),
+                carePlanDto.getStatus().map(this::mapCarePlanStatus).orElse(null),
                 carePlanDto.getStartDate().map(OffsetDateTime::toInstant).orElse(null),
                 carePlanDto.getCreated().map(OffsetDateTime::toInstant).orElse(null),
                 carePlanDto.getEndDate().map(OffsetDateTime::toInstant).orElse(null),
@@ -48,7 +44,7 @@ public class DtoMapper {
         CarePlanDto carePlanDto = new CarePlanDto();
         carePlanDto.setId(Optional.ofNullable(carePlan.id()).map(QualifiedId.CarePlanId::unqualified));
         carePlanDto.setTitle(Optional.ofNullable(carePlan.title()));
-        carePlanDto.setStatus(Optional.ofNullable(carePlan.status().toString()));
+        carePlanDto.setStatus(Optional.ofNullable(carePlan.status()).map(this::mapCarePlanStatus));
         carePlanDto.setCreated(Optional.ofNullable(carePlan.created()).map(this::mapInstant));
         carePlanDto.setStartDate(Optional.ofNullable(carePlan.startDate()).map(this::mapInstant));
         carePlanDto.setEndDate(Optional.ofNullable(carePlan.endDate()).map(this::mapInstant));
@@ -60,6 +56,7 @@ public class DtoMapper {
 
         return carePlanDto;
     }
+
 
     public ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
         return new ContactDetailsModel(
@@ -93,35 +90,11 @@ public class DtoMapper {
         );
     }
 
-    private Weekday mapWeekdayDto(FrequencyDto.WeekdaysEnum weekdaysEnum) {
-        return switch (weekdaysEnum) {
-            case MON -> Weekday.MON;
-            case TUE -> Weekday.TUE;
-            case WED -> Weekday.WED;
-            case THU -> Weekday.THU;
-            case FRI -> Weekday.FRI;
-            case SAT -> Weekday.SAT;
-            case SUN -> Weekday.SUN;
-        };
-    }
-
     public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
         FrequencyDto frequencyDto = new FrequencyDto();
         Optional.ofNullable(frequencyModel.weekdays()).map(x -> x.stream().map(this::mapWeekdayModel).toList()).ifPresent(frequencyDto::setWeekdays);
         frequencyDto.setTimeOfDay(Optional.ofNullable(frequencyModel.timeOfDay()).map(LocalTime::toString));
         return frequencyDto;
-    }
-
-    private FrequencyDto.WeekdaysEnum mapWeekdayModel(Weekday weekday) {
-        return switch (weekday) {
-            case MON -> FrequencyDto.WeekdaysEnum.MON;
-            case TUE -> FrequencyDto.WeekdaysEnum.TUE;
-            case WED -> FrequencyDto.WeekdaysEnum.WED;
-            case THU -> FrequencyDto.WeekdaysEnum.THU;
-            case FRI -> FrequencyDto.WeekdaysEnum.FRI;
-            case SAT -> FrequencyDto.WeekdaysEnum.SAT;
-            case SUN -> FrequencyDto.WeekdaysEnum.SUN;
-        };
     }
 
     public PatientModel mapPatientDto(PatientDto patient) {
@@ -196,14 +169,6 @@ public class DtoMapper {
         );
     }
 
-    private ThresholdType mapThresholdTypeDto(ThresholdDto.TypeEnum type) {
-        return switch (type) {
-            case NORMAL -> ThresholdType.NORMAL;
-            case ABNORMAL -> ThresholdType.ABNORMAL;
-            case CRITICAL -> ThresholdType.CRITICAL;
-        };
-    }
-
     public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
         ThresholdDto thresholdDto = new ThresholdDto()
                 .questionId(thresholdModel.questionnaireItemLinkId())
@@ -214,14 +179,6 @@ public class DtoMapper {
 
         thresholdDto.setType(Optional.ofNullable(thresholdModel.type()).map(this::mapThresholdTypeModel));
         return thresholdDto;
-    }
-
-    private ThresholdDto.TypeEnum mapThresholdTypeModel(ThresholdType type) {
-        return switch (type) {
-            case NORMAL -> ThresholdDto.TypeEnum.NORMAL;
-            case ABNORMAL -> ThresholdDto.TypeEnum.ABNORMAL;
-            case CRITICAL -> ThresholdDto.TypeEnum.CRITICAL;
-        };
     }
 
     public PersonDto mapPersonModel(PersonModel person) {
@@ -247,7 +204,7 @@ public class DtoMapper {
                 null, // Todo: organizationId was expected but is not defined by the api
                 questionnaireDto.getTitle().orElse(null),
                 null, // Todo: Description was expected but is not defined by the api
-                questionnaireDto.getStatus().map(Status::valueOf).orElse(null),
+                questionnaireDto.getStatus().map(this::mapStatus).orElse(null),
                 Optional.ofNullable(questionnaireDto.getQuestions()).map((questions) -> questions.stream().map(this::mapQuestion).toList()).orElse(null),
                 questionnaireDto.getCallToAction().map(this::mapQuestion).orElse(null),
                 questionnaireDto.getVersion().orElse(null),
@@ -259,7 +216,7 @@ public class DtoMapper {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
         questionnaireDto.setId(Optional.ofNullable(questionnaireModel.id()).map(Object::toString));
         questionnaireDto.setTitle(Optional.ofNullable(questionnaireModel.title()));
-        questionnaireDto.setStatus(Optional.ofNullable(questionnaireModel.status().toString()));
+        questionnaireDto.setStatus(Optional.ofNullable(questionnaireModel.status()).map(this::mapStatus));
         questionnaireDto.setVersion(Optional.ofNullable(questionnaireModel.version()));
         questionnaireDto.setLastUpdated(Optional.ofNullable(questionnaireModel.lastUpdated()).map(this::mapDate));
         Optional.ofNullable(questionnaireModel.questions()).map(x -> x.stream().map(this::mapQuestion).toList()).ifPresent(questionnaireDto::setQuestions);
@@ -281,18 +238,6 @@ public class DtoMapper {
         return customUserRequestDto;
     }
 
-    private String getInitials(String firstName, String lastName) {
-        String initials = "";
-        if (firstName != null && !firstName.isEmpty()) {
-            initials = initials + firstName.charAt(0);
-        }
-        if (lastName != null && lastName.length() > 1) {
-            assert firstName != null;
-            initials = initials + firstName.substring(0, 2);
-        }
-        return initials;
-    }
-
     public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
         return new QuestionnaireResponseDto()
                 .id(Optional.ofNullable(questionnaireResponseModel.id()).map(Object::toString).orElse(null))
@@ -307,19 +252,146 @@ public class DtoMapper {
                 .planDefinitionTitle(questionnaireResponseModel.planDefinitionTitle());
     }
 
-    private QuestionnaireResponseDto.TriagingCategoryEnum mapTriagingCategoryModel(TriagingCategory triagingCategory) {
-        return switch (triagingCategory) {
-            case GREEN -> QuestionnaireResponseDto.TriagingCategoryEnum.GREEN;
-            case YELLOW -> QuestionnaireResponseDto.TriagingCategoryEnum.YELLOW;
-            case RED -> QuestionnaireResponseDto.TriagingCategoryEnum.RED;
-        };
-    }
-
     public ExaminationStatusDto mapExaminationStatusModel(ExaminationStatus examinationStatus) {
         return switch (examinationStatus) {
             case NOT_EXAMINED -> ExaminationStatusDto.NOT_EXAMINED;
             case UNDER_EXAMINATION -> ExaminationStatusDto.UNDER_EXAMINATION;
             case EXAMINED -> ExaminationStatusDto.EXAMINED;
+        };
+    }
+
+    public QuestionModel mapQuestion(QuestionDto questionDto) {
+        return new QuestionModel(
+                questionDto.getLinkId().orElse(null),
+                questionDto.getText().orElse(null),
+                questionDto.getAbbreviation().orElse(null),
+                questionDto.getHelperText().orElse(null),
+                questionDto.getRequired().orElse(false),
+                questionDto.getQuestionType().map(this::mapQuestionTypeDto).orElse(null),
+                questionDto.getMeasurementType().map(this::mapMeasurementTypeDto).orElse(null),
+                questionDto.getOptions().stream().map(this::mapOptionDto).toList(),
+                questionDto.getEnableWhen().stream().map(this::mapEnableWhenDto).toList(),
+                questionDto.getThresholds().stream().map(this::mapThresholdDto).toList(),
+                questionDto.getSubQuestions().stream().map(this::mapQuestion).toList(),
+                questionDto.getDeprecated().orElse(false)
+        );
+    }
+
+    public OffsetDateTime mapInstant(Instant satisfiedUntil) {
+        return satisfiedUntil.atOffset(ZoneOffset.UTC);
+    }
+
+    public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
+        MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
+        measurementTypeDto.setSystem(Optional.ofNullable(measurementTypeModel.system()));
+        measurementTypeDto.setCode(Optional.ofNullable(measurementTypeModel.code()));
+        measurementTypeDto.setDisplay(Optional.ofNullable(measurementTypeModel.display()));
+        return measurementTypeDto;
+    }
+
+    public ExaminationStatus mapExaminationStatusDto(ExaminationStatusDto examinationStatus) {
+        return switch (examinationStatus) {
+            case NOT_EXAMINED -> ExaminationStatus.NOT_EXAMINED;
+            case UNDER_EXAMINATION -> ExaminationStatus.UNDER_EXAMINATION;
+            case EXAMINED -> ExaminationStatus.EXAMINED;
+        };
+    }
+
+    public Status mapStatus(@NotNull StatusDto planDefinitionStatus) {
+        return switch (planDefinitionStatus) {
+            case DRAFT -> Status.DRAFT;
+            case ACTIVE -> Status.ACTIVE;
+            case RETIRED -> Status.RETIRED;
+        };
+    }
+
+    public UserContext mapUserContext(UserContextModel userContext) {
+
+        var organization = userContext.organization();
+
+        return new UserContext()
+                .name(userContext.name().orElse(null))
+                .userId(userContext.userId().orElse(null))
+                .email(userContext.email().orElse(null))
+                .entitlements(userContext.entitlements())
+                .authorizationIds(userContext.authorizationIds())
+                .authorizationIds(userContext.authorizationIds())
+                .orgName(organization.map(OrganizationModel::name).orElse(null))
+                .orgId(organization.map(OrganizationModel::id).map(QualifiedId.OrganizationId::unqualified).orElse(null));
+    }
+
+    public PatientDetails mapUpdateCarePlanRequest(UpdateCareplanRequest request) {
+        return new PatientDetails(
+                request.getPatientPrimaryPhone().orElse(null),
+                request.getPatientSecondaryPhone().orElse(null),
+                request.getPrimaryRelativeName().orElse(null),
+                request.getPrimaryRelativeAffiliation().orElse(null),
+                request.getPrimaryRelativePrimaryPhone().orElse(null),
+                request.getPrimaryRelativeSecondaryPhone().orElse(null)
+        );
+    }
+
+    private Option mapOptionModel(dk.kvalitetsit.hjemmebehandling.model.Option o) {
+        return new Option().option(o.option()).comment(o.comment());
+    }
+
+    private Weekday mapWeekdayDto(FrequencyDto.WeekdaysEnum weekdaysEnum) {
+        return switch (weekdaysEnum) {
+            case MON -> Weekday.MON;
+            case TUE -> Weekday.TUE;
+            case WED -> Weekday.WED;
+            case THU -> Weekday.THU;
+            case FRI -> Weekday.FRI;
+            case SAT -> Weekday.SAT;
+            case SUN -> Weekday.SUN;
+        };
+    }
+
+    private FrequencyDto.WeekdaysEnum mapWeekdayModel(Weekday weekday) {
+        return switch (weekday) {
+            case MON -> FrequencyDto.WeekdaysEnum.MON;
+            case TUE -> FrequencyDto.WeekdaysEnum.TUE;
+            case WED -> FrequencyDto.WeekdaysEnum.WED;
+            case THU -> FrequencyDto.WeekdaysEnum.THU;
+            case FRI -> FrequencyDto.WeekdaysEnum.FRI;
+            case SAT -> FrequencyDto.WeekdaysEnum.SAT;
+            case SUN -> FrequencyDto.WeekdaysEnum.SUN;
+        };
+    }
+
+    private ThresholdType mapThresholdTypeDto(ThresholdDto.TypeEnum type) {
+        return switch (type) {
+            case NORMAL -> ThresholdType.NORMAL;
+            case ABNORMAL -> ThresholdType.ABNORMAL;
+            case CRITICAL -> ThresholdType.CRITICAL;
+        };
+    }
+
+    private ThresholdDto.TypeEnum mapThresholdTypeModel(ThresholdType type) {
+        return switch (type) {
+            case NORMAL -> ThresholdDto.TypeEnum.NORMAL;
+            case ABNORMAL -> ThresholdDto.TypeEnum.ABNORMAL;
+            case CRITICAL -> ThresholdDto.TypeEnum.CRITICAL;
+        };
+    }
+
+    private String getInitials(String firstName, String lastName) {
+        String initials = "";
+        if (firstName != null && !firstName.isEmpty()) {
+            initials = initials + firstName.charAt(0);
+        }
+        if (lastName != null && lastName.length() > 1) {
+            assert firstName != null;
+            initials = initials + firstName.substring(0, 2);
+        }
+        return initials;
+    }
+
+    private QuestionnaireResponseDto.TriagingCategoryEnum mapTriagingCategoryModel(TriagingCategory triagingCategory) {
+        return switch (triagingCategory) {
+            case GREEN -> QuestionnaireResponseDto.TriagingCategoryEnum.GREEN;
+            case YELLOW -> QuestionnaireResponseDto.TriagingCategoryEnum.YELLOW;
+            case RED -> QuestionnaireResponseDto.TriagingCategoryEnum.RED;
         };
     }
 
@@ -418,23 +490,6 @@ public class DtoMapper {
         return questionDto;
     }
 
-    public QuestionModel mapQuestion(QuestionDto questionDto) {
-        return new QuestionModel(
-                questionDto.getLinkId().orElse(null),
-                questionDto.getText().orElse(null),
-                questionDto.getAbbreviation().orElse(null),
-                questionDto.getHelperText().orElse(null),
-                questionDto.getRequired().orElse(false),
-                questionDto.getQuestionType().map(this::mapQuestionTypeDto).orElse(null),
-                questionDto.getMeasurementType().map(this::mapMeasurementTypeDto).orElse(null),
-                questionDto.getOptions().stream().map(this::mapOptionDto).toList(),
-                questionDto.getEnableWhen().stream().map(this::mapEnableWhenDto).toList(),
-                questionDto.getThresholds().stream().map(this::mapThresholdDto).toList(),
-                questionDto.getSubQuestions().stream().map(this::mapQuestion).toList(),
-                questionDto.getDeprecated().orElse(false)
-        );
-    }
-
     private EnableWhen mapEnableWhenModel(QuestionModel.EnableWhen enableWhen) {
         return new EnableWhen()
                 .answer(Optional.ofNullable(enableWhen.answer()).map(this::mapAnswerModel).orElse(null))
@@ -504,36 +559,8 @@ public class DtoMapper {
         return questionnaireWrapperDto;
     }
 
-    public OffsetDateTime mapInstant(Instant satisfiedUntil) {
-        return satisfiedUntil.atOffset(ZoneOffset.UTC);
-    }
-
     private OffsetDateTime mapDate(Date lastUpdated) {
         return lastUpdated.toInstant().atOffset(ZoneOffset.UTC);
-    }
-
-    public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
-        MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
-        measurementTypeDto.setSystem(Optional.ofNullable(measurementTypeModel.system()));
-        measurementTypeDto.setCode(Optional.ofNullable(measurementTypeModel.code()));
-        measurementTypeDto.setDisplay(Optional.ofNullable(measurementTypeModel.display()));
-        return measurementTypeDto;
-    }
-
-    public ExaminationStatus mapExaminationStatusDto(ExaminationStatusDto examinationStatus) {
-        return switch (examinationStatus) {
-            case NOT_EXAMINED -> ExaminationStatus.NOT_EXAMINED;
-            case UNDER_EXAMINATION -> ExaminationStatus.UNDER_EXAMINATION;
-            case EXAMINED -> ExaminationStatus.EXAMINED;
-        };
-    }
-
-    public Status mapStatus(@NotNull StatusDto planDefinitionStatus) {
-        return switch (planDefinitionStatus) {
-            case DRAFT -> Status.DRAFT;
-            case ACTIVE -> Status.ACTIVE;
-            case RETIRED -> Status.RETIRED;
-        };
     }
 
     private StatusDto mapStatus(@NotNull Status planDefinitionStatus) {
@@ -544,31 +571,22 @@ public class DtoMapper {
         };
     }
 
-    public UserContext mapUserContext(UserContextModel userContext) {
 
-        var organization = userContext.organization();
-
-        return new UserContext()
-                .name(userContext.name().orElse(null))
-                .userId(userContext.userId().orElse(null))
-                .email(userContext.email().orElse(null))
-                .entitlements(userContext.entitlements())
-                .authorizationIds(userContext.authorizationIds())
-                .authorizationIds(userContext.authorizationIds())
-                .orgName(organization.map(OrganizationModel::name).orElse(null))
-                .orgId(organization.map(OrganizationModel::id).map(QualifiedId.OrganizationId::unqualified).orElse(null));
+    private CarePlanStatusDto mapCarePlanStatus(@NotNull CarePlanStatus carePlanStatus) {
+        return switch (carePlanStatus) {
+            case ACTIVE -> CarePlanStatusDto.ACTIVE;
+            case COMPLETED -> CarePlanStatusDto.COMPLETED;
+        };
     }
 
-    public PatientDetails mapUpdateCarePlanRequest(UpdateCareplanRequest request) {
-        return new PatientDetails(
-                request.getPatientPrimaryPhone().orElse(null),
-                request.getPatientSecondaryPhone().orElse(null),
-                request.getPrimaryRelativeName().orElse(null),
-                request.getPrimaryRelativeAffiliation().orElse(null),
-                request.getPrimaryRelativePrimaryPhone().orElse(null),
-                request.getPrimaryRelativeSecondaryPhone().orElse(null)
-        );
+
+    private CarePlanStatus mapCarePlanStatus(@NotNull CarePlanStatusDto carePlanStatus) {
+        return switch (carePlanStatus) {
+            case ACTIVE -> CarePlanStatus.ACTIVE;
+            case COMPLETED -> CarePlanStatus.COMPLETED;
+        };
     }
+
 }
 
 

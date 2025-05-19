@@ -47,7 +47,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
         QuestionnaireDto questionnaireDto = new QuestionnaireDto()
                 .questions(List.of(question1, question2))
-                .status("DRAFT");
+                .status(StatusDto.DRAFT);
 
         CreateQuestionnaireRequest request = new CreateQuestionnaireRequest()
                 .questionnaire(questionnaireDto);
@@ -67,7 +67,7 @@ public class QuestionnaireIntegrationTest extends AbstractIntegrationTest {
 
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest()
                 .title("Ny forbedret titel")
-                .status(Objects.requireNonNull(questionnaire.getStatus()))
+                .status(questionnaire.getStatus())
                 .description("ny forbedret description")
                 .questions(questionnaire.getQuestions())
                 .callToAction(Objects.requireNonNull(questionnaire.getCallToAction()));

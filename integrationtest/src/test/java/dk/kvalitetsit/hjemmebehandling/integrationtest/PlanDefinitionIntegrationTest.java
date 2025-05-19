@@ -4,10 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.client.ApiResponse;
 import org.openapitools.client.api.PlanDefinitionApi;
-import org.openapitools.client.model.CreatePlanDefinitionRequest;
-import org.openapitools.client.model.PlanDefinitionDto;
-import org.openapitools.client.model.QuestionnaireDto;
-import org.openapitools.client.model.QuestionnaireWrapperDto;
+import org.openapitools.client.model.*;
 
 import java.util.List;
 
@@ -35,7 +32,7 @@ public class PlanDefinitionIntegrationTest extends AbstractIntegrationTest {
         questionnaireDto.setId("Questionnaire/questionnaire-1");
 
         PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto()
-                .status("ACTIVE")
+                .status(StatusDto.ACTIVE)
                 .questionnaires(List.of(new QuestionnaireWrapperDto()
                         .questionnaire(questionnaireDto)));
 

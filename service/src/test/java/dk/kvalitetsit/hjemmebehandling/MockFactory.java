@@ -1,4 +1,4 @@
-package dk.kvalitetsit.hjemmebehandling.service;
+package dk.kvalitetsit.hjemmebehandling;
 
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionType;
@@ -6,8 +6,8 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.IdType;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Questionnaire;
+import org.hl7.fhir.r4.model.TimeType;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -137,10 +137,8 @@ public class MockFactory {
         return resource.build();
     }
 
-    public static Organization buildOrganization() {
-        var organization = new Organization();
-        organization.setId(ORGANIZATION_ID_1.unqualified());
-        return organization;
+    public static OrganizationModel buildOrganization() {
+        return new OrganizationModel(ORGANIZATION_ID_1, ORGANIZATION_NAME, new TimeType("11.00"));
     }
 
 
@@ -232,6 +230,7 @@ public class MockFactory {
                 .id(carePlanId)
                 .patient(PatientModel.builder().id(patientId).build())
                 .satisfiedUntil(POINT_IN_TIME)
+
                 .build();
 
     }

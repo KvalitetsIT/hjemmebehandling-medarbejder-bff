@@ -5,11 +5,12 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.CAREPLAN_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.PATIENT_ID_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BundleBuilderTest {
-    private static final String CAREPLAN_ID = "careplan-1";
-    private static final String PATIENT_ID = "patient-1";
+
     private final BundleBuilder subject = new BundleBuilder();
 
     //@Test
@@ -53,16 +54,16 @@ public class BundleBuilderTest {
 
     @Test
     public void buildCreateCarePlanBundle_mapsArgumentsToEntries() {
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
-        Patient patient = buildPatient(PATIENT_ID);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1.unqualified(), PATIENT_ID_1.unqualified());
+        Patient patient = buildPatient(PATIENT_ID_1.unqualified());
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
         assertEquals(2, result.getEntry().size());
     }
 
     @Test
     public void buildCreateCarePlanBundle_updatesSubjectReference() {
-        CarePlan carePlan = buildCarePlan(CAREPLAN_ID, PATIENT_ID);
-        Patient patient = buildPatient(PATIENT_ID);
+        CarePlan carePlan = buildCarePlan(CAREPLAN_ID_1.unqualified(), PATIENT_ID_1.unqualified());
+        Patient patient = buildPatient(PATIENT_ID_1.unqualified());
 
         Bundle result = subject.buildCreateCarePlanBundle(carePlan, patient);
 

@@ -3,15 +3,16 @@ package dk.kvalitetsit.hjemmebehandling.service.concrete;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.repository.*;
-import dk.kvalitetsit.hjemmebehandling.repository.access.AccessValidator;
+import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
+import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.hl7.fhir.r4.model.CanonicalType;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PlanDefinition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.MockFactory.*;
 import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
-import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -466,13 +467,9 @@ public class PlanDefinitionServiceTest {
         Mockito.when(carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(dateProvider.now()).thenReturn(Instant.now());
 
-        try {
-            subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
-            fail();
-        } catch (ServiceException se) {
-            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
-            assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES, se.getErrorDetails());
-        }
+        ServiceException se = assertThrows(ServiceException.class, () -> subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_2), List.of()));
+        assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
+        assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES, se.getErrorDetails());
     }
 
 

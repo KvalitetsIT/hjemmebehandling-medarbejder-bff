@@ -13,7 +13,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationExcepti
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.SerializationException;
 import org.hl7.fhir.r4.model.Practitioner;
 
 import java.util.List;
@@ -39,16 +38,22 @@ public class ConcretePractitionerRepository implements PractitionerRepository<Pr
     @Override
     public Practitioner getOrCreateUserAsPractitioner() throws ServiceException {
         // TODO: Handle 'Optional.get()' without 'isPresent()' check below
-        QualifiedId.OrganizationId orgId = userContextProvider.getUserContext().organization().map(OrganizationModel::id).orElseThrow(() -> new ServiceException("Could not acquire SOR-code from user context", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.MISSING_SOR_CODE));
+        QualifiedId.OrganizationId orgId = userContextProvider.getUserContext().organization()
+                .map(OrganizationModel::id)
+                .orElseThrow(() -> new ServiceException(
+                        "Could not acquire SOR-code from user context",
+                        ErrorKind.INTERNAL_SERVER_ERROR,
+                        ErrorDetails.MISSING_SOR_CODE)
+                );
+
         String userId = userContextProvider.getUserContext().userId().get();
         ICriterion<TokenClientParam> sorIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.SOR, orgId.unqualified());
         ICriterion<TokenClientParam> userIdIdentifier = Practitioner.IDENTIFIER.exactly().systemAndIdentifier(Systems.USER_ID, userId);
 
         Optional<Practitioner> practitioner = lookupPractitioner(List.of(sorIdentifier, userIdIdentifier));
 
-        if (practitioner.isPresent()) {
-            return practitioner.get();
-        } else {
+        if (practitioner.isPresent()) return practitioner.get();
+        else {
             Practitioner p = new Practitioner();
             p.addIdentifier().setSystem(Systems.SOR).setValue(orgId.unqualified());
             p.addIdentifier().setSystem(Systems.USER_ID).setValue(userId);
@@ -85,7 +90,7 @@ public class ConcretePractitionerRepository implements PractitionerRepository<Pr
     @Override
     public List<Practitioner> fetch(List<QualifiedId.PractitionerId> ids) throws ServiceException {
         var idCriterion = Practitioner.RES_ID.exactly().codes(ids.stream().map(QualifiedId::unqualified).toList());
-        return client.lookupByCriteria(Practitioner.class, List.of(idCriterion)).getPractitioners();
+        return client.lookupByCriteria(Practitioner.class, List.of(idCriterion));
     }
 
     @Override
@@ -110,12 +115,13 @@ public class ConcretePractitionerRepository implements PractitionerRepository<Pr
     private Optional<Practitioner> lookupPractitioner(List<ICriterion<?>> criterions) throws ServiceException {
         var lookupResult = client.lookupByCriteria(Practitioner.class, criterions);
 
-        if (lookupResult.getPractitioners().isEmpty()) {
-            return Optional.empty();
-        }
-        if (lookupResult.getPractitioners().size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Practitioner.class));
-        }
-        return Optional.of(lookupResult.getPractitioners().getFirst());
+        if (lookupResult.isEmpty()) return Optional.empty();
+
+        if (lookupResult.size() > 1) throw new IllegalStateException(String.format(
+                "Could not lookup single resource of class %s!",
+                Practitioner.class
+        ));
+
+        return Optional.of(lookupResult.getFirst());
     }
 }

@@ -1,49 +1,33 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
+import dk.kvalitetsit.hjemmebehandling.model.ValueSetModel;
 import dk.kvalitetsit.hjemmebehandling.repository.ValueSetRepository;
 import dk.kvalitetsit.hjemmebehandling.service.ValueSetService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.ValueSet;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Component
 public class ConcreteValueSetService implements ValueSetService {
 
-    private final ValueSetRepository<ValueSet> repository;
+    private final ValueSetRepository<ValueSetModel> repository;
 
-    public ConcreteValueSetService(ValueSetRepository<ValueSet> repository) {
+    public ConcreteValueSetService(ValueSetRepository<ValueSetModel> repository) {
         this.repository = repository;
     }
 
     @Override
     public List<MeasurementTypeModel> getMeasurementTypes() throws ServiceException, AccessValidationException {
         // as of now we only have one ValueSet in the system which holds the measurement type codes, so no special search handling is needed.
-        List<ValueSet> lookupResult = repository.fetch();
+        List<ValueSetModel> response = repository.fetch();
 
-        List<MeasurementTypeModel> result = new ArrayList<>();
-        lookupResult.forEach(vs -> {
-            var list = extractMeasurementTypes(vs);
-            result.addAll(list);
-        });
-
-        return result;
+        return response.stream().map(ValueSetModel::measurementTypes).flatMap(Collection::stream).toList();
     }
 
-    private List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
-        return valueSet.getCompose().getInclude()
-                .stream()
-                .flatMap(csc -> csc.getConcept()
-                        .stream()
-                        .map(crc -> mapCodingConcept(csc.getSystem(), crc))).toList();
-    }
 
-    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
-        return new MeasurementTypeModel(system, concept.getCode(), concept.getDisplay());
-    }
 
 }

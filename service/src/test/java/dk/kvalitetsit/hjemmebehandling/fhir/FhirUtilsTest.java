@@ -41,8 +41,7 @@ public class FhirUtilsTest {
         assertEquals("Patient/2", result.qualified());
         assertEquals("2", result.unqualified());
     }
-
-
+    
     @Test
     public void qualifiedId_from_success() {
         String qualifiedId = "CarePlan/2";

@@ -8,9 +8,9 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundExce
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.openapitools.api.PatientApi;
@@ -30,12 +30,12 @@ import java.util.List;
 public class PatientController extends BaseController implements PatientApi {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
-    private final ConcretePatientService patientService;
+    private final PatientService patientService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
     private final CustomUserClient customUserClient;
 
-    public PatientController(ConcretePatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
+    public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
         this.patientService = patientService;
         this.auditLoggingService = auditLoggingService;
         this.dtoMapper = dtoMapper;

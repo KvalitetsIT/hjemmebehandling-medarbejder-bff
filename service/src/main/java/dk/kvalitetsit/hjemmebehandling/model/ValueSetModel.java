@@ -1,4 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class ValueSetModel {
+import java.util.List;
+
+public record ValueSetModel(List<MeasurementTypeModel> measurementTypes) {
+    public ValueSetModel {
+        measurementTypes = (measurementTypes != null) ? measurementTypes : List.of();
+    }
 }

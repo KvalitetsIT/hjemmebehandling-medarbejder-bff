@@ -220,7 +220,7 @@ public class CarePlanControllerTest {
 
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void searchCarePlans_VerifyThatCorrectMethodIsCalled_withUndefinedCPR_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException {
+    public void searchCarePlans_VerifyThatCorrectMethodIsCalled_withUndefinedCPR_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException, AccessValidationException {
         Pagination pagination = new Pagination(1, 10);
         assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
         Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(expectedOnlyActive, expectedUnsatisfied, pagination);
@@ -228,7 +228,7 @@ public class CarePlanControllerTest {
 
     @ParameterizedTest
     @MethodSource // arguments comes from a method that is name the same as the test
-    public void searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException {
+    public void searchCarePlans_VerifyThatCorrectMethodIsCalled_DependingOnTheArguments_200(String cpr, Boolean onlyUnsatisfiedSchedules, Boolean onlyActiveCarePlans, boolean expectedUnsatisfied, boolean expectedOnlyActive) throws ServiceException, AccessValidationException {
         Pagination pagination = new Pagination(1, 10);
         assertDoesNotThrow(() -> subject.searchCarePlans(Optional.ofNullable(cpr), Optional.ofNullable(onlyUnsatisfiedSchedules), Optional.ofNullable(onlyActiveCarePlans), Optional.of(pagination.offset()), Optional.of(pagination.limit())));
         Mockito.verify(carePlanService, times(1)).getCarePlansWithFilters(new CPR(cpr), expectedOnlyActive, expectedUnsatisfied, pagination);

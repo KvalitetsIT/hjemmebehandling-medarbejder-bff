@@ -17,19 +17,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+
 @ExtendWith(MockitoExtension.class)
 public class FhirMapperTest {
-    private static final String CPR_1 = "0101010101";
-    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
-    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
-    private static final String PATIENT_ID_1 = "Patient/patient-1";
-    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
-    private static final String PLANDEFINITION_ID_2 = "PlanDefinition/plandefinition-2";
-    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
-    private static final String QUESTIONNAIRE_ID_2 = "Questionnaire/questionnaire-2";
-    private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
-    private static final String QUESTIONNAIRERESPONSE_ID_2 = "QuestionnaireResponse/questionnaireresponse-2";
-    private static final String PRACTITIONER_ID_1 = "Practitioner/practitioner-1";
+
     private static final Instant POINT_IN_TIME = Instant.parse("2021-11-23T00:00:00.000Z");
     @InjectMocks
     private FhirMapper subject;
@@ -106,7 +98,7 @@ public class FhirMapperTest {
         carePlan.getPeriod().setStart(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         carePlan.getPeriod().setEnd(Date.from(Instant.parse("2021-10-29T00:00:00Z")));
         carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(Instant.parse("2021-12-07T10:11:12.124Z")));
-        carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        carePlan.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1.qualified()));
 
         questionnaireIds.forEach(questionnaireId -> {
             var detail = new CarePlan.CarePlanActivityDetailComponent();
@@ -122,7 +114,7 @@ public class FhirMapperTest {
 
     private CarePlanModel buildCarePlanModel() {
         return CarePlanModel.builder()
-                .id(new QualifiedId.CarePlanId(CAREPLAN_ID_1))
+                .id(CAREPLAN_ID_1)
                 .status(CarePlanStatus.ACTIVE)
                 .created(Instant.parse("2021-12-07T10:11:12.124Z"))
                 .patient(buildPatientModel())
@@ -193,8 +185,8 @@ public class FhirMapperTest {
 
     private PatientModel buildPatientModel() {
         return PatientModel.builder()
-                .id(new QualifiedId.PatientId(PATIENT_ID_1))
-                .cpr(new CPR("0101010101"))
+                .id(PATIENT_ID_1)
+                .cpr(CPR_1)
                 .contactDetails(buildContactDetailsModel())
                 .primaryContact(PrimaryContactModel.builder().contactDetails(buildContactDetailsModel()).build())
                 .additionalRelativeContactDetails(List.of(buildContactDetailsModel()))
@@ -212,7 +204,7 @@ public class FhirMapperTest {
         planDefinition.setTitle(title);
         planDefinition.setStatus(Enumerations.PublicationStatus.ACTIVE);
         planDefinition.setDate(Date.from(POINT_IN_TIME));
-        planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1.qualified()));
 
         PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();
         action.setDefinition(new CanonicalType(questionnaireId));
@@ -232,7 +224,7 @@ public class FhirMapperTest {
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
         return PlanDefinitionModel.builder()
-                .id(new QualifiedId.PlanDefinitionId(PLANDEFINITION_ID_1))
+                .id(PLANDEFINITION_ID_1)
                 .questionnaires(List.of(buildQuestionnaireWrapperModel()))
                 .build();
     }
@@ -285,14 +277,14 @@ public class FhirMapperTest {
         QuestionModel question = buildQuestionModel();
         AnswerModel answer = new AnswerModel(null, "2", AnswerType.INTEGER, null);
         return QuestionnaireResponseModel.builder()
-                .id(new QualifiedId.QuestionnaireResponseId(QUESTIONNAIRERESPONSE_ID_1))
-                .questionnaireId(new QualifiedId.QuestionnaireId(QUESTIONNAIRE_ID_1))
-                .carePlanId(new QualifiedId.CarePlanId(CAREPLAN_ID_1))
-                .authorId(new QualifiedId.PractitionerId(PATIENT_ID_1))
-                .sourceId(new QualifiedId.QuestionnaireId(PATIENT_ID_1))
+                .id(QUESTIONNAIRE_RESPONSE_ID_1)
+                .questionnaireId(QUESTIONNAIRE_ID_1)
+                .carePlanId(CAREPLAN_ID_1)
+                .authorId(PRACTITIONER_ID_1)
+                .sourceId(QUESTIONNAIRE_ID_1)
                 .answered(Instant.parse("2021-11-03T00:00:00Z"))
                 .questionAnswerPairs(new ArrayList<>())
-                .patient(PatientModel.builder().id(new QualifiedId.PatientId(PATIENT_ID_1)).build())
+                .patient(PatientModel.builder().id(PATIENT_ID_1).build())
                 .examinationStatus(ExaminationStatus.NOT_EXAMINED)
                 .triagingCategory(TriagingCategory.GREEN)
                 .questionAnswerPairs(List.of(new QuestionAnswerPairModel(question, answer)))
@@ -339,14 +331,14 @@ public class FhirMapperTest {
         questionnaire.setId(questionnaireId);
         questionnaire.setStatus(Enumerations.PublicationStatus.ACTIVE);
         questionnaire.getItem().addAll(questionItems);
-        questionnaire.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        questionnaire.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1.qualified()));
 
         return questionnaire;
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {
         return QuestionnaireModel.builder()
-                .id(new QualifiedId.QuestionnaireId(QUESTIONNAIRE_ID_1))
+                .id(QUESTIONNAIRE_ID_1)
                 .status(Status.ACTIVE)
                 .questions(List.of(buildQuestionModel())).build();
     }
@@ -364,16 +356,16 @@ public class FhirMapperTest {
 
         questionnaireResponse.setId(questionnaireResponseId);
         questionnaireResponse.setQuestionnaire(questionnaireId);
-        questionnaireResponse.setBasedOn(List.of(new Reference(CAREPLAN_ID_1)));
-        questionnaireResponse.setAuthor(new Reference(PATIENT_ID_1));
-        questionnaireResponse.setSource(new Reference(PATIENT_ID_1));
+        questionnaireResponse.setBasedOn(List.of(new Reference(CAREPLAN_ID_1.qualified())));
+        questionnaireResponse.setAuthor(new Reference(PATIENT_ID_1.qualified()));
+        questionnaireResponse.setSource(new Reference(PATIENT_ID_1.qualified()));
         questionnaireResponse.setSubject(new Reference(patientId));
         questionnaireResponse.getItem().addAll(answerItems);
         questionnaireResponse.setAuthored(Date.from(Instant.parse("2021-10-28T00:00:00Z")));
         questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_STATUS, new StringType(ExaminationStatus.EXAMINED.toString())));
-        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_AUTHOR, new StringType(PRACTITIONER_ID_1)));
+        questionnaireResponse.getExtension().add(new Extension(Systems.EXAMINATION_AUTHOR, new StringType(PRACTITIONER_ID_1.qualified())));
         questionnaireResponse.getExtension().add(new Extension(Systems.TRIAGING_CATEGORY, new StringType(TriagingCategory.GREEN.toString())));
-        questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
+        questionnaireResponse.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1.qualified()));
 
         return questionnaireResponse;
     }

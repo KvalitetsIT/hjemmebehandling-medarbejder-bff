@@ -51,7 +51,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         try {
             CarePlanModel carePlan = carePlanService.completeCarePlan(new QualifiedId.CarePlanId(id));
             auditLoggingService.log("PUT /v1/careplan/" + id + "/complete", carePlan.patient());
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             logger.error("completeCarePlan({}) error:", id, e);
             throw toStatusCodeException(e);
         }
@@ -117,7 +117,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
 
             // todo: 'Optional.get()' without 'isPresent()' check
             return ResponseEntity.ok(response);
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             logger.error("Could not look up plandefinitions", e);
             throw toStatusCodeException(e);
         }
@@ -199,7 +199,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             }
             auditLoggingService.log("GET /v1/careplan", carePlans.stream().map(CarePlanModel::patient).toList());
             return ResponseEntity.ok(carePlans.stream().map(dtoMapper::mapCarePlanModel).toList());
-        } catch (ServiceException e) {
+        } catch (ServiceException | AccessValidationException e) {
             logger.error("Could not look up careplans by cpr", e);
             throw toStatusCodeException(e);
         }
@@ -215,7 +215,7 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         return questionnaireFrequencyPairs.stream().map(pair -> new QualifiedId.QuestionnaireId(pair.getId().get())).toList();
     }
 
-    private Map<QualifiedId.QuestionnaireId, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException {
+    private Map<QualifiedId.QuestionnaireId, FrequencyModel> getQuestionnaireFrequencies(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) throws ServiceException, AccessValidationException {
         // force time for deadline to organization configured default.
         TimeType defaultDeadlineTime = carePlanService.getDefaultDeadlineTime();
         // todo: 'Optional.get()' without 'isPresent()' check

@@ -6,7 +6,6 @@ import dk.kvalitetsit.hjemmebehandling.controller.exception.ForbiddenException;
 import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -31,11 +30,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.PLANDEFINITION_ID_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PlanDefinitionControllerTest {
-    private static final QualifiedId.PlanDefinitionId PLAN_DEFINITION_ID = new QualifiedId.PlanDefinitionId("plandefinition-1");
+
     @InjectMocks
     private PlanDefinitionController subject;
 
@@ -90,7 +90,7 @@ public class PlanDefinitionControllerTest {
     }
 
     @Test
-    public void getPlandefinitions_sorting() throws ServiceException {
+    public void getPlandefinitions_sorting() throws ServiceException, AccessValidationException {
         PlanDefinitionModel planDefinitionModel1 = PlanDefinitionModel.builder().build();
         PlanDefinitionModel planDefinitionModel2 = PlanDefinitionModel.builder().build();
         PlanDefinitionModel planDefinitionModel3 = PlanDefinitionModel.builder().build();
@@ -122,7 +122,7 @@ public class PlanDefinitionControllerTest {
 
         PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinition);
-        Mockito.when(planDefinitionService.createPlanDefinition(planDefinition)).thenReturn(PLAN_DEFINITION_ID);
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinition)).thenReturn(PLANDEFINITION_ID_1);
 
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 
@@ -137,11 +137,11 @@ public class PlanDefinitionControllerTest {
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
         Mockito.when(dtoMapper.mapPlanDefinitionDto(request.getPlanDefinition())).thenReturn(planDefinitionModel);
-        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(PLAN_DEFINITION_ID);
+        Mockito.when(planDefinitionService.createPlanDefinition(planDefinitionModel)).thenReturn(PLANDEFINITION_ID_1);
 
 
-        String location = "http://localhost:8080/api/v1/plandefinition/"+ PLAN_DEFINITION_ID.unqualified();
-        Mockito.when(locationHeaderBuilder.buildLocationHeader(PLAN_DEFINITION_ID)).thenReturn(URI.create(location));
+        String location = "http://localhost:8080/api/v1/plandefinition/"+ PLANDEFINITION_ID_1.unqualified();
+        Mockito.when(locationHeaderBuilder.buildLocationHeader(PLANDEFINITION_ID_1)).thenReturn(URI.create(location));
 
         ResponseEntity<Void> result = subject.createPlanDefinition(request);
 

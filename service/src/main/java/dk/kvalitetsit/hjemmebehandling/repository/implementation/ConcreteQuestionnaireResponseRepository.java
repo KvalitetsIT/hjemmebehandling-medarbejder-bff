@@ -85,7 +85,6 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
     @Override
     public List<QuestionnaireResponse> fetchByStatus(List<ExaminationStatus> statuses) throws ServiceException {
         var statusCriterion = new TokenClientParam(SearchParameters.EXAMINATION_STATUS).exactly().codes(statuses.stream().map(Enum::toString).toArray(String[]::new));
-
         return lookupQuestionnaireResponseByCriteria(List.of(statusCriterion));
     }
 
@@ -109,10 +108,8 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
         return client.lookupByCriteria(
                 QuestionnaireResponse.class,
                 criteria,
-                List.of(QuestionnaireResponse.INCLUDE_BASED_ON,
-                        QuestionnaireResponse.INCLUDE_QUESTIONNAIRE,
-                        QuestionnaireResponse.INCLUDE_SUBJECT
-                )).getQuestionnaireResponses();
+                List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT)
+        );
     }
 
 

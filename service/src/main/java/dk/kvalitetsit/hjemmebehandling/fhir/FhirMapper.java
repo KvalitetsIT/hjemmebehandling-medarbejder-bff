@@ -432,6 +432,36 @@ public class FhirMapper {
         return new CPR(patient.getIdentifier().getFirst().getValue());
     }
 
+    public PractitionerModel mapPractitioner(Practitioner practitioner) {
+        return new PractitionerModel(
+                new QualifiedId.PractitionerId(practitioner.getId()),
+                practitioner.getNameFirstRep().getGivenAsSingleString(),
+                practitioner.getNameFirstRep().getFamily()
+        );
+    }
+
+    public OrganizationModel mapOrganization(@NotNull Organization organization) {
+        return new OrganizationModel(
+                new QualifiedId.OrganizationId(organization.getIdElement().toUnqualifiedVersionless().getValue()),
+                organization.getName(),
+                ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension())
+        );
+    }
+
+
+    public Organization mapOrganization(@NotNull OrganizationModel organization) {
+        throw new  NotImplementedException();
+    }
+
+    public ValueSetModel mapValueSet(ValueSet valueSet) {
+        return new ValueSetModel(extractMeasurementTypes(valueSet));
+    }
+
+    public ValueSet mapValueSet(ValueSetModel valueSet) {
+        throw new  NotImplementedException();
+    }
+
+
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
         Optional.ofNullable(source.id()).ifPresent(id -> target.setId(id.toString()));
@@ -895,13 +925,7 @@ public class FhirMapper {
         );
     }
 
-    public PractitionerModel mapPractitioner(Practitioner practitioner) {
-        return new PractitionerModel(
-                new QualifiedId.PractitionerId(practitioner.getId()),
-                practitioner.getNameFirstRep().getGivenAsSingleString(),
-                practitioner.getNameFirstRep().getFamily()
-        );
-    }
+
 
     private MeasurementTypeModel mapCodingConcept(String system, String code, String display) {
         return new MeasurementTypeModel(system, code, display);
@@ -954,7 +978,6 @@ public class FhirMapper {
                 .map(QualifiedId.QuestionnaireId::new)
                 .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
 
-
         return new QuestionnaireResponseModel(
                 id,
                 organizationId,
@@ -971,8 +994,21 @@ public class FhirMapper {
                 mapPatient(patient, organisationId),
                 planDefinitionTitle
         );
+    }
 
 
+
+    private List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
+        return valueSet.getCompose().getInclude()
+                .stream()
+                .flatMap(csc -> csc.getConcept()
+                        .stream()
+                        .map(crc -> mapCodingConcept(csc.getSystem(), crc))).toList();
+    }
+
+
+    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
+        return new MeasurementTypeModel(system, concept.getCode(), concept.getDisplay());
     }
 
 }

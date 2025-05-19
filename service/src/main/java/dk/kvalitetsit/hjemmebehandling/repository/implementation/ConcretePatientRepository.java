@@ -93,18 +93,18 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
     private Optional<Patient> lookupPatient(List<ICriterion<?>> criterion) throws ServiceException {
         var lookupResult = lookupPatients(criterion);
 
-        if (lookupResult.isEmpty()) {
-            return Optional.empty();
-        }
-        if (lookupResult.size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", Patient.class));
-        }
+        if (lookupResult.isEmpty()) return Optional.empty();
+
+        if (lookupResult.size() > 1) throw new IllegalStateException(String.format(
+                "Could not lookup single resource of class %s!",
+                Patient.class
+        ));
+
         return Optional.ofNullable(lookupResult.getFirst());
     }
 
     private List<Patient> lookupPatients(List<ICriterion<?>> criterion) throws ServiceException {
-        var lookupResult = client.lookupByCriteria(Patient.class, criterion);
-        return lookupResult.getPatients();
+        return client.lookupByCriteria(Patient.class, criterion);
     }
 
 

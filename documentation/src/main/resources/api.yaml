@@ -1866,7 +1866,7 @@ components:
             title:
               type: string
             status:
-              type: string
+              $ref: '#/components/schemas/StatusDto'
             questions:
               type: array
               items:
@@ -1947,6 +1947,12 @@ components:
         - ACTIVE
         - RETIRED
 
+    CarePlanStatusDto:
+      type: string
+      enum:
+        - ACTIVE
+        - COMPLETED
+
     QuestionnaireWrapperDto:
       type: object
       properties:
@@ -1970,7 +1976,7 @@ components:
             title:
               type: string
             status:
-              type: string
+              $ref: "#/components/schemas/CarePlanStatusDto"
             created:
               type: string
               format: date-time

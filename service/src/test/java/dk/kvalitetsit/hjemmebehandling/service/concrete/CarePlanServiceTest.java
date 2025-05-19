@@ -14,7 +14,6 @@ import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcreteCarePlanSe
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.QuestionnaireResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +34,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.MockFactory.*;
 import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
-import static dk.kvalitetsit.hjemmebehandling.service.MockFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -61,6 +60,8 @@ public class CarePlanServiceTest {
     private DateProvider dateProvider;
     @Mock
     private CustomUserClient customUserService;
+    @Mock
+    private OrganizationRepository<OrganizationModel> organizationRepository;
 
 
     private static Stream<Arguments> getCarePlansWithUnsatisfiedSchedules_sortCareplans_byPatientName() {
@@ -80,7 +81,6 @@ public class CarePlanServiceTest {
     @Test
     public void createCareplan_ThrowsBadGateway_WhenCustomloginFails() throws JsonProcessingException, AccessValidationException {
         ReflectionTestUtils.setField(subject, "patientidpApiUrl", "http://foo");
-
 
         PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
 
@@ -114,7 +114,7 @@ public class CarePlanServiceTest {
         Mockito.when(dateProvider.today()).thenReturn(Date.from(POINT_IN_TIME));
 
         subject.createCarePlan(carePlan);
-        Mockito.verify(carePlanRepository).save(carePlan, patient);
+        Mockito.verify(carePlanRepository, Mockito.times(1)).save(carePlan, patient);
     }
 
     @Test
@@ -232,16 +232,17 @@ public class CarePlanServiceTest {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
         boolean onlyActiveCarePlans = true;
         boolean onlyUnSatisfied = false;
-        CarePlanModel carePlanModel = CarePlanModel.builder().build();
+
         var unsatisfiedAt = Instant.now();
 
         Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
-        //Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of(carePlan));
+
+        Mockito.when(carePlanRepository.fetch(new QualifiedId.PatientId(CPR_1.value()), unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of(carePlan));
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(CPR_1, onlyActiveCarePlans, onlyUnSatisfied, new Pagination(1, 10));
 
         assertEquals(1, result.size());
-        assertEquals(carePlanModel, result.getFirst());
+        assertEquals(carePlan, result.getFirst());
     }
 
     @Test
@@ -250,9 +251,11 @@ public class CarePlanServiceTest {
         boolean onlyUnSatisfied = false;
         var unsatisfiedAt = Instant.now();
 
-        Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
+        var patient = buildPatient(PATIENT_ID_1, CPR_1);
 
-        //Mockito.when(carePlanRepository.fetch(CPR_1, unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of());
+        Mockito.when(dateProvider.now()).thenReturn(unsatisfiedAt);
+        Mockito.when(patientRepository.fetch(CPR_1)).thenReturn(Optional.of(patient));
+        Mockito.when(carePlanRepository.fetch(patient.id(), unsatisfiedAt, onlyActiveCarePlans, onlyUnSatisfied)).thenReturn(List.of());
 
         List<CarePlanModel> result = subject.getCarePlansWithFilters(CPR_1, onlyActiveCarePlans, onlyUnSatisfied, new Pagination(1, 10));
 
@@ -340,9 +343,9 @@ public class CarePlanServiceTest {
 
     @Test
     public void getCarePlanById_carePlanPresent_returnsCarePlan() throws Exception {
-        QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
         CarePlanModel carePlanModel = CarePlanModel.builder().build();
-        Optional<CarePlanModel> result = subject.getCarePlanById(carePlanId);
+        Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlanModel));
+        Optional<CarePlanModel> result = subject.getCarePlanById(CAREPLAN_ID_1);
         assertEquals(carePlanModel, result.get());
     }
 
@@ -373,16 +376,23 @@ public class CarePlanServiceTest {
     @Test
     public void resolveAlarm_recomputesSatisfiedUntil_savesCarePlan() throws Exception {
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1);
-        CarePlanModel carePlanModel = CarePlanModel.builder().satisfiedUntil(POINT_IN_TIME.minusSeconds(100))
-                .questionnaires(List.of(
-                        buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1, POINT_IN_TIME.minusSeconds(100)),
-                        buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2, POINT_IN_TIME.plusSeconds(100))
-                )).build();
+
 
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
 
         subject.resolveAlarm(CAREPLAN_ID_1, QUESTIONNAIRE_ID_1);
+
+
+        Mockito.verify(carePlanRepository, Mockito.times(1)).update(carePlan);
+
+
+        CarePlanModel carePlanModel = CarePlanModel.builder()
+                .satisfiedUntil(POINT_IN_TIME.minusSeconds(100))
+                .questionnaires(List.of(
+                        buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1, POINT_IN_TIME.minusSeconds(100)),
+                        buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2, POINT_IN_TIME.plusSeconds(100))
+                )).build();
 
         // Verify that the first questionnaire has its satisfied-timestamp pushed to the next scheduled weekday,
         // the second questionnaire has its timestamp left untouched, and the careplan has its timestamp set to
@@ -391,7 +401,6 @@ public class CarePlanServiceTest {
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.questionnaires().get(1).satisfiedUntil());
         assertEquals(POINT_IN_TIME.plusSeconds(100), carePlanModel.satisfiedUntil());
 
-        Mockito.verify(carePlanRepository).update(carePlan);
     }
 
     @Test
@@ -433,7 +442,6 @@ public class CarePlanServiceTest {
     }
 
 
-    // TODO: May be moved since it depends on fhir resources and not only models
     @Test
     public void updateCarePlan_transfersThresholdsFromPlanDefinition() throws Exception {
         QualifiedId.CarePlanId carePlanId = new QualifiedId.CarePlanId("careplan-1");
@@ -469,11 +477,16 @@ public class CarePlanServiceTest {
         QuestionnaireModel questionnaire = QuestionnaireModel.builder().build();
         CarePlanModel carePlan = buildCarePlan(CAREPLAN_ID_1, PATIENT_ID_1, QUESTIONNAIRE_ID_1);
         PatientModel patientModel = buildPatientModel();
+        var threshold = new ThresholdModel(null, null, null, null, null, null);
+
+        PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel(QUESTIONNAIRE_ID_1, threshold);
 
         Mockito.when(questionnaireRepository.fetch(questionnaireIds)).thenReturn(List.of(questionnaire));
         Mockito.when(carePlanRepository.fetch(CAREPLAN_ID_1)).thenReturn(Optional.of(carePlan));
         Mockito.when(dateProvider.now()).thenReturn(POINT_IN_TIME);
         Mockito.when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(List.of());
+        Mockito.when(planDefinitionRepository.fetch(planDefinitionIds)).thenReturn(List.of(planDefinitionModel));
+        Mockito.when(organizationRepository.getOrganizationId()).thenReturn(ORGANIZATION_ID_1);
 
         subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
 
@@ -586,12 +599,9 @@ public class CarePlanServiceTest {
         questionnaireResponse.setQuestionnaire(QUESTIONNAIRE_ID_1.unqualified()); // unanswered response for questionnaire that is removed
 //        Mockito.when(fhirClient.lookupQuestionnaireResponsesByStatusAndCarePlanId(List.of(ExaminationStatus.NOT_EXAMINED), carePlanId)).thenReturn(FhirLookupResult.fromResources(questionnaireResponse));
 
-        try {
-            subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails);
-            fail("No error was thrown");
-        } catch (ServiceException e) {
-            assertEquals(ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, e.getErrorDetails());
-        }
+        var e = assertThrows(ServiceException.class, () -> subject.updateCarePlan(carePlanId, planDefinitionIds, questionnaireIds, frequencies, patientDetails));
+        assertEquals(ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, e.getErrorDetails());
+
     }
 
 

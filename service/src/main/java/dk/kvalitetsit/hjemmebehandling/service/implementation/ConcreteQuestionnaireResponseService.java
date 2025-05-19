@@ -12,7 +12,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hl7.fhir.r4.model.Organization;
 
 import java.util.Comparator;
 import java.util.List;
@@ -23,14 +22,14 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
     private final QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final PractitionerRepository<PractitionerModel> practitionerRepository;
-    private final OrganizationRepository<Organization> organizationRepository;
+    private final OrganizationRepository<OrganizationModel> organizationRepository;
 
     private final Comparator<QuestionnaireResponseModel> priorityComparator;
 
     public ConcreteQuestionnaireResponseService(Comparator<QuestionnaireResponseModel> priorityComparator,
                                                 QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
                                                 QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
-                                                PractitionerRepository<PractitionerModel> practitionerRepository, OrganizationRepository<Organization> organizationRepository
+                                                PractitionerRepository<PractitionerModel> practitionerRepository, OrganizationRepository<OrganizationModel> organizationRepository
     ) {
 
         this.priorityComparator = priorityComparator;

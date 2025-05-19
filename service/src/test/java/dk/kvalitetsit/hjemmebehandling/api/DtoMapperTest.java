@@ -13,18 +13,13 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DtoMapperTest {
-    private static final QualifiedId.CarePlanId CAREPLAN_ID_1 = new QualifiedId.CarePlanId("careplan-1");
-    private static final QualifiedId.OrganizationId ORGANIZATION_ID_1 = new QualifiedId.OrganizationId("organization-1");
-    private static final QualifiedId.PatientId PATIENT_ID_1 = new QualifiedId.PatientId("patient-1");
-    private static final QualifiedId.PlanDefinitionId PLANDEFINITION_ID_1 = new QualifiedId.PlanDefinitionId("plandefinition-1");
-    private static final QualifiedId.QuestionnaireId QUESTIONNAIRE_ID_1 = new QualifiedId.QuestionnaireId("questionnaire-1");
-    private static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRERESPONSE_ID_1 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
+
     private final DtoMapper subject = new DtoMapper();
-    QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
 
     @Test
     public void mapPlanDefinitionDto_success() {
@@ -147,8 +142,19 @@ public class DtoMapperTest {
 
     @Test
     public void mapQuestionnaireModel_thresholds() {
-        QuestionModel questionModel = buildQuestionModel().builder()
-                .thresholds(List.of(buildBooleanThresholdModel(null), buildNumberThresholdModel(null)))
+
+        var threshold = new ThresholdModel(
+                null,
+                ThresholdType.NORMAL,
+                2.0,
+                5.0,
+                null,
+                null
+        );
+
+        buildQuestionModel();
+        QuestionModel questionModel = QuestionModel.builder()
+                .thresholds(List.of(buildBooleanThresholdModel(null), threshold))
                 .build();
 
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(List.of(questionModel));
@@ -190,16 +196,6 @@ public class DtoMapperTest {
         );
     }
 
-    private ThresholdModel buildNumberThresholdModel(String questionLinkId) {
-        return new ThresholdModel(
-                questionLinkId,
-                ThresholdType.NORMAL,
-                2.0,
-                5.0,
-                null,
-                null);
-    }
-
 
     private AnswerModel buildAnswerModel() {
         return new AnswerModel(null, "foo", AnswerType.STRING, null);
@@ -209,7 +205,7 @@ public class DtoMapperTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setId(Optional.of(CAREPLAN_ID_1.unqualified()));
-        carePlanDto.setStatus(Optional.of("ACTIVE"));
+        carePlanDto.setStatus(Optional.of(CarePlanStatusDto.ACTIVE));
         carePlanDto.setPatientDto(Optional.of(buildPatientDto()));
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
         carePlanDto.setPlanDefinitions(List.of(buildPlanDefinitionDto()));
@@ -325,7 +321,7 @@ public class DtoMapperTest {
     private QuestionnaireDto buildQuestionnaireDto() {
         return new QuestionnaireDto()
                 .questions(List.of(buildQuestionDto()))
-                .status("DRAFT").id("questionnaire-1");
+                .status(StatusDto.DRAFT).id("questionnaire-1");
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {
@@ -358,7 +354,7 @@ public class DtoMapperTest {
 
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
         return QuestionnaireResponseModel.builder()
-                .id(QUESTIONNAIRERESPONSE_ID_1)
+                .id(QUESTIONNAIRE_RESPONSE_ID_1)
                 .questionnaireId(QUESTIONNAIRE_ID_1)
                 .carePlanId(CAREPLAN_ID_1)
                 .questionAnswerPairs(List.of(buildQuestionAnswerPairModel()))

@@ -37,12 +37,7 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
         this.client = client;
     }
 
-    private static String getQuestionnaireId(CarePlan.CarePlanActivityDetailComponent detail) {
-        if (detail.getInstantiatesCanonical() == null || detail.getInstantiatesCanonical().size() != 1) {
-            throw new IllegalStateException("Expected InstantiatesCanonical to be present, and to contain exactly one value!");
-        }
-        return detail.getInstantiatesCanonical().getFirst().getValue();
-    }
+
 
     @Override
     public void update(CarePlan carePlan, Patient patient) {
@@ -65,14 +60,14 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
         var patientCriterion = CarePlan.PATIENT.hasId(patientId.unqualified());
         criteria.add(patientCriterion);
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
-        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec));
+        return lookupCarePlansByCriteria(criteria, sortSpec);
     }
 
     @Override
     public List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException {
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var plandefinitionCriterion = FhirUtils.buildPlanDefinitionCriterion(plandefinitionId);
-        List<ICriterion<?>>  criteria = new ArrayList<>(List.of(statusCriterion, plandefinitionCriterion));
+        List<ICriterion<?>> criteria = new ArrayList<>(List.of(statusCriterion, plandefinitionCriterion));
         return lookupCarePlansByCriteria(criteria);
     }
 
@@ -91,13 +86,13 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     public List<CarePlan> fetch(Instant unsatisfiedToDate, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException {
         var criteria = client.createCriteria(unsatisfiedToDate, onlyActiveCarePlans, onlyUnSatisfied);
         var sortSpec = new SortSpec(SearchParameters.CAREPLAN_SATISFIED_UNTIL, SortOrderEnum.ASC);
-        return lookupCarePlansByCriteria(criteria, Optional.of(sortSpec));
+        return lookupCarePlansByCriteria(criteria, sortSpec);
     }
 
     public List<CarePlan> fetchActiveCarePlansByQuestionnaireId(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException {
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
         var questionnaireCriterion = CarePlan.INSTANTIATES_CANONICAL.hasChainedProperty(PlanDefinition.DEFINITION.hasId(questionnaireId.unqualified()));
-        List<ICriterion<?>>  criteria = new ArrayList<>(List.of(statusCriterion, questionnaireCriterion));
+        List<ICriterion<?>> criteria = new ArrayList<>(List.of(statusCriterion, questionnaireCriterion));
         return lookupCarePlansByCriteria(criteria);
     }
 
@@ -115,9 +110,11 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     public Optional<CarePlan> fetch(QualifiedId.CarePlanId id) throws ServiceException {
         var idCriterion = CarePlan.RES_ID.exactly().code(id.unqualified());
         var result = this.lookupCarePlansByCriteria(List.of(idCriterion));
-        if (result.size() > 1) {
-            throw new IllegalStateException(String.format("Could not lookup single resource of class %s!", CarePlan.class));
-        }
+        if (result.size() > 1) throw new IllegalStateException(String.format(
+                "Could not lookup single resource of class %s!",
+                CarePlan.class
+        ));
+
         return Optional.of(result.getFirst());
     }
 
@@ -142,23 +139,22 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     }
 
     private List<CarePlan> lookupCarePlansByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
-        return lookupCarePlansByCriteria(criteria, Optional.empty());
+        return client.lookupByCriteria(
+                CarePlan.class, criteria,
+                List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL)
+        );
     }
 
-    private List<CarePlan> lookupCarePlansByCriteria(List<ICriterion<?>> criteria, Optional<SortSpec> sortSpec) throws ServiceException {
-        boolean withOrganizations = true;
-        var carePlanResult = client.lookupByCriteria(
+    private List<CarePlan> lookupCarePlansByCriteria(List<ICriterion<?>> criteria, SortSpec sortSpec) throws ServiceException {
+        // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
+        // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
+        return client.lookupByCriteria(
                 CarePlan.class, criteria,
                 List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL),
-                withOrganizations,
-                sortSpec,
+                Optional.of(sortSpec),
                 Optional.empty(),
                 Optional.empty()
         );
-
-        // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
-        // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
-        return carePlanResult.getCarePlans();
     }
 
 

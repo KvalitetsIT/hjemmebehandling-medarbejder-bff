@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
 import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
+import org.hl7.fhir.r4.model.TimeType;
 import org.openapitools.model.NameDto;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class MockContextHandler implements IUserContextHandler {
     @Override
     public UserContextModel mapTokenToUserContext(FhirClient client, DecodedJWT jwt) {
 
-        var organization = new OrganizationModel(orgId, null);
+        var organization = new OrganizationModel(orgId, null, new TimeType("11.00"));
 
         return UserContextModel.builder()
                 .name(new NameDto().given("Test").family("Testsen"))
