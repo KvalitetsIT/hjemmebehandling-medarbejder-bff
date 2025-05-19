@@ -13,29 +13,28 @@ import java.util.concurrent.Executor;
 @Configuration
 @EnableAsync
 public class AuditLogServiceConfiguration {
-  @Value("${audit.url}")
-  private String auditUrl;
+    @Value("${audit.url}")
+    private String auditUrl;
 
-  @Bean
-  public WebClient getDiasAuditClient() {
-    return WebClient.create(auditUrl);
-  }
+    @Bean
+    public WebClient getDiasAuditClient() {
+        return WebClient.create(auditUrl);
+    }
 
-  @Bean
-  public DiasAuditLogger getDiasAuditLogger() {
-    boolean enabled = (auditUrl != null && !auditUrl.isEmpty());
-    return new DiasAuditLogger(enabled);
-  }
+    @Bean
+    public DiasAuditLogger getDiasAuditLogger() {
+        boolean enabled = (auditUrl != null && !auditUrl.isEmpty());
+        return new DiasAuditLogger(enabled);
+    }
 
-
-  @Bean(name = "threadPoolExecutor")
-  public Executor getAsyncExecutor() {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(7);
-    executor.setMaxPoolSize(42);
-    executor.setQueueCapacity(11);
-    executor.setThreadNamePrefix("threadPoolExecutor-");
-    executor.initialize();
-    return executor;
-  }
+    @Bean(name = "threadPoolExecutor")
+    public Executor getAsyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(7);
+        executor.setMaxPoolSize(42);
+        executor.setQueueCapacity(11);
+        executor.setThreadNamePrefix("threadPoolExecutor-");
+        executor.initialize();
+        return executor;
+    }
 }
