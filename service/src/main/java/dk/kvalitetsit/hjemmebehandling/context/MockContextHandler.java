@@ -1,33 +1,36 @@
 package dk.kvalitetsit.hjemmebehandling.context;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-
 import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
+import dk.kvalitetsit.hjemmebehandling.model.OrganizationModel;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.UserContextModel;
+import org.hl7.fhir.r4.model.TimeType;
+import org.openapitools.model.NameDto;
 
 import java.util.List;
 
 public class MockContextHandler implements IUserContextHandler {
-    private final String orgId;
+    private final QualifiedId.OrganizationId orgId;
     private final List<String> entitlements;
-    public MockContextHandler(String orgId, List<String> entitlements) {
+
+    public MockContextHandler(QualifiedId.OrganizationId orgId, List<String> entitlements) {
         this.orgId = orgId;
         this.entitlements = entitlements;
     }
 
     @Override
-	public UserContext mapTokenToUser(FhirClient client, DecodedJWT jwt) {
-		var context = new UserContext();
+    public UserContextModel mapTokenToUserContext(FhirClient client, DecodedJWT jwt) {
 
-        context.setFullName("Test Testsen");
-        context.setFirstName("Test");
-        context.setLastName("Testsen");
-        context.setOrgId(orgId);
-        context.setUserId("TesTes");
-        context.setEmail("test@rm.dk");
-        context.setEntitlements(entitlements.toArray(new String[0]));
-        context.setAuthorizationIds(new String[]{"1234"} );
+        var organization = new OrganizationModel(orgId, null, new TimeType("11.00"));
 
-        return context;
-	}
-
+        return UserContextModel.builder()
+                .name(new NameDto().given("Test").family("Testsen"))
+                .organization(organization)
+                .userId("TesTes")
+                .email("test@rm.dk")
+                .entitlements(entitlements)
+                .authorizationIds(List.of("1234"))
+                .build();
+    }
 }

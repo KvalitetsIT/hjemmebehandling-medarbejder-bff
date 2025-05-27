@@ -1,25 +1,32 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import java.util.Arrays;
 import java.util.List;
 
-public class PersonNameModel {
+public record PersonNameModel(
+        String family,
+        List<String> given
+) {
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    private String family;
-    private List<String> given;
-    
-	public String getFamily() {
-		return family;
-	}
-	public void setFamily(String family) {
-		this.family = family;
-	}
-	public List<String> getGiven() {
-		return given;
-	}
-	public void setGiven(List<String> given) {
-		this.given = given;
-	}
-    
-    
-	
+    public static class Builder {
+        private String family;
+        private List<String> given;
+
+        public Builder family(String family) {
+            this.family = family;
+            return this;
+        }
+
+        public Builder given(String... given) {
+            this.given = Arrays.stream(given).toList();
+            return this;
+        }
+
+        public PersonNameModel build() {
+            return new PersonNameModel(family, given);
+        }
+    }
 }

@@ -1,118 +1,183 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.ExaminationStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.TriagingCategory;
+import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
-public class QuestionnaireResponseModel extends BaseModel {
-    private QualifiedId questionnaireId;
-    private QualifiedId carePlanId;
-    private QualifiedId authorId;
-    private QualifiedId sourceId;
-    private String questionnaireName;
-    private List<QuestionAnswerPairModel> questionAnswerPairs;
-    private Instant answered;
-    private ExaminationStatus examinationStatus;
-    private PractitionerModel examinationAuthor;
-    private TriagingCategory triagingCategory;
-    private PatientModel patient;
-    private String planDefinitionTitle;
+public record QuestionnaireResponseModel(
+        QualifiedId.QuestionnaireResponseId id,
+        QualifiedId.OrganizationId organizationId,
+        QualifiedId.QuestionnaireId questionnaireId,
+        QualifiedId.CarePlanId carePlanId,
+        QualifiedId.PractitionerId authorId,
+        QualifiedId.QuestionnaireId sourceId,
+        String questionnaireName,
+        List<QuestionAnswerPairModel> questionAnswerPairs,
+        Instant answered,
+        ExaminationStatus examinationStatus,
+        PractitionerModel examinationAuthor,
+        TriagingCategory triagingCategory,
+        PatientModel patient,
+        String planDefinitionTitle
 
-    public QualifiedId getQuestionnaireId() {
-        return questionnaireId;
+) implements BaseModel<QuestionnaireResponseModel> {
+
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public void setQuestionnaireId(QualifiedId questionnaireId) {
-        this.questionnaireId = questionnaireId;
+    @Override
+    public QualifiedId.OrganizationId organizationId() {
+        return organizationId;
     }
 
-    public QualifiedId getCarePlanId() {
-        return carePlanId;
+    @Override
+    public QuestionnaireResponseModel substitute(QuestionnaireResponseModel other) {
+        return new QuestionnaireResponseModel(
+                Optional.ofNullable(other.id).orElse(id),
+                Optional.ofNullable(other.organizationId).orElse(organizationId),
+                Optional.ofNullable(other.questionnaireId).orElse(questionnaireId),
+                Optional.ofNullable(other.carePlanId).orElse(carePlanId),
+                Optional.ofNullable(other.authorId).orElse(authorId),
+                Optional.ofNullable(other.sourceId).orElse(sourceId),
+                Optional.ofNullable(other.questionnaireName).orElse(questionnaireName),
+                Optional.ofNullable(other.questionAnswerPairs).orElse(questionAnswerPairs),
+                Optional.ofNullable(other.answered).orElse(answered),
+                Optional.ofNullable(other.examinationStatus).orElse(examinationStatus),
+                Optional.ofNullable(other.examinationAuthor).orElse(examinationAuthor),
+                Optional.ofNullable(other.triagingCategory).orElse(triagingCategory),
+                Optional.ofNullable(other.patient).orElse(patient),
+                Optional.ofNullable(other.planDefinitionTitle).orElse(planDefinitionTitle)
+        );
     }
 
-    public void setCarePlanId(QualifiedId carePlanId) {
-        this.carePlanId = carePlanId;
-    }
 
-    public QualifiedId getAuthorId() {
-        return authorId;
-    }
+    public static class Builder {
+        private QualifiedId.QuestionnaireResponseId id;
+        private QualifiedId.QuestionnaireId questionnaireId;
+        private QualifiedId.CarePlanId carePlanId;
+        private QualifiedId.PractitionerId authorId;
+        private QualifiedId.QuestionnaireId sourceId;
+        private String questionnaireName;
+        private List<QuestionAnswerPairModel> questionAnswerPairs;
+        private Instant answered;
+        private ExaminationStatus examinationStatus;
+        private PractitionerModel examinationAuthor;
+        private TriagingCategory triagingCategory;
+        private PatientModel patient;
+        private String planDefinitionTitle;
+        private QualifiedId.OrganizationId organizationId;
 
-    public void setAuthorId(QualifiedId authorId) {
-        this.authorId = authorId;
-    }
+        public static Builder from(QuestionnaireResponseModel source) {
+            return new Builder()
+                    .answered(source.answered)
+                    .authorId(source.authorId)
+                    .id(source.id)
+                    .carePlanId(source.carePlanId)
+                    .sourceId(source.sourceId)
+                    .triagingCategory(source.triagingCategory)
+                    .examinationAuthor(source.examinationAuthor)
+                    .organizationId(source.organizationId())
+                    .planDefinitionTitle(source.planDefinitionTitle())
+                    .questionnaireId(source.questionnaireId)
+                    .questionnaireName(source.questionnaireName())
+                    .examinationStatus(source.examinationStatus)
+                    .questionAnswerPairs(source.questionAnswerPairs)
+                    .authorId(source.authorId)
+                    .patient(source.patient);
+        }
 
-    public QualifiedId getSourceId() {
-        return sourceId;
-    }
+        public Builder organizationId(QualifiedId.OrganizationId organizationId) {
+            this.organizationId = organizationId;
+            return this;
+        }
 
-    public void setSourceId(QualifiedId sourceId) {
-        this.sourceId = sourceId;
-    }
+        public Builder questionnaireId(QualifiedId.QuestionnaireId questionnaireId) {
+            this.questionnaireId = questionnaireId;
+            return this;
+        }
 
-    public String getQuestionnaireName() {
-        return questionnaireName;
-    }
+        public Builder carePlanId(QualifiedId.CarePlanId carePlanId) {
+            this.carePlanId = carePlanId;
+            return this;
+        }
 
-    public void setQuestionnaireName(String questionnaireName) {
-        this.questionnaireName = questionnaireName;
-    }
+        public Builder authorId(QualifiedId.PractitionerId authorId) {
+            this.authorId = authorId;
+            return this;
+        }
 
-    public List<QuestionAnswerPairModel> getQuestionAnswerPairs() {
-        return questionAnswerPairs;
-    }
+        public Builder sourceId(QualifiedId.QuestionnaireId sourceId) {
+            this.sourceId = sourceId;
+            return this;
+        }
 
-    public void setQuestionAnswerPairs(List<QuestionAnswerPairModel> questionAnswerPairs) {
-        this.questionAnswerPairs = questionAnswerPairs;
-    }
+        public Builder questionnaireName(String questionnaireName) {
+            this.questionnaireName = questionnaireName;
+            return this;
+        }
 
-    public Instant getAnswered() {
-        return answered;
-    }
+        public Builder questionAnswerPairs(List<QuestionAnswerPairModel> questionAnswerPairs) {
+            this.questionAnswerPairs = questionAnswerPairs;
+            return this;
+        }
 
-    public void setAnswered(Instant answered) {
-        this.answered = answered;
-    }
+        public Builder answered(Instant answered) {
+            this.answered = answered;
+            return this;
+        }
 
-    public ExaminationStatus getExaminationStatus() {
-        return examinationStatus;
-    }
+        public Builder examinationStatus(ExaminationStatus examinationStatus) {
+            this.examinationStatus = examinationStatus;
+            return this;
+        }
 
-    public void setExaminationStatus(ExaminationStatus examinationStatus) {
-        this.examinationStatus = examinationStatus;
-    }
+        public Builder examinationAuthor(PractitionerModel examinationAuthor) {
+            this.examinationAuthor = examinationAuthor;
+            return this;
+        }
 
-    public PractitionerModel getExaminationAuthor() {
-        return examinationAuthor;
-    }
+        public Builder triagingCategory(TriagingCategory triagingCategory) {
+            this.triagingCategory = triagingCategory;
+            return this;
+        }
 
-    public void setExaminationAuthor(PractitionerModel examinationAuthor) {
-        this.examinationAuthor = examinationAuthor;
-    }
+        public Builder patient(PatientModel patient) {
+            this.patient = patient;
+            return this;
+        }
 
-    public TriagingCategory getTriagingCategory() {
-        return triagingCategory;
-    }
+        public Builder planDefinitionTitle(String planDefinitionTitle) {
+            this.planDefinitionTitle = planDefinitionTitle;
+            return this;
+        }
 
-    public void setTriagingCategory(TriagingCategory triagingCategory) {
-        this.triagingCategory = triagingCategory;
-    }
+        public Builder id(QualifiedId.QuestionnaireResponseId id) {
+            this.id = id;
+            return this;
+        }
 
-    public PatientModel getPatient() {
-        return patient;
-    }
+        public QuestionnaireResponseModel build() {
+            return new QuestionnaireResponseModel(
+                    id,
+                    organizationId,
+                    questionnaireId,
+                    carePlanId,
+                    authorId,
+                    sourceId,
+                    questionnaireName,
+                    questionAnswerPairs,
+                    answered,
+                    examinationStatus,
+                    examinationAuthor,
+                    triagingCategory,
+                    patient,
+                    planDefinitionTitle
+            );
+        }
 
-    public void setPatient(PatientModel patient) {
-        this.patient = patient;
-    }
 
-    public String getPlanDefinitionTitle() {
-        return planDefinitionTitle;
-    }
-
-    public void setPlanDefinitionTitle(String planDefinitionTitle) {
-        this.planDefinitionTitle = planDefinitionTitle;
     }
 }

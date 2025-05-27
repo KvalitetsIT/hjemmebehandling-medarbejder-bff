@@ -1,70 +1,60 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-public class PatientDetails {
-    private String patientPrimaryPhone;
-    private String patientSecondaryPhone;
-    private String primaryRelativeName;
-    private String primaryRelativeAffiliation;
-    private String primaryRelativePrimaryPhone;
-    private String primaryRelativeSecondaryPhone;
-
-    @Override
-    public String toString() {
-        return "PatientDetails{" +
-                "patientPrimaryPhone='" + patientPrimaryPhone + '\'' +
-                ", patientSecondaryPhone='" + patientSecondaryPhone + '\'' +
-                ", primaryRelativeName='" + primaryRelativeName + '\'' +
-                ", primaryRelativeAffiliation='" + primaryRelativeAffiliation + '\'' +
-                ", primaryRelativePrimaryPhone='" + primaryRelativePrimaryPhone + '\'' +
-                ", primaryRelativeSecondaryPhone='" + primaryRelativeSecondaryPhone + '\'' +
-                '}';
+public record PatientDetails(
+        String patientPrimaryPhone,
+        String patientSecondaryPhone,
+        String primaryRelativeName,
+        String primaryRelativeAffiliation,
+        String primaryRelativePrimaryPhone,
+        String primaryRelativeSecondaryPhone
+) {
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public String getPatientPrimaryPhone() {
-        return patientPrimaryPhone;
-    }
+    public static class Builder {
+        private String patientPrimaryPhone;
+        private String patientSecondaryPhone;
+        private String primaryRelativeName;
+        private String primaryRelativeAffiliation;
+        private String primaryRelativePrimaryPhone;
+        private String primaryRelativeSecondaryPhone;
 
-    public void setPatientPrimaryPhone(String patientPrimaryPhone) {
-        this.patientPrimaryPhone = patientPrimaryPhone;
-    }
+        public Builder patientPrimaryPhone(String patientPrimaryPhone) {
+            this.patientPrimaryPhone = patientPrimaryPhone;
+            return this;
+        }
 
-    public String getPatientSecondaryPhone() {
-        return patientSecondaryPhone;
-    }
+        public Builder patientSecondaryPhone(String patientSecondaryPhone) {
+            this.patientSecondaryPhone = patientSecondaryPhone;
+            return this;
+        }
 
-    public void setPatientSecondaryPhone(String patientSecondaryPhone) {
-        this.patientSecondaryPhone = patientSecondaryPhone;
-    }
+        public Builder primaryRelativeName(String primaryRelativeName) {
+            this.primaryRelativeName = primaryRelativeName;
+            return this;
+        }
 
-    public String getPrimaryRelativeName() {
-        return primaryRelativeName;
-    }
+        public Builder primaryRelativeAffiliation(String primaryRelativeAffiliation) {
+            this.primaryRelativeAffiliation = primaryRelativeAffiliation;
+            return this;
+        }
 
-    public void setPrimaryRelativeName(String primaryRelativeName) {
-        this.primaryRelativeName = primaryRelativeName;
-    }
+        public Builder primaryRelativePrimaryPhone(String primaryRelativePrimaryPhone) {
+            this.primaryRelativePrimaryPhone = primaryRelativePrimaryPhone;
+            return this;
+        }
 
-    public String getPrimaryRelativeAffiliation() {
-        return primaryRelativeAffiliation;
-    }
+        public Builder primaryRelativeSecondaryPhone(String primaryRelativeSecondaryPhone) {
+            this.primaryRelativeSecondaryPhone = primaryRelativeSecondaryPhone;
+            return this;
+        }
 
-    public void setPrimaryRelativeAffiliation(String primaryRelativeAffiliation) {
-        this.primaryRelativeAffiliation = primaryRelativeAffiliation;
-    }
-
-    public String getPrimaryRelativePrimaryPhone() {
-        return primaryRelativePrimaryPhone;
-    }
-
-    public void setPrimaryRelativePrimaryPhone(String primaryRelativePrimaryPhone) {
-        this.primaryRelativePrimaryPhone = primaryRelativePrimaryPhone;
-    }
-
-    public String getPrimaryRelativeSecondaryPhone() {
-        return primaryRelativeSecondaryPhone;
-    }
-
-    public void setPrimaryRelativeSecondaryPhone(String primaryRelativeSecondaryPhone) {
-        this.primaryRelativeSecondaryPhone = primaryRelativeSecondaryPhone;
+        public PatientDetails build() {
+            return new PatientDetails(
+                    patientPrimaryPhone, patientSecondaryPhone, primaryRelativeName,
+                    primaryRelativeAffiliation, primaryRelativePrimaryPhone, primaryRelativeSecondaryPhone
+            );
+        }
     }
 }

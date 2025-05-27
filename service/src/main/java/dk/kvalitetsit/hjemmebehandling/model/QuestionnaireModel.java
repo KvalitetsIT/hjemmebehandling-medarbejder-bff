@@ -1,74 +1,129 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import org.hl7.fhir.r4.model.Base;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class QuestionnaireModel extends BaseModel {
-    private String title;
-    private String description;
-    private QuestionnaireStatus status;
-    private List<QuestionModel> questions;
-    private QuestionModel callToAction;
-    private String version;
-    private Date lastUpdated;
+public record QuestionnaireModel(
+        QualifiedId.QuestionnaireId id,
+        QualifiedId.OrganizationId organizationId,
+        String title,
+        String description,
+        Status status,
+        List<QuestionModel> questions,
+        QuestionModel callToAction,
+        String version,
+        Date lastUpdated
+) implements BaseModel<QuestionnaireModel> {
 
-    public String getTitle() {
-        return title;
+    public QuestionnaireModel {
+        // Ensure lists are never null
+        questions = questions != null ? questions : List.of();
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public String getDescription() {
-        return description;
+    @Override
+    public QualifiedId.OrganizationId organizationId() {
+        return this.organizationId;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public QuestionnaireModel substitute(QuestionnaireModel other) {
+        return null;
     }
 
-    public QuestionnaireStatus getStatus() {
-        return status;
-    }
 
-    public void setStatus(QuestionnaireStatus status) {
-        this.status = status;
-    }
+    public static class Builder {
+        private QualifiedId.QuestionnaireId id;
+        private String title;
+        private String description;
+        private Status status;
+        private List<QuestionModel> questions = new ArrayList<>();
+        private QuestionModel callToAction;
+        private String version;
+        private Date lastUpdated;
 
-    public List<QuestionModel> getQuestions() {
-        return questions;
-    }
+        public static Builder from(QuestionnaireModel questionnaire) {
+            return new Builder(
+                    questionnaire.id,
+                    questionnaire.title,
+                    questionnaire.description,
+                    questionnaire.status,
+                    questionnaire.questions,
+                    questionnaire.callToAction,
+                    questionnaire.version,
+                    questionnaire.lastUpdated
+            );
+        }
 
-    public void setQuestions(List<QuestionModel> questions) {
-        this.questions = questions;
-    }
+        public void organizationId(QualifiedId.OrganizationId organizationId) {
+            this.organizationId = organizationId;
+        }
 
-    public void setVersion(String version) {
-        this.version = version;
-    }
+        private QualifiedId.OrganizationId organizationId;
 
-    public String getVersion() {
-        return version;
-    }
+        public Builder(QualifiedId.QuestionnaireId id, String title, String description, Status status, List<QuestionModel> questions, QuestionModel callToAction, String version, Date lastUpdated) {
+            this.id = id;
+            this.title = title;
+            this.description = description;
+            this.status = status;
+            this.questions = questions;
+            this.callToAction = callToAction;
+            this.version = version;
+            this.lastUpdated = lastUpdated;
+        }
 
-    public QuestionModel getCallToAction() {
-        return callToAction;
-    }
+        public Builder() {
+        }
 
-    public void setCallToAction(QuestionModel callToAction) {
-        this.callToAction = callToAction;
-    }
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
 
-    public void setLastUpdated(Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
-    }
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
 
-    public Date getLastUpdated() {
-        return lastUpdated;
+        public Builder status(Status status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder questions(List<QuestionModel> questions) {
+            this.questions = questions != null ? new ArrayList<>(questions) : new ArrayList<>();
+            return this;
+        }
+
+        public Builder callToAction(QuestionModel callToAction) {
+            this.callToAction = callToAction;
+            return this;
+        }
+
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        public Builder lastUpdated(Date lastUpdated) {
+            this.lastUpdated = lastUpdated;
+            return this;
+        }
+
+
+        public Builder id(QualifiedId.QuestionnaireId id) {
+            this.id = id;
+            return this;
+        }
+
+        public QuestionnaireModel build() {
+            return new QuestionnaireModel(id, organizationId, title, description, status, questions, callToAction, version, lastUpdated);
+        }
     }
 }

@@ -1,142 +1,171 @@
 package dk.kvalitetsit.hjemmebehandling.fhir;
 
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.api.question.Option;
-import dk.kvalitetsit.hjemmebehandling.constants.EnableWhenOperator;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.model.constants.*;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.types.Weekday;
+import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.*;
-
 import org.hl7.fhir.r4.model.Enumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionType;
-import dk.kvalitetsit.hjemmebehandling.constants.Systems;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.types.Weekday;
-import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class FhirMapper {
     @Autowired
     private DateProvider dateProvider;
 
+    @SafeVarargs
+    static <E> List<E> listOfNullables(E... elements) {
+        ArrayList<E> out = new ArrayList<E>();
+
+        Arrays.stream(elements).forEach(e -> {
+            if (e != null) {
+                out.add(e);
+            }
+        });
+        return out.stream().toList();
+    }
+
+    public Enumerations.PublicationStatus mapStatus(Status status) {
+        return switch (status) {
+            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
+            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
+            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
+        };
+    }
+
+    public PatientModel mapPatient(Patient patient) {
+        throw new NotImplementedException();
+    }
+
+    public CarePlanModel mapCarePlan(CarePlan carePlan) {
+        throw new NotImplementedException();
+    }
+
+    public Practitioner mapPractitionerModel(PractitionerModel practitioner) {
+        throw new NotImplementedException();
+    }
+
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition) {
+        throw new NotImplementedException();
+    }
+
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse) {
+        throw new NotImplementedException();
+    }
+
+    public CarePlan.CarePlanStatus mapCarePlanStatus(CarePlanStatus carePlanStatus) {
+        return switch (carePlanStatus) {
+            case ACTIVE -> CarePlan.CarePlanStatus.ACTIVE;
+            case COMPLETED -> CarePlan.CarePlanStatus.COMPLETED;
+        };
+    }
+
     public CarePlan mapCarePlanModel(CarePlanModel carePlanModel) {
         CarePlan carePlan = new CarePlan();
 
         mapBaseAttributesToFhir(carePlan, carePlanModel);
 
-        carePlan.setTitle(carePlanModel.getTitle());
-        carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.getStatus().toString()));
-        carePlan.setCreated(Date.from(carePlanModel.getCreated()));
-        if(carePlanModel.getStartDate() != null) {
+        carePlan.setTitle(carePlanModel.title());
+        carePlan.setStatus(Enum.valueOf(CarePlan.CarePlanStatus.class, carePlanModel.status().toString()));
+        carePlan.setCreated(Date.from(carePlanModel.created()));
+
+        Optional.ofNullable(carePlanModel.startDate()).ifPresent(s -> {
             carePlan.setPeriod(new Period());
-            carePlan.getPeriod().setStart(Date.from(carePlanModel.getStartDate()));
-        }
-        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.getSatisfiedUntil()));
+            carePlan.getPeriod().setStart(Date.from(s));
+        });
+
+        carePlan.addExtension(ExtensionMapper.mapCarePlanSatisfiedUntil(carePlanModel.satisfiedUntil()));
 
         // Set the subject
-        if(carePlanModel.getPatient().getId() != null) {
-            carePlan.setSubject(new Reference(carePlanModel.getPatient().getId().toString()));
-        }
+        Optional.ofNullable(carePlanModel.patient().id()).ifPresent(id -> carePlan.setSubject(new Reference(id.toString())));
 
         // Map questionnaires to activities
-        if(carePlanModel.getQuestionnaires() != null) {
-            carePlan.setActivity(carePlanModel.getQuestionnaires()
-                    .stream()
+        Optional.ofNullable(carePlanModel.questionnaires()).ifPresent(questionnaires -> {
+            carePlan.setActivity(questionnaires.stream()
                     .map(this::buildCarePlanActivity)
-                    .collect(Collectors.toList()));
-        }
+                    .toList());
+        });
 
-        if(carePlanModel.getPlanDefinitions() != null) {
+
+        Optional.ofNullable(carePlanModel.planDefinitions()).ifPresent(planDefinitions -> {
             // Add references to planDefinitions
-            carePlan.setInstantiatesCanonical(carePlanModel.getPlanDefinitions()
+            carePlan.setInstantiatesCanonical(planDefinitions
                     .stream()
-                    .map(pd -> new CanonicalType(pd.getId().toString()))
-                    .collect(Collectors.toList()));
-        }
+                    .map(pd -> new CanonicalType(pd.id().toString()))
+                    .toList());
+        });
 
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan, FhirLookupResult lookupResult, String organisationId)  {
-        CarePlanModel carePlanModel = new CarePlanModel();
+    public CarePlanModel mapCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, List<PlanDefinition> planDefinitions, Organization organization, String organisationId, PatientModel patient, List<PlanDefinitionModel> planDefinitionModels) {
+        var id = carePlan.getId();
 
-        mapBaseAttributesToModel(carePlanModel, carePlan);
-
-        carePlanModel.setTitle(carePlan.getTitle());
-        carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlan.getStatus().toString()));
-        carePlanModel.setCreated(carePlan.getCreated().toInstant());
-        carePlanModel.setStartDate(carePlan.getPeriod().getStart().toInstant());
-        if(carePlan.getPeriod().getEnd() != null) {
-            carePlanModel.setEndDate(carePlan.getPeriod().getEnd().toInstant());
-        }
-
-
-        String patientId = carePlan.getSubject().getReference();
-        Patient patient = lookupResult.getPatient(patientId).orElseThrow(() -> new IllegalStateException(String.format("Could not look up Patient for CarePlan %s!", carePlanModel.getId())));
-        carePlanModel.setPatient(mapPatient(patient, organisationId));
-
-        carePlanModel.setPlanDefinitions(new ArrayList<>());
-        for(var ic : carePlan.getInstantiatesCanonical()) {
-            var planDefinition = lookupResult
-                .getPlanDefinition(ic.getValue())
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up PlanDefinition for CarePlan %s!", carePlanModel.getId())));
-            carePlanModel.getPlanDefinitions().add(mapPlanDefinition(planDefinition, lookupResult));
-        }
-
-        carePlanModel.setQuestionnaires(new ArrayList<>());
-        for(var activity : carePlan.getActivity()) {
-            String questionnaireId = activity.getDetail().getInstantiatesCanonical().get(0).getValue();
-            var questionnaire = lookupResult
-                    .getQuestionnaire(questionnaireId)
-                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire for CarePlan %s!", carePlanModel.getId())));
+        var wrapper = carePlan.getActivity().stream().map(activity -> {
+            String questionnaireId = activity.getDetail().getInstantiatesCanonical().getFirst().getValue();
+            var questionnaire = questionnaires
+                    .stream()
+                    .filter(x -> x.getIdElement().toUnqualifiedVersionless().getValue().equals(questionnaireId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire for CarePlan %s!", id)));
 
             var questionnaireModel = mapQuestionnaire(questionnaire);
-            var frequencyModel = mapTiming(activity.getDetail().getScheduledTiming());
+            var frequencyModel = mapTiming(activity.getDetail().getScheduledTiming()).orElse(null);
 
-            var wrapper = new QuestionnaireWrapperModel();
-            wrapper.setQuestionnaire(questionnaireModel);
-            wrapper.setFrequency(frequencyModel);
-            wrapper.setSatisfiedUntil(ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()));
 
             // get thresholds from questionnaire
-            List<ThresholdModel> questionnaireThresholds = ExtensionMapper.extractThresholds(
-                questionnaire.getItem().stream()
-                    .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
-                    .collect(Collectors.toList())
+            List<ThresholdModel> thresholds = ExtensionMapper.extractThresholds(
+                    questionnaire.getItem().stream()
+                            .flatMap(q -> q.getExtensionsByUrl(Systems.THRESHOLD).stream())
+                            .toList()
             );
-            wrapper.getThresholds().addAll(questionnaireThresholds);
 
-            // find thresholds from plandefinition
-            Optional<List<ThresholdModel>> thresholds = carePlanModel.getPlanDefinitions().stream()
-                .flatMap(p -> p.getQuestionnaires().stream())
-                .filter(q -> q.getQuestionnaire().getId().equals(questionnaireModel.getId()))
-                .findFirst()
-                .map(QuestionnaireWrapperModel::getThresholds);
-            thresholds.ifPresent(thresholdModels -> wrapper.getThresholds().addAll(thresholdModels));
+            List<PlanDefinitionModel> models = planDefinitions.stream()
+                    .map(x -> this.mapPlanDefinition(x, questionnaire, organization))
+                    .toList();
 
-            carePlanModel.getQuestionnaires().add(wrapper);
-        }
+            thresholds.addAll(models.stream()
+                    .flatMap(p -> p.questionnaires().stream())
+                    .filter(q -> q.questionnaire().id().equals(questionnaireModel.id()))
+                    .findFirst()
+                    .map(QuestionnaireWrapperModel::thresholds).orElse(List.of()));
+
+            return new QuestionnaireWrapperModel(
+                    questionnaireModel,
+                    frequencyModel,
+                    ExtensionMapper.extractActivitySatisfiedUntil(activity.getDetail().getExtension()),
+                    thresholds
+            );
+        }).toList();
+
+        QualifiedId.OrganizationId organizationId = ExtensionMapper.extractOrganizationId(carePlan.getExtension());
 
 
-        carePlanModel.setSatisfiedUntil(ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension()));
+        CarePlanStatus carePlanStatus = Enum.valueOf(CarePlanStatus.class, carePlan.getStatus().toString());
 
-        String organizationId = ExtensionMapper.extractOrganizationId(carePlan.getExtension());
-        Organization organization = lookupResult.getOrganization(organizationId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Organization with id %s was not present when trying to map careplan %s!", organizationId, carePlan.getId())));
-        carePlanModel.setDepartmentName(organization.getName());
 
-        return carePlanModel;
+        return new CarePlanModel(
+                new QualifiedId.CarePlanId(carePlan.getId()),
+                organizationId,
+                carePlan.getTitle(),
+                carePlanStatus,
+                carePlan.getCreated().toInstant(),
+                carePlan.getPeriod().getStart().toInstant(),
+                Optional.ofNullable(carePlan.getPeriod().getEnd()).map(Date::toInstant).orElse(null),
+                patient,
+                wrapper,
+                planDefinitionModels,
+                organization.getName(),
+                ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension())
+        );
     }
 
     public Timing mapFrequencyModel(FrequencyModel frequencyModel) {
@@ -145,8 +174,8 @@ public class FhirMapper {
         Timing.TimingRepeatComponent repeat = new Timing.TimingRepeatComponent();
 
         EnumFactory<Timing.DayOfWeek> factory = new Timing.DayOfWeekEnumFactory();
-        repeat.setDayOfWeek(frequencyModel.getWeekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).collect(Collectors.toList()));
-        repeat.setTimeOfDay(List.of(new TimeType(frequencyModel.getTimeOfDay().toString())));
+        repeat.setDayOfWeek(frequencyModel.weekdays().stream().map(w -> new Enumeration<>(factory, w.toString().toLowerCase())).toList());
+        repeat.setTimeOfDay(List.of(new TimeType(frequencyModel.timeOfDay().toString())));
         timing.setRepeat(repeat);
 
         return timing;
@@ -156,60 +185,60 @@ public class FhirMapper {
         Patient patient = new Patient();
 
         // Id may be null, in case we are creating the patient.
-        if(patientModel.getId() != null) {
-            patient.setId(patientModel.getId().toString());
+        if (patientModel.id() != null) {
+            patient.setId(patientModel.id().toString());
         }
 
-        var name = buildName(patientModel.getGivenName(), patientModel.getFamilyName());
+        var name = buildName(patientModel.name().given().getFirst(), patientModel.name().family());
         patient.addName(name);
 
-        patient.getIdentifier().add(makeCprIdentifier(patientModel.getCpr()));
-        
-        patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.getCustomUserId()));
-        patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.getCustomUserName()));
+        patient.getIdentifier().add(makeCprIdentifier(patientModel.cpr().toString()));
 
-        if(patientModel.getContactDetails() != null) {
-            var contactDetails = patientModel.getContactDetails();
+        patient.addExtension(ExtensionMapper.mapCustomUserId(patientModel.customUserId()));
+        patient.addExtension(ExtensionMapper.mapCustomUserName(patientModel.customUserName()));
+
+        if (patientModel.contactDetails() != null) {
+            var contactDetails = patientModel.contactDetails();
 
             var address = buildAddress(contactDetails);
             patient.addAddress(address);
 
-            if(contactDetails.getPrimaryPhone() != null) {
-                var primaryContactPoint = buildContactPoint(contactDetails.getPrimaryPhone(), 1);
+            if (contactDetails.primaryPhone() != null) {
+                var primaryContactPoint = buildContactPoint(contactDetails.primaryPhone(), 1);
                 patient.addTelecom(primaryContactPoint);
             }
 
-            if(contactDetails.getSecondaryPhone() != null) {
-                var secondaryContactPoint = buildContactPoint(contactDetails.getSecondaryPhone(), 2);
+            if (contactDetails.secondaryPhone() != null) {
+                var secondaryContactPoint = buildContactPoint(contactDetails.secondaryPhone(), 2);
                 patient.addTelecom(secondaryContactPoint);
             }
         }
 
-        if(patientModel.getPrimaryContact().getName() != null) {
+        if (patientModel.primaryContact().name() != null) {
             var contact = new Patient.ContactComponent();
 
-            var contactName = buildName(patientModel.getPrimaryContact().getName());
+            var contactName = buildName(patientModel.primaryContact().name());
             contact.setName(contactName);
             var organisation = new Reference();
-            organisation.setReference(patientModel.getPrimaryContact().getOrganisation());
+            organisation.setReference(patientModel.primaryContact().organisation().unqualified());
             contact.setOrganization(organisation);
 
-            if(patientModel.getPrimaryContact().getAffiliation() != null) {
+            if (patientModel.primaryContact().affiliation() != null) {
 
                 var codeableConcept = new CodeableConcept();
-                codeableConcept.setText(patientModel.getPrimaryContact().getAffiliation());
+                codeableConcept.setText(patientModel.primaryContact().affiliation());
                 contact.setRelationship(List.of(codeableConcept));
             }
 
-            if(patientModel.getPrimaryContact().getContactDetails() != null) {
-                var primaryRelativeContactDetails = patientModel.getPrimaryContact().getContactDetails();
-                if(primaryRelativeContactDetails.getPrimaryPhone() != null) {
-                    var relativePrimaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getPrimaryPhone(), 1);
+            if (patientModel.primaryContact().contactDetails() != null) {
+                var primaryRelativeContactDetails = patientModel.primaryContact().contactDetails();
+                if (primaryRelativeContactDetails.primaryPhone() != null) {
+                    var relativePrimaryContactPoint = buildContactPoint(primaryRelativeContactDetails.primaryPhone(), 1);
                     contact.addTelecom(relativePrimaryContactPoint);
                 }
 
-                if(primaryRelativeContactDetails.getSecondaryPhone() != null) {
-                    var relativeSecondaryContactPoint = buildContactPoint(primaryRelativeContactDetails.getSecondaryPhone(), 2);
+                if (primaryRelativeContactDetails.secondaryPhone() != null) {
+                    var relativeSecondaryContactPoint = buildContactPoint(primaryRelativeContactDetails.secondaryPhone(), 2);
                     contact.addTelecom(relativeSecondaryContactPoint);
                 }
             }
@@ -220,71 +249,64 @@ public class FhirMapper {
         return patient;
     }
 
-    public PatientModel mapPatient(Patient patient, String organizationId) {
-        PatientModel patientModel = new PatientModel();
+    public PatientModel mapPatient(Patient patient, @NotNull String organizationId) {
 
-        patientModel.setId(extractId(patient));
-        patientModel.setCustomUserId(ExtensionMapper.extractCustomUserId(patient.getExtension()));
-        patientModel.setCustomUserName(ExtensionMapper.extractCustomUserName(patient.getExtension()));
-        patientModel.setGivenName(extractGivenNames(patient));
-        patientModel.setFamilyName(extractFamilyName(patient));
-        patientModel.setCpr(extractCpr(patient));
-        patientModel.setContactDetails(extractPatientContactDetails(patient));
+        Optional.ofNullable(organizationId).orElseThrow(() -> new IllegalStateException("Mapping contact is only possible while the organization id is known"));
 
-        if(patient.getContact() != null && !patient.getContact().isEmpty()) {
-
-            if(organizationId == null) throw new IllegalStateException("Mapping contact is only possible while the organization id is known");
-
-            var optionalContact = patient.getContact().stream()
+        var primaryContact = Optional.ofNullable(patient.getContact()).flatMap(contacts -> {
+            var optionalContact = contacts.stream()
                     .filter(c -> c.getOrganization().getReference().equals(organizationId))
                     .findFirst();
 
-            if (optionalContact.isPresent()){
-                var contact = optionalContact.get();
-                patientModel.getPrimaryContact().setName(contact.getName().getText());
-                patientModel.getPrimaryContact().setOrganisation(contact.getOrganization().getReference());
-                patientModel.getPrimaryContact().setAffiliation( contact.getRelationshipFirstRep().getText() );
-
+            return optionalContact.map(contact -> {
                 // Extract phone numbers
-                if(contact.getTelecom() != null && !contact.getTelecom().isEmpty()) {
-                    var primaryRelativeContactDetails = new ContactDetailsModel();
+                var primaryRelativeContactDetails = ContactDetailsModel.builder();
 
-                    for(var telecom : contact.getTelecom()) {
-                        if(telecom.getRank() == 1) {
-                            primaryRelativeContactDetails.setPrimaryPhone(telecom.getValue());
+                Optional.ofNullable(contact.getTelecom()).ifPresent(telecoms -> {
+                    telecoms.forEach(telecom -> {
+                        if (telecom.getRank() == 1) {
+                            primaryRelativeContactDetails.primaryPhone(telecom.getValue());
                         }
-                        if(telecom.getRank() == 2) {
-                            primaryRelativeContactDetails.setSecondaryPhone(telecom.getValue());
+                        if (telecom.getRank() == 2) {
+                            primaryRelativeContactDetails.secondaryPhone(telecom.getValue());
                         }
-                    }
+                    });
+                });
 
-                    patientModel.getPrimaryContact().setContactDetails(primaryRelativeContactDetails);
-                }
 
-            }
-        }
+                return new PrimaryContactModel(
+                        primaryRelativeContactDetails.build(),
+                        contact.getName().getText(),
+                        contact.getRelationshipFirstRep().getText(),
+                        new QualifiedId.OrganizationId(contact.getOrganization().getReference())
+                );
+            });
+        }).orElse(null);
 
-        return patientModel;
+        return PatientModel.builder()
+                .id(new QualifiedId.PatientId(patient.getId()))
+                .customUserId(ExtensionMapper.extractCustomUserId(patient.getExtension()))
+                .customUserName(ExtensionMapper.extractCustomUserName(patient.getExtension()))
+                .name(new PersonNameModel(extractFamilyName(patient), List.of(Objects.requireNonNull(extractGivenNames(patient)))))
+                .cpr(extractCpr(patient))
+                .contactDetails(extractPatientContactDetails(patient))
+                .primaryContact(primaryContact)
+                .build();
+
     }
 
-    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, FhirLookupResult lookupResult) {
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
+    public PlanDefinitionModel mapPlanDefinition(PlanDefinition planDefinition, Questionnaire questionnaire, Organization organization) {
+        return new PlanDefinitionModel(
+                new QualifiedId.PlanDefinitionId(planDefinition.getId()),
+                ExtensionMapper.extractOrganizationId(planDefinition.getExtension()),
+                planDefinition.getName(),
+                planDefinition.getTitle(),
+                Enum.valueOf(Status.class, planDefinition.getStatus().toString()),
+                Optional.ofNullable(planDefinition.getDate()).map(Date::toInstant).orElse(null),
+                Optional.ofNullable(planDefinition.getMeta().getLastUpdated()).map(Date::toInstant).orElse(null),
+                planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, questionnaire, organization)).toList()
 
-        mapBaseAttributesToModel(planDefinitionModel, planDefinition);
-
-        planDefinitionModel.setName(planDefinition.getName());
-        planDefinitionModel.setTitle(planDefinition.getTitle());
-        planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinition.getStatus().toString()));
-        if(planDefinition.getDate() != null)
-            planDefinitionModel.setCreated(planDefinition.getDate().toInstant());
-
-        if(planDefinition.getMeta().getLastUpdated() != null)
-            planDefinitionModel.setLastUpdated(planDefinition.getMeta().getLastUpdated().toInstant());
-
-        // Map actions to questionnaires, along with their thresholds
-        planDefinitionModel.setQuestionnaires(planDefinition.getAction().stream().map(a -> mapPlanDefinitionAction(a, lookupResult)).collect(Collectors.toList()));
-
-        return planDefinitionModel;
+        );
     }
 
     public Questionnaire mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
@@ -292,104 +314,78 @@ public class FhirMapper {
 
         mapBaseAttributesToFhir(questionnaire, questionnaireModel);
 
-        questionnaire.setTitle(questionnaireModel.getTitle());
-        questionnaire.setStatus( mapQuestionnaireStatus(questionnaireModel.getStatus()) );
-        questionnaire.getItem().addAll(questionnaireModel.getQuestions().stream()
-            .map(this::mapQuestionnaireItem)
-            .collect(Collectors.toList()));
-        if (questionnaireModel.getCallToAction() != null) {
-            questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.getCallToAction()));
+        questionnaire.setTitle(questionnaireModel.title());
+        questionnaire.setStatus(mapQuestionnaireStatus(questionnaireModel.status()));
+        questionnaire.getItem().addAll(questionnaireModel.questions().stream()
+                .map(this::mapQuestionnaireItem)
+                .toList());
+        if (questionnaireModel.callToAction() != null) {
+            questionnaire.getItem().add(mapQuestionnaireCallToActions(questionnaireModel.callToAction()));
         }
-        questionnaire.setVersion(questionnaireModel.getVersion());
+        questionnaire.setVersion(questionnaireModel.version());
 
         return questionnaire;
     }
 
-
-
     public QuestionnaireModel mapQuestionnaire(Questionnaire questionnaire) {
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        mapBaseAttributesToModel(questionnaireModel, questionnaire);
-        questionnaireModel.setLastUpdated(questionnaire.getMeta().getLastUpdated());
-        questionnaireModel.setTitle(questionnaire.getTitle());
-        questionnaireModel.setStatus( mapQuestionnaireStatus(questionnaire.getStatus()) );
-        questionnaireModel.setQuestions(questionnaire.getItem().stream()
-            .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
-            .map(this::mapQuestionnaireItem).collect(Collectors.toList()));
-        questionnaireModel.setCallToAction(questionnaire.getItem().stream()
+        List<QuestionModel> questions = questionnaire.getItem().stream()
+                .filter(q -> !q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // filter out call-to-action's
+                .map(this::mapQuestionnaireItem).toList();
+
+        QuestionModel callToActions = questionnaire.getItem().stream()
                 .filter(q -> q.getLinkId().equals(Systems.CALL_TO_ACTION_LINK_ID)) // process call-to-action's
                 .findFirst()
                 .map(this::mapQuestionnaireItem)
-                .orElse(null));
-        questionnaireModel.setVersion(questionnaire.getVersion());
-        return questionnaireModel;
+                .orElse(null);
+
+        return new QuestionnaireModel(
+                new QualifiedId.QuestionnaireId(questionnaire.getId()),
+                ExtensionMapper.extractOrganizationId(questionnaire.getExtension()),
+                questionnaire.getTitle(),
+                null,
+                mapQuestionnaireStatus(questionnaire.getStatus()),
+                questions,
+                callToActions,
+                questionnaire.getVersion(),
+                questionnaire.getMeta().getLastUpdated()
+        );
     }
 
-    private Enumerations.PublicationStatus mapQuestionnaireStatus(QuestionnaireStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return Enumerations.PublicationStatus.ACTIVE;
-            case DRAFT:
-                return Enumerations.PublicationStatus.DRAFT;
-            case RETIRED:
-                return Enumerations.PublicationStatus.RETIRED;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireStatus %s", status.toString()));
-        }
-    }
-
-    private QuestionnaireStatus mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return QuestionnaireStatus.ACTIVE;
-            case DRAFT:
-                return QuestionnaireStatus.DRAFT;
-            case RETIRED:
-                return QuestionnaireStatus.RETIRED;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status.toString()));
-        }
-    }
 
     public QuestionnaireResponse mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
-        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse();
+        QuestionnaireResponse questionnaireResponse = new QuestionnaireResponse()
+                .setQuestionnaire(questionnaireResponseModel.questionnaireId().toString())
+                .setBasedOn(List.of(new Reference(questionnaireResponseModel.carePlanId().toString())))
+                .setAuthor(new Reference(questionnaireResponseModel.authorId().toString()))
+                .setSource(new Reference(questionnaireResponseModel.sourceId().toString()))
+                .setAuthored(Date.from(questionnaireResponseModel.answered()))
+                .setItem(questionnaireResponseModel.questionAnswerPairs().stream().map(x -> getQuestionnaireResponseItem(x.answer())).toList())
+                .setSubject(new Reference(questionnaireResponseModel.patient().id().toString()));
+
 
         mapBaseAttributesToFhir(questionnaireResponse, questionnaireResponseModel);
 
-        questionnaireResponse.setQuestionnaire(questionnaireResponseModel.getQuestionnaireId().toString());
-        for(var questionAnswerPair : questionnaireResponseModel.getQuestionAnswerPairs()) {
-            questionnaireResponse.getItem().add(getQuestionnaireResponseItem(questionAnswerPair.getAnswer()));
-        }
-        questionnaireResponse.setBasedOn(List.of(new Reference(questionnaireResponseModel.getCarePlanId().toString())));
-        questionnaireResponse.setAuthor(new Reference(questionnaireResponseModel.getAuthorId().toString()));
-        questionnaireResponse.setSource(new Reference(questionnaireResponseModel.getSourceId().toString()));
-        questionnaireResponse.setAuthored(Date.from(questionnaireResponseModel.getAnswered()));
-        questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationStatus(questionnaireResponseModel.getExaminationStatus()));
-        if (questionnaireResponseModel.getExaminationAuthor() != null) {
-            questionnaireResponse.getExtension().add(ExtensionMapper.mapExaminationAuthor(questionnaireResponseModel.getExaminationAuthor()));
-        }
-        questionnaireResponse.getExtension().add(ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.getTriagingCategory()));
-        questionnaireResponse.setSubject(new Reference(questionnaireResponseModel.getPatient().getId().toString()));
+        List<Extension> extensions = listOfNullables(
+                ExtensionMapper.mapExaminationStatus(questionnaireResponseModel.examinationStatus()),
+                ExtensionMapper.mapExaminationAuthor(questionnaireResponseModel.examinationAuthor()),
+                ExtensionMapper.mapTriagingCategory(questionnaireResponseModel.triagingCategory())
+        );
+
+        questionnaireResponse.setExtension(extensions);
 
         return questionnaireResponse;
     }
 
-
-    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
-        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
-
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireResponse.getQuestionnaire())
-                .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireResponse.getQuestionnaire())));
+    public QuestionnaireResponseModel mapQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
+        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, organisationId, null, null, questionnaire, examinationAuthor, patient);
 
         // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
-
-        for(var item : questionnaireResponse.getItem()) {
+        List<QuestionAnswerPairModel> answers = questionnaireResponse.getItem().stream().map(item -> {
             QuestionModel question;
             try {
                 question = getQuestion(questionnaire, item.getLinkId());
-            }   catch (IllegalStateException e) {
+            } catch (IllegalStateException e) {
                 // Corresponding question could not be found in the current/newest questionnaire
                 // ignore
                 // Or use the overloaded version which runs thought historical versions as well
@@ -397,190 +393,104 @@ public class FhirMapper {
                 question = null;
             }
             AnswerModel answer = getAnswer(item);
-            answers.add( new QuestionAnswerPairModel(question, answer));
-        }
+            return new QuestionAnswerPairModel(question, answer);
+        }).toList();
 
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
-
-        return questionnaireResponseModel;
-    }
-    public QuestionnaireResponseModel mapQuestionnaireResponse(
-            QuestionnaireResponse questionnaireResponse,
-            FhirLookupResult lookupResult,
-            List<Questionnaire> historicalQuestionnaires,
-            String organisationId
-    ) {
-        if (historicalQuestionnaires == null) return mapQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
-
-        QuestionnaireResponseModel questionnaireResponseModel = constructQuestionnaireResponse(questionnaireResponse, lookupResult, organisationId);
-
-        // Populate questionAnswerMap
-        List<QuestionAnswerPairModel> answers = new ArrayList<>();
-
-        //Look through all the given questionnaires
-        for(var item : questionnaireResponse.getItem()) {
-            QuestionModel question = null;
-            boolean deprecated = false;
-            int i = 0;
-
-
-            for (Questionnaire q : historicalQuestionnaires) {
-                if (i > 0) deprecated = true;
-                boolean hasNext = i < historicalQuestionnaires.size() - 1;
-                try {
-                    question = getQuestion(q, item.getLinkId());
-                    question.setDeprecated(deprecated);
-                    break;
-                } catch (IllegalStateException e) {
-                    if (!hasNext)
-                        throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
-                }
-                i++;
-            }
-
-            /*for (Questionnaire q : historicalQuestionnaires) {
-                if (i > 0) deprecated = true;
-                boolean hasNext = i < historicalQuestionnaires.size()-1;
-                try {
-                    question = getQuestion(q, item.getLinkId());
-                    question.setDeprecated(deprecated);
-                    break;
-                }catch (IllegalStateException e) {
-                    if (!hasNext) throw new IllegalStateException("Corresponding question could not be found in the given questionnaires");
-                }
-                i++;
-            }*/
-
-            AnswerModel answer = getAnswer(item);
-            answers.add(new QuestionAnswerPairModel(question, answer));
-        }
-        questionnaireResponseModel.setQuestionAnswerPairs(answers);
-        return questionnaireResponseModel;
+        return QuestionnaireResponseModel.Builder
+                .from(questionnaireResponseModel).questionAnswerPairs(answers)
+                .build();
     }
 
 
-
-    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, FhirLookupResult lookupResult, String organisationId) {
-        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
-
-        mapBaseAttributesToModel(questionnaireResponseModel, questionnaireResponse);
-
-        String questionnaireId = questionnaireResponse.getQuestionnaire();
-
-        Questionnaire questionnaire = lookupResult.getQuestionnaire(questionnaireId)
-                .orElseThrow(() -> new IllegalStateException(String.format("No Questionnaire found with id %s!", questionnaireId)));
-        questionnaireResponseModel.setQuestionnaireName(questionnaire.getTitle());
-        questionnaireResponseModel.setQuestionnaireId(extractId(questionnaire));
-
-
-        if(questionnaireResponse.getBasedOn() == null || questionnaireResponse.getBasedOn().size() != 1) {
-            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: Expected exactly one BasedOn-attribute!", questionnaireResponseModel.getId().toString()));
-        }
-        questionnaireResponseModel.setCarePlanId(new QualifiedId(questionnaireResponse.getBasedOn().get(0).getReference()));
-
-        if(questionnaireResponse.getAuthor() == null) {
-            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", questionnaireResponseModel.getId().toString()));
-        }
-        questionnaireResponseModel.setAuthorId(new QualifiedId(questionnaireResponse.getAuthor().getReference()));
-
-        if(questionnaireResponse.getSource() == null) {
-            throw new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", questionnaireResponseModel.getId().toString()));
-        }
-        questionnaireResponseModel.setSourceId(new QualifiedId(questionnaireResponse.getSource().getReference()));
-
-        questionnaireResponseModel.setAnswered(questionnaireResponse.getAuthored().toInstant());
-        questionnaireResponseModel.setExaminationStatus(ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()));
-        questionnaireResponseModel.setTriagingCategory(ExtensionMapper.extractTriagingCategoory(questionnaireResponse.getExtension()));
-
-        String practitionerId = ExtensionMapper.tryExtractExaminationAuthorPractitionerId(questionnaireResponse.getExtension());
-        Optional<Practitioner> practitioner = lookupResult.getPractitioner(practitionerId);
-        practitioner.ifPresent(value -> questionnaireResponseModel.setExaminationAuthor(mapPractitioner(value)));
-
-
-        String patientId = questionnaireResponse.getSubject().getReference();
-        Patient patient = lookupResult.getPatient(patientId)
-                .orElseThrow(() -> new IllegalStateException(String.format("No Patient found with id %s!", patientId)));
-        questionnaireResponseModel.setPatient(mapPatient(patient, organisationId));
-
-        String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
-        CarePlan carePlan = lookupResult.getCarePlan(carePlanId)
-                .orElseThrow(() -> new IllegalStateException(String.format("No CarePlan found with id %s!", carePlanId)));
-
-        // loop careplanens plandefinitions for at finde den der har referencen til questionnaire
-        for (CanonicalType canonicalType : carePlan.getInstantiatesCanonical()) {
-            String planDefinitionId = canonicalType.getValue();
-            PlanDefinition planDefinition = lookupResult.getPlanDefinition(planDefinitionId)
-                    .orElseThrow(() -> new IllegalStateException(String.format("No PlanDefinition found with id %s!", planDefinitionId)));
-
-            boolean found = false;
-            for (PlanDefinition.PlanDefinitionActionComponent planDefinitionActionComponent : planDefinition.getAction()) {
-                if (planDefinitionActionComponent.getDefinitionCanonicalType().equals(questionnaireId)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                questionnaireResponseModel.setPlanDefinitionTitle(planDefinition.getTitle());
-                break;
-            }
-        }
-
-        return questionnaireResponseModel;
+    public Optional<FrequencyModel> mapTiming(Timing timing) {
+        return Optional.ofNullable(timing.getRepeat()).map(repeat -> new FrequencyModel(
+                repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).toList(),
+                !repeat.getTimeOfDay().isEmpty() ? LocalTime.parse(repeat.getTimeOfDay().getFirst().getValue()) : null
+        ));
     }
 
-    public FrequencyModel mapTiming(Timing timing) {
-        FrequencyModel frequencyModel = new FrequencyModel();
 
-        if(timing.getRepeat() != null) {
-            Timing.TimingRepeatComponent repeat = timing.getRepeat();
-            frequencyModel.setWeekdays(repeat.getDayOfWeek().stream().map(d -> Enum.valueOf(Weekday.class, d.getValue().toString())).collect(Collectors.toList()));
-            if(!repeat.getTimeOfDay().isEmpty())
-                frequencyModel.setTimeOfDay(LocalTime.parse(repeat.getTimeOfDay().get(0).getValue()));
+    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
+        PlanDefinition planDefinition = new PlanDefinition()
+                .setTitle(planDefinitionModel.title())
+                .setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.status().toString()));
+
+
+        mapBaseAttributesToFhir(planDefinition, planDefinitionModel);
+
+        // Map questionnaires to actions
+        if (planDefinitionModel.questionnaires() != null) {
+            planDefinition.setAction(planDefinitionModel.questionnaires()
+                    .stream()
+                    .map(this::buildPlanDefinitionAction)
+                    .toList());
         }
 
-        return frequencyModel;
+        return planDefinition;
     }
 
-    private void mapBaseAttributesToModel(BaseModel target, DomainResource source) {
-        target.setId(extractId(source));
-        target.setOrganizationId(ExtensionMapper.extractOrganizationId(source.getExtension()));
+    public CPR extractCpr(Patient patient) {
+        return new CPR(patient.getIdentifier().getFirst().getValue());
     }
+
+    public PractitionerModel mapPractitioner(Practitioner practitioner) {
+        return new PractitionerModel(
+                new QualifiedId.PractitionerId(practitioner.getId()),
+                practitioner.getNameFirstRep().getGivenAsSingleString(),
+                practitioner.getNameFirstRep().getFamily()
+        );
+    }
+
+    public OrganizationModel mapOrganization(@NotNull Organization organization) {
+        return new OrganizationModel(
+                new QualifiedId.OrganizationId(organization.getIdElement().toUnqualifiedVersionless().getValue()),
+                organization.getName(),
+                ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension())
+        );
+    }
+
+
+    public Organization mapOrganization(@NotNull OrganizationModel organization) {
+        throw new  NotImplementedException();
+    }
+
+    public ValueSetModel mapValueSet(ValueSet valueSet) {
+        return new ValueSetModel(extractMeasurementTypes(valueSet));
+    }
+
+    public ValueSet mapValueSet(ValueSetModel valueSet) {
+        throw new  NotImplementedException();
+    }
+
 
     private void mapBaseAttributesToFhir(DomainResource target, BaseModel source) {
         // We may be creating the resource, and in that case, it is perfectly ok for it not to have id and organization id.
-        if(source.getId() != null) {
-            target.setId(source.getId().toString());
-        }
-        if(source.getOrganizationId() != null) {
-            target.addExtension(ExtensionMapper.mapOrganizationId(source.getOrganizationId()));
-        }
-    }
-
-    private QualifiedId extractId(DomainResource resource) {
-        String unqualifiedVersionless = resource.getIdElement().toUnqualifiedVersionless().getValue();
-        if(FhirUtils.isPlainId(unqualifiedVersionless)) {
-            return new QualifiedId(unqualifiedVersionless, resource.getResourceType());
-        }
-        else if (FhirUtils.isQualifiedId(unqualifiedVersionless, resource.getResourceType())) {
-            return new QualifiedId(unqualifiedVersionless);
-        }
-        else {
-            throw new IllegalArgumentException(String.format("Illegal id for resource of type %s: %s!", resource.getResourceType(), unqualifiedVersionless));
-        }
+        Optional.ofNullable(source.id()).ifPresent(id -> target.setId(id.toString()));
+        Optional.ofNullable(source.organizationId()).ifPresent(id -> target.addExtension(ExtensionMapper.mapOrganizationId(source.organizationId().unqualified())));
     }
 
     private Identifier makeCprIdentifier(String cpr) {
-        Identifier identifier = new Identifier();
-
-        identifier.setSystem(Systems.CPR);
-        identifier.setValue(cpr);
-
-        return identifier;
+        return new Identifier()
+                .setSystem(Systems.CPR)
+                .setValue(cpr);
     }
 
-    public String extractCpr(Patient patient) {
-        return patient.getIdentifier().get(0).getValue();
+    private Enumerations.PublicationStatus mapQuestionnaireStatus(Status status) {
+        return switch (status) {
+            case ACTIVE -> Enumerations.PublicationStatus.ACTIVE;
+            case DRAFT -> Enumerations.PublicationStatus.DRAFT;
+            case RETIRED -> Enumerations.PublicationStatus.RETIRED;
+        };
+    }
+
+    private Status mapQuestionnaireStatus(Enumerations.PublicationStatus status) {
+        return switch (status) {
+            case ACTIVE -> Status.ACTIVE;
+            case DRAFT -> Status.DRAFT;
+            case RETIRED -> Status.RETIRED;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.status %s", status));
+        };
     }
 
     private HumanName buildName(String givenName, String familyName) {
@@ -592,72 +502,52 @@ public class FhirMapper {
     }
 
     private HumanName buildName(String givenName, String familyName, String text) {
-        var name = new HumanName();
-
-        name.addGiven(givenName);
-        name.setFamily(familyName);
-        name.setText(text);
-
-        return name;
+        return new HumanName()
+                .addGiven(givenName)
+                .setFamily(familyName)
+                .setText(text);
     }
 
     private Address buildAddress(ContactDetailsModel contactDetailsModel) {
-        var address = new Address();
-
-        address.addLine(contactDetailsModel.getStreet());
-        address.setPostalCode(contactDetailsModel.getPostalCode());
-        address.setCity(contactDetailsModel.getCity());
-
-        return address;
+        return new Address()
+                .addLine(contactDetailsModel.street())
+                .setPostalCode(contactDetailsModel.postalCode())
+                .setCity(contactDetailsModel.city());
     }
 
     private ContactPoint buildContactPoint(String phone, int rank) {
-        var contactPoint = new ContactPoint();
-
-        contactPoint.setSystem(ContactPoint.ContactPointSystem.PHONE);
-        contactPoint.setValue(phone);
-        contactPoint.setRank(rank);
-
-        return contactPoint;
+        return new ContactPoint()
+                .setSystem(ContactPoint.ContactPointSystem.PHONE)
+                .setValue(phone)
+                .setRank(rank);
     }
 
     private String extractFamilyName(Patient patient) {
-        if(patient.getName() == null || patient.getName().isEmpty()) {
+        if (patient.getName() == null || patient.getName().isEmpty()) {
             return null;
         }
-        return patient.getName().get(0).getFamily();
+        return patient.getName().getFirst().getFamily();
     }
 
     private String extractGivenNames(Patient patient) {
-        if(patient.getName() == null || patient.getName().isEmpty()) {
+        if (patient.getName() == null || patient.getName().isEmpty()) {
             return null;
         }
-        return patient.getName().get(0).getGivenAsSingleString();
+        return patient.getName().getFirst().getGivenAsSingleString();
     }
 
     private ContactDetailsModel extractPatientContactDetails(Patient patient) {
-        ContactDetailsModel contactDetails = new ContactDetailsModel();
-
-        var lines = patient.getAddressFirstRep().getLine();
-        if(lines != null && !lines.isEmpty()) {
-            contactDetails.setStreet(lines.stream().map(PrimitiveType::getValue).collect(Collectors.joining(", ")));
-        }
-        contactDetails.setCity(patient.getAddressFirstRep().getCity());
-        contactDetails.setPostalCode(patient.getAddressFirstRep().getPostalCode());
-        contactDetails.setPrimaryPhone(extractPrimaryPhone(patient.getTelecom()));
-        contactDetails.setSecondaryPhone(extractSecondaryPhone(patient.getTelecom()));
-        contactDetails.setCountry(extractCountry(patient));
-
-        return contactDetails;
+        var street = Optional.ofNullable(patient.getAddressFirstRep().getLine()).map(lines -> lines.stream().map(PrimitiveType::getValue).collect(Collectors.joining(", "))).orElse(null);
+        return new ContactDetailsModel(
+                street,
+                patient.getAddressFirstRep().getPostalCode(),
+                patient.getAddressFirstRep().getCountry(),
+                patient.getAddressFirstRep().getCity(),
+                extractPrimaryPhone(patient.getTelecom()),
+                extractSecondaryPhone(patient.getTelecom())
+        );
     }
 
-    private String extractCountry(Patient patient) {
-        var country = patient.getAddressFirstRep().getCountry();
-        if(country == null || country.isEmpty()) {
-            return null;
-        }
-        return country;
-    }
 
     private String extractPrimaryPhone(List<ContactPoint> contactPoints) {
         return extractPhone(contactPoints, 1);
@@ -668,341 +558,283 @@ public class FhirMapper {
     }
 
     private String extractPhone(List<ContactPoint> contactPoints, int rank) {
-        if(contactPoints == null || contactPoints.isEmpty()) {
+        if (contactPoints == null || contactPoints.isEmpty()) {
             return null;
         }
-        for(ContactPoint cp : contactPoints) {
-            if(cp.getSystem().equals(ContactPoint.ContactPointSystem.PHONE) && cp.getRank() == rank) {
+        for (ContactPoint cp : contactPoints) {
+            if (cp.getSystem().equals(ContactPoint.ContactPointSystem.PHONE) && cp.getRank() == rank) {
                 return cp.getValue();
             }
         }
         return null;
     }
 
-    private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
-        var item = getQuestionnaireItem(questionnaire, linkId);
-        if(item == null) {
-            throw new IllegalStateException(String.format("Malformed QuestionnaireResponse: Question for linkId %s not found in Questionnaire %s!", linkId, questionnaire.getId()));
-        }
+    private QuestionModel getQuestion(QuestionnaireModel questionnaire, String linkId) {
+        return getQuestion(mapQuestionnaireModel(questionnaire), linkId);
+    }
 
-        return mapQuestionnaireItem(item);
+
+    private QuestionModel getQuestion(Questionnaire questionnaire, String linkId) {
+        return Optional.ofNullable(getQuestionnaireItem(questionnaire, linkId))
+                .map(this::mapQuestionnaireItem)
+                .orElseThrow(() -> new IllegalStateException(String.format("Malformed QuestionnaireResponse: Question for linkId %s not found in Questionnaire %s!", linkId, questionnaire.getId())));
     }
 
     private Questionnaire.QuestionnaireItemComponent getQuestionnaireItem(Questionnaire questionnaire, String linkId) {
-        for(var item : questionnaire.getItem()) {
-            if(item != null && item.getLinkId() != null && item.getLinkId().equals(linkId)) {
-                return item;
-            }
-        }
-        return null;
+        return questionnaire.getItem().stream()
+                .filter(Objects::nonNull)
+                .filter(item -> linkId.equals(item.getLinkId()))
+                .findFirst()
+                .orElse(null);
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireItem(QuestionModel question) {
         Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
 
-        item.setLinkId(question.getLinkId());
-        item.setText(question.getText());
-        if (question.getAbbreviation() != null) {
-            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.getAbbreviation()));
+        item.setLinkId(question.linkId());
+        item.setText(question.text());
+        if (question.abbreviation() != null) {
+            item.addExtension(ExtensionMapper.mapQuestionAbbreviation(question.abbreviation()));
         }
-        if (question.getThresholds() != null) {
-            item.getExtension().addAll(ExtensionMapper.mapThresholds(question.getThresholds()));
+        if (question.thresholds() != null) {
+            item.getExtension().addAll(ExtensionMapper.mapThresholds(question.thresholds()));
         }
-        if (question.getHelperText() != null) {
-            item.addItem(mapQuestionHelperText(question.getHelperText()));
+        if (question.helperText() != null) {
+            item.addItem(mapQuestionHelperText(question.helperText()));
         }
-        item.setRequired(question.isRequired());
-        if (question.getOptions() != null) {
-            item.setAnswerOption( mapAnswerOptions(question.getOptions()) );
+        item.setRequired(question.required());
+        if (question.options() != null) {
+            item.setAnswerOption(mapAnswerOptions(question.options()));
         }
-        item.setType( mapQuestionType(question.getQuestionType()) );
-        if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
+        item.setType(mapQuestionType(question.questionType()));
+        if (question.enableWhens() != null) {
+            item.setEnableWhen(mapEnableWhens(question.enableWhens()));
         }
 
-        if (question.getMeasurementType() != null ) {
+        if (question.measurementType() != null) {
             item.getCodeFirstRep()
-                    .setCode(question.getMeasurementType().getCode())
-                    .setDisplay(question.getMeasurementType().getDisplay())
-                    .setSystem(question.getMeasurementType().getSystem());
+                    .setCode(question.measurementType().code())
+                    .setDisplay(question.measurementType().display())
+                    .setSystem(question.measurementType().system());
         }
 
         if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
-            question.getSubQuestions().forEach(questionModel -> {
-                item.addItem( this.mapQuestionnaireItem(questionModel) );
+            question.subQuestions().forEach(questionModel -> {
+                item.addItem(this.mapQuestionnaireItem(questionModel));
             });
         }
         return item;
     }
 
     private QuestionModel mapQuestionnaireItem(Questionnaire.QuestionnaireItemComponent item) {
-        QuestionModel question = new QuestionModel();
-
-        question.setLinkId(item.getLinkId());
-        question.setText(item.getText());
-        question.setAbbreviation(ExtensionMapper.extractQuestionAbbreviation(item.getExtension()));
-        question.setHelperText( mapQuestionnaireItemHelperText(item.getItem()));
-        question.setRequired(item.getRequired());
-        if(item.getAnswerOption() != null) {
-            // TODO: The mapping below has to be changed from excluding the "comment" and the "triage"
-            question.setOptions( mapAnswerOptionComponents(item.getAnswerOption()) );
-        }
-        question.setQuestionType( mapQuestionType(item.getType()) );
-        if (item.hasEnableWhen()) {
-            question.setEnableWhens( mapEnableWhenComponents(item.getEnableWhen()) );
-        }
-        if (item.hasCode()) {
-            question.setMeasurementType(mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()));
-        }
-
-        if (item.getType() == Questionnaire.QuestionnaireItemType.GROUP) {
-            question.setSubQuestions( mapQuestionnaireItemGroupQuestions(item.getItem()) );
-        }
-        question.setThresholds(ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)));
-
-        return question;
+        return new QuestionModel(
+                item.getLinkId(),
+                item.getText(),
+                ExtensionMapper.extractQuestionAbbreviation(item.getExtension()),
+                mapQuestionnaireItemHelperText(item.getItem()),
+                item.getRequired(),
+                mapQuestionType(item.getType()),
+                item.hasCode() ? mapCodingConcept(item.getCodeFirstRep().getSystem(), item.getCodeFirstRep().getCode(), item.getCodeFirstRep().getDisplay()) : null,
+                Optional.ofNullable(item.getAnswerOption()).map(this::mapAnswerOptionComponents).orElse(null),
+                item.hasEnableWhen() ? mapEnableWhenComponents(item.getEnableWhen()) : null,
+                ExtensionMapper.extractThresholds(item.getExtensionsByUrl(Systems.THRESHOLD)),
+                item.getType() == Questionnaire.QuestionnaireItemType.GROUP ? mapQuestionnaireItemGroupQuestions(item.getItem()) : null,
+                false
+        );
     }
 
     private List<QuestionModel> mapQuestionnaireItemGroupQuestions(List<Questionnaire.QuestionnaireItemComponent> item) {
         return item.stream()
                 .filter(i -> i.getType() != Questionnaire.QuestionnaireItemType.DISPLAY)
                 .map(this::mapQuestionnaireItem)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String mapQuestionnaireItemHelperText(List<Questionnaire.QuestionnaireItemComponent> item) {
         return item.stream()
-            .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
-            .map(Questionnaire.QuestionnaireItemComponent::getText)
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElse(null)
-            ;
+                .filter(i -> i.getType().equals(Questionnaire.QuestionnaireItemType.DISPLAY))
+                .map(Questionnaire.QuestionnaireItemComponent::getText)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
 
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionHelperText(String text) {
-        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
-        item.setLinkId(IdType.newRandomUuid().getValueAsString())
-            .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
-            .setText(text);
-
-        return item;
+        return new Questionnaire.QuestionnaireItemComponent()
+                .setLinkId(IdType.newRandomUuid().getValueAsString())
+                .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
+                .setText(text);
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToActions(QuestionModel callToAction) {
-        Questionnaire.QuestionnaireItemComponent item = mapQuestionnaireItem(callToAction);
-        item.setType(Questionnaire.QuestionnaireItemType.DISPLAY);
-        item.setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
-
-        return item;
+        return mapQuestionnaireItem(callToAction)
+                .setType(Questionnaire.QuestionnaireItemType.DISPLAY)
+                .setLinkId(Systems.CALL_TO_ACTION_LINK_ID);
     }
 
     private Questionnaire.QuestionnaireItemComponent mapQuestionnaireCallToAction(QuestionModel question) {
-        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent();
+        Questionnaire.QuestionnaireItemComponent item = new Questionnaire.QuestionnaireItemComponent()
+                .setLinkId(question.linkId())
+                .setText(question.text())
+                .setRequired(question.required())
+                .setType(mapQuestionType(question.questionType()));
 
-        item.setLinkId(question.getLinkId());
-        item.setText(question.getText());
-        item.setRequired(question.isRequired());
 //        if (question.getOptions() != null) {
 //             TODO: Fix the line below - it has to include comment and triage
-//            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).collect(Collectors.toList())) );
+//            item.setAnswerOption( mapAnswerOptions(question.getOptions().stream().map(Option::getOption).toList()) );
 //        }
-        item.setType( mapQuestionType(question.getQuestionType()) );
-        if (question.getEnableWhens() != null) {
-            item.setEnableWhen( mapEnableWhens(question.getEnableWhens()) );
-        }
+
+        Optional.ofNullable(question.enableWhens()).ifPresent(x -> item.setEnableWhen(mapEnableWhens(x)));
+
         return item;
     }
 
     private List<Questionnaire.QuestionnaireItemEnableWhenComponent> mapEnableWhens(List<QuestionModel.EnableWhen> enableWhens) {
         return enableWhens
-            .stream()
-            .map(this::mapEnableWhen)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::mapEnableWhen)
+                .toList();
     }
 
     private Questionnaire.QuestionnaireItemEnableWhenComponent mapEnableWhen(QuestionModel.EnableWhen enableWhen) {
-        Questionnaire.QuestionnaireItemEnableWhenComponent enableWhenComponent = new Questionnaire.QuestionnaireItemEnableWhenComponent();
-
-        enableWhenComponent.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
-        enableWhenComponent.setQuestion(enableWhen.getAnswer().getLinkId());
-        enableWhenComponent.setAnswer(getValue(enableWhen.getAnswer()));
-        enableWhenComponent.setOperator(mapEnableWhenOperator(enableWhen.getOperator()));
-
-        return enableWhenComponent;
+        return new Questionnaire.QuestionnaireItemEnableWhenComponent()
+                .setOperator(mapEnableWhenOperator(enableWhen.operator()))
+                .setQuestion(enableWhen.answer().linkId())
+                .setAnswer(getValue(enableWhen.answer()))
+                .setOperator(mapEnableWhenOperator(enableWhen.operator()));
     }
 
     private List<QuestionModel.EnableWhen> mapEnableWhenComponents(List<Questionnaire.QuestionnaireItemEnableWhenComponent> enableWhen) {
         return enableWhen
-            .stream()
-            .map(this::mapEnableWhenComponent)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::mapEnableWhenComponent)
+                .toList();
     }
 
     private QuestionModel.EnableWhen mapEnableWhenComponent(Questionnaire.QuestionnaireItemEnableWhenComponent enableWhen) {
-        QuestionModel.EnableWhen newEnableWhen = new QuestionModel.EnableWhen();
-
-        newEnableWhen.setOperator( mapEnableWhenOperator(enableWhen.getOperator()) );
-        newEnableWhen.setAnswer( mapAnswer(enableWhen.getQuestion(), enableWhen.getAnswer()) );
-
-        return newEnableWhen;
+        return new QuestionModel.EnableWhen(
+                mapAnswer(enableWhen.getQuestion(), enableWhen.getAnswer()),
+                mapEnableWhenOperator(enableWhen.getOperator())
+        );
     }
 
     private AnswerModel mapAnswer(String question, Type answer) {
-        AnswerModel answerModel = new AnswerModel();
-        answerModel.setLinkId(question);
-
-        if (answer instanceof StringType) {
-            answerModel.setAnswerType(AnswerType.STRING);
-            answerModel.setValue( ((StringType)answer).asStringValue() );
-        }
-        else if (answer instanceof BooleanType) {
-            answerModel.setAnswerType(AnswerType.BOOLEAN);
-            answerModel.setValue(((BooleanType) answer).asStringValue() );
-        }
-        else if (answer instanceof Quantity) {
-            answerModel.setAnswerType(AnswerType.QUANTITY);
-            answerModel.setValue(((Quantity) answer).getValueElement().asStringValue() );
-        }
-        else if (answer instanceof IntegerType) {
-            answerModel.setAnswerType(AnswerType.INTEGER);
-            answerModel.setValue(((IntegerType) answer).asStringValue() );
-        }
-        else {
-            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
-        }
-
-        return answerModel;
+        return switch (answer) {
+            case StringType stringType ->
+                    new AnswerModel(question, stringType.asStringValue(), AnswerType.STRING, null);
+            case BooleanType booleanType ->
+                    new AnswerModel(question, booleanType.asStringValue(), AnswerType.BOOLEAN, null);
+            case Quantity quantity ->
+                    new AnswerModel(question, quantity.getValueElement().asStringValue(), AnswerType.QUANTITY, null);
+            case IntegerType integerType ->
+                    new AnswerModel(question, integerType.asStringValue(), AnswerType.INTEGER, null);
+            case null, default ->
+                    throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answer));
+        };
     }
 
     private Questionnaire.QuestionnaireItemOperator mapEnableWhenOperator(EnableWhenOperator operator) {
-        switch (operator) {
-            case EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.EQUAL;
-            case LESS_THAN:
-                return Questionnaire.QuestionnaireItemOperator.LESS_THAN;
-            case LESS_OR_EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.LESS_OR_EQUAL;
-            case GREATER_THAN:
-                return Questionnaire.QuestionnaireItemOperator.GREATER_THAN;
-            case GREATER_OR_EQUAL:
-                return Questionnaire.QuestionnaireItemOperator.GREATER_OR_EQUAL;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.QuestionnaireItemOperator %s", operator.toString()));
-        }
+        return switch (operator) {
+            case EQUAL -> Questionnaire.QuestionnaireItemOperator.EQUAL;
+            case LESS_THAN -> Questionnaire.QuestionnaireItemOperator.LESS_THAN;
+            case LESS_OR_EQUAL -> Questionnaire.QuestionnaireItemOperator.LESS_OR_EQUAL;
+            case GREATER_THAN -> Questionnaire.QuestionnaireItemOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL -> Questionnaire.QuestionnaireItemOperator.GREATER_OR_EQUAL;
+        };
     }
 
     private EnableWhenOperator mapEnableWhenOperator(Questionnaire.QuestionnaireItemOperator operator) {
-        switch (operator) {
-            case EQUAL:
-                return EnableWhenOperator.EQUAL;
-            case LESS_THAN:
-                return EnableWhenOperator.LESS_THAN;
-            case LESS_OR_EQUAL:
-                return EnableWhenOperator.LESS_OR_EQUAL;
-            case GREATER_THAN:
-                return EnableWhenOperator.GREATER_THAN;
-            case GREATER_OR_EQUAL:
-                return EnableWhenOperator.GREATER_OR_EQUAL;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemOperator %s", operator.toString()));
-        }
+        return switch (operator) {
+            case EQUAL -> EnableWhenOperator.EQUAL;
+            case LESS_THAN -> EnableWhenOperator.LESS_THAN;
+            case LESS_OR_EQUAL -> EnableWhenOperator.LESS_OR_EQUAL;
+            case GREATER_THAN -> EnableWhenOperator.GREATER_THAN;
+            case GREATER_OR_EQUAL -> EnableWhenOperator.GREATER_OR_EQUAL;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemOperator %s", operator));
+        };
     }
 
     private List<Questionnaire.QuestionnaireItemAnswerOptionComponent> mapAnswerOptions(List<Option> answerOptions) {
         return answerOptions
-            .stream()
-            .map(oc -> (Questionnaire.QuestionnaireItemAnswerOptionComponent) new Questionnaire.QuestionnaireItemAnswerOptionComponent()
-                    .setValue(new StringType(oc.getOption()))
-                    .addExtension(ExtensionMapper.mapAnswerOptionComment(oc.getComment())))
-            .collect(Collectors.toList());
+                .stream()
+                .map(oc -> (Questionnaire.QuestionnaireItemAnswerOptionComponent) new Questionnaire.QuestionnaireItemAnswerOptionComponent()
+                        .setValue(new StringType(oc.option()))
+                        .addExtension(ExtensionMapper.mapAnswerOptionComment(oc.comment())))
+                .toList();
     }
 
     private List<Option> mapAnswerOptionComponents(List<Questionnaire.QuestionnaireItemAnswerOptionComponent> optionComponents) {
         return optionComponents
                 .stream()
                 .map(oc -> new Option(oc.getValue().primitiveValue(), ExtensionMapper.extractAnswerOptionComment(oc.getExtension())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private QuestionType mapQuestionType(Questionnaire.QuestionnaireItemType type) {
-        switch(type) {
-            case CHOICE:
-                return QuestionType.CHOICE;
-            case INTEGER:
-                return QuestionType.INTEGER;
-            case QUANTITY:
-                return QuestionType.QUANTITY;
-            case STRING:
-                return QuestionType.STRING;
-            case BOOLEAN:
-                return QuestionType.BOOLEAN;
-            case DISPLAY:
-                return QuestionType.DISPLAY;
-            case GROUP:
-                return QuestionType.GROUP;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type.toString()));
-        }
+        return switch (type) {
+            case CHOICE -> QuestionType.CHOICE;
+            case INTEGER -> QuestionType.INTEGER;
+            case QUANTITY -> QuestionType.QUANTITY;
+            case STRING -> QuestionType.STRING;
+            case BOOLEAN -> QuestionType.BOOLEAN;
+            case DISPLAY -> QuestionType.DISPLAY;
+            case GROUP -> QuestionType.GROUP;
+            default ->
+                    throw new IllegalArgumentException(String.format("Don't know how to map QuestionnaireItemType %s", type));
+        };
     }
 
     private Questionnaire.QuestionnaireItemType mapQuestionType(QuestionType type) {
-        switch(type) {
-            case CHOICE:
-                return Questionnaire.QuestionnaireItemType.CHOICE;
-            case INTEGER:
-                return Questionnaire.QuestionnaireItemType.INTEGER;
-            case QUANTITY:
-                return Questionnaire.QuestionnaireItemType.QUANTITY;
-            case STRING:
-                return Questionnaire.QuestionnaireItemType.STRING;
-            case BOOLEAN:
-                return Questionnaire.QuestionnaireItemType.BOOLEAN;
-            case DISPLAY:
-                return Questionnaire.QuestionnaireItemType.DISPLAY;
-            case GROUP:
-                return Questionnaire.QuestionnaireItemType.GROUP;
-            default:
-                throw new IllegalArgumentException(String.format("Don't know how to map Questionnaire.ItemType %s", type.toString()));
-        }
+        return switch (type) {
+            case CHOICE -> Questionnaire.QuestionnaireItemType.CHOICE;
+            case INTEGER -> Questionnaire.QuestionnaireItemType.INTEGER;
+            case QUANTITY -> Questionnaire.QuestionnaireItemType.QUANTITY;
+            case STRING -> Questionnaire.QuestionnaireItemType.STRING;
+            case BOOLEAN -> Questionnaire.QuestionnaireItemType.BOOLEAN;
+            case DISPLAY -> Questionnaire.QuestionnaireItemType.DISPLAY;
+            case GROUP -> Questionnaire.QuestionnaireItemType.GROUP;
+        };
     }
 
     private AnswerModel getAnswer(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
-        AnswerModel answer = new AnswerModel();
-        answer.setLinkId(item.getLinkId());
+        String linkId = item.getLinkId();
+        String value = null;
+        AnswerType answerType;
+        List<AnswerModel> subAnswers = List.of();
 
         boolean emptyAnswer = item.getAnswer().isEmpty();
         boolean hasSubAnswers = !item.getItem().isEmpty();
-        if (emptyAnswer && hasSubAnswers) {
-            // group answer with sub-answers
-            answer.setAnswerType(AnswerType.GROUP);
-            answer.setSubAnswers(item.getItem().stream().map(this::getAnswer).collect(Collectors.toList()));
-        }
-        else {
 
+        if (emptyAnswer && hasSubAnswers) {
+            // Group answer with sub-answers
+            answerType = AnswerType.GROUP;
+            subAnswers = item.getItem().stream().map(this::getAnswer).toList();
+        } else {
             var answerItem = extractAnswerItem(item);
 
             if (answerItem.hasValueStringType()) {
-                answer.setValue(answerItem.getValue().primitiveValue());
+                value = answerItem.getValue().primitiveValue();
             } else if (answerItem.hasValueIntegerType()) {
-                answer.setValue(answerItem.getValueIntegerType().primitiveValue());
+                value = String.valueOf(answerItem.getValueIntegerType().primitiveValue());
             } else if (answerItem.hasValueQuantity()) {
-                answer.setValue(answerItem.getValueQuantity().getValueElement().primitiveValue());
+                value = answerItem.getValueQuantity().getValueElement().primitiveValue();
             } else if (answerItem.hasValueBooleanType()) {
-                answer.setValue(answerItem.getValueBooleanType().primitiveValue());
+                value = String.valueOf(answerItem.getValueBooleanType().primitiveValue());
             }
-            answer.setAnswerType(getAnswerType(answerItem));
+
+            answerType = getAnswerType(answerItem);
         }
 
-        return answer;
+        return new AnswerModel(linkId, value, answerType, subAnswers);
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent extractAnswerItem(QuestionnaireResponse.QuestionnaireResponseItemComponent item) {
-        if(item.getAnswer() == null || item.getAnswer().size() != 1) {
+        if (item.getAnswer() == null || item.getAnswer().size() != 1) {
             throw new IllegalStateException("Expected exactly one answer!");
         }
-        return item.getAnswer().get(0);
+        return item.getAnswer().getFirst();
     }
 
     private AnswerType getAnswerType(QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent answerItem) {
@@ -1011,185 +843,100 @@ public class FhirMapper {
     }
 
     private AnswerType getAnswerType(Type answerType) {
-        if (answerType instanceof StringType) {
-            return AnswerType.STRING;
-        }
-        if (answerType instanceof BooleanType) {
-            return AnswerType.BOOLEAN;
-        }
-        else if (answerType instanceof Quantity) {
-            return AnswerType.QUANTITY;
-        }
-        else if (answerType instanceof IntegerType) {
-            return AnswerType.INTEGER;
-        }
-        else {
-            throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
-        }
+        return switch (answerType) {
+            case StringType ignored -> AnswerType.STRING;
+            case BooleanType ignored -> AnswerType.BOOLEAN;
+            case Quantity ignored -> AnswerType.QUANTITY;
+            case IntegerType ignored -> AnswerType.INTEGER;
+            case null, default ->
+                    throw new IllegalArgumentException(String.format("Unsupported AnswerItem of type: %s", answerType));
+        };
     }
 
     private CarePlan.CarePlanActivityComponent buildCarePlanActivity(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
-        Type timing = mapFrequencyModel(questionnaireWrapperModel.getFrequency());
-        Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.getSatisfiedUntil());
-
+        CanonicalType instantiatesCanonical = new CanonicalType(questionnaireWrapperModel.questionnaire().id().toString());
+        Type timing = mapFrequencyModel(questionnaireWrapperModel.frequency());
+        Extension activitySatisfiedUntil = ExtensionMapper.mapActivitySatisfiedUntil(questionnaireWrapperModel.satisfiedUntil());
         return buildActivity(instantiatesCanonical, timing, activitySatisfiedUntil);
     }
 
     private CarePlan.CarePlanActivityComponent buildActivity(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
         CarePlan.CarePlanActivityComponent activity = new CarePlan.CarePlanActivityComponent();
-
         activity.setDetail(buildDetail(instantiatesCanonical, timing, activitySatisfiedUntil));
-
         return activity;
     }
 
     private CarePlan.CarePlanActivityDetailComponent buildDetail(CanonicalType instantiatesCanonical, Type timing, Extension activitySatisfiedUntil) {
-        CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent();
+        CarePlan.CarePlanActivityDetailComponent detail = new CarePlan.CarePlanActivityDetailComponent()
+                .setInstantiatesCanonical(List.of(instantiatesCanonical))
+                .setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED)
+                .setScheduled(timing);
 
-        detail.setInstantiatesCanonical(List.of(instantiatesCanonical));
-        detail.setStatus(CarePlan.CarePlanActivityStatus.NOTSTARTED);
         detail.addExtension(activitySatisfiedUntil);
-        detail.setScheduled(timing);
 
         return detail;
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemComponent getQuestionnaireResponseItem(AnswerModel answer) {
-        var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent();
+        var item = new QuestionnaireResponse.QuestionnaireResponseItemComponent()
+                .setLinkId(answer.linkId());
 
-        item.setLinkId(answer.getLinkId());
         item.getAnswer().add(getAnswerItem(answer));
 
-        if (answer.getAnswerType() == AnswerType.GROUP && answer.getSubAnswers() != null) {
-            item.setItem(answer.getSubAnswers().stream().map(this::getQuestionnaireResponseItem).collect(Collectors.toList()));
+        if (answer.answerType() == AnswerType.GROUP && answer.subAnswers() != null) {
+            item.setItem(answer.subAnswers().stream().map(this::getQuestionnaireResponseItem).toList());
         }
-
         return item;
     }
 
     private QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent getAnswerItem(AnswerModel answer) {
-        var answerItem = new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent();
-
-        answerItem.setValue(getValue(answer));
-
-        return answerItem;
+        return new QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent()
+                .setValue(getValue(answer));
     }
 
     private Type getValue(AnswerModel answer) {
-        Type value = null;
-        switch(answer.getAnswerType()) {
-            case INTEGER:
-                value = new IntegerType(answer.getValue());
-                break;
-            case STRING:
-                value = new StringType(answer.getValue());
-                break;
-            case QUANTITY:
-                value = new Quantity(Double.parseDouble(answer.getValue()));
-                break;
-            case BOOLEAN:
-                value = new BooleanType(answer.getValue());
-                break;
-            case GROUP:
-                // return default = null
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unknown AnswerType: %s", answer.getAnswerType()));
+        if (answer == null || answer.value() == null) {
+            return null;
         }
-        return value;
+        return switch (answer.answerType()) {
+            case INTEGER -> new IntegerType(answer.value());
+            case STRING -> new StringType(answer.value());
+            case QUANTITY -> new Quantity(Double.parseDouble(answer.value()));
+            case BOOLEAN -> new BooleanType(answer.value());
+            case GROUP -> null; // GROUP type doesn't have a value
+        };
     }
 
-    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, FhirLookupResult lookupResult) {
-        var wrapper = new QuestionnaireWrapperModel();
+    private QuestionnaireWrapperModel mapPlanDefinitionAction(PlanDefinition.PlanDefinitionActionComponent action, Questionnaire questionnaire, Organization organization) {
+        var thresholds = ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD));
+        FrequencyModel timeType = Optional.ofNullable(ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension()))
+                .map(time -> {
+                    Timing timing = new Timing();
+                    timing.getRepeat().getTimeOfDay().add(time);
+                    return timing;
+                })
+                .flatMap(this::mapTiming)
+                .orElse(null);
 
-        String questionnaireId = action.getDefinitionCanonicalType().getValue();
-        Questionnaire questionnaire = lookupResult
-                .getQuestionnaire(questionnaireId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Questionnaire with id %s!", questionnaireId)));
-        wrapper.setQuestionnaire(mapQuestionnaire(questionnaire));
-
-        wrapper.setThresholds( ExtensionMapper.extractThresholds(action.getExtensionsByUrl(Systems.THRESHOLD)) );
-
-        // initialize timeofday from responsible organization
-        String organizationId = ExtensionMapper.extractOrganizationId(questionnaire.getExtension());
-        Organization organization = lookupResult
-                .getOrganization(organizationId)
-                .orElseThrow(() -> new IllegalStateException(String.format("Could not look up Organization with id %s!", organizationId)));
-
-        TimeType timeType = ExtensionMapper.extractOrganizationDeadlineTimeDefault(organization.getExtension());
-        if (timeType != null) {
-            Timing timing = new Timing();
-            timing.getRepeat().getTimeOfDay().add(timeType);
-            wrapper.setFrequency(mapTiming(timing));
-        }
-
-
-        return wrapper;
+        return new QuestionnaireWrapperModel(
+                mapQuestionnaire(questionnaire),
+                timeType,
+                null,
+                thresholds
+        );
     }
 
-    public PractitionerModel mapPractitioner(Practitioner practitioner) {
-        PractitionerModel practitionerModel = new PractitionerModel();
 
-        practitionerModel.setId(extractId(practitioner));
-        practitionerModel.setGivenName(practitioner.getNameFirstRep().getGivenAsSingleString());
-        practitionerModel.setFamilyName(practitioner.getNameFirstRep().getFamily());
-
-        return practitionerModel;
-    }
-
-    public List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
-        List<MeasurementTypeModel> result = new ArrayList<>();
-
-        valueSet.getCompose().getInclude()
-            .forEach(csc -> {
-                var measurementTypes = csc.getConcept().stream()
-                    .map(crc -> mapCodingConcept(csc.getSystem(), crc))
-                    .collect(Collectors.toList());
-
-                result.addAll(measurementTypes);
-            });
-
-        return result;
-    }
-
-    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
-        return mapCodingConcept(system, concept.getCode(), concept.getDisplay());
-    }
 
     private MeasurementTypeModel mapCodingConcept(String system, String code, String display) {
-        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
-
-        measurementTypeModel.setSystem(system);
-        measurementTypeModel.setCode(code);
-        measurementTypeModel.setDisplay(display);
-
-        return measurementTypeModel;
+        return new MeasurementTypeModel(system, code, display);
     }
 
-    public PlanDefinition mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
-        PlanDefinition planDefinition = new PlanDefinition();
-
-        mapBaseAttributesToFhir(planDefinition, planDefinitionModel);
-
-        planDefinition.setTitle(planDefinitionModel.getTitle());
-        planDefinition.setStatus(Enumerations.PublicationStatus.valueOf(planDefinitionModel.getStatus().toString()));
-
-        // Map questionnaires to actions
-        if(planDefinitionModel.getQuestionnaires() != null) {
-            planDefinition.setAction(planDefinitionModel.getQuestionnaires()
-                .stream()
-                .map(this::buildPlanDefinitionAction)
-                .collect(Collectors.toList()));
-        }
-
-        return planDefinition;
-    }
 
     private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(QuestionnaireWrapperModel questionnaireWrapperModel) {
-        CanonicalType definitionCanonical = new CanonicalType(questionnaireWrapperModel.getQuestionnaire().getId().toString());
+        CanonicalType definitionCanonical = new CanonicalType(questionnaireWrapperModel.questionnaire().id().toString());
 
-        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.getThresholds());
+        List<Extension> thresholds = ExtensionMapper.mapThresholds(questionnaireWrapperModel.thresholds());
 
         PlanDefinition.PlanDefinitionActionComponent action = new PlanDefinition.PlanDefinitionActionComponent();
         action.setDefinition(definitionCanonical);
@@ -1198,5 +945,71 @@ public class FhirMapper {
         return action;
     }
 
+
+    private QuestionnaireResponseModel constructQuestionnaireResponse(QuestionnaireResponse questionnaireResponse, String organisationId, PlanDefinition planDefinition, CarePlan carePlan, Questionnaire questionnaire, Practitioner examinationAuthor, Patient patient) {
+        String qId = questionnaireResponse.getQuestionnaire();
+
+        String patientId = questionnaireResponse.getSubject().getReference();
+        String carePlanId = questionnaireResponse.getBasedOnFirstRep().getReference();
+
+        String planDefinitionTitle = Optional.ofNullable(carePlan)
+                .map(CarePlan::getInstantiatesCanonical)
+                .flatMap(canonicals -> canonicals.stream()
+                        .map(CanonicalType::getValue)
+                        .map(planDefinitionId -> Optional.ofNullable(planDefinition)
+                                .filter(p -> p.getAction().stream()
+                                        .anyMatch(action -> action.getDefinitionCanonicalType().equals(qId)))
+                                .map(PlanDefinition::getTitle))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .findFirst()
+                )
+                .orElseThrow(() -> new IllegalStateException(String.format("No matching PlanDefinition with title found for CarePlan id %s!", carePlanId)));
+
+        var id = new QualifiedId.QuestionnaireResponseId(questionnaireResponse.getId());
+        var organizationId = ExtensionMapper.extractOrganizationId(questionnaireResponse.getExtension());
+
+        var authorId = Optional.ofNullable(questionnaireResponse.getAuthor())
+                .map(Reference::getReference)
+                .map(QualifiedId.PractitionerId::new)
+                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Author-attribute present!!", id)));
+
+        var sourceId = Optional.ofNullable(questionnaireResponse.getSource())
+                .map(Reference::getReference)
+                .map(QualifiedId.QuestionnaireId::new)
+                .orElseThrow(() -> new IllegalStateException(String.format("Error mapping QuestionnaireResponse %s: No Source-attribute present!!", id)));
+
+        return new QuestionnaireResponseModel(
+                id,
+                organizationId,
+                new QualifiedId.QuestionnaireId(questionnaire.getId()),
+                new QualifiedId.CarePlanId(carePlanId),
+                authorId,
+                sourceId,
+                questionnaire.getName(),
+                null,
+                questionnaireResponse.getAuthored().toInstant(),
+                ExtensionMapper.extractExaminationStatus(questionnaireResponse.getExtension()),
+                mapPractitioner(examinationAuthor),
+                ExtensionMapper.extractTriagingCategory(questionnaireResponse.getExtension()),
+                mapPatient(patient, organisationId),
+                planDefinitionTitle
+        );
+    }
+
+
+
+    private List<MeasurementTypeModel> extractMeasurementTypes(ValueSet valueSet) {
+        return valueSet.getCompose().getInclude()
+                .stream()
+                .flatMap(csc -> csc.getConcept()
+                        .stream()
+                        .map(crc -> mapCodingConcept(csc.getSystem(), crc))).toList();
+    }
+
+
+    private MeasurementTypeModel mapCodingConcept(String system, ValueSet.ConceptReferenceComponent concept) {
+        return new MeasurementTypeModel(system, concept.getCode(), concept.getDisplay());
+    }
 
 }
