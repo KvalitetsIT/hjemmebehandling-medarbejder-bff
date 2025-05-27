@@ -69,7 +69,7 @@ public class PatientController extends BaseController implements PatientApi {
     }
 
     @Override
-    public ResponseEntity<PatientDto> getPatient(String cpr) {
+    public ResponseEntity<PatientDto> getPatientsByCpr(String cpr) {
         logger.info("Getting patient ...");
 
         try {
@@ -84,14 +84,6 @@ public class PatientController extends BaseController implements PatientApi {
         }
     }
 
-
-    @Override
-    public ResponseEntity<org.openapitools.model.PatientListResponse> getPatientList() {
-        logger.info("Getting patient list ...");
-        auditLoggingService.log("GET /v1/patientlist", List.of());
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
-    }
-
     @Override
     public ResponseEntity<PatientListResponse> getPatients(Boolean includeActive, Boolean includeCompleted, Optional<Integer> limit, Optional<Integer> offset) {
         logger.info("Getting patient ...");
@@ -100,7 +92,6 @@ public class PatientController extends BaseController implements PatientApi {
         var pagination = new Pagination(offset, limit);
         try {
             List<PatientModel> patients = patientService.getPatients(includeActive, includeCompleted, pagination);
-            patientService.getPatients(includeActive, includeCompleted);
             auditLoggingService.log("GET /v1/patients", patients);
 
             return ResponseEntity.ok(buildResponse(patients));

@@ -159,12 +159,6 @@ public class PlanDefinitionControllerTest {
     }
 
     @Test
-    public void updatePlanDefinition_throwsUnsupportedOperationException() {
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-        assertThrows(UnsupportedOperationException.class, () -> subject.updatePlanDefinition(planDefinitionDto));
-    }
-
-    @Test
     public void patchPlanDefinition_success() throws Exception {
         PatchPlanDefinitionRequest request = new PatchPlanDefinitionRequest();
         ResponseEntity<Void> result = subject.patchPlanDefinition("plandefinition-1", request);

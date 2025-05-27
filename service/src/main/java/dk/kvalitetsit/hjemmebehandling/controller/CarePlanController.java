@@ -101,25 +101,6 @@ public class CarePlanController extends BaseController implements CarePlanApi {
         }
     }
 
-    @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions1(List<StatusDto> statusesToInclude) {
-        try {
-
-            List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statusesToInclude.stream().map(dtoMapper::mapStatus).toList());
-
-            var response = planDefinitions.stream()
-                    .map(dtoMapper::mapPlanDefinitionModel)
-                    .sorted(Comparator.comparing(x -> x.getLastUpdated().get().toInstant(), Comparator.nullsFirst(Instant::compareTo).reversed()))
-                    .toList();
-
-            // todo: 'Optional.get()' without 'isPresent()' check
-            return ResponseEntity.ok(response);
-        } catch (ServiceException | AccessValidationException e) {
-            logger.error("Could not look up planDefinitions", e);
-            throw toStatusCodeException(e);
-        }
-    }
-
 
     @Override
     public ResponseEntity<List<String>> getUnresolvedQuestionnaires(String id) {
@@ -200,11 +181,6 @@ public class CarePlanController extends BaseController implements CarePlanApi {
             logger.error("Could not look up careplans by cpr", e);
             throw toStatusCodeException(e);
         }
-    }
-
-    @Override
-    public ResponseEntity<Void> updateCarePlan(CarePlanDto carePlanDto) {
-        throw new UnsupportedOperationException();
     }
 
     private List<QualifiedId.QuestionnaireId> getQuestionnaireIds(List<QuestionnaireFrequencyPairDto> questionnaireFrequencyPairs) {

@@ -205,7 +205,7 @@ public class DtoMapperTest {
         CarePlanDto carePlanDto = new CarePlanDto();
 
         carePlanDto.setId(Optional.of(CAREPLAN_ID_1.unqualified()));
-        carePlanDto.setStatus(Optional.of(CarePlanStatusDto.ACTIVE));
+        carePlanDto.setStatus(Optional.of(org.openapitools.model.CarePlanStatus.ACTIVE));
         carePlanDto.setPatientDto(Optional.of(buildPatientDto()));
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
         carePlanDto.setPlanDefinitions(List.of(buildPlanDefinitionDto()));
@@ -284,7 +284,7 @@ public class DtoMapperTest {
     private PlanDefinitionDto buildPlanDefinitionDto() {
         return new PlanDefinitionDto()
                 .id(PLANDEFINITION_ID_1.unqualified())
-                .status(StatusDto.ACTIVE)
+                .status(org.openapitools.model.Status.ACTIVE)
                 .questionnaires(List.of(buildQuestionnaireWrapperDto()));
     }
 
@@ -321,7 +321,7 @@ public class DtoMapperTest {
     private QuestionnaireDto buildQuestionnaireDto() {
         return new QuestionnaireDto()
                 .questions(List.of(buildQuestionDto()))
-                .status(StatusDto.DRAFT).id("questionnaire-1");
+                .status(org.openapitools.model.Status.DRAFT).id("questionnaire-1");
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {

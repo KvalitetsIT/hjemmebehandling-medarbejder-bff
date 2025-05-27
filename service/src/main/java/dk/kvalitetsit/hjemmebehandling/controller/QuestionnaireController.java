@@ -136,10 +136,7 @@ public class QuestionnaireController extends BaseController implements Questionn
         return ResponseEntity.ok().build();
     }
 
-    @Override
-    public ResponseEntity<Void> updateQuestionnaire(QuestionnaireDto questionnaireDto) {
-        throw new UnsupportedOperationException();
-    }
+
 
 
     private void validateQuestions(List<QuestionDto> questions) {

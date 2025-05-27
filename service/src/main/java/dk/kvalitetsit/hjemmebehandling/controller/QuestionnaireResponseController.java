@@ -11,7 +11,6 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.openapitools.api.QuestionnaireResponseApi;
-import org.openapitools.model.ExaminationStatusDto;
 
 import org.openapitools.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.model.QuestionnaireResponseDto;
@@ -38,10 +37,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
     }
 
 
-    @Override
-    public ResponseEntity<Void> createQuestionnaireResponse(QuestionnaireResponseDto questionnaireResponse) {
-        throw new UnsupportedOperationException();
-    }
+
 
     @Override
     public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCarePlanId(String carePlanId, List<String> questionnaireIds, Optional<Integer> limit, Optional<Integer> offset) {
@@ -67,7 +63,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
     }
 
     @Override
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(List<ExaminationStatusDto> status, Optional<Integer> limit, Optional<Integer> offset) {
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(List<org.openapitools.model.ExaminationStatus> status, Optional<Integer> limit, Optional<Integer> offset) {
         if (status == null || status.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }

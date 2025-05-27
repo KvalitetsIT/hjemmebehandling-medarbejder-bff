@@ -20,7 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.openapitools.model.ExaminationStatusDto;
 import org.openapitools.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.model.QuestionnaireResponseDto;
 import org.springframework.http.HttpStatus;
@@ -116,7 +115,7 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByStatus_responsesPresent_200() throws Exception {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
-        List<ExaminationStatusDto> statusesdto = List.of(ExaminationStatusDto.NOT_EXAMINED);
+        List<org.openapitools.model.ExaminationStatus> statusesdto = List.of(org.openapitools.model.ExaminationStatus.NOT_EXAMINED);
 
         Pagination pagination = PAGINATION;
 
@@ -128,7 +127,7 @@ public class QuestionnaireResponseControllerTest {
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenReturn(List.of(responseModel1, responseModel2));
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel1)).thenReturn(responseDto1);
         Mockito.when(dtoMapper.mapQuestionnaireResponseModel(responseModel2)).thenReturn(responseDto2);
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.NOT_EXAMINED)).thenReturn(ExaminationStatus.NOT_EXAMINED);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.NOT_EXAMINED)).thenReturn(ExaminationStatus.NOT_EXAMINED);
 
         ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(statusesdto,  pagination.limit(), pagination.offset());
 
@@ -145,8 +144,8 @@ public class QuestionnaireResponseControllerTest {
 
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, pagination)).thenReturn(List.of());
 
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(List.of(ExaminationStatusDto.UNDER_EXAMINATION), pagination.limit(), pagination.offset());
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
+        ResponseEntity<List<QuestionnaireResponseDto>> result = subject.getQuestionnaireResponsesByStatus(List.of(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION), pagination.limit(), pagination.offset());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(result.getBody().isEmpty());
@@ -155,10 +154,10 @@ public class QuestionnaireResponseControllerTest {
     @Test
     public void getQuestionnaireResponsesByStatus_failureToFetch_500() throws Exception {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.EXAMINED);
-        List<ExaminationStatusDto> statusesDtos = List.of(ExaminationStatusDto.UNDER_EXAMINATION, ExaminationStatusDto.EXAMINED);
+        List<org.openapitools.model.ExaminationStatus> statusesDtos = List.of(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION, org.openapitools.model.ExaminationStatus.EXAMINED);
 
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.EXAMINED)).thenReturn(ExaminationStatus.EXAMINED);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.EXAMINED)).thenReturn(ExaminationStatus.EXAMINED);
         Mockito.when(questionnaireResponseService.getQuestionnaireResponsesByStatus(statuses, PAGINATION)).thenThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR));
 
         assertThrows(InternalServerErrorException.class, () -> subject.getQuestionnaireResponsesByStatus(statusesDtos,  PAGINATION.limit(), PAGINATION.offset()));
@@ -174,9 +173,9 @@ public class QuestionnaireResponseControllerTest {
     public void patchQuestionnaireResponse_accessViolation_403() throws Exception {
 
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-        request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
+        request.setExaminationStatus(Optional.of(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION));
 
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.doThrow(AccessValidationException.class).when(questionnaireResponseService).updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID_1, ExaminationStatus.UNDER_EXAMINATION);
 
         assertThrows(ForbiddenException.class, () -> subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1.unqualified(), request));
@@ -186,9 +185,9 @@ public class QuestionnaireResponseControllerTest {
     public void patchQuestionnaireResponse_failureToUpdate_500() throws Exception {
 
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-        request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
+        request.setExaminationStatus(Optional.of(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION));
 
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.doThrow(new ServiceException("error", ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR)).when(questionnaireResponseService).updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID_1, ExaminationStatus.UNDER_EXAMINATION);
 
         assertThrows(InternalServerErrorException.class, () -> subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1.unqualified(), request));
@@ -198,9 +197,9 @@ public class QuestionnaireResponseControllerTest {
     public void patchQuestionnaireResponse_success_200() throws Exception {
 
         PartialUpdateQuestionnaireResponseRequest request = new PartialUpdateQuestionnaireResponseRequest();
-        request.setExaminationStatus(Optional.of(ExaminationStatusDto.UNDER_EXAMINATION));
+        request.setExaminationStatus(Optional.of(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION));
 
-        Mockito.when(dtoMapper.mapExaminationStatusDto(ExaminationStatusDto.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
+        Mockito.when(dtoMapper.mapExaminationStatusDto(org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION)).thenReturn(ExaminationStatus.UNDER_EXAMINATION);
         Mockito.when(questionnaireResponseService.updateExaminationStatus(QUESTIONNAIRE_RESPONSE_ID_1, ExaminationStatus.UNDER_EXAMINATION)).thenReturn(QuestionnaireResponseModel.builder().build());
 
         ResponseEntity<Void> result = subject.patchQuestionnaireResponse(QUESTIONNAIRE_RESPONSE_ID_1.unqualified(), request);

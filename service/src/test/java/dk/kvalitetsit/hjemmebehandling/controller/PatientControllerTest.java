@@ -68,13 +68,13 @@ public class PatientControllerTest {
     @Test
     public void getPatient_error_notExist() throws ServiceException {
         Mockito.when(patientService.getPatient(Mockito.any(CPR.class))).thenReturn(null);
-        assertThrows(ResourceNotFoundException.class, () -> subject.getPatient(CPR_1.toString()));
+        assertThrows(ResourceNotFoundException.class, () -> subject.getPatientsByCpr(CPR_1.toString()));
     }
 
     @Test
     public void getPatient_error_malformed_CPR() throws ServiceException {
         var malformed_cpr = "010101010101";
-        assertThrows(IllegalArgumentException.class, () -> subject.getPatient(malformed_cpr));
+        assertThrows(IllegalArgumentException.class, () -> subject.getPatientsByCpr(malformed_cpr));
     }
 
 
@@ -86,7 +86,7 @@ public class PatientControllerTest {
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
 
-        PatientDto result = subject.getPatient(CPR_1.toString()).getBody();
+        PatientDto result = subject.getPatientsByCpr(CPR_1.toString()).getBody();
 
         assertEquals(patientDto, result);
     }

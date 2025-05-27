@@ -24,17 +24,17 @@ tags:
   - name: Questionnaire
     description: API for manipulating and retrieving Questionnaires.
 paths:
-  /v1/resetpassword:
+  /v1/patients/{cpr}/resetpassword:
     put:
       tags:
         - Patient
       operationId: resetPassword
       parameters:
         - name: cpr
-          in: query
+          in: path
           required: true
           schema:
-            $ref: '#/components/schemas/CprDto'
+            $ref: '#/components/schemas/Cpr'
       responses:
         "400":
           description: Bad Request
@@ -68,7 +68,8 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/questionnaire:
+
+  /v1/questionnaires:
     get:
       tags:
         - Questionnaire
@@ -123,49 +124,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/QuestionnaireDto'
-    put:
-      tags:
-        - Questionnaire
-      operationId: updateQuestionnaire
-      parameters:
-        - name: questionnaireDto
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/QuestionnaireDto'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
+
     post:
       tags:
         - Questionnaire
@@ -215,6 +174,7 @@ paths:
             Location:
               description: URL pointing to the created Questionnaire.
               style: simple
+
   /v1/questionnaires/{id}/retire:
     put:
       tags:
@@ -259,7 +219,8 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/plandefinition:
+
+  /v1/plandefinitions:
     get:
       tags:
         - PlanDefinition
@@ -272,7 +233,7 @@ paths:
             type: array
             default: []
             items:
-              $ref: '#/components/schemas/StatusDto'
+              $ref: '#/components/schemas/Status'
       responses:
         "400":
           description: Bad Request
@@ -312,49 +273,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PlanDefinitionDto'
-    put:
-      tags:
-        - PlanDefinition
-      operationId: updatePlanDefinition
-      parameters:
-        - name: planDefinitionDto
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/PlanDefinitionDto'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
+
     post:
       tags:
         - PlanDefinition
@@ -404,6 +323,7 @@ paths:
             Location:
               description: URL pointing to the created PlanDefinition.
               style: simple
+
   /v1/plandefinitions/{id}/retire:
     put:
       tags:
@@ -448,6 +368,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/careplans:
     get:
       tags:
@@ -457,7 +378,7 @@ paths:
         - name: cpr
           in: query
           schema:
-            $ref: '#/components/schemas/CprDto'
+            $ref: '#/components/schemas/Cpr'
         - name: only_unsatisfied_schedules
           in: query
           schema:
@@ -514,49 +435,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CarePlanDto'
-    put:
-      tags:
-        - CarePlan
-      operationId: updateCarePlan
-      parameters:
-        - name: carePlanDto
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/CarePlanDto'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
     post:
       tags:
         - CarePlan
@@ -606,13 +484,14 @@ paths:
             Location:
               description: URL pointing to the created CarePlan.
               style: simple
-  /v1/careplans/{id}/resolve-alarm/{questionnaireId}:
+
+  /v1/careplans/{careplanId}/resolve-alarm/{questionnaireId}:
     put:
       tags:
         - CarePlan
       operationId: resolveAlarm
       parameters:
-        - name: id
+        - name: careplanId
           in: path
           required: true
           schema:
@@ -655,6 +534,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/careplans/{id}/complete:
     put:
       tags:
@@ -699,19 +579,24 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/questionnaireresponse:
+  /v1/careplans/{carePlanId}/questionnaireresponses:
     get:
       tags:
         - QuestionnaireResponse
-      operationId: getQuestionnaireResponsesByStatus
+      operationId: getQuestionnaireResponsesByCarePlanId
       parameters:
-        - name: status
+        - name: carePlanId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: questionnaireIds
           in: query
           required: true
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/examinationStatusDto'
+              type: string
         - $ref: '#/components/parameters/LimitParam'
         - $ref: '#/components/parameters/OffsetParam'
       responses:
@@ -753,60 +638,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/QuestionnaireResponseDto'
-    post:
-      tags:
-        - QuestionnaireResponse
-      operationId: createQuestionnaireResponse
-      parameters:
-        - name: questionnaireResponse
-          in: query
-          required: true
-          schema:
-            $ref: '#/components/schemas/QuestionnaireResponseDto'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
-  /v1/patient:
+  /v1/questionnaireresponses:
     get:
       tags:
-        - Patient
-      operationId: getPatient
+        - QuestionnaireResponse
+      operationId: getQuestionnaireResponsesByStatus
       parameters:
-        - name: cpr
+        - name: status
           in: query
           required: true
           schema:
-            $ref: '#/components/schemas/CprDto'
+            type: array
+            items:
+              $ref: '#/components/schemas/examinationStatus'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         "400":
           description: Bad Request
@@ -843,51 +689,11 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/PatientDto'
-    post:
-      tags:
-        - Patient
-      operationId: createPatient
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePatientRequest'
-        required: true
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
-  /v1/questionnaireresponse/{id}:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionnaireResponseDto'
+
+  /v1/questionnaireresponses/{id}:
     patch:
       tags:
         - QuestionnaireResponse
@@ -937,6 +743,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/questionnaires/{id}:
     get:
       tags:
@@ -985,6 +792,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QuestionnaireDto'
+
     patch:
       tags:
         - Questionnaire
@@ -1034,6 +842,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/plandefinitions/{id}:
     patch:
       tags:
@@ -1084,6 +893,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/careplans/{id}:
     get:
       tags:
@@ -1181,6 +991,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+
   /v1/user:
     get:
       tags:
@@ -1223,65 +1034,8 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/UserContext'
-  /v1/questionnaireresponse/{carePlanId}:
-    get:
-      tags:
-        - QuestionnaireResponse
-      operationId: getQuestionnaireResponsesByCarePlanId
-      parameters:
-        - name: carePlanId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: questionnaireIds
-          in: query
-          required: true
-          schema:
-            type: array
-            items:
-              type: string
-        - $ref: '#/components/parameters/LimitParam'
-        - $ref: '#/components/parameters/OffsetParam'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/QuestionnaireResponseDto'
+
+
 
   /v1/questionnaires/{id}/used:
     get:
@@ -1334,6 +1088,7 @@ paths:
             'application/json':
               schema:
                 type: boolean
+
   /v1/plandefinitions/{id}/used:
     get:
       tags:
@@ -1385,17 +1140,17 @@ paths:
             'application/json':
               schema:
                 type: boolean
-  /v1/person:
+  /v1/person/{cpr}:
     get:
       tags:
         - Person
       operationId: getPerson
       parameters:
         - name: cpr
-          in: query
+          in: path
           required: true
           schema:
-            $ref: '#/components/schemas/CprDto'
+            $ref: '#/components/schemas/Cpr'
       responses:
         "400":
           description: Bad Request
@@ -1488,11 +1243,17 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/PatientListResponse'
-  /v1/patientlist:
-    get:
+
+    post:
       tags:
         - Patient
-      operationId: getPatientList
+      operationId: createPatient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+        required: true
       responses:
         "400":
           description: Bad Request
@@ -1526,11 +1287,56 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
+  /v1/patients/{cpr}:
+    get:
+      tags:
+        - Patient
+      summary: Get patient by cpr.
+      description: Retrieves a patient by its cpr.
+      operationId: getPatientsByCpr
+      parameters:
+        - name: cpr
+          in: path
+          description: Cpr of the patient to be retrieved.
+          required: true
+          schema:
+            $ref: '#/components/schemas/Cpr'
+      responses:
+        "400":
+          description: Bad Request
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/PatientListResponse'
-  /v1/patient/search:
+                $ref: '#/components/schemas/ErrorDto'
+        "502":
+          description: Bad Gateway
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        "403":
+          description: Forbidden
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        "404":
+          description: Patient not found.
+          content: { }
+        "500":
+          description: Internal Server Error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ErrorDto'
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientDto'
+
+  /v1/patients/search:
     get:
       tags:
         - Patient
@@ -1578,7 +1384,7 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/PatientListResponse'
-  /v1/measurementtype:
+  /v1/measurementtypes:
     get:
       tags:
         - ValueSet
@@ -1674,59 +1480,7 @@ paths:
                 type: array
                 items:
                   type: string
-  /v1/careplans/plandefinition:
-    get:
-      tags:
-        - CarePlan
-      operationId: getPlanDefinitions_1
-      parameters:
-        - name: statusesToInclude
-          in: query
-          required: true
-          schema:
-            type: array
-            default: []
-            items:
-              $ref: '#/components/schemas/StatusDto'
-      responses:
-        "400":
-          description: Bad Request
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "502":
-          description: Bad Gateway
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "403":
-          description: Forbidden
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "404":
-          description: Not Found
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "500":
-          description: Internal Server Error
-          content:
-            'application/json':
-              schema:
-                $ref: '#/components/schemas/ErrorDto'
-        "200":
-          description: OK
-          content:
-            'application/json':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PlanDefinitionDto'
+
 components:
   parameters:
     OffsetParam:
@@ -1778,6 +1532,7 @@ components:
             - LESS_THAN
             - GREATER_OR_EQUAL
             - LESS_OR_EQUAL
+
     MeasurementTypeDto:
       type: object
       properties:
@@ -1794,6 +1549,7 @@ components:
           type: string
         comment:
           type: string
+
     QuestionDto:
       type: object
       properties:
@@ -1847,7 +1603,6 @@ components:
           type: string
           description: Id of the resource
 
-
     QuestionnaireDto:
       allOf:
         - $ref: "#/components/schemas/BaseDto"
@@ -1856,7 +1611,7 @@ components:
             title:
               type: string
             status:
-              $ref: '#/components/schemas/StatusDto'
+              $ref: '#/components/schemas/Status'
             questions:
               type: array
               items:
@@ -1918,7 +1673,7 @@ components:
             title:
               type: string
             status:
-              $ref: "#/components/schemas/StatusDto"
+              $ref: "#/components/schemas/Status"
             created:
               type: string
               format: date-time
@@ -1930,14 +1685,14 @@ components:
               items:
                 $ref: '#/components/schemas/QuestionnaireWrapperDto'
 
-    StatusDto:
+    Status:
       type: string
       enum:
         - DRAFT
         - ACTIVE
         - RETIRED
 
-    CarePlanStatusDto:
+    CarePlanStatus:
       type: string
       enum:
         - ACTIVE
@@ -1966,7 +1721,7 @@ components:
             title:
               type: string
             status:
-              $ref: "#/components/schemas/CarePlanStatusDto"
+              $ref: "#/components/schemas/CarePlanStatus"
             created:
               type: string
               format: date-time
@@ -2004,13 +1759,14 @@ components:
           type: string
         secondaryPhone:
           type: string
+
     PatientDto:
       type: object
       properties:
         name:
           $ref: '#/components/schemas/NameDto'
         cpr:
-          $ref: '#/components/schemas/CprDto'
+          $ref: '#/components/schemas/Cpr'
         customUserName:
           type: string
         patientContactDetails:
@@ -2025,6 +1781,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContactDetailsDto'
+
     AnswerDto:
       type: object
       properties:
@@ -2075,7 +1832,7 @@ components:
           type: string
           format: date-time
         examinationStatus:
-          $ref: '#/components/schemas/examinationStatusDto'
+          $ref: '#/components/schemas/examinationStatus'
         triagingCategory:
           type: string
           enum:
@@ -2086,7 +1843,8 @@ components:
           $ref: '#/components/schemas/PatientDto'
         planDefinitionTitle:
           type: string
-    examinationStatusDto:
+
+    examinationStatus:
       type: string
       enum:
         - NOT_EXAMINED
@@ -2100,6 +1858,7 @@ components:
       properties:
         questionnaire:
           $ref: '#/components/schemas/QuestionnaireDto'
+
     CreatePlanDefinitionRequest:
       required:
         - planDefinition
@@ -2107,11 +1866,13 @@ components:
       properties:
         planDefinition:
           $ref: '#/components/schemas/PlanDefinitionDto'
+
     CreatePatientRequest:
       type: object
       properties:
         patient:
           $ref: '#/components/schemas/PatientDto'
+
     CreateCarePlanRequest:
       required:
         - carePlan
@@ -2119,11 +1880,13 @@ components:
       properties:
         carePlan:
           $ref: '#/components/schemas/CarePlanDto'
+
     PartialUpdateQuestionnaireResponseRequest:
       type: object
       properties:
         examinationStatus:
-          $ref: '#/components/schemas/examinationStatusDto'
+          $ref: '#/components/schemas/examinationStatus'
+
     PatchQuestionnaireRequest:
       type: object
       required:
@@ -2137,13 +1900,14 @@ components:
         description:
           type: string
         status:
-          $ref: '#/components/schemas/StatusDto'
+          $ref: '#/components/schemas/Status'
         questions:
           type: array
           items:
             $ref: '#/components/schemas/QuestionDto'
         callToAction:
           $ref: '#/components/schemas/QuestionDto'
+
     PatchPlanDefinitionRequest:
       type: object
       required:
@@ -2161,7 +1925,7 @@ components:
           items:
             $ref: '#/components/schemas/ThresholdDto'
         status:
-          $ref: '#/components/schemas/StatusDto'
+          $ref: '#/components/schemas/Status'
 
     QuestionnaireFrequencyPairDto:
       type: object
@@ -2170,6 +1934,7 @@ components:
           type: string
         frequency:
           $ref: '#/components/schemas/FrequencyDto'
+
     UpdateCarePlanRequest:
       type: object
       properties:
@@ -2193,11 +1958,12 @@ components:
           type: string
         primaryRelativeSecondaryPhone:
           type: string
+
     UserContext:
       type: object
       properties:
         orgId:
-          $ref: '#/components/schemas/SORCodeDto'
+          $ref: '#/components/schemas/SORCode'
         name:
           $ref: '#/components/schemas/NameDto'
         authorizationIds:
@@ -2215,11 +1981,14 @@ components:
             type: string
         orgName:
           type: string
-    SORCodeDto:
+
+    SORCode:
       type: string
       description: "Sundhedsvæsenets Organisations Register (SOR)"
-    CprDto:
+
+    Cpr:
       type: string
+      pattern: '^\d{10}$'
       description: "Et personnummer, i daglig tale kaldet CPR-nummer (eng. civil registration number), er et ti-cifret, personligt identifikationsnummer"
 
 
@@ -2227,7 +1996,7 @@ components:
       type: object
       properties:
         cpr:
-          $ref: '#/components/schemas/CprDto'
+          $ref: '#/components/schemas/Cpr'
         name:
           $ref: '#/components/schemas/NameDto'
         gender:
@@ -2238,6 +2007,7 @@ components:
           type: boolean
         patientContactDetails:
           $ref: '#/components/schemas/ContactDetailsDto'
+
     NameDto:
       type: object
       properties:

@@ -3,8 +3,11 @@ package dk.kvalitetsit.hjemmebehandling.api;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.*;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
@@ -253,11 +256,11 @@ public class DtoMapper {
                 .planDefinitionTitle(questionnaireResponseModel.planDefinitionTitle());
     }
 
-    public ExaminationStatusDto mapExaminationStatusModel(ExaminationStatus examinationStatus) {
+    public org.openapitools.model.ExaminationStatus mapExaminationStatusModel(ExaminationStatus examinationStatus) {
         return switch (examinationStatus) {
-            case NOT_EXAMINED -> ExaminationStatusDto.NOT_EXAMINED;
-            case UNDER_EXAMINATION -> ExaminationStatusDto.UNDER_EXAMINATION;
-            case EXAMINED -> ExaminationStatusDto.EXAMINED;
+            case NOT_EXAMINED -> org.openapitools.model.ExaminationStatus.NOT_EXAMINED;
+            case UNDER_EXAMINATION -> org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION;
+            case EXAMINED -> org.openapitools.model.ExaminationStatus.EXAMINED;
         };
     }
 
@@ -290,7 +293,7 @@ public class DtoMapper {
         return measurementTypeDto;
     }
 
-    public ExaminationStatus mapExaminationStatusDto(ExaminationStatusDto examinationStatus) {
+    public ExaminationStatus mapExaminationStatusDto(org.openapitools.model.ExaminationStatus examinationStatus) {
         return switch (examinationStatus) {
             case NOT_EXAMINED -> ExaminationStatus.NOT_EXAMINED;
             case UNDER_EXAMINATION -> ExaminationStatus.UNDER_EXAMINATION;
@@ -298,7 +301,7 @@ public class DtoMapper {
         };
     }
 
-    public Status mapStatus(@NotNull StatusDto planDefinitionStatus) {
+    public Status mapStatus(@NotNull org.openapitools.model.Status planDefinitionStatus) {
         return switch (planDefinitionStatus) {
             case DRAFT -> Status.DRAFT;
             case ACTIVE -> Status.ACTIVE;
@@ -564,24 +567,24 @@ public class DtoMapper {
         return lastUpdated.toInstant().atOffset(ZoneOffset.UTC);
     }
 
-    private StatusDto mapStatus(@NotNull Status planDefinitionStatus) {
+    private org.openapitools.model.Status mapStatus(@NotNull Status planDefinitionStatus) {
         return switch (planDefinitionStatus) {
-            case DRAFT -> StatusDto.DRAFT;
-            case ACTIVE -> StatusDto.ACTIVE;
-            case RETIRED -> StatusDto.RETIRED;
+            case DRAFT -> org.openapitools.model.Status.DRAFT;
+            case ACTIVE -> org.openapitools.model.Status.ACTIVE;
+            case RETIRED -> org.openapitools.model.Status.RETIRED;
         };
     }
 
 
-    private CarePlanStatusDto mapCarePlanStatus(@NotNull CarePlanStatus carePlanStatus) {
+    private org.openapitools.model.CarePlanStatus mapCarePlanStatus(@NotNull CarePlanStatus carePlanStatus) {
         return switch (carePlanStatus) {
-            case ACTIVE -> CarePlanStatusDto.ACTIVE;
-            case COMPLETED -> CarePlanStatusDto.COMPLETED;
+            case ACTIVE -> org.openapitools.model.CarePlanStatus.ACTIVE;
+            case COMPLETED -> org.openapitools.model.CarePlanStatus.COMPLETED;
         };
     }
 
 
-    private CarePlanStatus mapCarePlanStatus(@NotNull CarePlanStatusDto carePlanStatus) {
+    private CarePlanStatus mapCarePlanStatus(@NotNull org.openapitools.model.CarePlanStatus carePlanStatus) {
         return switch (carePlanStatus) {
             case ACTIVE -> CarePlanStatus.ACTIVE;
             case COMPLETED -> CarePlanStatus.COMPLETED;

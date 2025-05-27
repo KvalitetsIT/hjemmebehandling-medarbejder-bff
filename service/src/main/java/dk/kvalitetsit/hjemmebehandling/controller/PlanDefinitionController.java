@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Comparator;
@@ -54,13 +55,15 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(List<StatusDto> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(List<org.openapitools.model.Status> statusesToInclude) {
         try {
             var statuses = statusesToInclude.stream().map(dtoMapper::mapStatus).toList();
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statuses);
 
-            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing((x) -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed())).toList());
+            return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel)
+                    .sorted(Comparator.comparing((x) -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed()))
+                    .toList());
         } catch (ServiceException | AccessValidationException e) {
             logger.error("Could not look up planDefinitions", e);
             throw toStatusCodeException(e);
@@ -106,10 +109,6 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
         return ResponseEntity.ok().build();
     }
 
-    @Override
-    public ResponseEntity<Void> updatePlanDefinition(PlanDefinitionDto planDefinitionDto) {
-        throw new UnsupportedOperationException();
-    }
 
     private List<QualifiedId.QuestionnaireId> getQuestionnaireIds(List<String> questionnaireIds) {
         return questionnaireIds.stream().map(QualifiedId.QuestionnaireId::new).toList();
