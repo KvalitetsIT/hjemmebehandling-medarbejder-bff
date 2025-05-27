@@ -27,7 +27,7 @@ public class ValidatedQuestionnaireRepository implements QuestionnaireRepository
     }
 
     @Override
-    public void update(QuestionnaireModel resource) throws ServiceException {
+    public void update(QuestionnaireModel resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 

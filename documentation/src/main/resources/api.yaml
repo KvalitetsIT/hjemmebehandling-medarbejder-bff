@@ -78,9 +78,10 @@ paths:
       parameters:
         - name: statusesToInclude
           in: query
-          required: false
+          required: true
           schema:
             type: array
+            default: [ ]
             items:
               type: string
       responses:
@@ -214,7 +215,7 @@ paths:
             Location:
               description: URL pointing to the created Questionnaire.
               style: simple
-  /v1/questionnaire/{id}/retire:
+  /v1/questionnaires/{id}/retire:
     put:
       tags:
         - Questionnaire
@@ -266,9 +267,10 @@ paths:
       parameters:
         - name: statusesToInclude
           in: query
-          required: false
+          required: true
           schema:
             type: array
+            default: []
             items:
               $ref: '#/components/schemas/StatusDto'
       responses:
@@ -402,7 +404,7 @@ paths:
             Location:
               description: URL pointing to the created PlanDefinition.
               style: simple
-  /v1/plandefinition/{id}/retire:
+  /v1/plandefinitions/{id}/retire:
     put:
       tags:
         - PlanDefinition
@@ -446,7 +448,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/careplan:
+  /v1/careplans:
     get:
       tags:
         - CarePlan
@@ -604,7 +606,7 @@ paths:
             Location:
               description: URL pointing to the created CarePlan.
               style: simple
-  /v1/careplan/{id}/resolve-alarm/{questionnaireId}:
+  /v1/careplans/{id}/resolve-alarm/{questionnaireId}:
     put:
       tags:
         - CarePlan
@@ -653,7 +655,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/careplan/{id}/complete:
+  /v1/careplans/{id}/complete:
     put:
       tags:
         - CarePlan
@@ -710,19 +712,8 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/examinationStatusDto'
-
-        - name: pageNumber
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
-        - name: pageSize
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         "400":
           description: Bad Request
@@ -946,7 +937,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/questionnaire/{id}:
+  /v1/questionnaires/{id}:
     get:
       tags:
         - Questionnaire
@@ -1043,7 +1034,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/plandefinition/{id}:
+  /v1/plandefinitions/{id}:
     patch:
       tags:
         - PlanDefinition
@@ -1093,7 +1084,7 @@ paths:
                 $ref: '#/components/schemas/ErrorDto'
         "200":
           description: OK
-  /v1/careplan/{id}:
+  /v1/careplans/{id}:
     get:
       tags:
         - CarePlan
@@ -1155,7 +1146,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateCareplanRequest'
+              $ref: '#/components/schemas/UpdateCarePlanRequest'
         required: true
       responses:
         "400":
@@ -1250,18 +1241,8 @@ paths:
             type: array
             items:
               type: string
-        - name: pageNumber
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
-        - name: pageSize
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         "400":
           description: Bad Request
@@ -1298,8 +1279,11 @@ paths:
           content:
             'application/json':
               schema:
-                $ref: '#/components/schemas/PaginatedListQuestionnaireResponseDto'
-  /v1/questionnaire/{id}/used:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionnaireResponseDto'
+
+  /v1/questionnaires/{id}/used:
     get:
       tags:
         - Questionnaire
@@ -1350,7 +1334,7 @@ paths:
             'application/json':
               schema:
                 type: boolean
-  /v1/plandefinition/{id}/used:
+  /v1/plandefinitions/{id}/used:
     get:
       tags:
         - PlanDefinition
@@ -1465,18 +1449,8 @@ paths:
           required: true
           schema:
             type: boolean
-        - name: page_number
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
-        - name: page_size
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         "400":
           description: Bad Request
@@ -1650,7 +1624,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MeasurementTypeDto'
-  /v1/careplan/{id}/questionnaires/unresolved:
+  /v1/careplans/{id}/questionnaires/unresolved:
     get:
       tags:
         - CarePlan
@@ -1700,7 +1674,7 @@ paths:
                 type: array
                 items:
                   type: string
-  /v1/careplan/plandefinition:
+  /v1/careplans/plandefinition:
     get:
       tags:
         - CarePlan
@@ -1708,9 +1682,10 @@ paths:
       parameters:
         - name: statusesToInclude
           in: query
-          required: false
+          required: true
           schema:
             type: array
+            default: []
             items:
               $ref: '#/components/schemas/StatusDto'
       responses:
@@ -1753,6 +1728,21 @@ paths:
                 items:
                   $ref: '#/components/schemas/PlanDefinitionDto'
 components:
+  parameters:
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+
   schemas:
     ErrorDto:
       type: object
@@ -2180,7 +2170,7 @@ components:
           type: string
         frequency:
           $ref: '#/components/schemas/FrequencyDto'
-    UpdateCareplanRequest:
+    UpdateCarePlanRequest:
       type: object
       properties:
         planDefinitionIds:
@@ -2232,22 +2222,7 @@ components:
       type: string
       description: "Et personnummer, i daglig tale kaldet CPR-nummer (eng. civil registration number), er et ti-cifret, personligt identifikationsnummer"
 
-    PaginatedListQuestionnaireResponseDto:
-      type: object
-      properties:
-        total:
-          type: integer
-          format: int32
-        limit:
-          type: integer
-          format: int32
-        offset:
-          type: integer
-          format: int32
-        list:
-          type: array
-          items:
-            $ref: '#/components/schemas/QuestionnaireResponseDto'
+
     PersonDto:
       type: object
       properties:

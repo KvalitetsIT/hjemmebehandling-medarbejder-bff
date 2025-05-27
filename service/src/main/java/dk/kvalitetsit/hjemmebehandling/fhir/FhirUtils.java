@@ -5,8 +5,7 @@ import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.constants.SearchParameters;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.QuestionnaireResponse;
+import org.hl7.fhir.r4.model.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -17,8 +16,8 @@ public class FhirUtils {
         return new ReferenceClientParam(SearchParameters.ORGANIZATION).hasId(organizationId.unqualified());
     }
 
-    public static ICriterion<ReferenceClientParam> buildPlanDefinitionCriterion(QualifiedId.PlanDefinitionId plandefinitionId) {
-        return CarePlan.INSTANTIATES_CANONICAL.hasId(plandefinitionId.unqualified());
+    public static ICriterion<ReferenceClientParam> buildPlanDefinitionCriterion(QualifiedId.PlanDefinitionId planDefinitionId) {
+        return CarePlan.INSTANTIATES_CANONICAL.hasId(planDefinitionId.unqualified());
     }
 
 

@@ -12,8 +12,11 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A concrete implementation of the {@link PatientRepository} interface for handling
@@ -37,17 +40,23 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
         var cprCriterion = CarePlan.PATIENT.hasChainedProperty(new StringClientParam("patient_identifier_cpr").matches().values(searchStrings));
         var nameCriterion = CarePlan.PATIENT.hasChainedProperty(Patient.NAME.matches().values(searchStrings));
         var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-//
-//        FhirLookupResult fhirLookupResult = lookupCarePlansByCriteria(List.of(cprCriterion, statusCriterion, organizationCriterion));
-//        fhirLookupResult.merge(lookupCarePlansByCriteria(List.of(nameCriterion, statusCriterion, organizationCriterion)));
 
-        throw new NotImplementedException();
+        var patientsByCPR = lookupPatients(List.of(cprCriterion, statusCriterion));
+        var patientsByName = lookupPatients(List.of(nameCriterion, statusCriterion));
+        return Stream.concat(patientsByCPR.stream(), patientsByName.stream())
+                .distinct()
+                .toList();
     }
 
     @Override
-    public List<Patient> fetchByStatus(CarePlan.CarePlanStatus status) throws ServiceException {
-        var statusCriterion = CarePlan.STATUS.exactly().code(status.toCode());
-        return lookupPatients(List.of(statusCriterion));
+    public List<Patient> fetchByStatus(CarePlan.CarePlanStatus... status) throws ServiceException {
+        List<ICriterion<?>> statusCriteria = Arrays.stream(status)
+                .distinct()
+                .map(CarePlan.CarePlanStatus::toCode)
+                .map(x -> CarePlan.STATUS.exactly().code(x))
+                .collect(Collectors.toList());
+
+        return lookupPatients(statusCriteria);
     }
 
     @Override
@@ -104,7 +113,7 @@ public class ConcretePatientRepository implements PatientRepository<Patient, Car
     }
 
     private List<Patient> lookupPatients(List<ICriterion<?>> criterion) throws ServiceException {
-        return client.lookupByCriteria(Patient.class, criterion);
+        return client.fetchByCriteria(Patient.class, criterion);
     }
 
 

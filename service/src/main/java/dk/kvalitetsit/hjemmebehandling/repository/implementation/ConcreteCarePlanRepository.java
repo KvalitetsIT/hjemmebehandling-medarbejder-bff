@@ -37,8 +37,6 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
         this.client = client;
     }
 
-
-
     @Override
     public void update(CarePlan carePlan, Patient patient) {
         var bundle = new BundleBuilder().buildUpdateCarePlanBundle(carePlan, patient);
@@ -64,10 +62,10 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     }
 
     @Override
-    public List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException {
+    public List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId planDefinitionId) throws ServiceException {
         var statusCriterion = CarePlan.STATUS.exactly().code(CarePlan.CarePlanStatus.ACTIVE.toCode());
-        var plandefinitionCriterion = FhirUtils.buildPlanDefinitionCriterion(plandefinitionId);
-        List<ICriterion<?>> criteria = new ArrayList<>(List.of(statusCriterion, plandefinitionCriterion));
+        var planDefinitionCriterion = FhirUtils.buildPlanDefinitionCriterion(planDefinitionId);
+        List<ICriterion<?>> criteria = new ArrayList<>(List.of(statusCriterion, planDefinitionCriterion));
         return lookupCarePlansByCriteria(criteria);
     }
 
@@ -124,8 +122,8 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     }
 
     @Override
-    public List<CarePlan> fetch() {
-        throw new NotImplementedException();
+    public List<CarePlan> fetch() throws ServiceException {
+        return client.fetch(CarePlan.class);
     }
 
     @Override
@@ -139,21 +137,19 @@ public class ConcreteCarePlanRepository implements CarePlanRepository<CarePlan, 
     }
 
     private List<CarePlan> lookupCarePlansByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
-        return client.lookupByCriteria(
+        return client.fetchByCriteria(
                 CarePlan.class, criteria,
                 List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL)
         );
     }
 
     private List<CarePlan> lookupCarePlansByCriteria(List<ICriterion<?>> criteria, SortSpec sortSpec) throws ServiceException {
-        // The FhirLookupResult includes the patient- and plandefinition-resources that we need,
+        // The FhirLookupResult includes the patient- and planDefinition-resources that we need,
         // but due to limitations of the FHIR server, not the questionnaire-resources. Se wo look up those in a separate call.
-        return client.lookupByCriteria(
+        return client.fetchByCriteria(
                 CarePlan.class, criteria,
                 List.of(CarePlan.INCLUDE_SUBJECT, CarePlan.INCLUDE_INSTANTIATES_CANONICAL),
-                Optional.of(sortSpec),
-                Optional.empty(),
-                Optional.empty()
+                sortSpec
         );
     }
 

@@ -19,5 +19,5 @@ public interface PatientService {
 
     List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException, AccessValidationException;
 
-    List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException, AccessValidationException;
+    List<PatientModel> searchActivePatients(List<String> searchStrings) throws ServiceException, AccessValidationException;
 }

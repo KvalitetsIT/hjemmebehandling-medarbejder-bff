@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.TriagingCategory;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public record QuestionnaireResponseModel(
         QualifiedId.QuestionnaireResponseId id,
@@ -21,7 +22,7 @@ public record QuestionnaireResponseModel(
         PatientModel patient,
         String planDefinitionTitle
 
-) implements BaseModel {
+) implements BaseModel<QuestionnaireResponseModel> {
 
     public static Builder builder() {
         return new Builder();
@@ -31,6 +32,27 @@ public record QuestionnaireResponseModel(
     public QualifiedId.OrganizationId organizationId() {
         return organizationId;
     }
+
+    @Override
+    public QuestionnaireResponseModel substitute(QuestionnaireResponseModel other) {
+        return new QuestionnaireResponseModel(
+                Optional.ofNullable(other.id).orElse(id),
+                Optional.ofNullable(other.organizationId).orElse(organizationId),
+                Optional.ofNullable(other.questionnaireId).orElse(questionnaireId),
+                Optional.ofNullable(other.carePlanId).orElse(carePlanId),
+                Optional.ofNullable(other.authorId).orElse(authorId),
+                Optional.ofNullable(other.sourceId).orElse(sourceId),
+                Optional.ofNullable(other.questionnaireName).orElse(questionnaireName),
+                Optional.ofNullable(other.questionAnswerPairs).orElse(questionAnswerPairs),
+                Optional.ofNullable(other.answered).orElse(answered),
+                Optional.ofNullable(other.examinationStatus).orElse(examinationStatus),
+                Optional.ofNullable(other.examinationAuthor).orElse(examinationAuthor),
+                Optional.ofNullable(other.triagingCategory).orElse(triagingCategory),
+                Optional.ofNullable(other.patient).orElse(patient),
+                Optional.ofNullable(other.planDefinitionTitle).orElse(planDefinitionTitle)
+        );
+    }
+
 
     public static class Builder {
         private QualifiedId.QuestionnaireResponseId id;
@@ -47,6 +69,25 @@ public record QuestionnaireResponseModel(
         private PatientModel patient;
         private String planDefinitionTitle;
         private QualifiedId.OrganizationId organizationId;
+
+        public static Builder from(QuestionnaireResponseModel source) {
+            return new Builder()
+                    .answered(source.answered)
+                    .authorId(source.authorId)
+                    .id(source.id)
+                    .carePlanId(source.carePlanId)
+                    .sourceId(source.sourceId)
+                    .triagingCategory(source.triagingCategory)
+                    .examinationAuthor(source.examinationAuthor)
+                    .organizationId(source.organizationId())
+                    .planDefinitionTitle(source.planDefinitionTitle())
+                    .questionnaireId(source.questionnaireId)
+                    .questionnaireName(source.questionnaireName())
+                    .examinationStatus(source.examinationStatus)
+                    .questionAnswerPairs(source.questionAnswerPairs)
+                    .authorId(source.authorId)
+                    .patient(source.patient);
+        }
 
         public Builder organizationId(QualifiedId.OrganizationId organizationId) {
             this.organizationId = organizationId;
@@ -116,25 +157,6 @@ public record QuestionnaireResponseModel(
         public Builder id(QualifiedId.QuestionnaireResponseId id) {
             this.id = id;
             return this;
-        }
-
-        public static Builder from(QuestionnaireResponseModel source) {
-            return new Builder()
-                    .answered(source.answered)
-                    .authorId(source.authorId)
-                    .id(source.id)
-                    .carePlanId(source.carePlanId)
-                    .sourceId(source.sourceId)
-                    .triagingCategory(source.triagingCategory)
-                    .examinationAuthor(source.examinationAuthor)
-                    .organizationId(source.organizationId())
-                    .planDefinitionTitle(source.planDefinitionTitle())
-                    .questionnaireId(source.questionnaireId)
-                    .questionnaireName(source.questionnaireName())
-                    .examinationStatus(source.examinationStatus)
-                    .questionAnswerPairs(source.questionAnswerPairs)
-                    .authorId(source.authorId)
-                    .patient(source.patient);
         }
 
         public QuestionnaireResponseModel build() {

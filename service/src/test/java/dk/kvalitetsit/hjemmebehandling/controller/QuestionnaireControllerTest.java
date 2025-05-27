@@ -61,7 +61,7 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel1)).thenReturn(questionnaireDto1);
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
 
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(2, Objects.requireNonNull(result.getBody()).size());
@@ -89,7 +89,7 @@ public class QuestionnaireControllerTest {
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel2)).thenReturn(questionnaireDto2);
         Mockito.when(dtoMapper.mapQuestionnaireModel(questionnaireModel3)).thenReturn(questionnaireDto3);
 
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(3, Objects.requireNonNull(result.getBody()).size());
@@ -102,7 +102,7 @@ public class QuestionnaireControllerTest {
     public void getQuestionnaire_questionnairesMissing_200() throws Exception {
         Mockito.when(questionnaireService.getQuestionnaires(List.of())).thenReturn(List.of());
 
-        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(Optional.empty());
+        ResponseEntity<List<QuestionnaireDto>> result = subject.getQuestionnaires(List.of());
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertTrue(Objects.requireNonNull(result.getBody()).isEmpty());

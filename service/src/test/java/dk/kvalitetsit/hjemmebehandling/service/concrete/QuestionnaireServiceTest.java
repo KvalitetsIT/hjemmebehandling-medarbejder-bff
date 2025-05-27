@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -133,8 +134,8 @@ public class QuestionnaireServiceTest {
         String newTitle = "new title";
         String newDescription = "new description";
         Status newStatus = Status.ACTIVE;
-        List<QuestionModel> newQuestions = List.of(buildQuestionModel());
-        QuestionModel newCallToAction = buildQuestionModel();
+        List<QuestionModel> newQuestions = List.of(QuestionModel.builder().build());
+        QuestionModel newCallToAction = QuestionModel.builder().build();;
 
         QuestionnaireModel questionnaire = QuestionnaireModel
                 .builder()
@@ -148,14 +149,12 @@ public class QuestionnaireServiceTest {
         ArgumentCaptor<QuestionnaireModel> captor = ArgumentCaptor.forClass(QuestionnaireModel.class);
         verify(questionnaireRepository, times(1)).update(captor.capture());
 
-        questionnaire = captor.getValue();
-
-        assertEquals(newTitle, questionnaire.title());
-        assertEquals(newDescription, questionnaire.description());
-        assertEquals(newStatus, questionnaire.status());
-        assertEquals(newQuestions.size(), questionnaire.questions().size());
-        assertEquals(newQuestions.getFirst(), questionnaire.questions().getFirst());
-        assertEquals(newCallToAction, questionnaire.callToAction());
+        assertEquals(newTitle, captor.getValue().title());
+        assertEquals(newDescription, captor.getValue().description());
+        assertEquals(newStatus, captor.getValue().status());
+        assertEquals(newQuestions.size(), captor.getValue().questions().size());
+        assertNotNull(captor.getValue().questions().getFirst().linkId());
+        assertEquals(Systems.CALL_TO_ACTION_LINK_ID, captor.getValue().callToAction().linkId());
     }
 
     @Test

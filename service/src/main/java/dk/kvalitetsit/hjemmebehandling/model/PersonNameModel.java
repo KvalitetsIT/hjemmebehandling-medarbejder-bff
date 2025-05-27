@@ -1,5 +1,6 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import java.util.Arrays;
 import java.util.List;
 
 public record PersonNameModel(
@@ -19,8 +20,8 @@ public record PersonNameModel(
             return this;
         }
 
-        public Builder given(List<String> given) {
-            this.given = given;
+        public Builder given(String... given) {
+            this.given = Arrays.stream(given).toList();
             return this;
         }
 

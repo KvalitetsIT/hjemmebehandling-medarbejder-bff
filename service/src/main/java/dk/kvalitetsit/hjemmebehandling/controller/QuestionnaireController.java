@@ -76,15 +76,9 @@ public class QuestionnaireController extends BaseController implements Questionn
     }
 
     @Override
-    public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires(Optional<List<String>> statusesToInclude) {
-
-        if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
-            var details = ErrorDetails.PARAMETERS_INCOMPLETE;
-            details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
-            throw new BadRequestException(details);
-        }
+    public ResponseEntity<List<QuestionnaireDto>> getQuestionnaires(List<String> statusesToInclude) {
         try {
-            List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude.orElse(List.of()));
+            List<QuestionnaireModel> questionnaires = questionnaireService.getQuestionnaires(statusesToInclude);
 
             var response = questionnaires.stream()
                     .map(dtoMapper::mapQuestionnaireModel)

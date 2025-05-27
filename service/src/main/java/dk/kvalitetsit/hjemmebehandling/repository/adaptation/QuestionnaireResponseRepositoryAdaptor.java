@@ -52,7 +52,7 @@ public class QuestionnaireResponseRepositoryAdaptor implements QuestionnaireResp
     }
 
     @Override
-    public void update(QuestionnaireResponseModel resource) throws ServiceException {
+    public void update(QuestionnaireResponseModel resource) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapQuestionnaireResponseModel(resource));
     }
 

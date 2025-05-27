@@ -10,7 +10,6 @@ import java.util.Optional;
 
 public interface PatientRepository<Patient, CarePlanStatus> extends Repository<Patient, QualifiedId.PatientId> {
 
-
     /**
      * Looks up a patient by CPR number.
      *
@@ -30,14 +29,12 @@ public interface PatientRepository<Patient, CarePlanStatus> extends Repository<P
     List<Patient> searchPatients(List<String> searchStrings, CarePlanStatus status) throws ServiceException, AccessValidationException;
 
     /**
-     * Retrieves patients by care plan status.
+     * Retrieves patients by status.
      *
-     * @param status The care plan status.
+     * @param status The status of the care plan.
      * @return List of matching patients.
      * @throws ServiceException If the operation fails.
      */
-    List<Patient> fetchByStatus(CarePlanStatus status) throws ServiceException, AccessValidationException;
-
-
+    List<Patient> fetchByStatus(CarePlanStatus... status) throws ServiceException, AccessValidationException;
 
 }

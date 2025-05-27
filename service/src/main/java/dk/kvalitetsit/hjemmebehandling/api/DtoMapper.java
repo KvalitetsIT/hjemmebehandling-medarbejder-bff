@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.*;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import jakarta.validation.Valid;
@@ -23,7 +24,7 @@ import java.util.Optional;
 
 @Component
 public class DtoMapper {
-    public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
+    public CarePlanModel mapCarePlan(CarePlanDto carePlanDto) {
         return new CarePlanModel(
                 carePlanDto.getId().map(QualifiedId.CarePlanId::new).orElse(null),
                 null, //Todo: organizationId was expected but is not defined by the api
@@ -40,7 +41,7 @@ public class DtoMapper {
         );
     }
 
-    public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
+    public CarePlanDto mapCarePlan(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
         carePlanDto.setId(Optional.ofNullable(carePlan.id()).map(QualifiedId.CarePlanId::unqualified));
         carePlanDto.setTitle(Optional.ofNullable(carePlan.title()));
@@ -320,7 +321,7 @@ public class DtoMapper {
                 .orgId(organization.map(OrganizationModel::id).map(QualifiedId.OrganizationId::unqualified).orElse(null));
     }
 
-    public PatientDetails mapUpdateCarePlanRequest(UpdateCareplanRequest request) {
+    public PatientDetails mapUpdateCarePlanRequest(UpdateCarePlanRequest request) {
         return new PatientDetails(
                 request.getPatientPrimaryPhone().orElse(null),
                 request.getPatientSecondaryPhone().orElse(null),

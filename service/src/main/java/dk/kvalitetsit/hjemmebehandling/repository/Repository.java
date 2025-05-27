@@ -23,7 +23,7 @@ public interface Repository<R, ID extends QualifiedId> {
      * @param resource the resource to update
      * @throws ServiceException if the update fails due to a service-level issue
      */
-    void update(R resource) throws ServiceException;
+    void update(R resource) throws ServiceException, AccessValidationException;
 
     /**
      * Saves the given resource to the repository.

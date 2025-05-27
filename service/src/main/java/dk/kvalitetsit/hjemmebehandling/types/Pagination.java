@@ -1,3 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.types;
 
-public record Pagination(int offset, int limit) { }
+import java.util.Optional;
+
+public record Pagination(Optional<Integer> offset, Optional<Integer> limit) {
+    public Pagination(Integer offset, Integer limit) {
+        this(Optional.of(offset), Optional.of(limit));
+    }
+}

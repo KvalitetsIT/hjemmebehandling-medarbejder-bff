@@ -48,7 +48,7 @@ public class ConcreteValueSetRepository implements ValueSetRepository<ValueSet> 
 
     @Override
     public List<ValueSet> fetch() throws ServiceException {
-        return fhirClient.lookup(ValueSet.class);
+        return fhirClient.fetch(ValueSet.class);
     }
 
     @Override

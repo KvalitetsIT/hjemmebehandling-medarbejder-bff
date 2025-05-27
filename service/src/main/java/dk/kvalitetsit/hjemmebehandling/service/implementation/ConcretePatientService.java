@@ -1,7 +1,7 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
-import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
+import dk.kvalitetsit.hjemmebehandling.api.Paginator;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
@@ -17,10 +17,11 @@ import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ConcretePatientService implements PatientService {
 
-    // TODO: Should be split into one which is only concerned about patient
     private final PatientRepository<PatientModel, CarePlanStatus> patientRepository;
 
     private CustomUserClient customUserService;
@@ -47,38 +48,37 @@ public class ConcretePatientService implements PatientService {
         return patientRepository.fetch(cpr).orElse(null);
     }
 
+    /**
+     * Note: patients with a missing CPR are excluded during a distinction/filter
+     * @param includeActive
+     * @param includeCompleted
+     * @return a paginated list of patients with a status of either active, complete or both
+     * @throws ServiceException
+     * @throws AccessValidationException
+     */
     // TODO: Bad Practice... replace 'includeActive' and 'includeCompleted' with 'CarePlanStatus...  status'
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException, AccessValidationException {
-        var patients = new ArrayList<PatientModel>();
+        var status = new ArrayList<CarePlanStatus>();
 
-        if (includeActive) {
-            var patientsWithActiveCarePlan = patientRepository.fetchByStatus(CarePlanStatus.ACTIVE);
-            patients.addAll(patientsWithActiveCarePlan);
-        }
+        if (includeActive) status.add(CarePlanStatus.ACTIVE);
+        if (includeCompleted) status.add(CarePlanStatus.COMPLETED);
 
-        if (includeCompleted) {
-            var patientsWithInactiveCarePlan = patientRepository.fetchByStatus(CarePlanStatus.COMPLETED);
+        var distinctPatients = patientRepository.fetchByStatus(status.toArray(new CarePlanStatus[0])).stream()
+                .collect(Collectors.toMap(PatientModel::cpr, Function.identity(),(existing, replacement) -> existing))
+                .values();
 
-            var uniquePatient = patientsWithInactiveCarePlan.stream()
-                    .filter(potentialPatient -> patients.stream().anyMatch(p -> p.cpr().equals(potentialPatient.cpr())))
-                    .toList();
-
-            patients.addAll(uniquePatient);
-        }
-
-        // Map the resources
-        return patients
+        return distinctPatients
                 .stream()
-                .sorted(Comparator.comparing((PatientModel x) -> x.name().given().getFirst()))
+                .sorted(Comparator.comparing((x) -> x.name().given().getFirst()))
                 .toList();
     }
 
     public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException, AccessValidationException {
         List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
-        return new PaginatedList<>(patients, pagination).getList();
+        return Paginator.paginate(patients, pagination);
     }
 
-    public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException, AccessValidationException {
+    public List<PatientModel> searchActivePatients(List<String> searchStrings) throws ServiceException, AccessValidationException {
         return patientRepository.searchPatients(searchStrings, CarePlanStatus.ACTIVE);
     }
 }

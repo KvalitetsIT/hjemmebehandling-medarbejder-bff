@@ -15,7 +15,7 @@ public record ThresholdModel (
         return new Builder();
     }
 
-    static class Builder {
+    public static class Builder {
 
         private String questionnaireItemLinkId;
         private ThresholdType type;
@@ -47,32 +47,32 @@ public record ThresholdModel (
             this.valueOption = valueOption;
         }
 
-        public Builder setQuestionnaireItemLinkId(String questionnaireItemLinkId) {
+        public Builder questionnaireItemLinkId(String questionnaireItemLinkId) {
             this.questionnaireItemLinkId = questionnaireItemLinkId;
             return this;
         }
 
-        public Builder setType(ThresholdType type) {
+        public Builder type(ThresholdType type) {
             this.type = type;
             return this;
         }
 
-        public Builder setValueQuantityLow(Double valueQuantityLow) {
+        public Builder valueQuantityLow(Double valueQuantityLow) {
             this.valueQuantityLow = valueQuantityLow;
             return this;
         }
 
-        public Builder setValueQuantityHigh(Double valueQuantityHigh) {
+        public Builder valueQuantityHigh(Double valueQuantityHigh) {
             this.valueQuantityHigh = valueQuantityHigh;
             return this;
         }
 
-        public Builder setValueBoolean(Boolean valueBoolean) {
+        public Builder valueBoolean(Boolean valueBoolean) {
             this.valueBoolean = valueBoolean;
             return this;
         }
 
-        public Builder setValueOption(String valueOption) {
+        public Builder valueOption(String valueOption) {
             this.valueOption = valueOption;
             return this;
         }

@@ -154,13 +154,13 @@ public class FhirClientTest {
 //
 //    @Test
 //    public void lookupPlanDefinitionById_planDefinitionPresent_success() {
-//        String plandefinitionId = "plandefinition-1";
+//        String planDefinitionId = "planDefinition-1";
 //        PlanDefinition planDefinition = new PlanDefinition();
-//        planDefinition.setId(plandefinitionId);
+//        planDefinition.setId(planDefinitionId);
 //        setupSearchPlanDefinitionClient(planDefinition);
 //        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
 //
-//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(planDefinitionId);
 //
 //        assertTrue(result.isPresent());
 //        assertEquals(planDefinition, result.get());
@@ -168,22 +168,22 @@ public class FhirClientTest {
 //
 //    @Test
 //    public void lookupPlanDefinitionById_planDefinitionMissing_empty() {
-//        String plandefinitionId = "plandefinition-1";
+//        String planDefinitionId = "planDefinition-1";
 //        setupSearchPlanDefinitionClient();
 //        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(planDefinitionId);
 //        assertFalse(result.isPresent());
 //    }
 //
 //    @Test
 //    public void lookupPlanDefinitionById_resultIncludesOrganization() {
-//        String plandefinitionId = "plandefinition-1";
+//        String planDefinitionId = "planDefinition-1";
 //        PlanDefinition planDefinition = new PlanDefinition();
 //        planDefinition.addExtension(ExtensionMapper.mapOrganizationId(ORGANIZATION_ID_1));
-//        planDefinition.setId(plandefinitionId);
+//        planDefinition.setId(planDefinitionId);
 //        setupSearchPlanDefinitionClient(planDefinition);
 //        setupOrganization(SOR_CODE_1, ORGANIZATION_ID_1);
-//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(plandefinitionId);
+//        Optional<PlanDefinition> result = subject.lookupPlanDefinition(planDefinitionId);
 //        assertTrue(result.isPresent());
 //    }
 //

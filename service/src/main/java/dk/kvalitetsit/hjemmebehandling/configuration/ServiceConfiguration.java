@@ -90,7 +90,7 @@ public class ServiceConfiguration {
             @Autowired OrganizationRepository<OrganizationModel> organizationRepository
     ) {
         // Reverse the comporator: We want responses by descending priority.
-        return new ConcreteQuestionnaireResponseService(priorityComparator, questionnaireRepository, questionnaireResponseRepository, practitionerRepository, organizationRepository);
+        return new ConcreteQuestionnaireResponseService(priorityComparator, questionnaireRepository, questionnaireResponseRepository, practitionerRepository);
     }
 
 

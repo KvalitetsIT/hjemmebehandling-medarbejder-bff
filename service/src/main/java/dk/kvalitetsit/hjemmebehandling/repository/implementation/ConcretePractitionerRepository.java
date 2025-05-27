@@ -90,7 +90,7 @@ public class ConcretePractitionerRepository implements PractitionerRepository<Pr
     @Override
     public List<Practitioner> fetch(List<QualifiedId.PractitionerId> ids) throws ServiceException {
         var idCriterion = Practitioner.RES_ID.exactly().codes(ids.stream().map(QualifiedId::unqualified).toList());
-        return client.lookupByCriteria(Practitioner.class, List.of(idCriterion));
+        return client.fetchByCriteria(Practitioner.class, List.of(idCriterion));
     }
 
     @Override
@@ -113,7 +113,7 @@ public class ConcretePractitionerRepository implements PractitionerRepository<Pr
     }
 
     private Optional<Practitioner> lookupPractitioner(List<ICriterion<?>> criterions) throws ServiceException {
-        var lookupResult = client.lookupByCriteria(Practitioner.class, criterions);
+        var lookupResult = client.fetchByCriteria(Practitioner.class, criterions);
 
         if (lookupResult.isEmpty()) return Optional.empty();
 

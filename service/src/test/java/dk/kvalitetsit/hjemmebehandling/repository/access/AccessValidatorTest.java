@@ -55,8 +55,8 @@ public class AccessValidatorTest {
     @Test
     public void validateAccess_noOrganizationTag() throws ServiceException {
         var resource = buildResource();
-        var context = UserContextModel.builder().organization(buildOrganization()).build();
         var organization = buildOrganization();
+        var context = UserContextModel.builder().organization(organization).build();
         Mockito.when(userContextProvider.getUserContext()).thenReturn(context);
         Mockito.when(organisationRepository.lookupOrganizationBySorCode(context.organization().map(OrganizationModel::id).get())).thenReturn(Optional.of(organization));
         assertThrows(IllegalStateException.class, () -> subject.validateAccess(resource));

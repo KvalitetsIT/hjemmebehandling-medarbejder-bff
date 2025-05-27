@@ -10,7 +10,6 @@ import dk.kvalitetsit.hjemmebehandling.service.PatientService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -99,7 +98,7 @@ public class PatientControllerTest {
         PatientDto patientDto = new PatientDto();
         Mockito.when(dtoMapper.mapPatientModel(patientModel)).thenReturn(patientDto);
         String searchString = "searchString";
-        Mockito.when(patientService.searchPatients(List.of(searchString))).thenReturn(List.of(patientModel));
+        Mockito.when(patientService.searchActivePatients(List.of(searchString))).thenReturn(List.of(patientModel));
         PatientListResponse result = subject.searchPatients(searchString).getBody();
 
         assertEquals(1, Objects.requireNonNull(result).getPatients().size());

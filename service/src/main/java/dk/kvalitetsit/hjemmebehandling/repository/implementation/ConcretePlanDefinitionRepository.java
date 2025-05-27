@@ -104,7 +104,7 @@ public class ConcretePlanDefinitionRepository implements PlanDefinitionRepositor
     }
 
     private List<PlanDefinition> lookupPlanDefinitionsByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
-        return client.lookupByCriteria(PlanDefinition.class, criteria, List.of(PlanDefinition.INCLUDE_DEFINITION));
+        return client.fetchByCriteria(PlanDefinition.class, criteria, List.of(PlanDefinition.INCLUDE_DEFINITION));
     }
 
 

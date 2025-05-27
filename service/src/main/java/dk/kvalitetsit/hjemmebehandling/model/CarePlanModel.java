@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public record CarePlanModel(
         QualifiedId.CarePlanId id,
@@ -19,7 +20,8 @@ public record CarePlanModel(
         List<PlanDefinitionModel> planDefinitions,
         String departmentName,
         Instant satisfiedUntil
-) implements BaseModel {
+) implements BaseModel<CarePlanModel> {
+
     public CarePlanModel {
         // Ensure lists are never null
         questionnaires = (questionnaires != null) ? List.copyOf(questionnaires) : List.of();
@@ -28,6 +30,24 @@ public record CarePlanModel(
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public CarePlanModel substitute(CarePlanModel other) {
+        return new CarePlanModel(
+                Optional.ofNullable(other.id).orElse(id),
+                Optional.ofNullable(other.organizationId).orElse(organizationId),
+                Optional.ofNullable(other.title).orElse(title),
+                Optional.ofNullable(other.status).orElse(status),
+                Optional.ofNullable(other.created).orElse(created),
+                Optional.ofNullable(other.startDate).orElse(startDate),
+                Optional.ofNullable(other.endDate).orElse(endDate),
+                Optional.ofNullable(other.patient).orElse(patient),
+                Optional.ofNullable(other.questionnaires).orElse(questionnaires),
+                Optional.ofNullable(other.planDefinitions).orElse(planDefinitions),
+                Optional.ofNullable(other.departmentName).orElse(departmentName),
+                Optional.ofNullable(other.satisfiedUntil).orElse(satisfiedUntil)
+        );
     }
 
     public static class Builder {
@@ -122,8 +142,20 @@ public record CarePlanModel(
         }
 
         public CarePlanModel build() {
-            return new CarePlanModel(id, organizationId, title, status, created, startDate, endDate, patient,
-                    questionnaires, planDefinitions, departmentName, satisfiedUntil);
+            return new CarePlanModel(
+                    id,
+                    organizationId,
+                    title,
+                    status,
+                    created,
+                    startDate,
+                    endDate,
+                    patient,
+                    questionnaires,
+                    planDefinitions,
+                    departmentName,
+                    satisfiedUntil
+            );
         }
     }
 }

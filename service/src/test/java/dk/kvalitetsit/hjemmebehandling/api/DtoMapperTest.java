@@ -42,7 +42,7 @@ public class DtoMapperTest {
     public void mapCarePlanDto_success() {
         CarePlanDto carePlanDto = buildCarePlanDto();
 
-        CarePlanModel result = subject.mapCarePlanDto(carePlanDto);
+        CarePlanModel result = subject.mapCarePlan(carePlanDto);
 
         assertEquals(carePlanDto.getId().get(), result.id().unqualified());
     }
@@ -50,7 +50,7 @@ public class DtoMapperTest {
     @Test
     public void mapCarePlanModel_success() {
         CarePlanModel carePlanModel = buildCarePlanModel();
-        CarePlanDto result = subject.mapCarePlanModel(carePlanModel);
+        CarePlanDto result = subject.mapCarePlan(carePlanModel);
         assertEquals(carePlanModel.id().unqualified(), result.getId().get());
     }
 

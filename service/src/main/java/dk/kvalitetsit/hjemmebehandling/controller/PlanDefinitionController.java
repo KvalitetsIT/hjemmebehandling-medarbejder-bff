@@ -1,12 +1,10 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
 import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
 import dk.kvalitetsit.hjemmebehandling.controller.http.LocationHeaderBuilder;
 import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
@@ -56,20 +54,15 @@ public class PlanDefinitionController extends BaseController implements PlanDefi
     }
 
     @Override
-    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(Optional<List<StatusDto>> statusesToInclude) {
+    public ResponseEntity<List<PlanDefinitionDto>> getPlanDefinitions(List<StatusDto> statusesToInclude) {
         try {
-            if (statusesToInclude.isPresent() && statusesToInclude.get().isEmpty()) {
-                var details = ErrorDetails.PARAMETERS_INCOMPLETE;
-                details.setDetails("Statusliste blev sendt med, men indeholder ingen elementer");
-                throw new BadRequestException(details);
-            }
-            var statuses = statusesToInclude.map(x -> x.stream().map(dtoMapper::mapStatus)).map(Stream::toList).orElse(List.of());
+            var statuses = statusesToInclude.stream().map(dtoMapper::mapStatus).toList();
 
             List<PlanDefinitionModel> planDefinitions = planDefinitionService.getPlanDefinitions(statuses);
 
             return ResponseEntity.ok(planDefinitions.stream().map(dtoMapper::mapPlanDefinitionModel).sorted(Comparator.comparing((x) -> x.getLastUpdated().orElse(null), Comparator.nullsFirst(OffsetDateTime::compareTo).reversed())).toList());
         } catch (ServiceException | AccessValidationException e) {
-            logger.error("Could not look up plandefinitions", e);
+            logger.error("Could not look up planDefinitions", e);
             throw toStatusCodeException(e);
         }
     }

@@ -15,9 +15,12 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.Instant;
@@ -31,6 +34,7 @@ import java.util.Optional;
  */
 public class FhirClient {
     private static final List<ResourceType> UNTAGGED_RESOURCE_TYPES = List.of(ResourceType.Patient);
+    private static final Logger logger = LoggerFactory.getLogger(FhirClient.class);
     private final UserContextProvider userContextProvider;
     private final IGenericClient client;
 
@@ -48,44 +52,50 @@ public class FhirClient {
                 .toList();
     }
 
-    public <T extends Resource> List<T> lookupByCriteria(
-            Class<T> resourceClass,
-            List<ICriterion<?>> criteria,
-            List<Include> includes,
-            Optional<SortSpec> sortSpec,
-            Optional<Integer> offset,
-            Optional<Integer> count
-    ) throws ServiceException {
+    @NotNull
+    private static List<Resource> getResources(List<Bundle.BundleEntryComponent> entries) {
+        return entries.stream()
+                .map(Bundle.BundleEntryComponent::getResponse)
+                .peek(response -> {
+                    if (!response.getStatus().startsWith("201")) {
+                        logger.error("Expected status 201, but was: {}", response.getStatus());
+                    }
+                })
+                .filter(response -> response.getStatus().startsWith("201"))
+                .map(Bundle.BundleEntryResponseComponent::getOutcome)
+                .toList();
+    }
 
-        List<ICriterion<?>> allCriteria = new ArrayList<>();
-        allCriteria.add(FhirUtils.buildOrganizationCriterion(getRequiredOrganizationId()));
-        if (criteria != null) allCriteria.addAll(criteria);
-
-        var query = client.search().forResource(resourceClass);
-
-        for (int i = 0; i < allCriteria.size(); i++) {
-            query = (i == 0) ? query.where(allCriteria.get(i)) : query.and(allCriteria.get(i));
-        }
-
-        if (includes != null) includes.forEach(query::include);
-
-        sortSpec.ifPresent(query::sort);
-        offset.ifPresent(query::offset);
-        count.ifPresent(query::count);
+    public <T extends Resource> List<T> fetchByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, SortSpec sortSpec, Pagination pagination) throws ServiceException {
+        var query = createQuery(resourceClass, criteria, includes)
+                .sort(sortSpec)
+                .offset(pagination.offset().get())
+                .count(pagination.limit().get());
 
         return fetch(query, resourceClass);
     }
 
-    public <T extends Resource> List<T> lookup(Class<T> resourceClass) throws ServiceException {
-        return lookupByCriteria(resourceClass, Collections.emptyList(), Collections.emptyList());
+    public <T extends Resource> List<T> fetchByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes, SortSpec sortSpec) throws ServiceException {
+        var query = createQuery(resourceClass, criteria, includes).sort(sortSpec);
+        return fetch(query, resourceClass);
     }
 
-    public <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
-        return lookupByCriteria(resourceClass, criteria, Collections.emptyList());
+    public <T extends Resource> List<T> fetch(Class<T> resourceClass) throws ServiceException {
+        return fetchByCriteria(resourceClass);
     }
 
-    public <T extends Resource> List<T> lookupByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
-        return lookupByCriteria(resourceClass, criteria, includes, Optional.empty(), Optional.empty(), Optional.empty());
+    public <T extends Resource> List<T> fetchByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
+        return fetchByCriteria(resourceClass, criteria, Collections.emptyList());
+    }
+
+    public <T extends Resource> List<T> fetchByCriteria(Class<T> resourceClass) throws ServiceException {
+        var query = client.search().forResource(resourceClass);
+        return fetch(query, resourceClass);
+    }
+
+    public <T extends Resource> List<T> fetchByCriteria(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
+        var query = createQuery(resourceClass, criteria, includes);
+        return fetch(query, resourceClass);
     }
 
     public Optional<String> saveInTransaction(Bundle transactionBundle, ResourceType resourceType) {
@@ -96,6 +106,33 @@ public class FhirClient {
                 .filter(response -> response.getStatus().startsWith("201") && response.getLocation().startsWith(resourceType.toString()))
                 .map(response -> response.getLocation().replaceFirst("/_history.*$", ""))
                 .findFirst();
+    }
+
+    /**
+     * This method is supposed to add multiple resources as one bundle resulting in a single server-call and hopefully a reliable transaction
+     * @param resources related resources that are expecting a cascading operation
+     * @return All the resource which were added during the execution
+     */
+    public List<Resource> postAll(Resource... resources) throws ServiceException {
+        for (Resource resource : resources) {
+            addOrganizationTag(resource);
+        }
+        var bundle = new BundleBuilder().buildBundle(Bundle.HTTPVerb.POST, resources);
+        var responseBundle = client.transaction().withBundle(bundle).execute();
+        var entries = responseBundle.getEntry();
+        return getResources(entries);
+    }
+
+    /**
+     * This method is supposed to update multiple resources as one bundle resulting in a single server-call and hopefully a reliable transaction
+     * @param resources related resources that are expecting a cascading operation
+     * @return All the resource which were added during the execution
+     */
+    public List<Resource> putAll(Resource... resources) {
+        var bundle = new BundleBuilder().buildBundle(Bundle.HTTPVerb.PUT, resources);
+        var responseBundle = client.transaction().withBundle(bundle).execute();
+        var entries = responseBundle.getEntry();
+        return getResources(entries);
     }
 
     public <T extends Resource> String saveResource(Resource resource) throws ServiceException {
@@ -118,13 +155,13 @@ public class FhirClient {
         client.update().resource(resource).execute();
     }
 
-    public <T extends Resource> List<T> lookupHistorical(List<? extends QualifiedId> ids, Class<T> clazz) {
+    public <T extends Resource> List<T> fetchHistorical(List<? extends QualifiedId> ids, Class<T> clazz) {
         return ids.stream()
-                .flatMap(id -> lookupHistorical(id, clazz).stream())
+                .flatMap(id -> fetchHistorical(id, clazz).stream())
                 .toList();
     }
 
-    public <T extends Resource> List<T> lookupHistorical(QualifiedId id, Class<T> clazz) {
+    public <T extends Resource> List<T> fetchHistorical(QualifiedId id, Class<T> clazz) {
         var bundle = client.history()
                 .onInstance(new IdType(clazz.getTypeName(), id.unqualified()))
                 .returnBundle(Bundle.class)
@@ -156,7 +193,7 @@ public class FhirClient {
                 .anyMatch(e -> e.getUrl().equals(Systems.ORGANIZATION));
 
         if (alreadyTagged)
-            throw new IllegalArgumentException("Resource already has organization tag: " + resource.getId());
+            throw new IllegalStateException("Resource already has organization tag: " + resource.getId());
 
         resource.addExtension(Systems.ORGANIZATION, new Reference(getRequiredOrganizationId().unqualified()));
     }
@@ -171,4 +208,25 @@ public class FhirClient {
                 .map(OrganizationModel::id)
                 .orElseThrow(() -> new ServiceException("Expected organisation id", ErrorKind.BAD_REQUEST, ErrorDetails.MISSING_SOR_CODE));
     }
+
+
+    private <T extends Resource> IQuery<IBaseBundle> createQuery(Class<T> resourceClass, List<ICriterion<?>> criteria) throws ServiceException {
+        var query = client.search().forResource(resourceClass);
+
+        List<ICriterion<?>> allCriteria = new ArrayList<>();
+        allCriteria.add(FhirUtils.buildOrganizationCriterion(getRequiredOrganizationId()));
+        if (criteria != null) allCriteria.addAll(criteria);
+
+        for (int i = 0; i < allCriteria.size(); i++) {
+            query = (i == 0) ? query.where(allCriteria.get(i)) : query.and(allCriteria.get(i));
+        }
+        return query;
+    }
+
+    private <T extends Resource> IQuery<IBaseBundle> createQuery(Class<T> resourceClass, List<ICriterion<?>> criteria, List<Include> includes) throws ServiceException {
+        var query = createQuery(resourceClass, criteria);
+        if (includes != null) includes.forEach(query::include);
+        return query;
+    }
+
 }

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class PatientController extends BaseController implements PatientApi {
@@ -92,11 +93,11 @@ public class PatientController extends BaseController implements PatientApi {
     }
 
     @Override
-    public ResponseEntity<org.openapitools.model.PatientListResponse> getPatients(Boolean includeActive, Boolean includeCompleted, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<PatientListResponse> getPatients(Boolean includeActive, Boolean includeCompleted, Optional<Integer> limit, Optional<Integer> offset) {
         logger.info("Getting patient ...");
         if (!includeActive && !includeCompleted) return ResponseEntity.ok(buildResponse(new ArrayList<>()));
 
-        var pagination = new Pagination(pageNumber, pageSize);
+        var pagination = new Pagination(offset, limit);
         try {
             List<PatientModel> patients = patientService.getPatients(includeActive, includeCompleted, pagination);
             patientService.getPatients(includeActive, includeCompleted);
@@ -107,6 +108,8 @@ public class PatientController extends BaseController implements PatientApi {
             throw toStatusCodeException(e);
         }
     }
+
+
 
     @Override
     public ResponseEntity<Void> resetPassword(String cpr) {
@@ -126,7 +129,7 @@ public class PatientController extends BaseController implements PatientApi {
     public ResponseEntity<org.openapitools.model.PatientListResponse> searchPatients(String searchString) {
         logger.info("Getting patient ...");
         try {
-            List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
+            List<PatientModel> patients = patientService.searchActivePatients(List.of(searchString));
             auditLoggingService.log("GET /v1/patient/search", patients);
             return ResponseEntity.ok(buildResponse(patients));
         } catch (ServiceException | AccessValidationException e) {

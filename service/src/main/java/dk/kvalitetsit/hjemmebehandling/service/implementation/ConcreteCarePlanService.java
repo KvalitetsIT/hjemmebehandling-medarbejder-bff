@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
 import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
+import dk.kvalitetsit.hjemmebehandling.api.Paginator;
 import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
 import dk.kvalitetsit.hjemmebehandling.context.UserContextProvider;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
 import dk.kvalitetsit.hjemmebehandling.service.CarePlanService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
@@ -15,8 +17,6 @@ import dk.kvalitetsit.hjemmebehandling.service.frequency.FrequencyEnumerator;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import org.apache.commons.lang3.NotImplementedException;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.TimeType;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -95,30 +95,22 @@ public class ConcreteCarePlanService implements CarePlanService {
                     .organisation(organizationRepository.getOrganizationId())
                     .build();
 
-            updatedPatient = new PatientModel(
-                    updatedPatient.id(),
-                    updatedPatient.name(),
-                    updatedPatient.cpr(),
-                    updatedPatient.contactDetails(),
-                    updatedPrimaryContact,
-                    updatedPatient.additionalRelativeContactDetails(),
-                    updatedPatient.customUserId(),
-                    updatedPatient.customUserName()
-            );
+            updatedPatient = PatientModel.Builder
+                    .from(updatedPatient)
+                    .primaryContact(updatedPrimaryContact)
+                    .build();
+
         }
 
         if (patient.isPresent()) {
             QualifiedId.PatientId patientId = patient.get().id();
-            boolean onlyActiveCarePlans = true;
-            var carePlanResult = carePlanRepository.fetchCarePlansByPatientId(patientId, onlyActiveCarePlans);
+            var carePlanResult = carePlanRepository.fetchCarePlansByPatientId(patientId, true);
 
-            if (!carePlanResult.isEmpty()) {
-                throw new ServiceException(String.format(
-                        "Could not create careplan for cpr %s: Another active careplan already exists!", cpr),
-                        ErrorKind.BAD_REQUEST,
-                        ErrorDetails.CAREPLAN_EXISTS
-                );
-            }
+            if (!carePlanResult.isEmpty()) throw new ServiceException(String.format(
+                    "Could not create carePlan for cpr '%s' - Another active carePlan already exists", cpr),
+                    ErrorKind.BAD_REQUEST,
+                    ErrorDetails.CAREPLAN_EXISTS
+            );
 
         }
 
@@ -158,47 +150,28 @@ public class ConcreteCarePlanService implements CarePlanService {
                 })
                 .toList();
 
-        CarePlanModel updatedCarePlan = new CarePlanModel(
-                null, // id must be null for creation
-                carePlan.organizationId(),
-                carePlan.title(),
-                CarePlanStatus.ACTIVE,
-                today,
-                today,
-                null,
-                updatedPatient,
-                updatedQuestionnaires,
-                carePlan.planDefinitions(),
-                carePlan.departmentName(),
-                null // will be computed below
-        );
 
-        Instant finalSatisfiedUntil = getRefreshedFrequencyTimestampForCarePlan(updatedCarePlan);
-        updatedCarePlan = new CarePlanModel(
-                updatedCarePlan.id(),
-                updatedCarePlan.organizationId(),
-                updatedCarePlan.title(),
-                updatedCarePlan.status(),
-                updatedCarePlan.created(),
-                updatedCarePlan.startDate(),
-                updatedCarePlan.endDate(),
-                updatedCarePlan.patient(),
-                updatedCarePlan.questionnaires(),
-                updatedCarePlan.planDefinitions(),
-                updatedCarePlan.departmentName(),
-                finalSatisfiedUntil
-        );
+        CarePlanModel updatedCarePlan = CarePlanModel.Builder.from(carePlan)
+                .id(null) // id must be null for creation
+                .status(CarePlanStatus.ACTIVE)
+                .created(today)
+                .startDate(today)
+                .endDate(null)
+                .patient(updatedPatient)
+                .questionnaires(updatedQuestionnaires)
+                .satisfiedUntil(getRefreshedFrequencyTimestampForCarePlan(updatedQuestionnaires))// will be computed below
+                .build();
 
         try {
             if (patient.isPresent()) {
+                // The two lines below should be done as a transaction
                 patientRepository.update(patient.get());
                 return carePlanRepository.save(updatedCarePlan);
             }
 
             if (patientidpApiUrl != null && !patientidpApiUrl.isEmpty()) {
                 try {
-                    Optional<CustomUserResponseDto> customUserResponse = customUserService
-                            .createUser(updatedPatient);
+                    Optional<CustomUserResponseDto> customUserResponse = customUserService.createUser(updatedPatient);
 
                     if (customUserResponse.isPresent()) {
                         CustomUserResponseDto dto = customUserResponse.get();
@@ -209,7 +182,7 @@ public class ConcreteCarePlanService implements CarePlanService {
                     }
                 } catch (Exception e) {
                     throw new ServiceException(
-                            String.format("Could not create customlogin for patient with id %s!", updatedPatient.id()),
+                            String.format("Could not create custom login for patient with id '%s'", updatedPatient.id()),
                             ErrorKind.BAD_GATEWAY,
                             ErrorDetails.CUSTOMLOGIN_UNKNOWN_ERROR
                     );
@@ -230,7 +203,7 @@ public class ConcreteCarePlanService implements CarePlanService {
         Optional<CarePlanModel> result = carePlanRepository.fetch(carePlanId);
 
         if (result.isEmpty()) throw new ServiceException(
-                String.format("Could not lookup careplan with id %s!", carePlanId.toString()),
+                String.format("Could not lookup carePlan with id '%s'", carePlanId.toString()),
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.CAREPLAN_DOES_NOT_EXIST
         );
@@ -240,7 +213,7 @@ public class ConcreteCarePlanService implements CarePlanService {
         var questionnaireResponsesStillNotExamined = questionnaireResponseRepository.fetch(statuses, carePlanId);
 
         if (!questionnaireResponsesStillNotExamined.isEmpty()) throw new ServiceException(
-                String.format("Careplan with id %s still has unhandled questionnaire-responses!", carePlanId),
+                String.format("CarePlan with id '%s' still has unhandled questionnaire-responses", carePlanId),
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.CAREPLAN_HAS_UNHANDLED_QUESTIONNAIRERESPONSES
         );
@@ -248,7 +221,7 @@ public class ConcreteCarePlanService implements CarePlanService {
         var questionnaireSatisfiedUntil = result.get().questionnaires().stream().anyMatch(x -> x.satisfiedUntil().isBefore(Instant.now()));
 
         if (result.get().satisfiedUntil().isBefore(Instant.now())) throw new ServiceException(
-                String.format("Careplan with id %s is missing scheduled responses!", carePlanId.qualified()),
+                String.format("CarePlan with id '%s' is missing scheduled responses", carePlanId.qualified()),
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.CAREPLAN_IS_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
         );
@@ -266,17 +239,17 @@ public class ConcreteCarePlanService implements CarePlanService {
 
     public List<CarePlanModel> getCarePlansWithFilters(boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException {
         Instant pointInTime = dateProvider.now();
-        List<CarePlanModel> careplans = carePlanRepository.fetch(pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
-        if (careplans.isEmpty()) {
+        List<CarePlanModel> carePlans = carePlanRepository.fetch(pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
+        if (carePlans.isEmpty()) {
             return List.of();
         }
         // Get the related questionnaire-resources
         List<QualifiedId.QuestionnaireId> questionnaireIds = new ArrayList<>();
-        questionnaireIds.addAll(extractQuestionnaireIdsFromCarePlan(careplans));
-        questionnaireIds.addAll(extractQuestionnaireIdsFromPlanDefinition(careplans.getFirst().planDefinitions()));
+        questionnaireIds.addAll(extractQuestionnaireIdsFromCarePlan(carePlans));
+        questionnaireIds.addAll(extractQuestionnaireIdsFromPlanDefinition(carePlans.getFirst().planDefinitions()));
         List<QuestionnaireModel> questionnaireResult = questionnaireRepository.fetch(questionnaireIds);
 
-        return careplans.stream()
+        return carePlans.stream()
                 .sorted((carePlan1, carePlan2) -> {
                     String name1 = String.join(" ", carePlan1.patient().name().given().getFirst(), carePlan1.patient().name().family());
                     String name2 = String.join(" ", carePlan2.patient().name().given().getFirst(), carePlan2.patient().name().family());
@@ -287,18 +260,13 @@ public class ConcreteCarePlanService implements CarePlanService {
 
     public List<CarePlanModel> getCarePlansWithFilters(CPR cpr, boolean onlyActiveCarePlans, boolean onlyUnSatisfied) throws ServiceException, AccessValidationException {
         Instant pointInTime = dateProvider.now();
-        Optional<PatientModel> patient = patientRepository.fetch(cpr);
-        List<CarePlanModel> lookupResult = carePlanRepository.fetch(patient.get().id(), pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
-        if (lookupResult.isEmpty()) {
-            return List.of();
-        }
+        PatientModel patient = patientRepository.fetch(cpr).orElseThrow(() -> new ServiceException(String.format("Patient with CPR '%s' was not found", cpr), ErrorKind.BAD_REQUEST, ErrorDetails.PATIENT_DOES_NOT_EXIST));
+        List<CarePlanModel> carePlans = carePlanRepository.fetch(patient.id(), pointInTime, onlyActiveCarePlans, onlyUnSatisfied);
 
-        // Map and sort the resources
-
-        return lookupResult.stream()
-                .sorted((careplan1, careplan2) -> {
-                    String name1 = String.join(" ", careplan1.patient().name().given().getFirst(), careplan1.patient().name().family());
-                    String name2 = String.join(" ", careplan2.patient().name().given().getFirst(), careplan2.patient().name().family());
+        return carePlans.stream()
+                .sorted((carePlan1, carePlan2) -> {
+                    String name1 = String.join(" ", carePlan1.patient().name().given().getFirst(), carePlan1.patient().name().family());
+                    String name2 = String.join(" ", carePlan2.patient().name().given().getFirst(), carePlan2.patient().name().family());
                     return name1.compareTo(name2);
                 })
                 .toList();
@@ -318,14 +286,17 @@ public class ConcreteCarePlanService implements CarePlanService {
 
     public CarePlanModel resolveAlarm(QualifiedId.CarePlanId carePlanId, QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
         Optional<CarePlanModel> carePlanResult = carePlanRepository.fetch(carePlanId);
-        CarePlanModel carePlan = carePlanResult.orElseThrow(() -> new ServiceException(String.format("Could not look up careplan by id %s", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST));
+        CarePlanModel carePlan = carePlanResult.orElseThrow(() -> new ServiceException(String.format("Could not look up carePlan by id '%s'", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_DOES_NOT_EXIST));
 
         // Check that the 'satisfiedUntil'-timestamp is indeed in the past, throw an exception if not.
         // CarePlanModel carePlanModel = fhirMapper.mapCarePlan(carePlan,null, fhirClient.getOrganizationId());
         var currentPointInTime = dateProvider.now();
-        if (currentPointInTime.isBefore(carePlan.satisfiedUntil())) {
-            throw new ServiceException(String.format("Could not resolve alarm for careplan %s! The satisfiedUntil-timestamp was in the future.", carePlanId), ErrorKind.BAD_REQUEST, ErrorDetails.CAREPLAN_ALREADY_FULFILLED);
-        }
+        if (currentPointInTime.isBefore(carePlan.satisfiedUntil())) throw new ServiceException(
+                String.format("Could not resolve alarm for carePlan '%s' - The satisfiedUntil-timestamp was in the future", carePlanId),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.CAREPLAN_ALREADY_FULFILLED
+        );
+
 
         // Recompute the 'satisfiedUntil'-timestamps
         carePlan = CarePlanModel.Builder
@@ -349,7 +320,7 @@ public class ConcreteCarePlanService implements CarePlanService {
         List<PlanDefinitionModel> planDefinitionResult = planDefinitionRepository.fetch(planDefinitionIds);
 
         if (planDefinitionResult.size() != planDefinitionIds.size()) throw new ServiceException(
-                "Could not look up plan definitions to update!",
+                "Could not look up plan definitions to update",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.PLAN_DEFINITIONS_MISSING_FOR_CAREPLAN
         );
@@ -358,14 +329,14 @@ public class ConcreteCarePlanService implements CarePlanService {
         List<QuestionnaireModel> questionnaireResult = questionnaireRepository.fetch(questionnaireIds);
 
         if (questionnaireResult.size() != questionnaireIds.size()) throw new ServiceException(
-                "Could not look up questionnaires to update!",
+                "Could not look up questionnaires to update",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
         );
 
         // Look up the CarePlan, throw an exception in case it does not exist.
         CarePlanModel carePlan = carePlanRepository.fetch(carePlanId).orElseThrow(() -> new ServiceException(
-                        String.format("Could not lookup careplan with id %s!", carePlanId.qualified()),
+                        String.format("Could not lookup carePlan with id '%s'", carePlanId.qualified()),
                         ErrorKind.BAD_REQUEST,
                         ErrorDetails.CAREPLAN_DOES_NOT_EXIST
                 )
@@ -373,7 +344,7 @@ public class ConcreteCarePlanService implements CarePlanService {
 
         // Validate that the client is allowed to update the carePlan.
         if (!questionnairesAllowedByPlanDefinitions(planDefinitionResult, questionnaireIds)) throw new ServiceException(
-                "Not every questionnaireId could be found in the provided plan definitions.",
+                "Not every questionnaireId could be found in the provided plan definitions",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.QUESTIONNAIRES_NOT_ALLOWED_FOR_CAREPLAN
         );
@@ -385,7 +356,7 @@ public class ConcreteCarePlanService implements CarePlanService {
         if (!removedQuestionnaireIds.isEmpty()) {
             boolean removedQuestionnaireWithExceededDeadline = questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds);
             if (removedQuestionnaireWithExceededDeadline) throw new ServiceException(
-                    "Not every questionnaireId could be found in the provided plan definitions.",
+                    "Not every questionnaireId could be found in the provided plan definitions",
                     ErrorKind.BAD_REQUEST,
                     ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
             );
@@ -395,12 +366,24 @@ public class ConcreteCarePlanService implements CarePlanService {
         var removedQuestionnaireWithNotExaminedResponses = questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds);
 
         if (removedQuestionnaireWithNotExaminedResponses) throw new ServiceException(
-                String.format("Careplan with id %s still has unhandled questionnaire-responses!", carePlanId),
+                String.format("CarePlan with id '%s' still has unhandled questionnaire-responses", carePlanId),
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.PLANDEFINITION_CONTAINS_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
         );
 
-        carePlan = updateCarePlanModel(carePlan, questionnaireIds, frequencies, planDefinitionResult);
+        var questionnaires = planDefinitionResult.stream().flatMap(pd -> pd.questionnaires().stream()).toList();
+
+        var updatedQuestionnaires = buildQuestionnaireWrapperModels(
+                carePlan,
+                questionnaires,
+                frequencies
+        );
+
+        carePlan = CarePlanModel.Builder.from(carePlan)
+                .planDefinitions(planDefinitionResult)
+                .questionnaires(updatedQuestionnaires)
+                .satisfiedUntil(getRefreshedFrequencyTimestampForCarePlan(updatedQuestionnaires))
+                .build();
 
         var newPatient = updatePatientModel(carePlan.patient(), patientDetails, organizationRepository.getOrganizationId());
 
@@ -409,26 +392,13 @@ public class ConcreteCarePlanService implements CarePlanService {
         return carePlan; // for auditlogging
     }
 
-    private CarePlanModel updateCarePlanModel(CarePlanModel carePlanModel, List<QualifiedId.QuestionnaireId> questionnaireIds, Map<QualifiedId.QuestionnaireId, FrequencyModel> frequencies, List<PlanDefinitionModel> planDefinitions) {
-        var updatedQuestionnaires = planDefinitions.stream()
-                .flatMap(pd -> pd.questionnaires().stream())
-                .toList();
-
-        carePlanModel = CarePlanModel.Builder
-                .from(carePlanModel)
-                .planDefinitions(planDefinitions)
-                .questionnaires(buildQuestionnaireWrapperModels(carePlanModel, updatedQuestionnaires, frequencies))
-                .satisfiedUntil(getRefreshedFrequencyTimestampForCarePlan(carePlanModel))
-                .build();
-        return carePlanModel;
-    }
 
     private PatientModel updatePatientModel(PatientModel patientModel, PatientDetails patientDetails, QualifiedId.OrganizationId organizationId) {
 
         var primaryContactDetails = ContactDetailsModel.Builder
                 .from(patientModel.primaryContact().contactDetails())
-                .primaryPhone(patientDetails.primaryRelativePrimaryPhone() != null ? patientDetails.primaryRelativePrimaryPhone() : patientDetails.patientPrimaryPhone())
-                .secondaryPhone(patientDetails.primaryRelativeSecondaryPhone() != null ? patientDetails.primaryRelativeSecondaryPhone() : patientDetails.patientSecondaryPhone())
+                .primaryPhone(Optional.ofNullable(patientDetails.primaryRelativePrimaryPhone()).orElse(patientDetails.patientPrimaryPhone()))
+                .secondaryPhone(Optional.ofNullable(patientDetails.primaryRelativeSecondaryPhone()).orElse(patientDetails.patientSecondaryPhone()))
                 .build();
 
         var primaryContact = PrimaryContactModel.Builder
@@ -453,7 +423,7 @@ public class ConcreteCarePlanService implements CarePlanService {
     public List<QuestionnaireModel> getUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
         Optional<CarePlanModel> optional = getCarePlanById(carePlanId);
         if (optional.isEmpty()) throw new ServiceException(
-                "Careplan was not found",
+                "CarePlan was not found",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.CAREPLAN_DOES_NOT_EXIST
         );
@@ -462,28 +432,31 @@ public class ConcreteCarePlanService implements CarePlanService {
     }
 
     public TimeType getDefaultDeadlineTime() throws ServiceException, AccessValidationException {
-        OrganizationModel organization = organizationRepository.fetchCurrentUsersOrganization();
-        return organization.defaultDeadlineTime();
+        return organizationRepository.fetchCurrentUsersOrganization().defaultDeadlineTime();
     }
 
     private boolean questionnaireHasExceededDeadline(CarePlanModel carePlan, List<QualifiedId.QuestionnaireId> questionnaireIds) {
-        //return carePlan.getActivity().stream()
-        //        .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().getFirst().getValue()))
-        //        .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
-        throw new NotImplementedException();
+        return carePlan.questionnaires().stream()
+                .filter(qw -> questionnaireIds.contains(qw.questionnaire().id()))
+                .anyMatch(qw -> qw.satisfiedUntil().isBefore(dateProvider.now()));
     }
 
     private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
         List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
         return questionnaireResponseRepository.fetch(statuses, carePlanId)
                 .stream()
-                .anyMatch(questionnaireResponse -> questionnaireIds.contains(questionnaireResponse.questionnaireId()));
+                .map(QuestionnaireResponseModel::questionnaireId)
+                .anyMatch(questionnaireIds::contains);
     }
 
     private boolean questionnairesAllowedByPlanDefinitions(List<PlanDefinitionModel> planDefinitions, List<QualifiedId.QuestionnaireId> questionnaireIds) {
-        var allowedQuestionnaires = planDefinitions.stream().flatMap(pd -> pd.questionnaires().stream().map(qw -> qw.questionnaire().id())).collect(Collectors.toSet());
-        var actualQuestionnaires = new HashSet<>(questionnaireIds);
+        var allowedQuestionnaires = planDefinitions.stream()
+                .flatMap(pd -> pd.questionnaires().stream()
+                        .map(QuestionnaireWrapperModel::questionnaire)
+                        .map(QuestionnaireModel::id))
+                .collect(Collectors.toSet());
 
+        var actualQuestionnaires = new HashSet<>(questionnaireIds);
         return allowedQuestionnaires.containsAll(actualQuestionnaires);
     }
 
@@ -520,31 +493,28 @@ public class ConcreteCarePlanService implements CarePlanService {
 
                 if (currentSatisfiedUntil.isAfter(newSatisfiedUntil)) {
                     QualifiedId.QuestionnaireId questionnaireId = existing.questionnaire().id();
-                    List<QuestionnaireResponseModel> result = null;
+
                     try {
-                        result = questionnaireResponseRepository.fetch(carePlan.id(), List.of(questionnaireId));
+                        List<QuestionnaireResponseModel> result = questionnaireResponseRepository.fetch(carePlan.id(), List.of(questionnaireId));
+
+                        ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
+
+                        boolean answerFromTodayExists = result.stream().anyMatch(questionnaireResponse -> {
+                            ZonedDateTime answered = ZonedDateTime.ofInstant(null, ZoneId.of("Europe/Copenhagen"));
+                            return answered.toLocalDate().equals(now.toLocalDate()) && answered.toLocalTime().isBefore(updatedFrequency.timeOfDay());
+                        });
+
+                        if (answerFromTodayExists) {
+                            Instant nextSatisfiedUntil = frequencyEnumerator.getSatisfiedUntil(dateProvider.now(), false);
+                            return builder.satisfiedUntil(nextSatisfiedUntil).build();
+                        }
+
                     } catch (ServiceException | AccessValidationException e) {
                         throw new RuntimeException(e);
                     }
-
-                    ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("Europe/Copenhagen"));
-
-                    boolean answerFromTodayExists = result.stream()
-                            .anyMatch(questionnaireResponse -> {
-                                ZonedDateTime answered = ZonedDateTime.ofInstant(null, ZoneId.of("Europe/Copenhagen"));
-                                return answered.toLocalDate().equals(now.toLocalDate())
-                                        && answered.toLocalTime().isBefore(updatedFrequency.timeOfDay());
-                            });
-
-                    if (answerFromTodayExists) {
-                        Instant nextSatisfiedUntil = frequencyEnumerator.getSatisfiedUntil(dateProvider.now(), false);
-                        return builder.satisfiedUntil(nextSatisfiedUntil).build();
-                    } else {
-                        return builder.satisfiedUntil(newSatisfiedUntil).build();
-                    }
-                } else {
-                    return builder.satisfiedUntil(newSatisfiedUntil).build();
                 }
+
+                return builder.satisfiedUntil(newSatisfiedUntil).build();
             }
 
             // Frequency has not changed – reuse current satisfiedUntil
@@ -560,81 +530,32 @@ public class ConcreteCarePlanService implements CarePlanService {
                         FrequencyEnumerator enumerator = new FrequencyEnumerator(wrapper.frequency());
                         Instant newSatisfiedUntil = enumerator.getSatisfiedUntilForAlarmRemoval(dateProvider.now());
 
-                        return new QuestionnaireWrapperModel(
-                                wrapper.questionnaire(),
-                                wrapper.frequency(),
-                                newSatisfiedUntil,
-                                wrapper.thresholds()
-                        );
+                        return QuestionnaireWrapperModel.Builder.from(wrapper)
+                                .satisfiedUntil(newSatisfiedUntil)
+                                .build();
                     }
                     return wrapper;
                 })
                 .toList();
 
-        CarePlanModel updatedCarePlan = new CarePlanModel(
-                carePlanModel.id(),
-                carePlanModel.organizationId(),
-                carePlanModel.title(),
-                carePlanModel.status(),
-                carePlanModel.created(),
-                carePlanModel.startDate(),
-                carePlanModel.endDate(),
-                carePlanModel.patient(),
-                updatedQuestionnaires,
-                carePlanModel.planDefinitions(),
-                carePlanModel.departmentName(),
-                carePlanModel.satisfiedUntil()
-        );
+        CarePlanModel updatedCarePlan = CarePlanModel.Builder
+                .from(carePlanModel)
+                .questionnaires(updatedQuestionnaires)
+                .build();
 
-        return getRefreshedFrequencyTimestampForCarePlan(updatedCarePlan);
+        return getRefreshedFrequencyTimestampForCarePlan(updatedCarePlan.questionnaires());
     }
 
-    private Instant getRefreshedFrequencyTimestampForCarePlan(CarePlanModel carePlanModel) {
-        return carePlanModel.questionnaires()
+    private Instant getRefreshedFrequencyTimestampForCarePlan(List<QuestionnaireWrapperModel> questionnaires) {
+        return questionnaires
                 .stream()
                 .map(QuestionnaireWrapperModel::satisfiedUntil)
                 .min(Comparator.naturalOrder())
                 .orElse(Instant.MAX);
-
     }
 
     private List<CarePlanModel> pageResponses(List<CarePlanModel> responses, Pagination pagination) {
-        return responses
-                .stream()
-                .skip((long) (pagination.offset() - 1) * pagination.limit())
-                .limit(pagination.limit())
-                .toList();
-    }
-
-    private List<String> getIdsOfQuestionnairesContainingAlarm(CarePlanModel carePlanModel, CarePlan carePlan) {
-        throw new NotImplementedException();
-    }
-
-    private List<String> getIdsOfUnresolvedQuestionnaires(QualifiedId.CarePlanId carePlanId) throws ServiceException, AccessValidationException {
-        List<ExaminationStatus> statuses = List.of(ExaminationStatus.NOT_EXAMINED);
-        List<QuestionnaireResponseModel> responses = questionnaireResponseRepository.fetch(statuses, carePlanId);
-        return responses.stream()
-                .map(QuestionnaireResponseModel::questionnaireId)
-                .map(QualifiedId::toString)
-                .toList();
-    }
-
-    private List<Patient.ContactComponent> mergeContacts(List<Patient.ContactComponent> oldContacts, List<Patient.ContactComponent> newContacts) {
-        for (var newContact : newContacts) {
-            boolean contactExists = false;
-            for (int i = 0; i < oldContacts.size(); i++) {
-                var oldContact = oldContacts.get(i);
-                if (oldContact.getOrganization().getReference().equals(newContact.getOrganization().getReference())) {
-                    oldContacts.set(i, newContact);
-                    contactExists = true;
-                    break;
-                }
-            }
-            if (!contactExists) {
-                oldContacts.add(newContact);
-            }
-        }
-        return oldContacts;
+        return Paginator.paginate(responses, pagination);
     }
 
 

@@ -16,7 +16,7 @@ public record QuestionnaireModel(
         QuestionModel callToAction,
         String version,
         Date lastUpdated
-) implements BaseModel {
+) implements BaseModel<QuestionnaireModel> {
 
     public QuestionnaireModel {
         // Ensure lists are never null
@@ -31,6 +31,12 @@ public record QuestionnaireModel(
     public QualifiedId.OrganizationId organizationId() {
         return this.organizationId;
     }
+
+    @Override
+    public QuestionnaireModel substitute(QuestionnaireModel other) {
+        return null;
+    }
+
 
     public static class Builder {
         private QualifiedId.QuestionnaireId id;

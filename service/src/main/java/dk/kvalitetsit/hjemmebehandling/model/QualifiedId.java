@@ -5,8 +5,9 @@ import org.hl7.fhir.r4.model.ResourceType;
 
 import java.util.regex.Pattern;
 
-public sealed interface QualifiedId permits QualifiedId.PatientId, QualifiedId.CarePlanId, QualifiedId.PersonId, QualifiedId.PlanDefinitionId, QualifiedId.QuestionnaireId, QualifiedId.QuestionnaireResponseId, QualifiedId.PractitionerId, QualifiedId.OrganizationId, QualifiedId.ValueSetId {
 
+
+public interface QualifiedId  {
     static void validateUnqualifiedId(String unqualified) throws IllegalArgumentException {
         if (!isPlainId(unqualified)) {
             throw new IllegalArgumentException("Provided id was not a plain id: " + unqualified);

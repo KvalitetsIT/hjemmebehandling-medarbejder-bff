@@ -33,7 +33,7 @@ public class PlanDefinitionRepositoryAdaptor implements PlanDefinitionRepository
         return repository.fetchActivePlanDefinitionsUsingQuestionnaireWithId(questionnaireId).stream().map(mapper::mapPlanDefinition).toList();
     }
 
-    public void update(PlanDefinition resource) throws ServiceException {
+    public void update(PlanDefinition resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 
@@ -42,7 +42,7 @@ public class PlanDefinitionRepositoryAdaptor implements PlanDefinitionRepository
     }
 
     @Override
-    public void update(PlanDefinitionModel resource) throws ServiceException {
+    public void update(PlanDefinitionModel resource) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapPlanDefinitionModel(resource));
     }
 

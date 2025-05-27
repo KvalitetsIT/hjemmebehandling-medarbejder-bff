@@ -1,11 +1,13 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 
+import java.util.Optional;
+
 public record PractitionerModel(
         QualifiedId.PractitionerId id,
         String givenName,
         String familyName
-) implements BaseModel {
+) implements BaseModel<PractitionerModel> {
     public static PractitionerModel.Builder builder() {
         return new Builder();
     }
@@ -13,6 +15,15 @@ public record PractitionerModel(
     @Override
     public QualifiedId.OrganizationId organizationId() {
         return null;
+    }
+
+    @Override
+    public PractitionerModel substitute(PractitionerModel other) {
+        return new PractitionerModel(
+                Optional.ofNullable(other.id).orElse(id),
+                Optional.ofNullable(other.givenName).orElse(givenName),
+                Optional.ofNullable(other.familyName).orElse(familyName)
+        );
     }
 
     public static class Builder {

@@ -46,7 +46,7 @@ public class OrganizationRepositoryAdaptor implements OrganizationRepository<Org
     }
 
     @Override
-    public void update(OrganizationModel resource) throws ServiceException {
+    public void update(OrganizationModel resource) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapOrganization(resource));
     }
 

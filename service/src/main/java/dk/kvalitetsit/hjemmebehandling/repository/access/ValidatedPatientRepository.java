@@ -33,12 +33,12 @@ public class ValidatedPatientRepository implements PatientRepository<PatientMode
     }
 
     @Override
-    public List<PatientModel> fetchByStatus(CarePlanStatus carePlanStatus) throws ServiceException, AccessValidationException {
+    public List<PatientModel> fetchByStatus(CarePlanStatus... carePlanStatus) throws ServiceException, AccessValidationException {
         return accessValidator.validateAccess(repository.fetchByStatus(carePlanStatus));
     }
 
     @Override
-    public void update(PatientModel resource) throws ServiceException {
+    public void update(PatientModel resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 

@@ -25,7 +25,7 @@ public class ValidatedPractitionerRepository implements PractitionerRepository<P
     }
 
     @Override
-    public void update(PractitionerModel resource) throws ServiceException {
+    public void update(PractitionerModel resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 

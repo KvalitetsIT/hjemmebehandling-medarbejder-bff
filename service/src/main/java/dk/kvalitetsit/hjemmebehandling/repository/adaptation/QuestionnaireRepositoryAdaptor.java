@@ -37,7 +37,7 @@ public class QuestionnaireRepositoryAdaptor implements QuestionnaireRepository<Q
     }
 
     @Override
-    public void update(QuestionnaireModel resource) throws ServiceException {
+    public void update(QuestionnaireModel resource) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapQuestionnaireModel(resource));
     }
 

@@ -105,7 +105,7 @@ public class ConcreteQuestionnaireResponseRepository implements QuestionnaireRes
     }
 
     private List<QuestionnaireResponse> lookupQuestionnaireResponseByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
-        return client.lookupByCriteria(
+        return client.fetchByCriteria(
                 QuestionnaireResponse.class,
                 criteria,
                 List.of(QuestionnaireResponse.INCLUDE_BASED_ON, QuestionnaireResponse.INCLUDE_QUESTIONNAIRE, QuestionnaireResponse.INCLUDE_SUBJECT)

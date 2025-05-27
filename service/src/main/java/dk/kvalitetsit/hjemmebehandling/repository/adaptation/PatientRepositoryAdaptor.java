@@ -12,6 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +36,7 @@ public class PatientRepositoryAdaptor implements PatientRepository<PatientModel,
     }
 
     @Override
-    public void update(PatientModel patientModel) throws ServiceException {
+    public void update(PatientModel patientModel) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapPatientModel(patientModel));
     }
 
@@ -50,8 +51,10 @@ public class PatientRepositoryAdaptor implements PatientRepository<PatientModel,
     }
 
     @Override
-    public List<PatientModel> fetchByStatus(CarePlanStatus carePlanStatus) throws ServiceException, AccessValidationException {
-        return repository.fetchByStatus(mapper.mapCarePlanStatus(carePlanStatus)).stream().map(mapper::mapPatient).toList();
+    public List<PatientModel> fetchByStatus(CarePlanStatus... carePlanStatus) throws ServiceException, AccessValidationException {
+        var status = Arrays.stream(carePlanStatus).map(mapper::mapCarePlanStatus).toList();
+        var result = repository.fetchByStatus(status.toArray(new CarePlan.CarePlanStatus[0]));
+        return result.stream().map(mapper::mapPatient).toList();
     }
 
     @Override

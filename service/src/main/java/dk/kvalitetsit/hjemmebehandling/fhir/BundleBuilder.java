@@ -5,7 +5,19 @@ import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Resource;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class BundleBuilder {
+
+    public Bundle buildBundle(Bundle.HTTPVerb method, Resource... resources) {
+        List<Bundle.BundleEntryComponent> entries = Arrays.stream(resources)
+                .map(resource -> buildEntry(resource, resource.getResourceType().getPath(), method))
+                .toList();
+        return buildBundle(entries.toArray(new Bundle.BundleEntryComponent[]{}));
+    }
+
+
     public Bundle buildCreateCarePlanBundle(CarePlan carePlan, Patient patient) {
         // Build the CarePlan entry.
         var carePlanEntry = buildCarePlanEntry(carePlan, Bundle.HTTPVerb.POST);

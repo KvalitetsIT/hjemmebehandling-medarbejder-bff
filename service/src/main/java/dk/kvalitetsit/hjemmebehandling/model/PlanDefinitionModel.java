@@ -5,6 +5,7 @@ import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public record PlanDefinitionModel(
         QualifiedId.PlanDefinitionId id,
@@ -16,16 +17,13 @@ public record PlanDefinitionModel(
         Instant lastUpdated,
         List<QuestionnaireWrapperModel> questionnaires
 
-) implements BaseModel {
+) implements BaseModel<PlanDefinitionModel> {
 
     public PlanDefinitionModel {
         // Ensure lists are never null
         questionnaires = questionnaires != null ? questionnaires : List.of();
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
 
     @Override
     public QualifiedId.PlanDefinitionId id() {
@@ -37,7 +35,26 @@ public record PlanDefinitionModel(
         return organizationId;
     }
 
-    public static class Builder {
+    @Override
+    public PlanDefinitionModel substitute(PlanDefinitionModel other) {
+        return new PlanDefinitionModel(
+                Optional.ofNullable(other.id()).orElse(this.id()),
+                Optional.ofNullable(other.organizationId()).orElse(this.organizationId()),
+                Optional.ofNullable(other.name()).orElse(this.name()),
+                Optional.ofNullable(other.title()).orElse(this.title()),
+                Optional.ofNullable(other.status()).orElse(this.status()),
+                Optional.ofNullable(other.created()).orElse(this.created()),
+                Optional.ofNullable(other.lastUpdated()).orElse(this.lastUpdated()),
+                Optional.ofNullable(other.questionnaires()).orElse(this.questionnaires())
+        );
+    }
+
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder  {
 
         private QualifiedId.PlanDefinitionId id;
         private String name;
@@ -104,7 +121,5 @@ public record PlanDefinitionModel(
         public PlanDefinitionModel build() {
             return new PlanDefinitionModel(id, organizationId, name, title, status, created, lastUpdated, questionnaires);
         }
-
     }
-
 }

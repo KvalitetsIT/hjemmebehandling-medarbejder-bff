@@ -32,7 +32,7 @@ public class ValidatedPlanDefinitionRepository implements PlanDefinitionReposito
     }
 
     @Override
-    public void update(PlanDefinitionModel resource) throws ServiceException {
+    public void update(PlanDefinitionModel resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 

@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.fhir;
 
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.*;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
 import jakarta.validation.constraints.NotNull;
@@ -105,7 +106,7 @@ public class FhirMapper {
         return carePlan;
     }
 
-    public CarePlanModel mapCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, List<PlanDefinition> planDefinitions, Organization organization, String organisationId, PatientModel patient, List<PlanDefinitionModel> plandefinitions) {
+    public CarePlanModel mapCarePlan(CarePlan carePlan, List<Questionnaire> questionnaires, List<PlanDefinition> planDefinitions, Organization organization, String organisationId, PatientModel patient, List<PlanDefinitionModel> planDefinitionModels) {
         var id = carePlan.getId();
 
         var wrapper = carePlan.getActivity().stream().map(activity -> {
@@ -127,11 +128,11 @@ public class FhirMapper {
                             .toList()
             );
 
-            List<PlanDefinitionModel> planDefinitionModels = planDefinitions.stream()
+            List<PlanDefinitionModel> models = planDefinitions.stream()
                     .map(x -> this.mapPlanDefinition(x, questionnaire, organization))
                     .toList();
 
-            thresholds.addAll(planDefinitionModels.stream()
+            thresholds.addAll(models.stream()
                     .flatMap(p -> p.questionnaires().stream())
                     .filter(q -> q.questionnaire().id().equals(questionnaireModel.id()))
                     .findFirst()
@@ -161,7 +162,7 @@ public class FhirMapper {
                 Optional.ofNullable(carePlan.getPeriod().getEnd()).map(Date::toInstant).orElse(null),
                 patient,
                 wrapper,
-                plandefinitions,
+                planDefinitionModels,
                 organization.getName(),
                 ExtensionMapper.extractCarePlanSatisfiedUntil(carePlan.getExtension())
         );

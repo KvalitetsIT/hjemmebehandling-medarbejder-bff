@@ -31,7 +31,7 @@ public class AccessValidator<T extends BaseModel> {
         QualifiedId.OrganizationId userOrganizationId = getOrganizationIdForUser();
 
         for (var resource : resources) {
-            QualifiedId.OrganizationId resourceOrganizationId = resource.organizationId();
+            QualifiedId.OrganizationId resourceOrganizationId = Optional.ofNullable(resource.organizationId()).orElseThrow(() -> new IllegalStateException("No organization id was present on resource %s"));
             if (!userOrganizationId.equals(resourceOrganizationId)) throw new AccessValidationException(String.format(
                     "Error updating status on resource of type %s. Id was %s. User belongs to organization %s, but resource belongs to organization %s.",
                     resource.getClass(),

@@ -32,8 +32,8 @@ public class ValidatedCarePlanRepository implements CarePlanRepository<CarePlanM
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException, AccessValidationException {
-        return validator.validateAccess(repository.fetchActiveCarePlansByPlanDefinitionId(plandefinitionId));
+    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId planDefinitionId) throws ServiceException, AccessValidationException {
+        return validator.validateAccess(repository.fetchActiveCarePlansByPlanDefinitionId(planDefinitionId));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class ValidatedCarePlanRepository implements CarePlanRepository<CarePlanM
     }
 
     @Override
-    public void update(CarePlanModel resource) throws ServiceException {
+    public void update(CarePlanModel resource) throws ServiceException, AccessValidationException {
         repository.update(resource);
     }
 

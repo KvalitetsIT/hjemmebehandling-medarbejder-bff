@@ -32,11 +32,11 @@ public interface CarePlanRepository<CarePlan, Patient> extends Repository<CarePl
     /**
      * Fetches active care plans associated with a specific plan definition.
      *
-     * @param plandefinitionId The ID of the plan definition.
+     * @param planDefinitionId The ID of the plan definition.
      * @return List of matching active care plans.
      * @throws ServiceException If the operation fails.
      */
-    List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException, AccessValidationException;
+    List<CarePlan> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId planDefinitionId) throws ServiceException, AccessValidationException;
 
     /**
      * Fetches active care plans that include a specific questionnaire.

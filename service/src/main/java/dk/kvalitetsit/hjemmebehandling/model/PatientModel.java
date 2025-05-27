@@ -1,6 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import java.util.List;
+import java.util.Optional;
 
 public record PatientModel(
         QualifiedId.PatientId id,
@@ -11,7 +14,7 @@ public record PatientModel(
         List<ContactDetailsModel> additionalRelativeContactDetails,
         String customUserId,
         String customUserName
-) implements BaseModel {
+) implements BaseModel<PatientModel> {
 
     public static Builder builder() {
         return new PatientModel.Builder();
@@ -19,7 +22,21 @@ public record PatientModel(
 
     @Override
     public QualifiedId.OrganizationId organizationId() {
-        return null;
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public PatientModel substitute(PatientModel other) {
+        return new PatientModel(
+                Optional.of(other.id).orElse(id),
+                Optional.of(other.name).orElse(name),
+                Optional.of(other.cpr).orElse(cpr),
+                Optional.of(other.contactDetails).orElse(contactDetails),
+                Optional.of(other.primaryContact).orElse(primaryContact),
+                Optional.of(other.additionalRelativeContactDetails).orElse(additionalRelativeContactDetails),
+                Optional.of(other.customUserId).orElse(customUserId),
+                Optional.of(other.customUserName).orElse(customUserName)
+        );
     }
 
     public static class Builder {

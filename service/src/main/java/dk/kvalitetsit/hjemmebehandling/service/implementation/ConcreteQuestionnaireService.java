@@ -4,6 +4,7 @@ import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Systems;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.CarePlanRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.PlanDefinitionRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
@@ -23,12 +24,12 @@ import static dk.kvalitetsit.hjemmebehandling.model.constants.Status.RETIRED;
 public class ConcreteQuestionnaireService implements QuestionnaireService {
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final CarePlanRepository<CarePlanModel, PatientModel> careplanRepository;
-    private final PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository;
+    private final PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository;
 
-    public ConcreteQuestionnaireService(QuestionnaireRepository<QuestionnaireModel> questionnaireRepository, CarePlanRepository<CarePlanModel, PatientModel> careplanRepository, PlanDefinitionRepository<PlanDefinitionModel> plandefinitionRepository) {
+    public ConcreteQuestionnaireService(QuestionnaireRepository<QuestionnaireModel> questionnaireRepository, CarePlanRepository<CarePlanModel, PatientModel> careplanRepository, PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository) {
         this.questionnaireRepository = questionnaireRepository;
         this.careplanRepository = careplanRepository;
-        this.plandefinitionRepository = plandefinitionRepository;
+        this.planDefinitionRepository = planDefinitionRepository;
     }
 
     public Optional<QuestionnaireModel> getQuestionnaireById(QualifiedId.QuestionnaireId questionnaireId) throws ServiceException, AccessValidationException {
@@ -147,6 +148,6 @@ public class ConcreteQuestionnaireService implements QuestionnaireService {
         if (result.isEmpty()) {
             throw new ServiceException(String.format("Could not find questionnaires with tht requested id: %s", questionnaireId), ErrorKind.BAD_REQUEST, ErrorDetails.QUESTIONNAIRE_DOES_NOT_EXIST);
         }
-        return plandefinitionRepository.fetchActivePlanDefinitionsUsingQuestionnaireWithId(questionnaireId);
+        return planDefinitionRepository.fetchActivePlanDefinitionsUsingQuestionnaireWithId(questionnaireId);
     }
 }

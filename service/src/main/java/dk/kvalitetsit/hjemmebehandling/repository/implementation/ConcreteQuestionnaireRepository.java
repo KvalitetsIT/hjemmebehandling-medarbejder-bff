@@ -69,12 +69,12 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
 
     @Override
     public List<Questionnaire> history(QualifiedId.QuestionnaireId id) throws ServiceException, AccessValidationException {
-        return client.lookupHistorical(id, Questionnaire.class);
+        return client.fetchHistorical(id, Questionnaire.class);
     }
 
     @Override
     public List<Questionnaire> history(List<QualifiedId.QuestionnaireId> ids) throws ServiceException, AccessValidationException {
-        return client.lookupHistorical(ids, Questionnaire.class);
+        return client.fetchHistorical(ids, Questionnaire.class);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
             var statusCriterion = Questionnaire.STATUS.exactly().codes(statusesToIncludeToLowered);
             criteria.add(statusCriterion);
         }
-        return client.lookupByCriteria(Questionnaire.class, criteria);
+        return client.fetchByCriteria(Questionnaire.class, criteria);
     }
 
     private List<Questionnaire> getQuestionnairesById(List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException {
@@ -97,7 +97,7 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
         var organizationId = getOrganizationId();
 
         var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
-        return client.lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
+        return client.fetchByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
     }
 
     private QualifiedId.OrganizationId getOrganizationId() throws ServiceException {
@@ -115,6 +115,6 @@ public class ConcreteQuestionnaireRepository implements QuestionnaireRepository<
         var organizationId = getOrganizationId();
 
         var organizationCriterion = FhirUtils.buildOrganizationCriterion(organizationId);
-        return client.lookupByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
+        return client.fetchByCriteria(Questionnaire.class, List.of(idCriterion, organizationCriterion));
     }
 }

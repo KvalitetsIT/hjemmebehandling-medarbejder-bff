@@ -34,7 +34,7 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public void update(CarePlanModel resource) throws ServiceException {
+    public void update(CarePlanModel resource) throws ServiceException, AccessValidationException {
         this.client.update(this.mapper.mapCarePlanModel(resource));
     }
 
@@ -74,8 +74,8 @@ public class CarePlanRepositoryAdaptor implements CarePlanRepository<CarePlanMod
     }
 
     @Override
-    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId plandefinitionId) throws ServiceException, AccessValidationException {
-        return client.fetchActiveCarePlansByPlanDefinitionId(plandefinitionId).stream().map(mapper::mapCarePlan).toList();
+    public List<CarePlanModel> fetchActiveCarePlansByPlanDefinitionId(QualifiedId.PlanDefinitionId planDefinitionId) throws ServiceException, AccessValidationException {
+        return client.fetchActiveCarePlansByPlanDefinitionId(planDefinitionId).stream().map(mapper::mapCarePlan).toList();
     }
 
     @Override

@@ -3,6 +3,7 @@ package dk.kvalitetsit.hjemmebehandling;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.QuestionType;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.hl7.fhir.r4.model.IdType;
@@ -21,16 +22,18 @@ public class MockFactory {
 
 
     public static QuestionnaireModel buildQuestionnaireModel(QualifiedId.QuestionnaireId questionnaireId) {
-        var builder = QuestionnaireModel.builder();
-        builder.questions(new ArrayList<>());
-        builder.id(questionnaireId);
-        var questionBuilder = QuestionModel.builder();
-        questionBuilder.linkId("question-1");
-        var question = questionBuilder.build();
-        builder.questions(List.of(question));
-        ThresholdModel thresholdModel = buildThresholdModel(question.linkId());
-        questionBuilder.thresholds(List.of(thresholdModel));
-        return builder.build();
+        var linkId = "question-1";
+
+        var question = QuestionModel.builder()
+                .linkId(linkId)
+                .thresholds(List.of(buildThresholdModel(linkId)))
+                .build();
+
+        return QuestionnaireModel.builder()
+                .questions(new ArrayList<>())
+                .id(questionnaireId)
+                .questions(List.of(question))
+                .build();
     }
 
     public static ThresholdModel buildThresholdModel(String questionnaireLinkId, Double valueQuantityLow) {
@@ -56,11 +59,11 @@ public class MockFactory {
     }
 
     public static QuestionModel buildMeasurementQuestionModel() {
-        var builder = QuestionModel.builder();
-        builder.linkId(IdType.newRandomUuid().getValueAsString());
-        builder.text("Hvad er din temperatur?");
-        builder.questionType(QuestionType.QUANTITY);
-        return builder.build();
+        return QuestionModel.builder()
+                .linkId(IdType.newRandomUuid().getValueAsString())
+                .text("Hvad er din temperatur?")
+                .questionType(QuestionType.QUANTITY)
+                .build();
     }
 
     public static ThresholdModel buildMeasurementThresholdModel(String questionnaireLinkId) {
@@ -90,16 +93,13 @@ public class MockFactory {
                 ).build();
     }
 
-    public static QuestionnaireModel buildQuestionnaire(QualifiedId.QuestionnaireId questionnaireId) {
-        return QuestionnaireModel.builder()
-                .id(questionnaireId)
-                .build();
-    }
 
     public static Questionnaire.QuestionnaireItemComponent buildMeasurementQuestion() {
-        Questionnaire.QuestionnaireItemComponent question = new Questionnaire.QuestionnaireItemComponent();
-        question.setLinkId("temperature").setText("Hvad er din temperatur?").setType(Questionnaire.QuestionnaireItemType.QUANTITY);
-        return question;
+        return new Questionnaire.QuestionnaireItemComponent()
+                .setLinkId("temperature")
+                .setText("Hvad er din temperatur?")
+                .setType(Questionnaire.QuestionnaireItemType.QUANTITY);
+
     }
 
     public static QuestionModel buildQuestionModel(String linkId) {
@@ -108,9 +108,6 @@ public class MockFactory {
                 .build();
     }
 
-    public static QuestionModel buildQuestionModel() {
-        return QuestionModel.builder().build();
-    }
 
     public static QuestionnaireResponseModel buildQuestionnaireResponse(QualifiedId.QuestionnaireResponseId questionnaireResponseId, QualifiedId.QuestionnaireId questionnaireId) {
         return buildQuestionnaireResponse(questionnaireResponseId, questionnaireId, ORGANIZATION_ID_1);
@@ -119,10 +116,10 @@ public class MockFactory {
     public static QuestionnaireResponseModel buildQuestionnaireResponse(QualifiedId.QuestionnaireResponseId questionnaireResponseId, QualifiedId.QuestionnaireId questionnaireId, QualifiedId.OrganizationId organizationId) {
         return QuestionnaireResponseModel.builder()
                 .id(questionnaireResponseId)
+                .patient(buildPatient(PATIENT_ID_1, CPR_1))
                 .questionnaireId(questionnaireId)
                 .organizationId(organizationId)
                 .build();
-
     }
 
     public static CarePlanModel buildResource() {
@@ -131,16 +128,13 @@ public class MockFactory {
 
     public static CarePlanModel buildResource(QualifiedId.OrganizationId organizationId) {
         var resource = CarePlanModel.builder();
-        if (organizationId != null) {
-            resource.organizationId(organizationId);
-        }
+        Optional.ofNullable(organizationId).ifPresent(resource::organizationId);
         return resource.build();
     }
 
     public static OrganizationModel buildOrganization() {
         return new OrganizationModel(ORGANIZATION_ID_1, ORGANIZATION_NAME, new TimeType("11.00"));
     }
-
 
     public static CarePlanModel buildCarePlanModel() {
         return buildCarePlanModel(null, null);
@@ -152,7 +146,6 @@ public class MockFactory {
 
     public static CarePlanModel buildCarePlanModel(List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, PatientModel patient) {
         return buildCarePlanModel(null, planDefinitionIds, questionnaireIds, patient);
-
     }
 
     public static CarePlanModel buildCarePlanModel(QualifiedId.CarePlanId id, List<QualifiedId.PlanDefinitionId> planDefinitionIds, List<QualifiedId.QuestionnaireId> questionnaireIds, PatientModel patient) {
@@ -164,7 +157,6 @@ public class MockFactory {
                 .questionnaires(questionnaireIds != null ? questionnaireIds.stream().map(MockFactory::buildQuestionnaireWrapperModel).toList() : List.of())
                 .build();
     }
-
 
     public static PatientModel buildPatientModel() {
         return PatientModel
@@ -201,18 +193,25 @@ public class MockFactory {
 
     public static QuestionnaireWrapperModel buildQuestionnaireWrapperModel(QualifiedId.QuestionnaireId questionnaireId, Instant satisfiedUntil) {
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(questionnaireId);
+
+        var thresholds = questionnaireModel.questions().stream()
+                .flatMap(q -> q.thresholds().stream())
+                .toList();
+
+        var frequency = FrequencyModel.builder()
+                .weekdays(List.of(Weekday.TUE))
+                .timeOfDay(LocalTime.parse("04:00")).build();
+
+        var questionnaire = QuestionnaireModel.builder()
+                .id(questionnaireId)
+                .build();
+
         return QuestionnaireWrapperModel.builder()
-                .questionnaire(QuestionnaireModel.builder()
-                        .id(questionnaireId)
-                        .build())
-                .frequency(FrequencyModel.builder()
-                        .weekdays(List.of(Weekday.TUE))
-                        .timeOfDay(LocalTime.parse("04:00")).build())
+                .questionnaire(questionnaire)
+                .frequency(frequency)
                 .satisfiedUntil(satisfiedUntil)
                 .questionnaire(questionnaireModel)
-                .thresholds(questionnaireModel.questions().stream()
-                        .flatMap(q -> q.thresholds().stream())
-                        .toList())
+                .thresholds(thresholds)
                 .build();
     }
 
@@ -230,9 +229,7 @@ public class MockFactory {
                 .id(carePlanId)
                 .patient(PatientModel.builder().id(patientId).build())
                 .satisfiedUntil(POINT_IN_TIME)
-
                 .build();
-
     }
 
 
@@ -243,48 +240,20 @@ public class MockFactory {
     }
 
     public static PatientModel buildPatient(QualifiedId.PatientId patientId, CPR cpr) {
+        var primaryContact = PrimaryContactModel.builder()
+                .name("Yvonne")
+                .affiliation("Moster")
+                .organisation(new QualifiedId.OrganizationId("infektionsmedicinsk"))
+                .build();
 
         return PatientModel.builder()
                 .id(patientId)
-                .name(PersonNameModel.builder().given(List.of("Yvonne")).build())
-                .primaryContact(PrimaryContactModel.builder()
-                        .name("Yvonne")
-                        .affiliation("Moster")
-                        .organisation(new QualifiedId.OrganizationId("infektionsmedicinsk"))
-                        .build())
-                .build();
-
-
-//        var identifier = new Identifier();
-//        identifier.setSystem(Systems.CPR);
-//        identifier.setValue(cpr);
-//        patient.setIdentifier(List.of(identifier));
-//        var contact = new Patient.ContactComponent();
-//
-//        var name = new HumanName();
-//        name.setGiven(List.of(new StringType("Yvonne")));
-//        contact.setName(name);
-//
-//        var affiliation = List.of(new CodeableConcept().setText("Moster"));
-//        contact.setRelationship(affiliation);
-//        contact.setOrganization(buildReference());
-//
-//        patient.setContact(new ArrayList<>(List.of(contact)));
-//        return patient;
-    }
-
-
-    public static PatientModel buildPatient(QualifiedId.PatientId patientId, CPR cpr, String givenName, String familyName) {
-        PatientModel patient = buildPatient(patientId, cpr);
-
-        return PatientModel.Builder.from(patient)
-                .name(PersonNameModel.builder()
-                        .given(List.of(givenName))
-                        .family(familyName)
-                        .build()
-                )
+                .cpr(cpr)
+                .name(PersonNameModel.builder().given("Yvonne").build())
+                .primaryContact(primaryContact)
                 .build();
     }
+
 
     public static PatientDetails buildPatientDetails() {
         return PatientDetails.builder()
@@ -293,7 +262,8 @@ public class MockFactory {
                 .primaryRelativeName("Dronning Margrethe")
                 .primaryRelativeAffiliation("Ven")
                 .primaryRelativePrimaryPhone("98798798")
-                .primaryRelativeSecondaryPhone("78978978").build();
+                .primaryRelativeSecondaryPhone("78978978")
+                .build();
     }
 
 

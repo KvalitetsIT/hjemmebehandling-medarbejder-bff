@@ -118,9 +118,9 @@ public class PlanDefinitionServiceTest {
     public void patchPlanDefinition_name_existingIsUntouched() throws ServiceException, AccessValidationException {
 
         String name = "existing name";
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
-        PlanDefinitionModel planDefinitionModel = PlanDefinitionModel
-                .builder()
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .status(Status.ACTIVE)
                 .name(name)
                 .build();
 
@@ -130,33 +130,33 @@ public class PlanDefinitionServiceTest {
 
         subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(), List.of());
 
-        fail("Falsk positiv - der testes på et forkert grundlag");
-        assertEquals(name, planDefinitionModel.name());
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        Mockito.verify(planDefinitionRepository, times(1)).update(captor.capture());
+
+        assertEquals(name, captor.getValue().name());
     }
 
     @Test
     public void patchPlanDefinition_threshold() throws ServiceException, AccessValidationException {
 
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+
 //        planDefinition.getAction().add(buildPlanDefinitionAction(QUESTIONNAIRE_ID_1));
 
-        PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder().build();
         QuestionnaireModel questionnaireModel = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
         QuestionModel temperatureQuestion = buildMeasurementQuestionModel();
 
         List<QuestionModel> questions = questionnaireModel.questions();
         questions.add(temperatureQuestion);
 
-        var questionnaires = Stream.concat(planDefinitionModel.questionnaires().stream(), Stream.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1))).toList();
+        var questionnaires = Stream.concat(planDefinition.questionnaires().stream(), Stream.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1))).toList();
 
-        planDefinitionModel = PlanDefinitionModel.Builder.from(planDefinitionModel)
+        planDefinition = PlanDefinitionModel.Builder.from(planDefinition)
                 .questionnaires(questionnaires)
                 .build();
 
-
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
-        Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinitionModel));
+        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaireModel));
+        Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
 
         ThresholdModel thresholdModel = buildThresholdModel(temperatureQuestion.linkId());
 
@@ -168,7 +168,6 @@ public class PlanDefinitionServiceTest {
         assertEquals(1, captor.getValue().questionnaires().size());
         assertEquals(2, captor.getValue().questionnaires().getFirst().thresholds().size());
         assertTrue(captor.getValue().questionnaires().getFirst().thresholds().stream().anyMatch(t -> t.questionnaireItemLinkId().equals(thresholdModel.questionnaireItemLinkId())));
-
     }
 
     private PlanDefinition.PlanDefinitionActionComponent buildPlanDefinitionAction(String questionnaireId) {
@@ -182,8 +181,7 @@ public class PlanDefinitionServiceTest {
     public void patchPlanDefinition_threshold_onMultipleQuestionnaires() throws ServiceException, AccessValidationException {
 
         PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
-        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+
 
         QuestionModel temperatureQuestion1 = buildMeasurementQuestionModel();
         QuestionModel temperatureQuestion2 = buildMeasurementQuestionModel();
@@ -193,11 +191,13 @@ public class PlanDefinitionServiceTest {
                 buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2)
         )).build();
 
-        QuestionnaireModel questionnaireModel1 = QuestionnaireModel.Builder.from(buildQuestionnaireModel(QUESTIONNAIRE_ID_1))
+        QuestionnaireModel questionnaire1 = QuestionnaireModel.Builder
+                .from(buildQuestionnaireModel(QUESTIONNAIRE_ID_1))
                 .questions(List.of(temperatureQuestion1))
                 .build();
 
-        QuestionnaireModel questionnaireModel2 = QuestionnaireModel.Builder.from(buildQuestionnaireModel(QUESTIONNAIRE_ID_2))
+        QuestionnaireModel questionnaire2 = QuestionnaireModel.Builder
+                .from(buildQuestionnaireModel(QUESTIONNAIRE_ID_2))
                 .questions(List.of(temperatureQuestion2))
                 .build();
 
@@ -209,17 +209,19 @@ public class PlanDefinitionServiceTest {
 
         subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_1, QUESTIONNAIRE_ID_2), List.of(thresholdModel1, thresholdModel2));
 
-        assertEquals(2, planDefinitionModel.questionnaires().size());
-        assertEquals(2, planDefinitionModel.questionnaires().get(0).thresholds().size());
-        assertEquals(2, planDefinitionModel.questionnaires().get(1).thresholds().size());
 
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+
+        Mockito.verify(planDefinitionRepository, times(1)).update(captor.capture());
+
+        assertEquals(2, captor.getValue().questionnaires().size());
+        assertEquals(2, captor.getValue().questionnaires().get(0).thresholds().size());
+        assertEquals(2, captor.getValue().questionnaires().get(1).thresholds().size());
     }
 
 
     @Test
     public void patchPlanDefinition_updateThreshold_onExistingQuestionnaire() throws ServiceException, AccessValidationException {
-
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
 
         QuestionModel temperatureQuestion = buildMeasurementQuestionModel();
 
@@ -237,10 +239,15 @@ public class PlanDefinitionServiceTest {
                 .flatMap(q -> Stream.concat(q.thresholds().stream(), Stream.of(thresholdModel)))
                 .toList();
 
-
         var questionnaireWrapperModel = QuestionnaireWrapperModel.builder()
                 .questionnaire(questionnaireModel)
                 .thresholds(thresholds)
+                .build();
+
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .status(Status.ACTIVE)
+                .questionnaires(List.of(questionnaireWrapperModel))
                 .build();
 
         List<QualifiedId.QuestionnaireId> questionnaireIds = List.of();
@@ -256,16 +263,16 @@ public class PlanDefinitionServiceTest {
         ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
         verify(planDefinitionRepository, times(1)).update(captor.capture());
 
-
         assertEquals(1, captor.getValue().questionnaires().size());
         assertEquals(2, captor.getValue().questionnaires().getFirst().thresholds().size());
 
-        Optional<ThresholdModel> updatedThreshold = captor.getValue().questionnaires().getFirst().thresholds().stream().filter(t -> t.questionnaireItemLinkId().equals(temperatureQuestion.linkId())).findFirst();
+        Optional<ThresholdModel> updatedThreshold = captor.getValue().questionnaires().getFirst().thresholds()
+                .stream()
+                .filter(t -> t.questionnaireItemLinkId().equals(temperatureQuestion.linkId()))
+                .findFirst();
+
         assertTrue(updatedThreshold.isPresent());
-
         assertEquals(1, captor.getValue().questionnaires().size());
-
-
         assertNotEquals(thresholdModel.valueQuantityLow(), newThresholdModel.valueQuantityLow());
         assertEquals(newThresholdModel.valueQuantityLow(), updatedThreshold.get().valueQuantityLow());
     }
@@ -276,7 +283,10 @@ public class PlanDefinitionServiceTest {
 
         PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .build();
+        ;
         QuestionnaireModel questionnaireModel1 = buildQuestionnaireModel(QUESTIONNAIRE_ID_1);
 
         Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
@@ -293,7 +303,10 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_addNew_activeCarePlanExists_without_same_questionnaire() throws ServiceException, AccessValidationException {
         PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .build();
+        ;
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().build();
 
         Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire));
@@ -302,14 +315,18 @@ public class PlanDefinitionServiceTest {
 
         subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
-        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
-        verify(planDefinitionRepository, times(1)).update(captor.capture());
+        ArgumentCaptor<PlanDefinitionModel> planDefinitionModelArgumentCaptor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(planDefinitionRepository, times(1)).update(planDefinitionModelArgumentCaptor.capture());
 
-        assertEquals(1, captor.getValue().questionnaires().size());
-        assertEquals(1, existingCarePlanModel.questionnaires().size());
-        assertNotNull(existingCarePlanModel.questionnaires().getFirst().frequency());
-        assertTrue(existingCarePlanModel.questionnaires().getFirst().frequency().weekdays().isEmpty());
-        assertNotNull(existingCarePlanModel.questionnaires().getFirst().satisfiedUntil());
+        ArgumentCaptor<CarePlanModel> carePlanModelArgumentCaptor = ArgumentCaptor.forClass(CarePlanModel.class);
+        verify(carePlanRepository, times(1)).update(carePlanModelArgumentCaptor.capture());
+
+
+        assertEquals(1, planDefinitionModelArgumentCaptor.getValue().questionnaires().size());
+        assertEquals(1, carePlanModelArgumentCaptor.getValue().questionnaires().size());
+        assertNotNull(carePlanModelArgumentCaptor.getValue().questionnaires().getFirst().frequency());
+        assertTrue(carePlanModelArgumentCaptor.getValue().questionnaires().getFirst().frequency().weekdays().isEmpty());
+        assertNotNull(carePlanModelArgumentCaptor.getValue().questionnaires().getFirst().satisfiedUntil());
     }
 
     @Test
@@ -317,7 +334,10 @@ public class PlanDefinitionServiceTest {
 
         PlanDefinitionModel planDefinition = buildPlanDefinition();
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder().build();
-        QuestionnaireModel questionnaire = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .build();
+        ;
         QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         CarePlanModel existingCarePlanModel = CarePlanModel.builder().questionnaires(List.of(questionnaireWrapperModel)).build();
 
@@ -337,7 +357,10 @@ public class PlanDefinitionServiceTest {
     public void patchPlanDefinition_questionnaire_remove() throws ServiceException, AccessValidationException {
 
         PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
+        QuestionnaireModel questionnaire1 = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .build();
+        ;
         var questionnaires = List.of(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1), buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2));
 
         PlanDefinitionModel planDefinitionModel = PlanDefinitionModel.builder()
@@ -368,35 +391,31 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_without_questionnaire() throws ServiceException, AccessValidationException {
 
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire1 = buildQuestionnaire(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
 
-        PlanDefinitionModel planDefinitionModel = PlanDefinitionModel
-                .builder()
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
                 .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
+                .status(Status.ACTIVE)
                 .build();
 
         CarePlanModel existingCarePlan = CarePlanModel.builder()
                 .id(CAREPLAN_ID_1)
                 .build();
 
-        CarePlanModel existingCarePlanModel = CarePlanModel.builder()
-                .questionnaires(List.of(questionnaireWrapperModel1))
-                .build();
-
-        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaire1));
+        Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_1))).thenReturn(List.of(questionnaireWrapperModel1.questionnaire()));
         Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
         Mockito.when(carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
-        Mockito.when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id())).thenReturn(List.of());
 
         subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_1), List.of());
 
-        assertEquals(1, planDefinitionModel.questionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_1, planDefinitionModel.questionnaires().getFirst().questionnaire().id().toString());
-        assertEquals(1, existingCarePlanModel.questionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_1, existingCarePlanModel.questionnaires().getFirst().questionnaire().id().toString());
+        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        Mockito.verify(planDefinitionRepository, times(1)).update(captor.capture());
+
+        assertEquals(1, captor.getValue().questionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_1, captor.getValue().questionnaires().getFirst().questionnaire().id());
+
     }
 
     /**
@@ -412,35 +431,42 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire() throws ServiceException, AccessValidationException {
 
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireModel questionnaire2 = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_2)
+                .build();
+
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
 
         CarePlanModel existingCarePlan = CarePlanModel.builder()
                 .id(CAREPLAN_ID_1)
-                .build();
-
-        CarePlanModel existingCarePlanModel = CarePlanModel
-                .builder()
                 .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
                 .build();
+
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .status(Status.ACTIVE)
+                .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
+                .build();
+
 
         Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire2));
         Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
         Mockito.when(carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(PLANDEFINITION_ID_1)).thenReturn(List.of(existingCarePlan));
         Mockito.when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlan.id())).thenReturn(List.of());
-
+        Mockito.when(dateProvider.now()).thenReturn(Instant.now());
         subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
 
-        ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
-        verify(planDefinitionRepository, times(1)).update(captor.capture());
-        assertEquals(1, captor.getValue().questionnaires().size());
+        ArgumentCaptor<PlanDefinitionModel> planDefinitionModelArgumentCaptor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
+        verify(planDefinitionRepository, times(1)).update(planDefinitionModelArgumentCaptor.capture());
 
-        assertEquals(1, captor.getValue().questionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_2, captor.getValue().questionnaires().getFirst().questionnaire().id());
-        assertEquals(1, existingCarePlanModel.questionnaires().size());
-        assertEquals(QUESTIONNAIRE_ID_2, existingCarePlanModel.questionnaires().getFirst().questionnaire().id());
+        ArgumentCaptor<CarePlanModel> carePlanModelArgumentCaptor = ArgumentCaptor.forClass(CarePlanModel.class);
+        verify(carePlanRepository, times(1)).update(carePlanModelArgumentCaptor.capture());
+
+        assertEquals(1, planDefinitionModelArgumentCaptor.getValue().questionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_2, planDefinitionModelArgumentCaptor.getValue().questionnaires().getFirst().questionnaire().id());
+        assertEquals(1, carePlanModelArgumentCaptor.getValue().questionnaires().size());
+        assertEquals(QUESTIONNAIRE_ID_2, carePlanModelArgumentCaptor.getValue().questionnaires().getFirst().questionnaire().id());
     }
 
     /**
@@ -456,10 +482,29 @@ public class PlanDefinitionServiceTest {
     @Test
     public void patchPlanDefinition_questionnaire_remove_activeCarePlanExists_with_questionnaire_thatHas_missingScheduledResponses() throws AccessValidationException, ServiceException {
 
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireModel questionnaire2 = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_2)
+                .questions(List.of(QuestionModel.builder().linkId(QUESTION_ID_1).build()))
+                .build();
+
+
+        QuestionnaireWrapperModel questionnaireWrapperModel1 = QuestionnaireWrapperModel.Builder.from(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1))
+                .satisfiedUntil(Instant.now())
+                .build();
+
+        QuestionnaireWrapperModel questionnaireWrapperModel2 = QuestionnaireWrapperModel.Builder.from(buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2))
+                .satisfiedUntil(Instant.now())
+                .build();
+
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .status(Status.ACTIVE)
+                .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
+                .build();
+
         CarePlanModel existingCarePlan = CarePlanModel.builder()
                 .id(CAREPLAN_ID_1)
+                .questionnaires(List.of(questionnaireWrapperModel1, questionnaireWrapperModel2))
                 .build();
 
         Mockito.when(questionnaireRepository.fetch(List.of(QUESTIONNAIRE_ID_2))).thenReturn(List.of(questionnaire2));
@@ -488,7 +533,10 @@ public class PlanDefinitionServiceTest {
         Instant before = Instant.now();
 
         PlanDefinitionModel planDefinition = buildPlanDefinition();
-        QuestionnaireModel questionnaire2 = buildQuestionnaire(QUESTIONNAIRE_ID_2);
+        QuestionnaireModel questionnaire2 = QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_2)
+                .build();
+        ;
         QuestionnaireWrapperModel questionnaireWrapperModel1 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
         QuestionnaireWrapperModel questionnaireWrapperModel2 = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_2);
 
@@ -505,25 +553,29 @@ public class PlanDefinitionServiceTest {
         Mockito.when(dateProvider.now()).thenReturn(before);
         Mockito.when(questionnaireResponseRepository.fetch(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), existingCarePlanModel.id())).thenReturn(List.of(questionnaireResponse));
 
-        try {
-            subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_2), List.of());
-        } catch (ServiceException se) {
-            assertEquals(ErrorKind.BAD_REQUEST, se.getErrorKind());
-            assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, se.getErrorDetails());
-        }
+        var e = assertThrows(ServiceException.class, () -> subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(QUESTIONNAIRE_ID_2), List.of()));
+
+        assertEquals(ErrorKind.BAD_REQUEST, e.getErrorKind());
+        assertEquals(ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES, e.getErrorDetails());
     }
 
     @Test
     public void patchPlanDefinition_questionnaire_existingIsUntouched() throws ServiceException, AccessValidationException {
-
-        PlanDefinitionModel planDefinition = buildPlanDefinition();
         List<QualifiedId.QuestionnaireId> ids = List.of();
+
+        QuestionnaireWrapperModel questionnaireWrapperModel = buildQuestionnaireWrapperModel(QUESTIONNAIRE_ID_1);
+
+        PlanDefinitionModel planDefinition = PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .questionnaires(List.of(questionnaireWrapperModel))
+                .status(Status.ACTIVE)
+                .build();
 
         Mockito.when(questionnaireRepository.fetch(ids)).thenReturn(List.of());
         Mockito.when(planDefinitionRepository.fetch(PLANDEFINITION_ID_1)).thenReturn(Optional.of(planDefinition));
         Mockito.when(carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(PLANDEFINITION_ID_1)).thenReturn(List.of());
 
-        subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, List.of(), List.of());
+        subject.updatePlanDefinition(PLANDEFINITION_ID_1, null, null, ids, List.of());
 
         ArgumentCaptor<PlanDefinitionModel> captor = ArgumentCaptor.forClass(PlanDefinitionModel.class);
         verify(planDefinitionRepository, times(1)).update(captor.capture());

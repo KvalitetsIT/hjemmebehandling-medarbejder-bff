@@ -1,8 +1,9 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
+import dk.kvalitetsit.hjemmebehandling.api.Paginator;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.repository.OrganizationRepository;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.PractitionerRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireRepository;
 import dk.kvalitetsit.hjemmebehandling.repository.QuestionnaireResponseRepository;
@@ -22,30 +23,24 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
     private final QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final PractitionerRepository<PractitionerModel> practitionerRepository;
-    private final OrganizationRepository<OrganizationModel> organizationRepository;
 
     private final Comparator<QuestionnaireResponseModel> priorityComparator;
 
-    public ConcreteQuestionnaireResponseService(Comparator<QuestionnaireResponseModel> priorityComparator,
-                                                QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
-                                                QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
-                                                PractitionerRepository<PractitionerModel> practitionerRepository, OrganizationRepository<OrganizationModel> organizationRepository
+    public ConcreteQuestionnaireResponseService(
+            Comparator<QuestionnaireResponseModel> priorityComparator,
+            QuestionnaireRepository<QuestionnaireModel> questionnaireRepository,
+            QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository,
+            PractitionerRepository<PractitionerModel> practitionerRepository
     ) {
-
         this.priorityComparator = priorityComparator;
         this.questionnaireResponseRepository = questionnaireResponseRepository;
         this.questionnaireRepository = questionnaireRepository;
         this.practitionerRepository = practitionerRepository;
-        this.organizationRepository = organizationRepository;
     }
 
 
     private static List<QuestionnaireResponseModel> pageResponses(List<QuestionnaireResponseModel> responses, Pagination pagination) {
-        return responses
-                .stream()
-                .skip((long) (pagination.offset() - 1) * pagination.limit())
-                .limit(pagination.limit())
-                .toList();
+        return Paginator.paginate(responses, pagination);
     }
 
     public List<QuestionnaireResponseModel> getQuestionnaireResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
@@ -54,8 +49,7 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
 
         return questionnaireResponseRepository.fetch(carePlanId, questionnaireIds)
                 .stream()
-                // Todo: The sorting below could probably be moved into the repository layer
-                // .sorted((a, b) -> b.getAuthored().compareTo(a.getAuthored())) // Sort the responses by priority.
+                .sorted((a, b) -> b.answered().compareTo(a.answered())) // Sort the responses by priority.
                 .toList();
     }
 
@@ -89,7 +83,6 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
     }
 
 
-
     private QuestionnaireResponseModel extractMaximalPriorityResponse(List<QuestionnaireResponseModel> responses) {
         return responses
                 .stream()
@@ -110,16 +103,14 @@ public class ConcreteQuestionnaireResponseService implements QuestionnaireRespon
         List<QuestionnaireModel> historicalQuestionnaires = questionnaireRepository.history(ids);
 
 
-
+        var filteredResponses = responses.stream()
+                .collect(Collectors.groupingBy(r -> new ImmutablePair<>(r.patient().id(), r.questionnaireId())));
         // Filter the responses: We want only one response per <patientId, questionnaireId>-pair,
         // and in case of multiple entries, we want the 'most important' one.
         // Grouping, ordering and pagination should ideally happen in the FHIR-server, but the grouping part seems to
         // require a server extension. So for now, we do it here.
-        return responses
-                .stream()
-                .collect(Collectors.groupingBy(r -> new ImmutablePair<>(r.id(), r.questionnaireId())))
-                .values()
-                .stream()
+        return filteredResponses
+                .values().stream()
                 .map(this::extractMaximalPriorityResponse)
                 .sorted(priorityComparator)
                 .toList();

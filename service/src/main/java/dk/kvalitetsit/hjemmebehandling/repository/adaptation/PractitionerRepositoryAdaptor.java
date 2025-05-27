@@ -41,7 +41,7 @@ public class PractitionerRepositoryAdaptor implements PractitionerRepository<Pra
     }
 
     @Override
-    public void update(PractitionerModel resource) throws ServiceException {
+    public void update(PractitionerModel resource) throws ServiceException, AccessValidationException {
         repository.update(mapper.mapPractitionerModel(resource));
     }
 

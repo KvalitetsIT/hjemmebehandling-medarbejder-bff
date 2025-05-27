@@ -12,7 +12,7 @@ import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 import org.openapitools.api.QuestionnaireResponseApi;
 import org.openapitools.model.ExaminationStatusDto;
-import org.openapitools.model.PaginatedListQuestionnaireResponseDto;
+
 import org.openapitools.model.PartialUpdateQuestionnaireResponseRequest;
 import org.openapitools.model.QuestionnaireResponseDto;
 import org.slf4j.Logger;
@@ -44,13 +44,11 @@ public class QuestionnaireResponseController extends BaseController implements Q
     }
 
     @Override
-    public ResponseEntity<PaginatedListQuestionnaireResponseDto> getQuestionnaireResponsesByCarePlanId(String carePlanId, List<String> questionnaireIds, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByCarePlanId(String carePlanId, List<String> questionnaireIds, Optional<Integer> limit, Optional<Integer> offset) {
         if (carePlanId == null || questionnaireIds == null || questionnaireIds.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
-
         try {
-            Pagination pagination = new Pagination(pageNumber, pageSize);
 
             List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponses(
                     new QualifiedId.CarePlanId(carePlanId),
@@ -61,14 +59,7 @@ public class QuestionnaireResponseController extends BaseController implements Q
 
             var dtos = questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList();
 
-            var response = new PaginatedListQuestionnaireResponseDto();
-
-            response.setList(dtos);
-            response.setLimit(Optional.of(pagination.limit()));
-            response.setOffset(Optional.of(pagination.offset()));
-            response.setTotal(Optional.of(dtos.size()));
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(dtos);
         } catch (AccessValidationException | ServiceException e) {
             logger.error("Could not look up questionnaire responses by cpr and questionnaire ids", e);
             throw toStatusCodeException(e);
@@ -76,12 +67,12 @@ public class QuestionnaireResponseController extends BaseController implements Q
     }
 
     @Override
-    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(List<ExaminationStatusDto> status, Integer pageNumber, Integer pageSize) {
+    public ResponseEntity<List<QuestionnaireResponseDto>> getQuestionnaireResponsesByStatus(List<ExaminationStatusDto> status, Optional<Integer> limit, Optional<Integer> offset) {
         if (status == null || status.isEmpty()) {
             throw new BadRequestException(ErrorDetails.PARAMETERS_INCOMPLETE);
         }
         try {
-            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(status.stream().map(dtoMapper::mapExaminationStatusDto).toList(), new Pagination(pageNumber, pageSize));
+            List<QuestionnaireResponseModel> questionnaireResponses = questionnaireResponseService.getQuestionnaireResponsesByStatus(status.stream().map(dtoMapper::mapExaminationStatusDto).toList(), new Pagination(offset, limit));
             auditLoggingService.log("GET /v1/questionnaireresponse/", questionnaireResponses.stream().map(QuestionnaireResponseModel::patient).toList());
             return ResponseEntity.ok(questionnaireResponses.stream().map(dtoMapper::mapQuestionnaireResponseModel).toList());
         } catch (AccessValidationException | ServiceException e) {
@@ -89,6 +80,8 @@ public class QuestionnaireResponseController extends BaseController implements Q
             throw toStatusCodeException(e);
         }
     }
+
+
 
 
     @Override

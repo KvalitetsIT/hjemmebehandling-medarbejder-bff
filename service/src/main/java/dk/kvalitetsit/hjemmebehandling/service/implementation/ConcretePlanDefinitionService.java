@@ -1,16 +1,15 @@
 package dk.kvalitetsit.hjemmebehandling.service.implementation;
 
-import dk.kvalitetsit.hjemmebehandling.fhir.ExtensionMapper;
 import dk.kvalitetsit.hjemmebehandling.model.*;
 import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.repository.*;
 import dk.kvalitetsit.hjemmebehandling.service.PlanDefinitionService;
 import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
 import dk.kvalitetsit.hjemmebehandling.util.DateProvider;
-import org.hl7.fhir.r4.model.CarePlan;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
     private final QuestionnaireRepository<QuestionnaireModel> questionnaireRepository;
     private final CarePlanRepository<CarePlanModel, PatientModel> carePlanRepository;
     private final QuestionnaireResponseRepository<QuestionnaireResponseModel> questionnaireResponseRepository;
-    private final OrganizationRepository<OrganizationModel> organizationRepository;
 
     public ConcretePlanDefinitionService(
             PlanDefinitionRepository<PlanDefinitionModel> planDefinitionRepository,
@@ -46,7 +44,6 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
         this.questionnaireRepository = questionnaireRepository;
         this.carePlanRepository = carePlanRepository;
         this.questionnaireResponseRepository = questionnaireResponseRepository;
-        this.organizationRepository = organizationRepository;
     }
 
     @NotNull
@@ -69,7 +66,7 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
 
     public QualifiedId.PlanDefinitionId createPlanDefinition(PlanDefinitionModel planDefinition) throws ServiceException, AccessValidationException {
 
-        // Check that the referenced questionnaires and plandefinitions are valid for the client to access (and thus use).
+        // Check that the referenced questionnaires and planDefinitions are valid for the client to access (and thus use).
         validateReferences(planDefinition);
 
         // Initialize basic attributes for a new PlanDefinition: Id, dates and so on.
@@ -81,7 +78,7 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
         try {
             return planDefinitionRepository.save(planDefinition);
         } catch (Exception e) {
-            throw new ServiceException("Error saving PlanDefinition", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
+            throw new ServiceException("Error saving plan definition", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -94,6 +91,13 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
     }
 
     // TODO: Breakdown this method into multiple methods it is way too long
+    // Proposition: Take a plandefinition as paramter. Substitute existing plandefintion if fields are defined
+    // Limitation: If fields are to be updated to null
+    // Solution:
+    //         public void updatePlanDefinition(PlanDefintionModel patch ) throws ServiceException, AccessValidationException {
+    //         var existingPlanDefinition = ...
+    //         existingPlanDefinition.name = patch.name == null ? null : patch.name.orElse(existingPlanDefinition.name)
+
     public void updatePlanDefinition(
             QualifiedId.PlanDefinitionId id,
             String name,
@@ -105,144 +109,123 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
         List<QuestionnaireModel> questionnaires = questionnaireRepository.fetch(questionnaireIds);
 
         if (questionnaires.size() != questionnaireIds.size()) throw new ServiceException(
-                "Could not look up questionnaires to update!",
+                "Could not look up questionnaires to update",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.QUESTIONNAIRES_MISSING_FOR_CAREPLAN
         );
 
         PlanDefinitionModel planDefinition = planDefinitionRepository.fetch(id).orElseThrow(() -> new ServiceException(
-                "Could not look up plan definitions to update!",
+                "Could not look up plan definitions to update",
                 ErrorKind.BAD_REQUEST,
                 ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST
         ));
 
-
         List<QualifiedId.QuestionnaireId> currentQuestionnaires = planDefinition.questionnaires().stream()
-                .map(q -> q.questionnaire().id())
+                .map(QuestionnaireWrapperModel::questionnaire)
+                .map(QuestionnaireModel::id)
                 .toList();
 
         List<QualifiedId.QuestionnaireId> removedQuestionnaireIds = currentQuestionnaires.stream()
                 .filter(qid -> !questionnaireIds.contains(qid))
                 .toList();
 
-        if (!removedQuestionnaireIds.isEmpty()) {
-            List<CarePlanModel> activeCarePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
-            for (CarePlanModel carePlan : activeCarePlans) {
-                QualifiedId.CarePlanId carePlanId = carePlan.id();
-
-                if (questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds)) throw new ServiceException(
-                        String.format("Careplan with id %s has missing scheduled questionnaire-responses!", carePlanId),
-                        ErrorKind.BAD_REQUEST,
-                        ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
-                );
-
-
-                if (questionnaireHasUnexaminedResponses(carePlanId, removedQuestionnaireIds))
-                    throw new ServiceException(
-                            String.format("Careplan with id %s still has unhandled questionnaire-responses!", carePlanId),
-                            ErrorKind.BAD_REQUEST,
-                            ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
-                    );
-
-            }
-        }
-
         List<QualifiedId.QuestionnaireId> newQuestionnaires = questionnaireIds.stream()
                 .filter(qid -> !currentQuestionnaires.contains(qid))
                 .toList();
 
-        if (!newQuestionnaires.isEmpty()) {
-            List<CarePlanModel> result = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
+        boolean hasRemovedQuestionnaires = !removedQuestionnaireIds.isEmpty();
+        boolean hasAddedQuestionnaires = !newQuestionnaires.isEmpty();
 
-            boolean inUse = result.stream()
-                    .flatMap(model -> model.questionnaires().stream())
-                    .map(qw -> qw.questionnaire().id())
-                    .anyMatch(newQuestionnaires::contains);
+        if (hasRemovedQuestionnaires || hasAddedQuestionnaires) {
 
-            if (inUse) throw new ServiceException(
-                    String.format("A questionnaire with id %s is used by active careplans!", newQuestionnaires),
-                    ErrorKind.BAD_REQUEST,
-                    ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN
-            );
+            List<CarePlanModel> activeCarePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
 
+            for (CarePlanModel carePlan : activeCarePlans) {
+                if (hasRemovedQuestionnaires) {
+
+                    if (questionnaireHasExceededDeadline(carePlan, removedQuestionnaireIds)) throw new ServiceException(
+                            String.format("CarePlan with id '%s' has missing scheduled questionnaire-responses", carePlan.id()),
+                            ErrorKind.BAD_REQUEST,
+                            ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_MISSING_SCHEDULED_QUESTIONNAIRERESPONSES
+                    );
+
+                    if (questionnaireHasUnexaminedResponses(carePlan.id(), removedQuestionnaireIds))
+                        throw new ServiceException(
+                                String.format("CarePlan with id '%s' still has unhandled questionnaire-responses", carePlan.id()),
+                                ErrorKind.BAD_REQUEST,
+                                ErrorDetails.REMOVED_QUESTIONNAIRE_WITH_UNHANDLED_QUESTIONNAIRERESPONSES
+                        );
+
+                    var updatedQuestionnaires = carePlan.questionnaires().stream()
+                            .filter(qw -> removedQuestionnaireIds.contains(qw.questionnaire().id()))
+                            .toList();
+
+                    carePlan = CarePlanModel.Builder.from(carePlan)
+                            .questionnaires(updatedQuestionnaires)
+                            .build();
+                }
+
+                // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
+                if (hasAddedQuestionnaires) {
+                    boolean inUse = activeCarePlans.stream()
+                            .flatMap(model -> model.questionnaires().stream())
+                            .map(qw -> qw.questionnaire().id())
+                            .anyMatch(newQuestionnaires::contains);
+
+                    if (inUse) throw new ServiceException(
+                            String.format("A questionnaire with id %s is used by active carePlans", newQuestionnaires),
+                            ErrorKind.BAD_REQUEST,
+                            ErrorDetails.QUESTIONNAIRE_IS_IN_ACTIVE_USE_BY_CAREPLAN
+                    );
+
+                    List<QuestionnaireModel> newQuestionnaireModels = questionnaires.stream()
+                            .filter(q -> newQuestionnaires.contains(q.id()))
+                            .toList();
+
+                    List<QuestionnaireWrapperModel> updatedQuestionnaires = getQuestionnaireWrapperModels(thresholds, carePlan, newQuestionnaireModels);
+
+                    carePlan = CarePlanModel.Builder.from(carePlan)
+                            .questionnaires(updatedQuestionnaires)
+                            .build();
+                }
+                carePlanRepository.update(carePlan);
+            }
         }
 
         List<QuestionnaireWrapperModel> updatedWrappers = questionnaires.stream()
                 .map(q -> new QuestionnaireWrapperModel(q, null, null, thresholds)) // use appropriate defaults/nulls if needed
                 .toList();
 
-        planDefinition = new PlanDefinitionModel(
-                planDefinition.id(),
-                planDefinition.organizationId(),
-                name,
-                planDefinition.title(),
-                status,
-                planDefinition.created(),
-                Instant.now(),
-                updatedWrappers
-        );
+        planDefinition = PlanDefinitionModel.Builder.from(planDefinition)
+                .name(Optional.ofNullable(name).orElse(planDefinition.name()))
+                .status(Optional.ofNullable(status).orElse(planDefinition.status()))
+                .lastUpdated(Instant.now())
+                .questionnaires(updatedWrappers)
+                .build();
 
         planDefinitionRepository.update(planDefinition);
 
-        // if questionnaire(s) has been removed, remove them from appropriate careplans
-        if (!removedQuestionnaireIds.isEmpty()) {
-            // get careplans we are removing the questionnaire(s) to
-            List<CarePlanModel> carePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
 
-            for (var carePlan : carePlans) {
-
-                var result = carePlan.questionnaires().stream()
-                        .filter(qw -> removedQuestionnaireIds.contains(qw.questionnaire().id()))
-                        .toList();
-
-
-
-                carePlanRepository.update(CarePlanModel.Builder.from(carePlan).questionnaires(result).build());
-            }
-        }
-
-        // if new questionnaire(s) has been added, add them to appropriate careplans with an empty schedule
-        if (!newQuestionnaires.isEmpty()) {
-            List<QuestionnaireModel> newQuestionnaireModels = questionnaires.stream()
-                    .filter(q -> newQuestionnaires.contains(q.id()))
-                    .toList();
-
-            List<CarePlanModel> carePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
-
-            for (var model : carePlans) {
-                List<QuestionnaireWrapperModel> updatedQuestionnaires = getQuestionnaireWrapperModels(thresholds, model, newQuestionnaireModels);
-                CarePlanModel updatedModel = new CarePlanModel(
-                        model.id(),
-                        model.organizationId(),
-                        model.title(),
-                        model.status(),
-                        model.created(),
-                        model.startDate(),
-                        model.endDate(),
-                        model.patient(),
-                        updatedQuestionnaires,
-                        model.planDefinitions(),
-                        model.departmentName(),
-                        model.satisfiedUntil()
-                );
-
-                carePlanRepository.update(updatedModel);
-            }
-        }
     }
 
 
     public void retirePlanDefinition(QualifiedId.PlanDefinitionId id) throws ServiceException, AccessValidationException {
         Optional<PlanDefinitionModel> result = planDefinitionRepository.fetch(id);
 
-        if (result.isEmpty()) {
-            throw new ServiceException(String.format("Could not lookup plandefinition with id %s!", id), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
-        }
+        if (result.isEmpty()) throw new ServiceException(
+                String.format("Could not lookup plan definition with id '%s'", id),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST
+        );
 
         var activeCarePlansWithPlanDefinition = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
-        if (!activeCarePlansWithPlanDefinition.isEmpty()) {
-            throw new ServiceException(String.format("Plandefinition with id %s if used by active careplans!", id), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN);
-        }
+
+        if (!activeCarePlansWithPlanDefinition.isEmpty()) throw new ServiceException(
+                String.format("Plan definition with id '%s' if used by active carePlans", id),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.PLANDEFINITION_IS_IN_ACTIVE_USE_BY_CAREPLAN
+        );
+
 
         PlanDefinitionModel retiredPlanDefinition = PlanDefinitionModel.Builder.from(result.get()).status(Status.RETIRED).build();
         planDefinitionRepository.update(retiredPlanDefinition);
@@ -252,33 +235,26 @@ public class ConcretePlanDefinitionService implements PlanDefinitionService {
     public List<CarePlanModel> getCarePlansThatIncludes(QualifiedId.PlanDefinitionId id) throws ServiceException, AccessValidationException {
         Optional<PlanDefinitionModel> result = planDefinitionRepository.fetch(id);
 
-        if (result.isEmpty()) {
-            throw new ServiceException(String.format("Could not find plandefinition with tht requested id: %s", id), ErrorKind.BAD_REQUEST, ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST);
-        }
+        if (result.isEmpty()) throw new ServiceException(
+                String.format("Could not find plan definition with tht requested id: '%s'", id),
+                ErrorKind.BAD_REQUEST,
+                ErrorDetails.PLANDEFINITION_DOES_NOT_EXIST
+        );
 
-        List<CarePlanModel> activeCarePlans = carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
-
-        return activeCarePlans;
+        return carePlanRepository.fetchActiveCarePlansByPlanDefinitionId(id);
     }
-
-
-    private boolean questionnaireHasExceededDeadline(CarePlan carePlan, List<QualifiedId.QuestionnaireId> questionnaireIds) {
-        return carePlan.getActivity()
-                .stream()
-                .filter(carePlanActivityComponent -> questionnaireIds.contains(carePlanActivityComponent.getDetail().getInstantiatesCanonical().getFirst().getValue()))
-                .anyMatch(carePlanActivityComponent -> ExtensionMapper.extractActivitySatisfiedUntil(carePlanActivityComponent.getDetail().getExtension()).isBefore(dateProvider.now()));
-    }
-
 
     private boolean questionnaireHasExceededDeadline(CarePlanModel carePlan, List<QualifiedId.QuestionnaireId> questionnaireIds) {
         return carePlan.questionnaires().stream()
                 .filter(wrapper -> questionnaireIds.contains(wrapper.questionnaire().id()))
-                .anyMatch(wrapper -> wrapper.satisfiedUntil().isBefore(dateProvider.now()));
+                .map(QuestionnaireWrapperModel::satisfiedUntil)
+                .anyMatch(satisfiedUntil -> satisfiedUntil.isBefore(dateProvider.now()));
     }
 
     private boolean questionnaireHasUnexaminedResponses(QualifiedId.CarePlanId carePlanId, List<QualifiedId.QuestionnaireId> questionnaireIds) throws ServiceException, AccessValidationException {
         return questionnaireResponseRepository.fetch(List.of(ExaminationStatus.UNDER_EXAMINATION, ExaminationStatus.NOT_EXAMINED), carePlanId)
                 .stream()
+                .map(QuestionnaireResponseModel::questionnaireId)
                 .anyMatch(questionnaireIds::contains);
     }
 }

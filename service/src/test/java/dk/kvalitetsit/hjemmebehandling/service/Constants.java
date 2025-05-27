@@ -2,6 +2,7 @@ package dk.kvalitetsit.hjemmebehandling.service;
 
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 
 import java.time.Instant;
 
@@ -27,5 +28,7 @@ public class Constants {
     public static final QualifiedId.QuestionnaireResponseId QUESTIONNAIRE_RESPONSE_ID_3 = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-3");
     public static final String ORGANIZATION_NAME = "infektionsmedicinsk afdeling";
     public static final QualifiedId.PractitionerId PRACTITIONER_ID_1 = new QualifiedId.PractitionerId("practitioner-1");
+    public static final String QUESTION_ID_1 = "question-1";
+    public static final Pagination PAGINATION = new Pagination(0, 10);
 }
 

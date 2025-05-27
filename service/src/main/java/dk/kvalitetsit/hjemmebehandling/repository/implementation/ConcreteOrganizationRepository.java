@@ -114,7 +114,7 @@ public class ConcreteOrganizationRepository implements OrganizationRepository<Or
 
     private List<Organization> lookupOrganizationsByCriteria(List<ICriterion<?>> criteria) throws ServiceException {
         // Don't try to include Organization-resources when we are looking up organizations ...
-        return client.lookupByCriteria(
+        return client.fetchByCriteria(
                 Organization.class,
                 criteria,
                 List.of()
