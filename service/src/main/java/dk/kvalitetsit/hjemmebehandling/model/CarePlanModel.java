@@ -1,115 +1,161 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class CarePlanModel extends BaseModel {
-    private String title;
-    private CarePlanStatus status;
-    private Instant created;
-    private Instant startDate;
-    private Instant endDate;
-    private PatientModel patient;
-    private List<QuestionnaireWrapperModel> questionnaires;
-    private List<PlanDefinitionModel> planDefinitions;
-    private String departmentName;
-    private Instant satisfiedUntil;
+public record CarePlanModel(
+        QualifiedId.CarePlanId id,
+        QualifiedId.OrganizationId organizationId,
+        String title,
+        CarePlanStatus status,
+        Instant created,
+        Instant startDate,
+        Instant endDate,
+        PatientModel patient,
+        List<QuestionnaireWrapperModel> questionnaires,
+        List<PlanDefinitionModel> planDefinitions,
+        String departmentName,
+        Instant satisfiedUntil
+) implements BaseModel<CarePlanModel> {
+
+    public CarePlanModel {
+        // Ensure lists are never null
+        questionnaires = (questionnaires != null) ? List.copyOf(questionnaires) : List.of();
+        planDefinitions = (planDefinitions != null) ? List.copyOf(planDefinitions) : List.of();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
-    public String toString() {
-        return "CarePlanModel{" +
-                "title='" + title + '\'' +
-                ", status=" + status +
-                ", created=" + created +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", patient=" + patient +
-                ", questionnaires=" + questionnaires +
-                ", planDefinitions=" + planDefinitions +
-                ", departmentName='" + departmentName + '\'' +
-                ", satisfiedUntil=" + satisfiedUntil +
-                '}';
+    public CarePlanModel substitute(CarePlanModel other) {
+        return new CarePlanModel(
+                Optional.ofNullable(other.id).orElse(id),
+                Optional.ofNullable(other.organizationId).orElse(organizationId),
+                Optional.ofNullable(other.title).orElse(title),
+                Optional.ofNullable(other.status).orElse(status),
+                Optional.ofNullable(other.created).orElse(created),
+                Optional.ofNullable(other.startDate).orElse(startDate),
+                Optional.ofNullable(other.endDate).orElse(endDate),
+                Optional.ofNullable(other.patient).orElse(patient),
+                Optional.ofNullable(other.questionnaires).orElse(questionnaires),
+                Optional.ofNullable(other.planDefinitions).orElse(planDefinitions),
+                Optional.ofNullable(other.departmentName).orElse(departmentName),
+                Optional.ofNullable(other.satisfiedUntil).orElse(satisfiedUntil)
+        );
     }
 
-    public String getTitle() {
-        return title;
-    }
+    public static class Builder {
+        private QualifiedId.CarePlanId id;
+        private QualifiedId.OrganizationId organizationId;
+        private String title;
+        private CarePlanStatus status;
+        private Instant created;
+        private Instant startDate;
+        private Instant endDate;
+        private PatientModel patient;
+        private List<QuestionnaireWrapperModel> questionnaires = new ArrayList<>();
+        private List<PlanDefinitionModel> planDefinitions = new ArrayList<>();
+        private String departmentName;
+        private Instant satisfiedUntil;
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+        public static Builder from(CarePlanModel model) {
+            return new Builder()
+                    .id(model.id)
+                    .organizationId(model.organizationId)
+                    .title(model.title)
+                    .status(model.status)
+                    .created(model.created)
+                    .startDate(model.startDate)
+                    .endDate(model.endDate)
+                    .patient(model.patient)
+                    .questionnaires(model.questionnaires)
+                    .planDefinitions(model.planDefinitions)
+                    .departmentName(model.departmentName)
+                    .satisfiedUntil(model.satisfiedUntil);
 
-    public CarePlanStatus getStatus() {
-        return status;
-    }
+        }
 
-    public void setStatus(CarePlanStatus status) {
-        this.status = status;
-    }
+        public Builder id(QualifiedId.CarePlanId id) {
+            this.id = id;
+            return this;
+        }
 
-    public Instant getCreated() {
-        return created;
-    }
+        public Builder organizationId(QualifiedId.OrganizationId organizationId) {
+            this.organizationId = organizationId;
+            return this;
+        }
 
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
 
-    public Instant getStartDate() {
-        return startDate;
-    }
+        public Builder status(CarePlanStatus status) {
+            this.status = status;
+            return this;
+        }
 
-    public void setStartDate(Instant startDate) {
-        this.startDate = startDate;
-    }
+        public Builder created(Instant created) {
+            this.created = created;
+            return this;
+        }
 
-    public Instant getEndDate() {
-        return endDate;
-    }
+        public Builder startDate(Instant startDate) {
+            this.startDate = startDate;
+            return this;
+        }
 
-    public void setEndDate(Instant endDate) {
-        this.endDate = endDate;
-    }
+        public Builder endDate(Instant endDate) {
+            this.endDate = endDate;
+            return this;
+        }
 
-    public PatientModel getPatient() {
-        return patient;
-    }
+        public Builder patient(PatientModel patient) {
+            this.patient = patient;
+            return this;
+        }
 
-    public void setPatient(PatientModel patient) {
-        this.patient = patient;
-    }
+        public Builder questionnaires(List<QuestionnaireWrapperModel> questionnaires) {
+            this.questionnaires = (questionnaires != null) ? new ArrayList<>(questionnaires) : new ArrayList<>();
+            return this;
+        }
 
-    public List<QuestionnaireWrapperModel> getQuestionnaires() {
-        return questionnaires;
-    }
+        public Builder planDefinitions(List<PlanDefinitionModel> planDefinitions) {
+            this.planDefinitions = (planDefinitions != null) ? new ArrayList<>(planDefinitions) : new ArrayList<>();
+            return this;
+        }
 
-    public void setQuestionnaires(List<QuestionnaireWrapperModel> questionnaires) {
-        this.questionnaires = questionnaires;
-    }
+        public Builder departmentName(String departmentName) {
+            this.departmentName = departmentName;
+            return this;
+        }
 
-    public List<PlanDefinitionModel> getPlanDefinitions() {
-        return planDefinitions;
-    }
+        public Builder satisfiedUntil(Instant satisfiedUntil) {
+            this.satisfiedUntil = satisfiedUntil;
+            return this;
+        }
 
-    public void setPlanDefinitions(List<PlanDefinitionModel> planDefinitions) {
-        this.planDefinitions = planDefinitions;
-    }
-
-    public String getDepartmentName() {
-        return departmentName;
-    }
-
-    public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
-    }
-
-    public Instant getSatisfiedUntil() {
-        return satisfiedUntil;
-    }
-
-    public void setSatisfiedUntil(Instant satisfiedUntil) {
-        this.satisfiedUntil = satisfiedUntil;
+        public CarePlanModel build() {
+            return new CarePlanModel(
+                    id,
+                    organizationId,
+                    title,
+                    status,
+                    created,
+                    startDate,
+                    endDate,
+                    patient,
+                    questionnaires,
+                    planDefinitions,
+                    departmentName,
+                    satisfiedUntil
+            );
+        }
     }
 }

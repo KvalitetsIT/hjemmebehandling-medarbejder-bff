@@ -1,270 +1,212 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.constants.AnswerType;
-import dk.kvalitetsit.hjemmebehandling.constants.PlanDefinitionStatus;
-import dk.kvalitetsit.hjemmebehandling.constants.QuestionnaireStatus;
 import dk.kvalitetsit.hjemmebehandling.model.*;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-import dk.kvalitetsit.hjemmebehandling.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.AnswerType;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 import dk.kvalitetsit.hjemmebehandling.types.Weekday;
 import org.junit.jupiter.api.Test;
+import org.openapitools.model.*;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DtoMapperTest {
-    private DtoMapper subject = new DtoMapper();
 
-    private static final String CAREPLAN_ID_1 = "CarePlan/careplan-1";
-    private static final String ORGANIZATION_ID_1 = "Organization/organization-1";
-    private static final String PATIENT_ID_1 = "Patient/patient-1";
-    private static final String PLANDEFINITION_ID_1 = "PlanDefinition/plandefinition-1";
-    private static final String QUESTIONNAIRE_ID_1 = "Questionnaire/questionnaire-1";
-    private static final String QUESTIONNAIRERESPONSE_ID_1 = "QuestionnaireResponse/questionnaireresponse-1";
+    private final DtoMapper subject = new DtoMapper();
 
     @Test
     public void mapPlanDefinitionDto_success() {
-        // Arrange
         PlanDefinitionDto planDefinitionDto = buildPlanDefinitionDto();
-        // Act
         PlanDefinitionModel result = subject.mapPlanDefinitionDto(planDefinitionDto);
 
-        // Assert
-        assertEquals(planDefinitionDto.getId(), result.getId().toString());
+        assertEquals(planDefinitionDto.getId().get(), result.id().unqualified());
     }
 
     @Test
     public void mapPlanDefinitionModel_success() {
-        // Arrange
         PlanDefinitionModel planDefinitionModel = buildPlanDefinitionModel();
 
-        // Act
         PlanDefinitionDto result = subject.mapPlanDefinitionModel(planDefinitionModel);
 
-        // Assert
-        assertEquals(planDefinitionModel.getId().toString(), result.getId());
+        assertEquals(planDefinitionModel.id().unqualified(), result.getId().get());
     }
 
     @Test
     public void mapCarePlanDto_success() {
-        // Arrange
         CarePlanDto carePlanDto = buildCarePlanDto();
 
-        // Act
-        CarePlanModel result = subject.mapCarePlanDto(carePlanDto);
+        CarePlanModel result = subject.mapCarePlan(carePlanDto);
 
-        // Assert
-        assertEquals(carePlanDto.getId(), result.getId().toString());
+        assertEquals(carePlanDto.getId().get(), result.id().unqualified());
     }
 
     @Test
     public void mapCarePlanModel_success() {
-        // Arrange
         CarePlanModel carePlanModel = buildCarePlanModel();
-
-        // Act
-        CarePlanDto result = subject.mapCarePlanModel(carePlanModel);
-
-        // Assert
-        assertEquals(carePlanModel.getId().toString(), result.getId());
+        CarePlanDto result = subject.mapCarePlan(carePlanModel);
+        assertEquals(carePlanModel.id().unqualified(), result.getId().get());
     }
 
     @Test
     public void mapPatientDto_success() {
-        // Arrange
         PatientDto patientDto = buildPatientDto();
-
-        // Act
         PatientModel result = subject.mapPatientDto(patientDto);
-
-        // Assert
-        assertEquals(patientDto.getCpr(), result.getCpr());
+        assertEquals(patientDto.getCpr().get(), result.cpr().toString());
     }
 
     @Test
     public void mapPatientModel_success() {
-        // Arrange
         PatientModel patientModel = buildPatientModel();
-
-        // Act
         PatientDto result = subject.mapPatientModel(patientModel);
-
-        // Assert
-        assertEquals(patientModel.getCpr(), result.getCpr());
+        assertEquals(patientModel.cpr().toString(), result.getCpr().get());
     }
 
     @Test
     public void mapPersonModel_success() {
-        // Arrange
         PersonModel personModel = buildPersonModel();
 
-        // Act
         PersonDto result = subject.mapPersonModel(personModel);
 
-        // Assert
-        assertEquals(personModel.getIdentifier().getId(), result.getCpr());
-        assertEquals("Arthur A.", result.getGivenName());
+        assertEquals(personModel.identifier().id(), result.getCpr().get());
+        assertEquals("Arthur A.", result.getName().get().getGiven().get());
     }
 
     @Test
     public void mapQuestionnaireResponseModel_success() {
-        // Arrange
         QuestionnaireResponseModel questionnaireResponseModel = buildQuestionnaireResponseModel();
-
-        // Act
         QuestionnaireResponseDto result = subject.mapQuestionnaireResponseModel(questionnaireResponseModel);
-
-        // Assert
-        assertEquals(questionnaireResponseModel.getId().toString(), result.getId());
+        assertEquals(questionnaireResponseModel.id().toString(), result.getId());
     }
 
     @Test
     public void mapQuestionnaireModel_callToAction() {
-        // Arrange
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        questionnaireModel.setCallToAction(buildQuestionModel());
-
-        // Act
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel(buildQuestionModel());
         QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
-
-        // Assert
         assertNotNull(result.getCallToAction());
     }
 
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
     @Test
     public void mapQuestionnaireModel_enableWhen() {
-        // Arrange
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
+        QuestionModel questionModel = buildQuestionModel(List.of(new QuestionModel.EnableWhen(null, null)));
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel(List.of(questionModel));
 
-        QuestionModel questionModel = buildQuestionModel();
-        questionModel.setEnableWhens( List.of(buildEnableWhen()));
-        questionnaireModel.setQuestions( List.of(questionModel) );
-
-        // Act
         QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
 
-        // Assert
         assertEquals(1, result.getQuestions().size());
         assertEquals(1, result.getQuestions().get(0).getEnableWhen().size());
     }
 
     @Test
     public void mapQuestionnaireDto_enableWhen() {
-        // Arrange
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
 
         QuestionDto questionDto = buildQuestionDto();
-        questionDto.setEnableWhen( List.of(buildEnableWhen()) );
-        questionnaireDto.setQuestions( List.of(questionDto) );
+        questionDto.setEnableWhen(List.of(new EnableWhen()));
+        questionnaireDto.setQuestions(List.of(questionDto));
 
-        // Act
         QuestionnaireModel result = subject.mapQuestionnaireDto(questionnaireDto);
 
-        // Assert
-        assertEquals(1, result.getQuestions().size());
-        assertEquals(1, result.getQuestions().get(0).getEnableWhens().size());
+        assertEquals(1, result.questions().size());
+        assertEquals(1, result.questions().get(0).enableWhens().size());
     }
 
+
     @Test
-    public void mapFrequencyModel_allValuesAreNull_noErrors(){
-        var toMap = new FrequencyModel();
+    public void mapFrequencyModel_allValuesAreNull_noErrors() {
+        var toMap = FrequencyModel.builder().build();
         var result = subject.mapFrequencyModel(toMap);
         assertNotNull(result);
-
     }
 
     @Test
     public void mapMeasurementTypeModel_success() {
-        // Arrange
-        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
-        measurementTypeModel.setSystem("system");
-        measurementTypeModel.setCode("code");
-        measurementTypeModel.setDisplay("display");
-   
-        // Act
+        MeasurementTypeModel measurementTypeModel = MeasurementTypeModel.builder()
+                .system("system")
+                .code("code")
+                .display("display")
+                .build();
+
         MeasurementTypeDto result = subject.mapMeasurementTypeModel(measurementTypeModel);
 
-        // Assert
-        assertEquals(measurementTypeModel.getSystem(), result.getSystem());
-        assertEquals(measurementTypeModel.getCode(), result.getCode());
-        assertEquals(measurementTypeModel.getDisplay(), result.getDisplay());
+        assertEquals(measurementTypeModel.system(), result.getSystem().get());
+        assertEquals(measurementTypeModel.code(), result.getCode().get());
+        assertEquals(measurementTypeModel.display(), result.getDisplay().get());
     }
 
- @Test
+    @Test
     public void mapQuestionnaireModel_thresholds() {
-        // Arrange
-        QuestionnaireModel questionnaireModel = buildQuestionnaireModel();
-        QuestionModel questionModel = buildQuestionModel();
-        questionModel.setThresholds( List.of(buildBooleanThresholdModel(questionModel.getLinkId()), buildNumberThresholdModel(questionModel.getLinkId())) );
-        questionnaireModel.setQuestions( List.of(questionModel) );
 
-        // Act
+        var threshold = new ThresholdModel(
+                null,
+                ThresholdType.NORMAL,
+                2.0,
+                5.0,
+                null,
+                null
+        );
+
+        buildQuestionModel();
+        QuestionModel questionModel = QuestionModel.builder()
+                .thresholds(List.of(buildBooleanThresholdModel(null), threshold))
+                .build();
+
+        QuestionnaireModel questionnaireModel = buildQuestionnaireModel(List.of(questionModel));
+
+
         QuestionnaireDto result = subject.mapQuestionnaireModel(questionnaireModel);
 
-        // Assert
         assertEquals(1, result.getQuestions().size());
-        assertEquals(questionModel.getLinkId(), result.getQuestions().get(0).getThresholds().get(0).getQuestionId());
+        assertEquals(Optional.ofNullable(questionModel.linkId()), result.getQuestions().get(0).getThresholds().get(0).getQuestionId());
 
         assertEquals(2, result.getQuestions().get(0).getThresholds().size());
         var firstThreshold = result.getQuestions().get(0).getThresholds().get(0);
         assertNotNull(firstThreshold);
-        assertEquals(ThresholdType.NORMAL,firstThreshold.getType());
-        assertEquals(questionModel.getLinkId(),firstThreshold.getQuestionId());
-        assertEquals(null,firstThreshold.getValueQuantityHigh());
-        assertEquals(null,firstThreshold.getValueQuantityLow());
-        assertEquals(Boolean.TRUE,firstThreshold.getValueBoolean());
+        assertEquals(ThresholdDto.TypeEnum.NORMAL, firstThreshold.getType().get());
+        assertEquals(Optional.ofNullable(questionModel.linkId()), firstThreshold.getQuestionId());
+        assertEquals(Optional.ofNullable(null), firstThreshold.getValueQuantityHigh());
+        assertEquals(Optional.ofNullable(null), firstThreshold.getValueQuantityLow());
+        assertEquals(Optional.ofNullable(Boolean.TRUE), firstThreshold.getValueBoolean());
 
-         var secondThreshold = result.getQuestions().get(0).getThresholds().get(1);
-         assertNotNull(secondThreshold);
-         assertEquals(ThresholdType.NORMAL,secondThreshold.getType());
-         assertEquals(questionModel.getLinkId(),secondThreshold.getQuestionId());
-         assertEquals(2.0,secondThreshold.getValueQuantityLow());
-         assertEquals(5.0,secondThreshold.getValueQuantityHigh());
-         assertEquals(null,secondThreshold.getValueBoolean());
-
+        var secondThreshold = result.getQuestions().get(0).getThresholds().get(1);
+        assertNotNull(secondThreshold);
+        assertEquals(Optional.ofNullable(ThresholdDto.TypeEnum.NORMAL), secondThreshold.getType());
+        assertEquals(Optional.ofNullable(questionModel.linkId()), secondThreshold.getQuestionId());
+        assertEquals(Optional.ofNullable(2.0), secondThreshold.getValueQuantityLow());
+        assertEquals(Optional.ofNullable(5.0), secondThreshold.getValueQuantityHigh());
+        assertEquals(Optional.ofNullable(null), secondThreshold.getValueBoolean());
     }
 
+
+    // TODO: Get rid of all these builders below
     private ThresholdModel buildBooleanThresholdModel(String questionLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setQuestionnaireItemLinkId(questionLinkId);
-        thresholdModel.setValueBoolean(Boolean.TRUE);
-
-        return thresholdModel;
-    }
-
-    private ThresholdModel buildNumberThresholdModel(String questionLinkId) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-        thresholdModel.setType(ThresholdType.NORMAL);
-        thresholdModel.setQuestionnaireItemLinkId(questionLinkId);
-        thresholdModel.setValueQuantityLow(2.0);
-        thresholdModel.setValueQuantityHigh(5.0);
-
-        return thresholdModel;
+        return new ThresholdModel(
+                questionLinkId,
+                ThresholdType.NORMAL,
+                null,
+                null,
+                Boolean.TRUE,
+                null
+        );
     }
 
 
     private AnswerModel buildAnswerModel() {
-        AnswerModel answerModel = new AnswerModel();
-
-        answerModel.setAnswerType(AnswerType.STRING);
-        answerModel.setValue("foo");
-
-        return answerModel;
+        return new AnswerModel(null, "foo", AnswerType.STRING, null);
     }
 
     private CarePlanDto buildCarePlanDto() {
         CarePlanDto carePlanDto = new CarePlanDto();
 
-        carePlanDto.setId(CAREPLAN_ID_1);
-        carePlanDto.setStatus("ACTIVE");
-        carePlanDto.setPatientDto(buildPatientDto());
+        carePlanDto.setId(Optional.of(CAREPLAN_ID_1.unqualified()));
+        carePlanDto.setStatus(Optional.of(org.openapitools.model.CarePlanStatus.ACTIVE));
+        carePlanDto.setPatientDto(Optional.of(buildPatientDto()));
         carePlanDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
         carePlanDto.setPlanDefinitions(List.of(buildPlanDefinitionDto()));
 
@@ -272,188 +214,164 @@ public class DtoMapperTest {
     }
 
     private CarePlanModel buildCarePlanModel() {
-        CarePlanModel carePlanModel = new CarePlanModel();
-
-        carePlanModel.setId(new QualifiedId(CAREPLAN_ID_1));
-        carePlanModel.setStatus(CarePlanStatus.ACTIVE);
-        carePlanModel.setPatient(buildPatientModel());
-        carePlanModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
-        carePlanModel.setPlanDefinitions(List.of(buildPlanDefinitionModel()));
-
-        return carePlanModel;
+        return CarePlanModel.builder()
+                .id(CAREPLAN_ID_1)
+                .status(CarePlanStatus.ACTIVE)
+                .patient(buildPatientModel())
+                .questionnaires(List.of(buildQuestionnaireWrapperModel()))
+                .planDefinitions(List.of(buildPlanDefinitionModel()))
+                .build();
     }
 
     private ContactDetailsDto buildContactDetailsDto() {
-        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
-
-        contactDetailsDto.setStreet("Fiskergade");
-
-        return contactDetailsDto;
+        return new ContactDetailsDto().street("Fiskergade");
     }
 
     private ContactDetailsModel buildContactDetailsModel() {
-        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
-
-        contactDetailsModel.setStreet("Fiskergade");
-
-        return contactDetailsModel;
+        return ContactDetailsModel.builder().street("Fiskergade").build();
     }
 
     private FrequencyDto buildFrequencyDto() {
-        FrequencyDto frequencyDto = new FrequencyDto();
-
-        frequencyDto.setWeekdays(List.of(Weekday.FRI));
-        frequencyDto.setTimeOfDay("04:00");
-
-        return frequencyDto;
+        return new FrequencyDto().weekdays(List.of(FrequencyDto.WeekdaysEnum.FRI)).timeOfDay("04:00");
     }
 
     private FrequencyModel buildFrequencyModel() {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        frequencyModel.setWeekdays(List.of(Weekday.FRI));
-        frequencyModel.setTimeOfDay(LocalTime.parse("04:00"));
-
-        return frequencyModel;
+        return FrequencyModel.builder()
+                .weekdays(List.of(Weekday.FRI))
+                .timeOfDay(LocalTime.parse("04:00"))
+                .build();
     }
 
     private PatientDto buildPatientDto() {
-        PatientDto patientDto = new PatientDto();
-
-        patientDto.setCpr("0101010101");
-        patientDto.setPatientContactDetails(buildContactDetailsDto());
-        patientDto.setPrimaryRelativeContactDetails(buildContactDetailsDto());
-        patientDto.setAdditionalRelativeContactDetails(List.of(buildContactDetailsDto()));
-
-        return patientDto;
+        return new PatientDto()
+                .cpr("0101010101")
+                .patientContactDetails(buildContactDetailsDto())
+                .primaryRelativeContactDetails(buildContactDetailsDto())
+                .additionalRelativeContactDetails(List.of(buildContactDetailsDto()));
     }
 
     private PatientModel buildPatientModel() {
-        PatientModel patientModel = new PatientModel();
+        return PatientModel.builder()
+                .cpr(CPR_1)
+                .contactDetails(buildContactDetailsModel())
+                .name(new PersonNameModel("Madsen", List.of("Bob")))
+                .primaryContact(PrimaryContactModel.builder()
+                        .contactDetails(buildContactDetailsModel())
+                        .build())
+                .contactDetails(buildContactDetailsModel())
+                .additionalRelativeContactDetails(List.of(buildContactDetailsModel()))
+                .build();
 
-        patientModel.setCpr("0101010101");
-        patientModel.setContactDetails(buildContactDetailsModel());
-        patientModel.getPrimaryContact().setContactDetails(buildContactDetailsModel());
-        patientModel.setAdditionalRelativeContactDetails(List.of(buildContactDetailsModel()));
-
-        return patientModel;
     }
 
+
     private PersonModel buildPersonModel() {
-        PersonModel personModel = new PersonModel();
-
-        personModel.setIdentifier(new PersonIdentifierModel());
-        personModel.getIdentifier().setId("0101010101");
-
-        personModel.setName(new PersonNameModel());
-        personModel.getName().setFamily("Dent");
-        personModel.getName().setGiven(List.of("Arthur", "A."));
-
-        personModel.setBirthDate("1980-05-05");
-        personModel.setDeceasedBoolean(false);
-        personModel.setGender("M");
-
-        personModel.setAddress(new PersonAddressModel());
-        personModel.getAddress().setCity("Aarhus");
-
-        return personModel;
+        return PersonModel.builder()
+                .identifier(PersonIdentifierModel.builder()
+                        .id("0101010101")
+                        .build()
+                )
+                .name(new PersonNameModel("Dent", List.of("Arthur", "A.")))
+                .birthDate("1980-05-05")
+                .deceasedBoolean(false)
+                .gender("M")
+                .address(PersonAddressModel.builder()
+                        .city("Arhus")
+                        .build()
+                ).build();
     }
 
     private PlanDefinitionDto buildPlanDefinitionDto() {
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
-
-        planDefinitionDto.setId(PLANDEFINITION_ID_1);
-        planDefinitionDto.setStatus("ACTIVE");
-        planDefinitionDto.setQuestionnaires(List.of(buildQuestionnaireWrapperDto()));
-
-        return planDefinitionDto;
+        return new PlanDefinitionDto()
+                .id(PLANDEFINITION_ID_1.unqualified())
+                .status(org.openapitools.model.Status.ACTIVE)
+                .questionnaires(List.of(buildQuestionnaireWrapperDto()));
     }
 
     private PlanDefinitionModel buildPlanDefinitionModel() {
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
-
-        planDefinitionModel.setId(new QualifiedId(PLANDEFINITION_ID_1));
-        planDefinitionModel.setStatus(PlanDefinitionStatus.ACTIVE);
-        planDefinitionModel.setQuestionnaires(List.of(buildQuestionnaireWrapperModel()));
-
-        return planDefinitionModel;
+        return PlanDefinitionModel.builder()
+                .id(PLANDEFINITION_ID_1)
+                .status(Status.ACTIVE)
+                .questionnaires(List.of(buildQuestionnaireWrapperModel()))
+                .build();
     }
 
     private QuestionDto buildQuestionDto() {
-        QuestionDto questionDto = new QuestionDto();
-
-        questionDto.setText("Hvordan har du det?");
-
-        return questionDto;
+        return new QuestionDto().text("Hvordan har du det?");
     }
 
     private QuestionModel buildQuestionModel() {
-        QuestionModel questionModel = new QuestionModel();
-
-        questionModel.setText("Hvordan har du det?");
-
-        return questionModel;
+        return QuestionModel.builder()
+                .text("Hvordan har du det?")
+                .build();
     }
 
-    private QuestionModel.EnableWhen buildEnableWhen() {
-        QuestionModel.EnableWhen enableWhen = new QuestionModel.EnableWhen();
-
-        return enableWhen;
+    private QuestionModel buildQuestionModel(List<QuestionModel.EnableWhen> enableWhens) {
+        return QuestionModel.builder()
+                .text("Hvordan har du det?")
+                .enableWhens(enableWhens)
+                .build();
     }
+
 
     private QuestionAnswerPairModel buildQuestionAnswerPairModel() {
-        QuestionAnswerPairModel questionAnswerPairModel = new QuestionAnswerPairModel(buildQuestionModel(), buildAnswerModel());
-
-        return questionAnswerPairModel;
+        return new QuestionAnswerPairModel(buildQuestionModel(), buildAnswerModel());
     }
 
     private QuestionnaireDto buildQuestionnaireDto() {
-        QuestionnaireDto questionnaireDto = new QuestionnaireDto();
-
-        questionnaireDto.setId("questionnaire-1");
-        questionnaireDto.setQuestions(List.of(buildQuestionDto()));
-        questionnaireDto.setStatus("DRAFT");
-
-        return questionnaireDto;
+        return new QuestionnaireDto()
+                .questions(List.of(buildQuestionDto()))
+                .status(org.openapitools.model.Status.DRAFT).id("questionnaire-1");
     }
 
     private QuestionnaireModel buildQuestionnaireModel() {
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
-
-        questionnaireModel.setId(new QualifiedId(QUESTIONNAIRE_ID_1));
-        questionnaireModel.setQuestions(List.of(buildQuestionModel()));
-        questionnaireModel.setStatus(QuestionnaireStatus.DRAFT);
-
-        return questionnaireModel;
+        return QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .questions(List.of(buildQuestionModel()))
+                .status(Status.DRAFT)
+                .build();
     }
+
+    private QuestionnaireModel buildQuestionnaireModel(QuestionModel callToAction) {
+        return QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .questions(List.of(buildQuestionModel()))
+                .status(Status.DRAFT)
+                .callToAction(callToAction)
+                .build();
+    }
+
+
+    private QuestionnaireModel buildQuestionnaireModel(List<QuestionModel> questions) {
+        return QuestionnaireModel.builder()
+                .id(QUESTIONNAIRE_ID_1)
+                .questions(List.of(buildQuestionModel()))
+                .status(Status.DRAFT)
+                .questions(questions)
+                .build();
+    }
+
 
     private QuestionnaireResponseModel buildQuestionnaireResponseModel() {
-        QuestionnaireResponseModel questionnaireResponseModel = new QuestionnaireResponseModel();
-
-        questionnaireResponseModel.setId(new QualifiedId(QUESTIONNAIRERESPONSE_ID_1));
-        questionnaireResponseModel.setQuestionnaireId(new QualifiedId(QUESTIONNAIRE_ID_1));
-        questionnaireResponseModel.setCarePlanId(new QualifiedId(CAREPLAN_ID_1));
-        questionnaireResponseModel.setQuestionAnswerPairs(List.of(buildQuestionAnswerPairModel()));
-        questionnaireResponseModel.setPatient(buildPatientModel());
-
-        return questionnaireResponseModel;
+        return QuestionnaireResponseModel.builder()
+                .id(QUESTIONNAIRE_RESPONSE_ID_1)
+                .questionnaireId(QUESTIONNAIRE_ID_1)
+                .carePlanId(CAREPLAN_ID_1)
+                .questionAnswerPairs(List.of(buildQuestionAnswerPairModel()))
+                .patient(buildPatientModel())
+                .build();
     }
 
+
     private QuestionnaireWrapperDto buildQuestionnaireWrapperDto() {
-        QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
-
-        questionnaireWrapperDto.setQuestionnaire(buildQuestionnaireDto());
-        questionnaireWrapperDto.setFrequency(buildFrequencyDto());
-
-        return questionnaireWrapperDto;
+        return new QuestionnaireWrapperDto()
+                .questionnaire(buildQuestionnaireDto())
+                .frequency(buildFrequencyDto());
     }
 
     private QuestionnaireWrapperModel buildQuestionnaireWrapperModel() {
-        QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
-
-        questionnaireWrapperModel.setQuestionnaire(buildQuestionnaireModel());
-        questionnaireWrapperModel.setFrequency(buildFrequencyModel());
-
-        return questionnaireWrapperModel;
+        return QuestionnaireWrapperModel.builder()
+                .questionnaire(buildQuestionnaireModel())
+                .frequency(buildFrequencyModel()).build();
     }
 }

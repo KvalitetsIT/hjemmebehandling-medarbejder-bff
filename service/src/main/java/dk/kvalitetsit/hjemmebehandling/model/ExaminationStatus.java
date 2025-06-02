@@ -1,0 +1,15 @@
+package dk.kvalitetsit.hjemmebehandling.model;
+
+public enum ExaminationStatus {
+    NOT_EXAMINED(2), UNDER_EXAMINATION(1), EXAMINED(3);
+
+    private final int priority;
+
+    public int getPriority() {
+        return priority;
+    }
+
+    ExaminationStatus(int priority) {
+        this.priority = priority;
+    }
+}

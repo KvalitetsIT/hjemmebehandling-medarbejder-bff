@@ -1,48 +1,40 @@
 package dk.kvalitetsit.hjemmebehandling.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
+import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
+import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
+import dk.kvalitetsit.hjemmebehandling.model.constants.errors.ErrorDetails;
+import dk.kvalitetsit.hjemmebehandling.service.PatientService;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.logging.AuditLoggingService;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
+import org.openapitools.api.PatientApi;
+import org.openapitools.model.CreatePatientRequest;
+import org.openapitools.model.PatientDto;
+import org.openapitools.model.PatientListResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.controller.exception.BadRequestException;
-import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import dk.kvalitetsit.hjemmebehandling.api.CreatePatientRequest;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.api.PatientDto;
-import dk.kvalitetsit.hjemmebehandling.api.PatientListResponse;
-import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.InternalServerErrorException;
-import dk.kvalitetsit.hjemmebehandling.controller.exception.ResourceNotFoundException;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.AuditLoggingService;
-import dk.kvalitetsit.hjemmebehandling.service.PatientService;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "Patient", description = "API for manipulating and retrieving patients.")
-public class PatientController extends BaseController {
+public class PatientController extends BaseController implements PatientApi {
     private static final Logger logger = LoggerFactory.getLogger(PatientController.class);
 
     private final PatientService patientService;
     private final AuditLoggingService auditLoggingService;
     private final DtoMapper dtoMapper;
-	private final CustomUserClient customUserClient;
+    private final CustomUserClient customUserClient;
 
     public PatientController(PatientService patientService, AuditLoggingService auditLoggingService, DtoMapper dtoMapper, CustomUserClient customUserClient) {
         this.patientService = patientService;
@@ -51,109 +43,88 @@ public class PatientController extends BaseController {
         this.customUserClient = customUserClient;
     }
 
-    @GetMapping(value = "/v1/patientlist")
-    public @ResponseBody PatientListResponse getPatientList() {
-        logger.info("Getting patient list ...");
-
-        String clinicalIdentifier = getClinicalIdentifier();
-
-        List<PatientModel> patients = patientService.getPatients(clinicalIdentifier);
-        auditLoggingService.log("GET /v1/patientlist", patients);
-
-        return buildResponse(patients);
+    private PatientListResponse buildResponse(List<PatientModel> patients) {
+        PatientListResponse response = new PatientListResponse();
+        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).toList());
+        return response;
     }
 
-    @PostMapping(value = "/v1/patient")
-    public void createPatient(@RequestBody CreatePatientRequest request) {
-        // Create the patient
+    @Override
+    public ResponseEntity<Void> createPatient(CreatePatientRequest createPatientRequest) {
+//         Create the patient
         try {
-            PatientModel patient = dtoMapper.mapPatientDto(request.getPatient());
+            // todo: handle 'Optional.get()' without 'isPresent()' check below
+            PatientModel patient = createPatientRequest.getPatient()
+                    .map(dtoMapper::mapPatientDto)
+                    .get();
+
             patientService.createPatient(patient);
             auditLoggingService.log("POST /v1/patient", patient);
-        }
-        catch(ServiceException e) {
+
+        } catch (ServiceException e) {
             logger.error("Error creating patient", e);
             throw new InternalServerErrorException(ErrorDetails.INTERNAL_SERVER_ERROR);
         }
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/v1/patient")
-    public @ResponseBody PatientDto getPatient(String cpr) {
+    @Override
+    public ResponseEntity<PatientDto> getPatientsByCpr(String cpr) {
         logger.info("Getting patient ...");
 
-        String clinicalIdentifier = getClinicalIdentifier();
-
         try {
-            PatientModel patient = patientService.getPatient(cpr);
+            PatientModel patient = patientService.getPatient(new CPR(cpr));
             auditLoggingService.log("GET /v1/patient", patient);
-
-            if(patient == null) {
+            if (patient == null) {
                 throw new ResourceNotFoundException("Patient did not exist!", ErrorDetails.PATIENT_DOES_NOT_EXIST);
             }
-            return dtoMapper.mapPatientModel(patient);
-        }catch (ServiceException e ) {
+            return ResponseEntity.ok(dtoMapper.mapPatientModel(patient));
+        } catch (ServiceException e) {
             throw toStatusCodeException(e);
         }
-
     }
 
-    @GetMapping(value = "/v1/patient/search")
-    public @ResponseBody PatientListResponse searchPatients(String searchString) {
+    @Override
+    public ResponseEntity<PatientListResponse> getPatients(Boolean includeActive, Boolean includeCompleted, Optional<Integer> limit, Optional<Integer> offset) {
         logger.info("Getting patient ...");
+        if (!includeActive && !includeCompleted) return ResponseEntity.ok(buildResponse(new ArrayList<>()));
+
+        var pagination = new Pagination(offset, limit);
         try {
-            List<PatientModel> patients = patientService.searchPatients(List.of(searchString));
-            auditLoggingService.log("GET /v1/patient/search", patients);
-            return buildResponse(patients);
-        }catch (ServiceException e ) {
-            throw toStatusCodeException(e);
-        }
-
-    }
-
-    @GetMapping(value = "/v1/patients")
-    public @ResponseBody PatientListResponse getPatients(
-            boolean includeActive,
-            boolean includeCompleted,
-            @RequestParam("page_number") Integer pageNumber,
-            @RequestParam("page_size") Integer pageSize
-    ) {
-        logger.info("Getting patient ...");
-        if(!includeActive && !includeCompleted) return buildResponse(new ArrayList<>());
-
-        var pagination = new Pagination(pageNumber, pageSize);
-        try {
-            List<PatientModel> patients = patientService.getPatients(includeActive,includeCompleted,pagination);
-            patientService.getPatients(includeActive,includeCompleted);
+            List<PatientModel> patients = patientService.getPatients(includeActive, includeCompleted, pagination);
             auditLoggingService.log("GET /v1/patients", patients);
 
-            return buildResponse(patients);
-        }catch (ServiceException e ) {
+            return ResponseEntity.ok(buildResponse(patients));
+        } catch (AccessValidationException | ServiceException e) {
             throw toStatusCodeException(e);
         }
-
     }
-    
-    @PutMapping(value = "/v1/resetpassword")
-    public void resetPassword(@RequestParam("cpr") String cpr) throws JsonMappingException, JsonProcessingException {
+
+
+
+    @Override
+    public ResponseEntity<Void> resetPassword(String cpr) {
         logger.info("reset password for patient");
-         try {
-            PatientModel patientModel = patientService.getPatient(cpr);
-            customUserClient.resetPassword(cpr, patientModel.getCustomUserName());
-        }catch (ServiceException e ) {
+        try {
+            PatientModel patientModel = patientService.getPatient(new CPR(cpr));
+            customUserClient.resetPassword(cpr, patientModel.customUserName());
+            return ResponseEntity.ok().build();
+        } catch (ServiceException e) {
             throw toStatusCodeException(e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private String getClinicalIdentifier() {
-        // TODO - get clinical identifier (from token?)
-        return "1234";
-    }
-
-    private PatientListResponse buildResponse(List<PatientModel> patients) {
-        PatientListResponse response = new PatientListResponse();
-
-        response.setPatients(patients.stream().map(dtoMapper::mapPatientModel).collect(Collectors.toList()));
-
-        return response;
+    @Override
+    public ResponseEntity<org.openapitools.model.PatientListResponse> searchPatients(String searchString) {
+        logger.info("Getting patient ...");
+        try {
+            List<PatientModel> patients = patientService.searchActivePatients(List.of(searchString));
+            auditLoggingService.log("GET /v1/patient/search", patients);
+            return ResponseEntity.ok(buildResponse(patients));
+        } catch (ServiceException | AccessValidationException e) {
+            throw toStatusCodeException(e);
+        }
     }
 }

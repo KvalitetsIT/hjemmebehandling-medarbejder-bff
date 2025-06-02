@@ -1,34 +1,30 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
-
-public class QuestionAnswerPairModel {
-    private QuestionModel question;
-    private AnswerModel answer;
-
-
-
-    public QuestionAnswerPairModel(QuestionModel question, AnswerModel answer) {
-        this.question = question;
-        this.answer = answer;
+public record QuestionAnswerPairModel(
+        QuestionModel question,
+        AnswerModel answer
+) {
+    public static QuestionAnswerPairModel.Builder builder() {
+        return new QuestionAnswerPairModel.Builder();
     }
 
-    public QuestionModel getQuestion() {
-        return question;
+    public static class Builder {
+        private QuestionModel question;
+        private AnswerModel answer;
+
+        public Builder question(QuestionModel question) {
+            this.question = question;
+            return this;
+        }
+
+        public Builder answer(AnswerModel answer) {
+            this.answer = answer;
+            return this;
+        }
+
+
+        public QuestionAnswerPairModel build() {
+            return new QuestionAnswerPairModel(this.question, this.answer);
+        }
     }
-
-    public void setQuestion(QuestionModel question) {
-        this.question = question;
-    }
-
-    public AnswerModel getAnswer() {
-        return answer;
-    }
-
-    public void setAnswer(AnswerModel answer) {
-        this.answer = answer;
-    }
-
-
 }

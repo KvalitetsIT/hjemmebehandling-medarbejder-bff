@@ -1,0 +1,178 @@
+package dk.kvalitetsit.hjemmebehandling.service.concrete;
+
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.repository.PatientRepository;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
+import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.service.implementation.ConcretePatientService;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+public class PatientServiceTest {
+
+    @InjectMocks
+    private ConcretePatientService subject;
+
+    @Mock
+    private PatientRepository<PatientModel, CarePlanStatus> patientRepository;
+
+    private static Stream<Arguments> getPatients_TwoResponses_ReturnAlphabetically() {
+        return Stream.of(
+                Arguments.of(List.of("A", "B"), List.of("A", "B"), 0, 2),
+                Arguments.of(List.of("B", "A"), List.of("A", "B"), 0, 2),
+                Arguments.of(List.of("C", "B", "A"), List.of("A", "B", "C"), 0, 3),
+                Arguments.of(List.of("B", "A", "C"), List.of("C"), 1, 2),
+                Arguments.of(List.of("C", "A", "B"), List.of("C"), 1, 2)
+        );
+    }
+
+    @Test
+    public void searchPatients() throws ServiceException, AccessValidationException {
+        PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+        Mockito.when(patientRepository.searchPatients(List.of(CPR_1.value()), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
+        List<PatientModel> result = subject.searchActivePatients(List.of(CPR_1.value()));
+        assertEquals(1, result.size());
+        assertEquals(patient, result.getFirst());
+    }
+
+
+    @Test
+    public void getPatients_includeActiveAndCompleted() throws ServiceException, AccessValidationException {
+        PatientModel patient1 = buildPatient(PATIENT_ID_1, CPR_1);
+        PatientModel patient2 = buildPatient(PATIENT_ID_2, CPR_2);
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE, CarePlanStatus.COMPLETED)).thenReturn(List.of(patient1, patient2));
+        List<PatientModel> result = subject.getPatients(true, true, PAGINATION);
+        Mockito.verify(patientRepository, Mockito.times(1)).fetchByStatus(CarePlanStatus.ACTIVE, CarePlanStatus.COMPLETED);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    public void getPatients_includeActiveAndCompleted_notIncludeRedundant() throws ServiceException, AccessValidationException {
+        PatientModel patient1 = buildPatient(PATIENT_ID_1, CPR_1);
+        PatientModel patient2 = buildPatient(PATIENT_ID_2, CPR_1);
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE, CarePlanStatus.COMPLETED)).thenReturn(List.of(patient1, patient2));
+        List<PatientModel> result = subject.getPatients(true, true, PAGINATION);
+        Mockito.verify(patientRepository, Mockito.times(1)).fetchByStatus(CarePlanStatus.ACTIVE, CarePlanStatus.COMPLETED);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getPatients_includeActive_notIncludeCompleted_patientActiveCarePlan() throws ServiceException, AccessValidationException {
+        PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
+        List<PatientModel> result = subject.getPatients(true, false, PAGINATION);
+        Mockito.verify(patientRepository, Mockito.times(1)).fetchByStatus(CarePlanStatus.ACTIVE);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getPatients_includeCompleted_notIncludeActive_patientWithOnlyCompletedCarePlan() throws ServiceException, AccessValidationException {
+        PatientModel patient = buildPatient(PATIENT_ID_1, CPR_1);
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.COMPLETED)).thenReturn(List.of(patient));
+        List<PatientModel> result = subject.getPatients(false, true, PAGINATION);
+        Mockito.verify(patientRepository, Mockito.times(1)).fetchByStatus(CarePlanStatus.COMPLETED);
+        Mockito.verify(patientRepository, Mockito.times(0)).fetchByStatus(CarePlanStatus.ACTIVE);
+        assertEquals(1, result.size());
+    }
+
+    @ParameterizedTest
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    @MethodSource // arguments comes from a method that is name the same as the test
+    public void getPatients_TwoResponses_ReturnAlphabetically(List<String> names, List<String> namesInExpectedOrder, int page, int pageSize) throws ServiceException, AccessValidationException {
+
+        List<PatientModel> patients = new ArrayList<>();
+        for (int i = 0; i < names.size(); i++) {
+            var name = PersonNameModel.builder().given(names.get(i)).build();;
+            patients.add(PatientModel.builder().cpr(new CPR("010101010" + i)).name(name).build());
+        }
+
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(patients);
+
+        List<PatientModel> result = subject.getPatients(true, false, new Pagination(page, pageSize));
+
+        assertEquals(namesInExpectedOrder.size(), result.size());
+        for (var i = 0; i < namesInExpectedOrder.size(); i++) {
+            assertEquals(namesInExpectedOrder.get(i), result.get(i).name().given().getFirst());
+        }
+    }
+
+    @Test
+    public void getPatients_includeActive_notIncludeCompleted_patientWithActiveAndCompletedCarePlan() throws ServiceException, AccessValidationException {
+        PatientModel patientModel = buildPatient(PATIENT_ID_1, CPR_1);
+        Mockito.when(patientRepository.fetchByStatus(CarePlanStatus.ACTIVE)).thenReturn(List.of(patientModel));
+        List<PatientModel> result = subject.getPatients(true, false, PAGINATION);
+        assertEquals(1, result.size());
+    }
+
+
+    @Test
+    public void searchPatients_emptyResult() throws ServiceException, AccessValidationException {
+
+        Mockito.when(patientRepository.searchPatients(List.of(CPR_1.value()), CarePlanStatus.ACTIVE)).thenReturn(List.of());
+        List<PatientModel> result = subject.searchActivePatients(List.of(CPR_1.value()));
+        assertTrue(result.isEmpty());
+    }
+
+// Excluded since the functionality is not relevanty to the patientService
+//    @Test
+//    public void searchPatients_emptyResult_emptySearch() throws ServiceException {
+//        PatientModel patient = PatientModel.builder()
+//                .id(PatientServiceTest.PATIENT_ID_1)
+//                .build();
+//
+//        CarePlanModel carePlan1 = CarePlanModel.builder()
+//                .id(CAREPLAN_ID_1)
+//                .status(CarePlanStatus.ACTIVE)
+//                .patient(patient)
+//                .build();
+//
+//        CarePlanModel carePlan2 = CarePlanModel.builder()
+//                .id(CAREPLAN_ID_2)
+//                .status(CarePlanStatus.COMPLETED)
+//                .patient(patient)
+//                .build();
+//
+//        CarePlanModel carePlan3 = CarePlanModel.builder()
+//                .id(CAREPLAN_ID_3)
+//                .status(CarePlanStatus.ACTIVE)
+//                .patient(patient)
+//                .build();
+//
+//        Mockito.when(patientRepository.searchPatients(new ArrayList<>(), CarePlanStatus.ACTIVE)).thenReturn(List.of(patient));
+//        PatientModel patientModel = PatientModel.builder().build();
+//
+//        List<PatientModel> result = subject.searchPatients(new ArrayList<>());
+//
+//        assertEquals(1, result.size());
+//        assertEquals(patientModel, result.getFirst());
+//    }
+
+
+    private PatientModel buildPatient(QualifiedId.PatientId patientId, CPR cpr) {
+        return PatientModel.builder()
+                .id(patientId)
+                .name(PersonNameModel.builder().given("bob").family("larsen").build())
+                .cpr(cpr)
+                .build();
+    }
+}

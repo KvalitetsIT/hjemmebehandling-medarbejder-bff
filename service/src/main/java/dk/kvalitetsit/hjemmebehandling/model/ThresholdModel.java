@@ -2,59 +2,85 @@ package dk.kvalitetsit.hjemmebehandling.model;
 
 import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
 
-public class ThresholdModel {
-  private String questionnaireItemLinkId;
-  private ThresholdType type;
-  private Double valueQuantityLow;
-  private Double valueQuantityHigh;
-  private Boolean valueBoolean;
-  private String valueOption;
+public record ThresholdModel (
+        String questionnaireItemLinkId, // Might be set to a "Qualified.QuestionId"
+        ThresholdType type,
+        Double valueQuantityLow,
+        Double valueQuantityHigh,
+        Boolean valueBoolean,
+        String valueOption
+) {
 
-  public String getQuestionnaireItemLinkId() {
-    return questionnaireItemLinkId;
-  }
+    public static Builder builder() {
+        return new Builder();
+    }
 
-  public void setQuestionnaireItemLinkId(String questionnaireItemLinkId) {
-    this.questionnaireItemLinkId = questionnaireItemLinkId;
-  }
+    public static class Builder {
 
-  public ThresholdType getType() {
-    return type;
-  }
+        private String questionnaireItemLinkId;
+        private ThresholdType type;
+        private Double valueQuantityLow;
+        private Double valueQuantityHigh;
+        private Boolean valueBoolean;
+        private String valueOption;
 
-  public void setType(ThresholdType type) {
-    this.type = type;
-  }
+        public static Builder from(ThresholdModel threshold) {
+            return new Builder(
+                    threshold.questionnaireItemLinkId,
+                    threshold.type,
+                    threshold.valueQuantityLow,
+                    threshold.valueQuantityHigh,
+                    threshold.valueBoolean,
+                    threshold.valueOption
+            );
+        }
 
-  public Double getValueQuantityLow() {
-    return valueQuantityLow;
-  }
+        private Builder() {
+        }
 
-  public void setValueQuantityLow(Double valueQuantityLow) {
-    this.valueQuantityLow = valueQuantityLow;
-  }
+        private Builder(String questionnaireItemLinkId, ThresholdType type, Double valueQuantityLow, Double valueQuantityHigh, Boolean valueBoolean, String valueOption) {
+            this.questionnaireItemLinkId = questionnaireItemLinkId;
+            this.type = type;
+            this.valueQuantityLow = valueQuantityLow;
+            this.valueQuantityHigh = valueQuantityHigh;
+            this.valueBoolean = valueBoolean;
+            this.valueOption = valueOption;
+        }
 
-  public Double getValueQuantityHigh() {
-    return valueQuantityHigh;
-  }
+        public Builder questionnaireItemLinkId(String questionnaireItemLinkId) {
+            this.questionnaireItemLinkId = questionnaireItemLinkId;
+            return this;
+        }
 
-  public void setValueQuantityHigh(Double valueQuantityHigh) {
-    this.valueQuantityHigh = valueQuantityHigh;
-  }
+        public Builder type(ThresholdType type) {
+            this.type = type;
+            return this;
+        }
 
-  public Boolean getValueBoolean() {
-    return valueBoolean;
-  }
+        public Builder valueQuantityLow(Double valueQuantityLow) {
+            this.valueQuantityLow = valueQuantityLow;
+            return this;
+        }
 
-  public void setValueBoolean(Boolean valueBoolean) {
-    this.valueBoolean = valueBoolean;
-  }
+        public Builder valueQuantityHigh(Double valueQuantityHigh) {
+            this.valueQuantityHigh = valueQuantityHigh;
+            return this;
+        }
 
-  public String getValueOption() {
-    return valueOption;
-  }
+        public Builder valueBoolean(Boolean valueBoolean) {
+            this.valueBoolean = valueBoolean;
+            return this;
+        }
 
-  public void setValueOption(String valueOption) {
-    this.valueOption = valueOption;
-  }
+        public Builder valueOption(String valueOption) {
+            this.valueOption = valueOption;
+            return this;
+        }
+
+        public ThresholdModel build(){
+            return new ThresholdModel(this.questionnaireItemLinkId, this.type, this.valueQuantityLow, this.valueQuantityHigh, this.valueBoolean, this.valueOption);
+        }
+    }
+
+
 }

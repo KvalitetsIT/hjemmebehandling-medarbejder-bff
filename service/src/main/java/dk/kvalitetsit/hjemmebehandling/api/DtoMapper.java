@@ -1,473 +1,596 @@
 package dk.kvalitetsit.hjemmebehandling.api;
 
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.constants.*;
-import dk.kvalitetsit.hjemmebehandling.model.MeasurementTypeModel;
-import org.hl7.fhir.r4.model.ResourceType;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestAttributesDto;
+import dk.kvalitetsit.hjemmebehandling.client.CustomUserRequestDto;
+import dk.kvalitetsit.hjemmebehandling.model.*;
+import dk.kvalitetsit.hjemmebehandling.model.ExaminationStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.*;
+import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
+import dk.kvalitetsit.hjemmebehandling.model.constants.CarePlanStatus;
+import dk.kvalitetsit.hjemmebehandling.model.constants.Status;
+import dk.kvalitetsit.hjemmebehandling.types.ThresholdType;
+import dk.kvalitetsit.hjemmebehandling.types.Weekday;
+import jakarta.validation.Valid;
+import org.jetbrains.annotations.NotNull;
+import org.openapitools.model.*;
+import org.openapitools.model.Option;
 import org.springframework.stereotype.Component;
 
-import dk.kvalitetsit.hjemmebehandling.api.answer.AnswerDto;
-import dk.kvalitetsit.hjemmebehandling.api.question.QuestionDto;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirUtils;
-import dk.kvalitetsit.hjemmebehandling.model.BaseModel;
-import dk.kvalitetsit.hjemmebehandling.model.CarePlanModel;
-import dk.kvalitetsit.hjemmebehandling.model.ContactDetailsModel;
-import dk.kvalitetsit.hjemmebehandling.model.FrequencyModel;
-import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
-import dk.kvalitetsit.hjemmebehandling.model.PlanDefinitionModel;
-import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionAnswerPairModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireResponseModel;
-import dk.kvalitetsit.hjemmebehandling.model.QuestionnaireWrapperModel;
-import dk.kvalitetsit.hjemmebehandling.model.ThresholdModel;
-import dk.kvalitetsit.hjemmebehandling.model.answer.AnswerModel;
-import dk.kvalitetsit.hjemmebehandling.model.question.QuestionModel;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Component
 public class DtoMapper {
-    public CarePlanModel mapCarePlanDto(CarePlanDto carePlanDto) {
-        CarePlanModel carePlanModel = new CarePlanModel();
-
-        mapBaseAttributesToModel(carePlanModel, carePlanDto, ResourceType.CarePlan);
-
-        carePlanModel.setTitle(carePlanDto.getTitle());
-        if(carePlanDto.getStatus() != null) {
-            carePlanModel.setStatus(Enum.valueOf(CarePlanStatus.class, carePlanDto.getStatus()));
-        }
-        carePlanModel.setCreated(carePlanDto.getCreated());
-        carePlanModel.setStartDate(carePlanDto.getStartDate());
-        carePlanModel.setEndDate(carePlanDto.getEndDate());
-        carePlanModel.setPatient(mapPatientDto(carePlanDto.getPatientDto()));
-        carePlanModel.setQuestionnaires(List.of());
-        if(carePlanDto.getQuestionnaires() != null) {
-            carePlanModel.setQuestionnaires(carePlanDto.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperDto).collect(Collectors.toList()));
-        }
-        carePlanModel.setPlanDefinitions(List.of());
-        if(carePlanDto.getPlanDefinitions() != null) {
-            carePlanModel.setPlanDefinitions(carePlanDto.getPlanDefinitions().stream().map(this::mapPlanDefinitionDto).collect(Collectors.toList()));
-        }
-        carePlanModel.setDepartmentName(carePlanDto.getDepartmentName());
-
-        return carePlanModel;
+    public CarePlanModel mapCarePlan(CarePlanDto carePlanDto) {
+        return new CarePlanModel(
+                carePlanDto.getId().map(QualifiedId.CarePlanId::new).orElse(null),
+                null, //Todo: organizationId was expected but is not defined by the api
+                carePlanDto.getTitle().orElse(null),
+                carePlanDto.getStatus().map(this::mapCarePlanStatus).orElse(null),
+                carePlanDto.getStartDate().map(OffsetDateTime::toInstant).orElse(null),
+                carePlanDto.getCreated().map(OffsetDateTime::toInstant).orElse(null),
+                carePlanDto.getEndDate().map(OffsetDateTime::toInstant).orElse(null),
+                carePlanDto.getPatientDto().map(this::mapPatientDto).orElse(null),
+                Optional.ofNullable(carePlanDto.getQuestionnaires()).map(x -> x.stream().map(this::mapQuestionnaireWrapperDto).toList()).orElse(List.of()),
+                Optional.ofNullable(carePlanDto.getPlanDefinitions()).map(x -> x.stream().map(this::mapPlanDefinitionDto).toList()).orElse(List.of()),
+                carePlanDto.getDepartmentName().orElse(null),
+                null
+        );
     }
 
-    public CarePlanDto mapCarePlanModel(CarePlanModel carePlan) {
+    public CarePlanDto mapCarePlan(CarePlanModel carePlan) {
         CarePlanDto carePlanDto = new CarePlanDto();
-
-        carePlanDto.setId(carePlan.getId().toString());
-        carePlanDto.setTitle(carePlan.getTitle());
-        carePlanDto.setStatus(carePlan.getStatus().toString());
-        carePlanDto.setCreated(carePlan.getCreated());
-        carePlanDto.setStartDate(carePlan.getStartDate());
-        carePlanDto.setEndDate(carePlan.getEndDate());
-        carePlanDto.setPatientDto(mapPatientModel(carePlan.getPatient()));
-        carePlanDto.setQuestionnaires(carePlan.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperModel).collect(Collectors.toList()));
-        carePlanDto.setPlanDefinitions(carePlan.getPlanDefinitions().stream().map(this::mapPlanDefinitionModel).collect(Collectors.toList()));
-        carePlanDto.setDepartmentName(carePlan.getDepartmentName());
+        carePlanDto.setId(Optional.ofNullable(carePlan.id()).map(QualifiedId.CarePlanId::unqualified));
+        carePlanDto.setTitle(Optional.ofNullable(carePlan.title()));
+        carePlanDto.setStatus(Optional.ofNullable(carePlan.status()).map(this::mapCarePlanStatus));
+        carePlanDto.setCreated(Optional.ofNullable(carePlan.created()).map(this::mapInstant));
+        carePlanDto.setStartDate(Optional.ofNullable(carePlan.startDate()).map(this::mapInstant));
+        carePlanDto.setEndDate(Optional.ofNullable(carePlan.endDate()).map(this::mapInstant));
+        carePlanDto.setEndDate(Optional.ofNullable(carePlan.endDate()).map(this::mapInstant));
+        carePlanDto.setPatientDto(Optional.ofNullable(carePlan.patient()).map(this::mapPatientModel));
+        carePlanDto.setQuestionnaires(carePlan.questionnaires().stream().map(this::mapQuestionnaireWrapperModel).toList());
+        carePlanDto.setPlanDefinitions(carePlan.planDefinitions().stream().map(this::mapPlanDefinitionModel).toList());
+        carePlanDto.setDepartmentName(Optional.ofNullable(carePlan.departmentName()));
 
         return carePlanDto;
     }
 
+
     public ContactDetailsModel mapContactDetailsDto(ContactDetailsDto contactDetails) {
-        ContactDetailsModel contactDetailsModel = new ContactDetailsModel();
-
-        contactDetailsModel.setCountry(contactDetails.getCountry());
-        contactDetailsModel.setCity(contactDetails.getCity());
-        contactDetailsModel.setPrimaryPhone(contactDetails.getPrimaryPhone());
-        contactDetailsModel.setSecondaryPhone(contactDetails.getSecondaryPhone());
-        contactDetailsModel.setPostalCode(contactDetails.getPostalCode());
-        contactDetailsModel.setStreet(contactDetails.getStreet());
-
-        return contactDetailsModel;
+        return new ContactDetailsModel(
+                contactDetails.getStreet().orElse(null),
+                contactDetails.getPostalCode().orElse(null),
+                contactDetails.getCountry().orElse(null),
+                contactDetails.getCity().orElse(null),
+                contactDetails.getPrimaryPhone().orElse(null),
+                contactDetails.getSecondaryPhone().orElse(null)
+        );
     }
 
     public ContactDetailsDto mapContactDetailsModel(ContactDetailsModel contactDetails) {
-        ContactDetailsDto contactDetailsDto = new ContactDetailsDto();
-
-        contactDetailsDto.setCountry(contactDetails.getCountry());
-        contactDetailsDto.setCity(contactDetails.getCity());
-        contactDetailsDto.setPrimaryPhone(contactDetails.getPrimaryPhone());
-        contactDetailsDto.setSecondaryPhone(contactDetails.getSecondaryPhone());
-        contactDetailsDto.setPostalCode(contactDetails.getPostalCode());
-        contactDetailsDto.setStreet(contactDetails.getStreet());
-
-        return contactDetailsDto;
+        return new ContactDetailsDto()
+                .country(contactDetails.country())
+                .city(contactDetails.city())
+                .primaryPhone(contactDetails.primaryPhone())
+                .secondaryPhone(contactDetails.secondaryPhone())
+                .postalCode(contactDetails.postalCode())
+                .street(contactDetails.street());
     }
 
     public FrequencyModel mapFrequencyDto(FrequencyDto frequencyDto) {
-        FrequencyModel frequencyModel = new FrequencyModel();
-
-        if(frequencyDto.getWeekdays() == null) {
-            throw new IllegalArgumentException("Weekdays must be non-null!");
-        }
-        frequencyModel.setWeekdays(frequencyDto.getWeekdays());
-        if(frequencyDto.getTimeOfDay() == null || Objects.equals(frequencyDto.getTimeOfDay(), "")) {
+        Optional.ofNullable(frequencyDto.getWeekdays()).orElseThrow(() -> new IllegalArgumentException("Weekdays must be non-null!"));
+        if (frequencyDto.getTimeOfDay().isEmpty() || Objects.equals(frequencyDto.getTimeOfDay().get(), "")) {
             throw new IllegalArgumentException("TimeOfDay must not be null or empty string!");
         }
-        frequencyModel.setTimeOfDay(LocalTime.parse(frequencyDto.getTimeOfDay()));
-
-        return frequencyModel;
+        return new FrequencyModel(
+                frequencyDto.getWeekdays().stream().map(this::mapWeekdayDto).toList(),
+                LocalTime.parse(frequencyDto.getTimeOfDay().get())
+        );
     }
 
     public FrequencyDto mapFrequencyModel(FrequencyModel frequencyModel) {
         FrequencyDto frequencyDto = new FrequencyDto();
-
-        frequencyDto.setWeekdays(frequencyModel.getWeekdays());
-        if(frequencyModel.getTimeOfDay() != null)
-            frequencyDto.setTimeOfDay(frequencyModel.getTimeOfDay().toString());
-
+        Optional.ofNullable(frequencyModel.weekdays()).map(x -> x.stream().map(this::mapWeekdayModel).toList()).ifPresent(frequencyDto::setWeekdays);
+        frequencyDto.setTimeOfDay(Optional.ofNullable(frequencyModel.timeOfDay()).map(LocalTime::toString));
         return frequencyDto;
     }
 
     public PatientModel mapPatientDto(PatientDto patient) {
-        PatientModel patientModel = new PatientModel();
-
-        patientModel.setCpr(patient.getCpr());
-        patientModel.setFamilyName(patient.getFamilyName());
-        patientModel.setGivenName(patient.getGivenName());
-        if(patient.getPatientContactDetails() != null) {
-            patientModel.setContactDetails(mapContactDetailsDto(patient.getPatientContactDetails()));
-        }
-        patientModel.getPrimaryContact().setName(patient.getPrimaryRelativeName());
-        patientModel.getPrimaryContact().setAffiliation(patient.getPrimaryRelativeAffiliation());
-        if(patient.getPrimaryRelativeContactDetails() != null) {
-            patientModel.getPrimaryContact().setContactDetails(mapContactDetailsDto(patient.getPrimaryRelativeContactDetails()));
-        }
-        if(patient.getAdditionalRelativeContactDetails() != null) {
-            patientModel.setAdditionalRelativeContactDetails(patient.getAdditionalRelativeContactDetails().stream().map(this::mapContactDetailsDto).collect(Collectors.toList()));
-        }
-
-        return patientModel;
+        return new PatientModel(
+                null,
+                patient.getName().map(nameDto -> new PersonNameModel(nameDto.getFamily().orElse(null), patient.getName().get().getGiven().map(List::of).orElse(null))).orElse(null),
+                patient.getCpr().map(CPR::new).orElse(null),
+                patient.getPatientContactDetails().map(this::mapContactDetailsDto).orElse(null),
+                new PrimaryContactModel(
+                        patient.getPrimaryRelativeContactDetails().map(this::mapContactDetailsDto).orElse(null),
+                        patient.getPrimaryRelativeName().orElse(null),
+                        patient.getPrimaryRelativeAffiliation().orElse(null),
+                        null
+                ),
+                Optional.ofNullable(patient.getAdditionalRelativeContactDetails()).map(x -> x.stream().map(this::mapContactDetailsDto).toList()).orElse(null),
+                null,
+                patient.getCustomUserName().orElse(null)
+        );
     }
 
     public PatientDto mapPatientModel(PatientModel patient) {
-        PatientDto patientDto = new PatientDto();
+        PatientDto patientDto = new PatientDto()
+                .cpr(patient.cpr().toString())
+                .name(new NameDto()
+                        .family(patient.name().family())
+                        .given(patient.name().given().getFirst()))
+                .customUserName(patient.customUserName())
+                .primaryRelativeName(patient.primaryContact().name())
+                .primaryRelativeAffiliation(patient.primaryContact().affiliation());
 
-        patientDto.setCpr(patient.getCpr());
-        patientDto.setFamilyName(patient.getFamilyName());
-        patientDto.setGivenName(patient.getGivenName());
-        patientDto.setCustomUserName(patient.getCustomUserName());
-        if(patient.getContactDetails() != null) {
-            patientDto.setPatientContactDetails(mapContactDetailsModel(patient.getContactDetails()));
-        }
-        patientDto.setPrimaryRelativeName(patient.getPrimaryContact().getName());
-        patientDto.setPrimaryRelativeAffiliation(patient.getPrimaryContact().getAffiliation());
-        if(patient.getPrimaryContact().getContactDetails() != null) {
-            patientDto.setPrimaryRelativeContactDetails(mapContactDetailsModel(patient.getPrimaryContact().getContactDetails()));
-        }
-        if(patient.getAdditionalRelativeContactDetails() != null) {
-            patientDto.setAdditionalRelativeContactDetails(patient.getAdditionalRelativeContactDetails().stream().map(this::mapContactDetailsModel).collect(Collectors.toList()));
-        }
-
+        Optional.ofNullable(patient.contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPatientContactDetails(Optional.of(x)));
+        Optional.ofNullable(patient.primaryContact().contactDetails()).map(this::mapContactDetailsModel).ifPresent(x -> patientDto.setPrimaryRelativeContactDetails(Optional.of(x)));
+        Optional.ofNullable(patient.additionalRelativeContactDetails()).map(x -> x.stream().map(this::mapContactDetailsModel).toList()).ifPresent(patientDto::setAdditionalRelativeContactDetails);
         return patientDto;
     }
 
     public PlanDefinitionModel mapPlanDefinitionDto(PlanDefinitionDto planDefinitionDto) {
-        PlanDefinitionModel planDefinitionModel = new PlanDefinitionModel();
-
-        mapBaseAttributesToModel(planDefinitionModel, planDefinitionDto, ResourceType.PlanDefinition);
-
-        planDefinitionModel.setName(planDefinitionDto.getName());
-        planDefinitionModel.setTitle(planDefinitionDto.getTitle());
-        if(planDefinitionDto.getStatus() != null) {
-            planDefinitionModel.setStatus(Enum.valueOf(PlanDefinitionStatus.class, planDefinitionDto.getStatus()));
-        }
-        planDefinitionModel.setCreated(planDefinitionDto.getCreated());
-        // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
-        if(planDefinitionDto.getQuestionnaires() != null) {
-            planDefinitionModel.setQuestionnaires(planDefinitionDto.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperDto).collect(Collectors.toList()));
-        }
-
-        return planDefinitionModel;
+        return new PlanDefinitionModel(
+                planDefinitionDto.getId().map(QualifiedId.PlanDefinitionId::new).orElse(null),
+                null, // Todo: organizationId was expected but is not defined by the api
+                planDefinitionDto.getName().orElse(null),
+                planDefinitionDto.getTitle().orElse(null),
+                planDefinitionDto.getStatus().map(this::mapStatus).orElse(null),
+                planDefinitionDto.getCreated().map(OffsetDateTime::toInstant).orElse(null),
+                planDefinitionDto.getLastUpdated().map(OffsetDateTime::toInstant).orElse(null),
+                Optional.ofNullable(planDefinitionDto.getQuestionnaires()).map(questionnaires -> questionnaires.stream().map(this::mapQuestionnaireWrapperDto).toList()).orElse(null)
+        );
     }
 
     public PlanDefinitionDto mapPlanDefinitionModel(PlanDefinitionModel planDefinitionModel) {
-        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto();
+        PlanDefinitionDto planDefinitionDto = new PlanDefinitionDto().id(planDefinitionModel.id().unqualified())
+                .name(planDefinitionModel.name())
+                .title(planDefinitionModel.title());
 
-        planDefinitionDto.setId(planDefinitionModel.getId().toString());
-        planDefinitionDto.setName(planDefinitionModel.getName());
-        planDefinitionDto.setTitle(planDefinitionModel.getTitle());
-        planDefinitionDto.setStatus(planDefinitionModel.getStatus().toString());
-        planDefinitionDto.setCreated(planDefinitionModel.getCreated());
-        planDefinitionDto.setLastUpdated(planDefinitionModel.getLastUpdated());
-        // TODO - planDefinitionModel.getQuestionnaires() should never return null - but it can for now.
-        if(planDefinitionModel.getQuestionnaires() != null) {
-            planDefinitionDto.setQuestionnaires(planDefinitionModel.getQuestionnaires().stream().map(this::mapQuestionnaireWrapperModel).collect(Collectors.toList()));
-        }
+        planDefinitionDto.setStatus(Optional.ofNullable(planDefinitionModel.status()).map(this::mapStatus));
+        planDefinitionDto.setCreated(Optional.ofNullable(planDefinitionModel.created()).map(this::mapInstant));
+        planDefinitionDto.setLastUpdated(Optional.ofNullable(planDefinitionModel.lastUpdated()).map(this::mapInstant));
+        Optional.ofNullable(planDefinitionModel.questionnaires())
+                .ifPresent(questionnaires -> planDefinitionDto.setQuestionnaires(questionnaires.stream().map(this::mapQuestionnaireWrapperModel).toList()));
 
         return planDefinitionDto;
     }
 
     public ThresholdModel mapThresholdDto(ThresholdDto thresholdDto) {
-        ThresholdModel thresholdModel = new ThresholdModel();
-
-        thresholdModel.setQuestionnaireItemLinkId(thresholdDto.getQuestionId());
-        thresholdModel.setType(thresholdDto.getType());
-        thresholdModel.setValueBoolean(thresholdDto.getValueBoolean());
-        thresholdModel.setValueQuantityLow(thresholdDto.getValueQuantityLow());
-        thresholdModel.setValueQuantityHigh(thresholdDto.getValueQuantityHigh());
-        thresholdModel.setValueOption(thresholdDto.getValueOption());
-        return thresholdModel;
+        return new ThresholdModel(
+                thresholdDto.getQuestionId().orElse(null),
+                thresholdDto.getType().map(this::mapThresholdTypeDto).orElse(null),
+                thresholdDto.getValueQuantityLow().orElse(null),
+                thresholdDto.getValueQuantityHigh().orElse(null),
+                thresholdDto.getValueBoolean().orElse(null),
+                thresholdDto.getValueOption().orElse(null)
+        );
     }
 
     public ThresholdDto mapThresholdModel(ThresholdModel thresholdModel) {
-        ThresholdDto thresholdDto = new ThresholdDto();
+        ThresholdDto thresholdDto = new ThresholdDto()
+                .questionId(thresholdModel.questionnaireItemLinkId())
+                .valueBoolean(thresholdModel.valueBoolean())
+                .valueQuantityLow(thresholdModel.valueQuantityLow())
+                .valueQuantityHigh(thresholdModel.valueQuantityHigh())
+                .valueOption(thresholdModel.valueOption());
 
-        thresholdDto.setQuestionId(thresholdModel.getQuestionnaireItemLinkId());
-        thresholdDto.setType(thresholdModel.getType());
-        thresholdDto.setValueBoolean(thresholdModel.getValueBoolean());
-        thresholdDto.setValueQuantityLow(thresholdModel.getValueQuantityLow());
-        thresholdDto.setValueQuantityHigh(thresholdModel.getValueQuantityHigh());
-        thresholdDto.setValueOption(thresholdModel.getValueOption());
+        thresholdDto.setType(Optional.ofNullable(thresholdModel.type()).map(this::mapThresholdTypeModel));
         return thresholdDto;
     }
-    
+
     public PersonDto mapPersonModel(PersonModel person) {
         PersonDto personDto = new PersonDto();
-
-        personDto.setCpr(person.getIdentifier().getId());
-        personDto.setFamilyName(person.getName().getFamily());
-        personDto.setGivenName(String.join(" ", person.getName().getGiven()));
-        personDto.setBirthDate(person.getBirthDate());
-        personDto.setDeceasedBoolean(person.isDeceasedBoolean());
-        personDto.setGender(person.getGender());
-        
-        personDto.setPatientContactDetails(new ContactDetailsDto());
-        personDto.getPatientContactDetails().setCountry(person.getAddress().getCountry());
-        personDto.getPatientContactDetails().setPostalCode(person.getAddress().getPostalCode());
-        personDto.getPatientContactDetails().setStreet(person.getAddress().getLine());
-        personDto.getPatientContactDetails().setCity(person.getAddress().getCity());
-
+        personDto.setCpr(Optional.ofNullable(person.identifier().id()));
+        personDto.name(new NameDto().family(person.name().family()).given(String.join(" ", person.name().given())));
+        personDto.setBirthDate(Optional.ofNullable(person.birthDate()));
+        personDto.setDeceasedBoolean(Optional.of(person.deceasedBoolean()));
+        personDto.setGender(Optional.ofNullable(person.gender()));
+        personDto.setPatientContactDetails(Optional.of(new ContactDetailsDto()));
+        personDto.getPatientContactDetails().ifPresent(x -> x.setCountry(Optional.ofNullable(person.address().country())));
+        personDto.getPatientContactDetails().ifPresent(x -> x.setPostalCode(Optional.ofNullable(person.address().postalCode())));
+        personDto.getPatientContactDetails().ifPresent(x -> x.setStreet(Optional.ofNullable(person.address().line())));
+        personDto.getPatientContactDetails().ifPresent(x -> x.setCity(Optional.ofNullable(person.address().city())));
         return personDto;
     }
 
     public QuestionnaireModel mapQuestionnaireDto(QuestionnaireDto questionnaireDto) {
-        QuestionnaireModel questionnaireModel = new QuestionnaireModel();
 
-        mapBaseAttributesToModel(questionnaireModel, questionnaireDto, ResourceType.Questionnaire);
 
-        questionnaireModel.setTitle(questionnaireDto.getTitle());
-        if (questionnaireDto.getStatus() != null) {
-            questionnaireModel.setStatus(QuestionnaireStatus.valueOf(questionnaireDto.getStatus()));
-        }
-        if(questionnaireDto.getQuestions() != null) {
-            questionnaireModel.setQuestions(questionnaireDto.getQuestions().stream().map(this::mapQuestionDto).collect(Collectors.toList()));
-        }
-        if (questionnaireDto.getCallToAction() != null) {
-            questionnaireModel.setCallToAction(this.mapQuestionDto(questionnaireDto.getCallToAction()));
-        }
-
-        return questionnaireModel;
+        return new QuestionnaireModel(
+                questionnaireDto.getId().map(QualifiedId.QuestionnaireId::new).orElse(null),
+                null, // Todo: organizationId was expected but is not defined by the api
+                questionnaireDto.getTitle().orElse(null),
+                null, // Todo: Description was expected but is not defined by the api
+                questionnaireDto.getStatus().map(this::mapStatus).orElse(null),
+                Optional.ofNullable(questionnaireDto.getQuestions()).map((questions) -> questions.stream().map(this::mapQuestion).toList()).orElse(null),
+                questionnaireDto.getCallToAction().map(this::mapQuestion).orElse(null),
+                questionnaireDto.getVersion().orElse(null),
+                questionnaireDto.getLastUpdated().map(x -> new Date(x.toInstant().getEpochSecond())).orElse(null)
+        );
     }
 
     public QuestionnaireDto mapQuestionnaireModel(QuestionnaireModel questionnaireModel) {
         QuestionnaireDto questionnaireDto = new QuestionnaireDto();
-
-        questionnaireDto.setId(questionnaireModel.getId().toString());
-        questionnaireDto.setTitle(questionnaireModel.getTitle());
-        questionnaireDto.setStatus(questionnaireModel.getStatus().toString());
-        questionnaireDto.setVersion(questionnaireModel.getVersion());
-        questionnaireDto.setLastUpdated(questionnaireModel.getLastUpdated());
-
-        if(questionnaireModel.getQuestions() != null) {
-            questionnaireDto.setQuestions(questionnaireModel.getQuestions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
-        }
-        if(questionnaireModel.getCallToAction() != null) {
-            questionnaireDto.setCallToAction(mapQuestionModel(questionnaireModel.getCallToAction()));
-        }
-
+        questionnaireDto.setId(Optional.ofNullable(questionnaireModel.id()).map(Object::toString));
+        questionnaireDto.setTitle(Optional.ofNullable(questionnaireModel.title()));
+        questionnaireDto.setStatus(Optional.ofNullable(questionnaireModel.status()).map(this::mapStatus));
+        questionnaireDto.setVersion(Optional.ofNullable(questionnaireModel.version()));
+        questionnaireDto.setLastUpdated(Optional.ofNullable(questionnaireModel.lastUpdated()).map(this::mapDate));
+        Optional.ofNullable(questionnaireModel.questions()).map(x -> x.stream().map(this::mapQuestion).toList()).ifPresent(questionnaireDto::setQuestions);
+        questionnaireDto.setCallToAction(Optional.ofNullable(questionnaireModel.callToAction()).map(this::mapQuestion));
         return questionnaireDto;
     }
-    
-	public CustomUserRequestDto mapPatientModelToCustomUserRequest(PatientModel patientModel) {
+
+
+    public CustomUserRequestDto mapPatientModelToCustomUserRequest(PatientModel patientModel) {
         CustomUserRequestDto customUserRequestDto = new CustomUserRequestDto();
-
-        customUserRequestDto.setFirstName(patientModel.getGivenName());
-        customUserRequestDto.setFullName(patientModel.getGivenName() + " "+ patientModel.getFamilyName() );
-        customUserRequestDto.setLastName(patientModel.getFamilyName());
-        customUserRequestDto.setTempPassword(patientModel.getCpr().substring(0,6));
+        customUserRequestDto.setFirstName(patientModel.name().given().getFirst());
+        customUserRequestDto.setFullName(patientModel.name().given().getFirst() + " " + patientModel.name().family());
+        customUserRequestDto.setLastName(patientModel.name().family());
+        customUserRequestDto.setTempPassword(patientModel.cpr().toString().substring(0, 6));
         CustomUserRequestAttributesDto userCreatedRequestModelAttributes = new CustomUserRequestAttributesDto();
-        userCreatedRequestModelAttributes.setCpr(patientModel.getCpr());
-        
-        userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.getGivenName(), patientModel.getFamilyName()));
+        userCreatedRequestModelAttributes.setCpr(patientModel.cpr());
+        userCreatedRequestModelAttributes.setInitials(getInitials(patientModel.name().given().getFirst(), patientModel.name().family()));
         customUserRequestDto.setAttributes(userCreatedRequestModelAttributes);
-        
         return customUserRequestDto;
-		
-	}
-	
-	private String getInitials(String firstName, String lastName) {
-		String initials ="";
-		if (firstName != null && !firstName.isEmpty()) {
-			initials = initials+firstName.charAt(0);
-		}
-		if (lastName != null && lastName.length()>1) {
-            assert firstName != null;
-            initials = initials+firstName.substring(0,2);
-		}
-		return initials;
-	}
-
-    public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
-        QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
-
-        questionnaireResponseDto.setId(questionnaireResponseModel.getId().toString());
-        questionnaireResponseDto.setQuestionnaireId(questionnaireResponseModel.getQuestionnaireId().toString());
-        questionnaireResponseDto.setCarePlanId(questionnaireResponseModel.getCarePlanId().toString());
-        questionnaireResponseDto.setQuestionnaireName(questionnaireResponseModel.getQuestionnaireName());
-        questionnaireResponseDto.setQuestionAnswerPairs(questionnaireResponseModel.getQuestionAnswerPairs().stream().map(this::mapQuestionAnswerPairModel).collect(Collectors.toList()));
-        questionnaireResponseDto.setAnswered(questionnaireResponseModel.getAnswered());
-        questionnaireResponseDto.setExaminationStatus(questionnaireResponseModel.getExaminationStatus());
-        questionnaireResponseDto.setTriagingCategory(questionnaireResponseModel.getTriagingCategory());
-        questionnaireResponseDto.setPatient(mapPatientModel(questionnaireResponseModel.getPatient()));
-        questionnaireResponseDto.setPlanDefinitionTitle(questionnaireResponseModel.getPlanDefinitionTitle());
-
-        return questionnaireResponseDto;
     }
 
-    private void mapBaseAttributesToModel(BaseModel target, BaseDto source, ResourceType resourceType) {
-        if(source.getId() == null) {
-            // OK, in case a resource is being created.
-            return;
-        }
+    public QuestionnaireResponseDto mapQuestionnaireResponseModel(QuestionnaireResponseModel questionnaireResponseModel) {
+        return new QuestionnaireResponseDto()
+                .id(Optional.ofNullable(questionnaireResponseModel.id()).map(Object::toString).orElse(null))
+                .questionnaireId(Optional.ofNullable(questionnaireResponseModel.questionnaireId()).map(Object::toString).orElse(null))
+                .carePlanId(Optional.ofNullable(questionnaireResponseModel.carePlanId()).map(Object::toString).orElse(null))
+                .questionnaireName(questionnaireResponseModel.questionnaireName())
+                .questionAnswerPairs(questionnaireResponseModel.questionAnswerPairs().stream().map(this::mapQuestionAnswerPairModel).toList())
+                .answered(Optional.ofNullable(questionnaireResponseModel.answered()).map(this::mapInstant).orElse(null))
+                .examinationStatus(Optional.ofNullable(questionnaireResponseModel.examinationStatus()).map(this::mapExaminationStatusModel).orElse(null))
+                .triagingCategory(Optional.ofNullable(questionnaireResponseModel.triagingCategory()).map(this::mapTriagingCategoryModel).orElse(null))
+                .patient(Optional.ofNullable(questionnaireResponseModel.patient()).map(this::mapPatientModel).orElse(null))
+                .planDefinitionTitle(questionnaireResponseModel.planDefinitionTitle());
+    }
 
-        if(FhirUtils.isPlainId(source.getId())) {
-            target.setId(new QualifiedId(source.getId(), resourceType));
+    public org.openapitools.model.ExaminationStatus mapExaminationStatusModel(ExaminationStatus examinationStatus) {
+        return switch (examinationStatus) {
+            case NOT_EXAMINED -> org.openapitools.model.ExaminationStatus.NOT_EXAMINED;
+            case UNDER_EXAMINATION -> org.openapitools.model.ExaminationStatus.UNDER_EXAMINATION;
+            case EXAMINED -> org.openapitools.model.ExaminationStatus.EXAMINED;
+        };
+    }
+
+    public QuestionModel mapQuestion(QuestionDto questionDto) {
+        return new QuestionModel(
+                questionDto.getLinkId().orElse(null),
+                questionDto.getText().orElse(null),
+                questionDto.getAbbreviation().orElse(null),
+                questionDto.getHelperText().orElse(null),
+                questionDto.getRequired().orElse(false),
+                questionDto.getQuestionType().map(this::mapQuestionTypeDto).orElse(null),
+                questionDto.getMeasurementType().map(this::mapMeasurementTypeDto).orElse(null),
+                questionDto.getOptions().stream().map(this::mapOptionDto).toList(),
+                questionDto.getEnableWhen().stream().map(this::mapEnableWhenDto).toList(),
+                questionDto.getThresholds().stream().map(this::mapThresholdDto).toList(),
+                questionDto.getSubQuestions().stream().map(this::mapQuestion).toList(),
+                questionDto.getDeprecated().orElse(false)
+        );
+    }
+
+    public OffsetDateTime mapInstant(Instant satisfiedUntil) {
+        return satisfiedUntil.atOffset(ZoneOffset.UTC);
+    }
+
+    public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
+        MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
+        measurementTypeDto.setSystem(Optional.ofNullable(measurementTypeModel.system()));
+        measurementTypeDto.setCode(Optional.ofNullable(measurementTypeModel.code()));
+        measurementTypeDto.setDisplay(Optional.ofNullable(measurementTypeModel.display()));
+        return measurementTypeDto;
+    }
+
+    public ExaminationStatus mapExaminationStatusDto(org.openapitools.model.ExaminationStatus examinationStatus) {
+        return switch (examinationStatus) {
+            case NOT_EXAMINED -> ExaminationStatus.NOT_EXAMINED;
+            case UNDER_EXAMINATION -> ExaminationStatus.UNDER_EXAMINATION;
+            case EXAMINED -> ExaminationStatus.EXAMINED;
+        };
+    }
+
+    public Status mapStatus(@NotNull org.openapitools.model.Status planDefinitionStatus) {
+        return switch (planDefinitionStatus) {
+            case DRAFT -> Status.DRAFT;
+            case ACTIVE -> Status.ACTIVE;
+            case RETIRED -> Status.RETIRED;
+        };
+    }
+
+    public UserContext mapUserContext(UserContextModel userContext) {
+
+        var organization = userContext.organization();
+
+        return new UserContext()
+                .name(userContext.name().orElse(null))
+                .userId(userContext.userId().orElse(null))
+                .email(userContext.email().orElse(null))
+                .entitlements(userContext.entitlements())
+                .authorizationIds(userContext.authorizationIds())
+                .authorizationIds(userContext.authorizationIds())
+                .orgName(organization.map(OrganizationModel::name).orElse(null))
+                .orgId(organization.map(OrganizationModel::id).map(QualifiedId.OrganizationId::unqualified).orElse(null));
+    }
+
+    public PatientDetails mapUpdateCarePlanRequest(UpdateCarePlanRequest request) {
+        return new PatientDetails(
+                request.getPatientPrimaryPhone().orElse(null),
+                request.getPatientSecondaryPhone().orElse(null),
+                request.getPrimaryRelativeName().orElse(null),
+                request.getPrimaryRelativeAffiliation().orElse(null),
+                request.getPrimaryRelativePrimaryPhone().orElse(null),
+                request.getPrimaryRelativeSecondaryPhone().orElse(null)
+        );
+    }
+
+    private Option mapOptionModel(dk.kvalitetsit.hjemmebehandling.model.Option o) {
+        return new Option().option(o.option()).comment(o.comment());
+    }
+
+    private Weekday mapWeekdayDto(FrequencyDto.WeekdaysEnum weekdaysEnum) {
+        return switch (weekdaysEnum) {
+            case MON -> Weekday.MON;
+            case TUE -> Weekday.TUE;
+            case WED -> Weekday.WED;
+            case THU -> Weekday.THU;
+            case FRI -> Weekday.FRI;
+            case SAT -> Weekday.SAT;
+            case SUN -> Weekday.SUN;
+        };
+    }
+
+    private FrequencyDto.WeekdaysEnum mapWeekdayModel(Weekday weekday) {
+        return switch (weekday) {
+            case MON -> FrequencyDto.WeekdaysEnum.MON;
+            case TUE -> FrequencyDto.WeekdaysEnum.TUE;
+            case WED -> FrequencyDto.WeekdaysEnum.WED;
+            case THU -> FrequencyDto.WeekdaysEnum.THU;
+            case FRI -> FrequencyDto.WeekdaysEnum.FRI;
+            case SAT -> FrequencyDto.WeekdaysEnum.SAT;
+            case SUN -> FrequencyDto.WeekdaysEnum.SUN;
+        };
+    }
+
+    private ThresholdType mapThresholdTypeDto(ThresholdDto.TypeEnum type) {
+        return switch (type) {
+            case NORMAL -> ThresholdType.NORMAL;
+            case ABNORMAL -> ThresholdType.ABNORMAL;
+            case CRITICAL -> ThresholdType.CRITICAL;
+        };
+    }
+
+    private ThresholdDto.TypeEnum mapThresholdTypeModel(ThresholdType type) {
+        return switch (type) {
+            case NORMAL -> ThresholdDto.TypeEnum.NORMAL;
+            case ABNORMAL -> ThresholdDto.TypeEnum.ABNORMAL;
+            case CRITICAL -> ThresholdDto.TypeEnum.CRITICAL;
+        };
+    }
+
+    private String getInitials(String firstName, String lastName) {
+        String initials = "";
+        if (firstName != null && !firstName.isEmpty()) {
+            initials = initials + firstName.charAt(0);
         }
-        else if(FhirUtils.isQualifiedId(source.getId(), resourceType)) {
-            target.setId(new QualifiedId(source.getId()));
+        if (lastName != null && lastName.length() > 1) {
+            assert firstName != null;
+            initials = initials + firstName.substring(0, 2);
         }
-        else {
-            throw new IllegalArgumentException(String.format("Illegal id provided for resource of type %s: %s!", resourceType.toString(), source.getId()));
-        }
+        return initials;
+    }
+
+    private QuestionnaireResponseDto.TriagingCategoryEnum mapTriagingCategoryModel(TriagingCategory triagingCategory) {
+        return switch (triagingCategory) {
+            case GREEN -> QuestionnaireResponseDto.TriagingCategoryEnum.GREEN;
+            case YELLOW -> QuestionnaireResponseDto.TriagingCategoryEnum.YELLOW;
+            case RED -> QuestionnaireResponseDto.TriagingCategoryEnum.RED;
+        };
     }
 
     private QuestionAnswerPairDto mapQuestionAnswerPairModel(QuestionAnswerPairModel questionAnswerPairModel) {
         QuestionAnswerPairDto questionAnswerPairDto = new QuestionAnswerPairDto();
-        questionAnswerPairDto.setQuestion(mapQuestionModel(questionAnswerPairModel.getQuestion()));
-        questionAnswerPairDto.setAnswer(mapAnswerModel(questionAnswerPairModel.getAnswer()));
-
+        questionAnswerPairDto.setQuestion(Optional.ofNullable(questionAnswerPairModel.question()).map(this::mapQuestion));
+        questionAnswerPairDto.setAnswer(Optional.of(questionAnswerPairModel.answer()).map(this::mapAnswerModel));
         return questionAnswerPairDto;
     }
 
-    public QuestionModel mapQuestionDto(QuestionDto questionDto) {
-        QuestionModel questionModel = new QuestionModel();
 
-        questionModel.setLinkId(questionDto.getLinkId());
-        questionModel.setText(questionDto.getText());
-        questionModel.setAbbreviation(questionDto.getAbbreviation());
-        questionModel.setRequired(questionDto.getRequired());
-        questionModel.setOptions(questionDto.getOptions());
-        questionModel.setQuestionType(questionDto.getQuestionType());
-        questionModel.setEnableWhens(questionDto.getEnableWhen());
-        questionModel.setHelperText(questionDto.getHelperText());
+    private QuestionType mapQuestionTypeDto(QuestionDto.QuestionTypeEnum questionType) {
+        return switch (questionType) {
+            case CHOICE -> QuestionType.CHOICE;
+            case INTEGER -> QuestionType.INTEGER;
+            case QUANTITY -> QuestionType.QUANTITY;
+            case STRING -> QuestionType.STRING;
+            case BOOLEAN -> QuestionType.BOOLEAN;
+            case DISPLAY -> QuestionType.DISPLAY;
+            case GROUP -> QuestionType.GROUP;
+        };
+    }
 
-        if(questionDto.getMeasurementType() != null){
-            questionModel.setMeasurementType(mapMeasurementTypeDto(questionDto.getMeasurementType()));
-        }
+    private dk.kvalitetsit.hjemmebehandling.model.Option mapOptionDto(@Valid Option option) {
+        return new dk.kvalitetsit.hjemmebehandling.model.Option(
+                option.getComment().orElse(null),
+                option.getOption().orElse(null)
+        );
+    }
 
-        if (questionDto.getThresholds() != null) {
-            questionModel.setThresholds(questionDto.getThresholds().stream().map(this::mapThresholdDto).collect(Collectors.toList()));
-        }
+    private QuestionModel.EnableWhen mapEnableWhenDto(@Valid EnableWhen enableWhen) {
+        return new QuestionModel.EnableWhen(
+                enableWhen.getAnswer().map(this::mapAnswerDto).orElse(null),
+                enableWhen.getOperator().map(this::mapEnableWhenOperatorModel).orElse(null)
+        );
+    }
 
-        if (questionDto.getSubQuestions() != null) {
-            questionModel.setSubQuestions(questionDto.getSubQuestions().stream().map(this::mapQuestionDto).collect(Collectors.toList()));
-        }
+    private AnswerModel mapAnswerDto(@Valid AnswerDto answer) {
+        return new AnswerModel(
+                answer.getLinkId().orElse(null),
+                answer.getValue().orElse(null),
+                answer.getAnswerType().map(this::mapAnswerTypeDto).orElse(null),
+                answer.getSubAnswers().stream().map(this::mapAnswerDto).toList()
+        );
+    }
 
-        return questionModel;
+    private AnswerType mapAnswerTypeDto(AnswerDto.AnswerTypeEnum answerType) {
+        return switch (answerType) {
+            case INTEGER -> AnswerType.INTEGER;
+            case STRING -> AnswerType.STRING;
+            case BOOLEAN -> AnswerType.BOOLEAN;
+            case QUANTITY -> AnswerType.QUANTITY;
+            case GROUP -> AnswerType.GROUP;
+        };
+    }
+
+    private EnableWhenOperator mapEnableWhenOperatorModel(EnableWhen.OperatorEnum operator) {
+        return switch (operator) {
+            case EQUAL -> EnableWhenOperator.EQUAL;
+            case GREATER_THAN -> EnableWhenOperator.GREATER_THAN;
+            case LESS_THAN -> EnableWhenOperator.LESS_THAN;
+            case GREATER_OR_EQUAL -> EnableWhenOperator.GREATER_OR_EQUAL;
+            case LESS_OR_EQUAL -> EnableWhenOperator.LESS_OR_EQUAL;
+        };
     }
 
 
     private MeasurementTypeModel mapMeasurementTypeDto(MeasurementTypeDto measurementTypeDto) {
-        MeasurementTypeModel measurementTypeModel = new MeasurementTypeModel();
-
-        measurementTypeModel.setCode(measurementTypeDto.getCode());
-        measurementTypeModel.setDisplay(measurementTypeDto.getDisplay());
-        measurementTypeModel.setSystem(measurementTypeDto.getSystem());
-
-        return measurementTypeModel;
+        return new MeasurementTypeModel(
+                measurementTypeDto.getSystem().orElse(null),
+                measurementTypeDto.getCode().orElse(null),
+                measurementTypeDto.getDisplay().orElse(null)
+        );
     }
 
 
-    private QuestionDto mapQuestionModel(QuestionModel questionModel) {
+    private QuestionDto mapQuestion(QuestionModel questionModel) {
         QuestionDto questionDto = new QuestionDto();
-        questionDto.setDeprecated(questionModel.isDeprecated());
-        questionDto.setLinkId(questionModel.getLinkId());
-        questionDto.setText(questionModel.getText());
-        questionDto.setAbbreviation(questionModel.getAbbreviation());
-        questionDto.setRequired(questionModel.isRequired());
-        questionDto.setOptions(questionModel.getOptions());
-        questionDto.setQuestionType(questionModel.getQuestionType());
-        questionDto.setEnableWhen(questionModel.getEnableWhens());
-        questionDto.setHelperText(questionModel.getHelperText());
+        questionDto.setDeprecated(Optional.of(questionModel.deprecated()));
+        questionDto.setLinkId(Optional.ofNullable(questionModel.linkId()));
+        questionDto.setText(Optional.ofNullable(questionModel.text()));
+        questionDto.setAbbreviation(Optional.ofNullable(questionModel.abbreviation()));
+        questionDto.setRequired(Optional.of(questionModel.required()));
+        questionDto.setOptions(questionModel.options() != null ? questionModel.options().stream().map(this::mapOptionModel).toList() : null);
+        questionDto.setQuestionType(Optional.ofNullable(questionModel.questionType()).map(this::mapQuestionTypeModel));
+        questionDto.setEnableWhen(questionModel.enableWhens() != null ? questionModel.enableWhens().stream().map(this::mapEnableWhenModel).toList() : null);
+        questionDto.setHelperText(Optional.ofNullable(questionModel.helperText()));
+        questionDto.setMeasurementType(Optional.ofNullable(questionModel.measurementType()).map(this::mapMeasurementTypeModel));
+        Optional.ofNullable(questionModel.thresholds())
+                .ifPresent(x -> questionDto.setThresholds(x.stream().map(this::mapThresholdModel).toList()));
 
-        if (questionModel.getMeasurementType() != null){
-            questionDto.setMeasurementType(mapMeasurementTypeModel(questionModel.getMeasurementType()));
+        if (questionModel.questionType() == QuestionType.GROUP && questionModel.subQuestions() != null) {
+            questionDto.setSubQuestions(questionModel.subQuestions().stream().map(this::mapQuestion).toList());
         }
 
-        if (questionModel.getThresholds() != null) {
-            questionDto.setThresholds(questionModel.getThresholds().stream().map(this::mapThresholdModel).collect(Collectors.toList()));
-        }
-
-        if (questionModel.getQuestionType() == QuestionType.GROUP && questionModel.getSubQuestions() != null) {
-            questionDto.setSubQuestions(questionModel.getSubQuestions().stream().map(this::mapQuestionModel).collect(Collectors.toList()));
-        }
         return questionDto;
+    }
+
+    private EnableWhen mapEnableWhenModel(QuestionModel.EnableWhen enableWhen) {
+        return new EnableWhen()
+                .answer(Optional.ofNullable(enableWhen.answer()).map(this::mapAnswerModel).orElse(null))
+                .operator(Optional.ofNullable(enableWhen.operator()).map(this::mapOperatorModel).orElse(null));
+    }
+
+    private EnableWhen.OperatorEnum mapOperatorModel(EnableWhenOperator operator) {
+        return switch (operator) {
+            case EQUAL -> EnableWhen.OperatorEnum.EQUAL;
+            case GREATER_THAN -> EnableWhen.OperatorEnum.GREATER_THAN;
+            case LESS_THAN -> EnableWhen.OperatorEnum.LESS_THAN;
+            case GREATER_OR_EQUAL -> EnableWhen.OperatorEnum.GREATER_OR_EQUAL;
+            case LESS_OR_EQUAL -> EnableWhen.OperatorEnum.LESS_OR_EQUAL;
+        };
+    }
+
+
+    private AnswerDto.AnswerTypeEnum mapAnswerTypeModel(AnswerType answerType) {
+        return switch (answerType) {
+            case INTEGER -> AnswerDto.AnswerTypeEnum.INTEGER;
+            case STRING -> AnswerDto.AnswerTypeEnum.STRING;
+            case BOOLEAN -> AnswerDto.AnswerTypeEnum.BOOLEAN;
+            case QUANTITY -> AnswerDto.AnswerTypeEnum.QUANTITY;
+            case GROUP -> AnswerDto.AnswerTypeEnum.GROUP;
+        };
+    }
+
+    private QuestionDto.QuestionTypeEnum mapQuestionTypeModel(QuestionType questionType) {
+        return switch (questionType) {
+            case CHOICE -> QuestionDto.QuestionTypeEnum.CHOICE;
+            case INTEGER -> QuestionDto.QuestionTypeEnum.INTEGER;
+            case QUANTITY -> QuestionDto.QuestionTypeEnum.QUANTITY;
+            case STRING -> QuestionDto.QuestionTypeEnum.STRING;
+            case BOOLEAN -> QuestionDto.QuestionTypeEnum.BOOLEAN;
+            case DISPLAY -> QuestionDto.QuestionTypeEnum.DISPLAY;
+            case GROUP -> QuestionDto.QuestionTypeEnum.GROUP;
+        };
     }
 
     private AnswerDto mapAnswerModel(AnswerModel answerModel) {
         AnswerDto answerDto = new AnswerDto();
-        answerDto.setLinkId(answerModel.getLinkId());
-        answerDto.setValue(answerModel.getValue());
-        answerDto.setAnswerType(answerModel.getAnswerType());
+        answerDto.setLinkId(Optional.ofNullable(answerModel.linkId()));
+        answerDto.setValue(Optional.ofNullable(answerModel.value()));
+        answerDto.setAnswerType(Optional.ofNullable(answerModel.answerType()).map(this::mapAnswerTypeModel));
 
-        if (answerModel.getAnswerType() == AnswerType.GROUP && answerModel.getSubAnswers() != null) {
-            answerDto.setSubAnswers(answerModel.getSubAnswers().stream().map(this::mapAnswerModel).collect(Collectors.toList()));
+        if (answerModel.answerType() == AnswerType.GROUP) {
+            Optional.ofNullable(answerModel.subAnswers()).map(x -> x.stream().map(this::mapAnswerModel).toList()).ifPresent(answerDto::setSubAnswers);
         }
 
         return answerDto;
     }
 
+
     private QuestionnaireWrapperModel mapQuestionnaireWrapperDto(QuestionnaireWrapperDto questionnaireWrapper) {
-        QuestionnaireWrapperModel questionnaireWrapperModel = new QuestionnaireWrapperModel();
-
-        questionnaireWrapperModel.setQuestionnaire(mapQuestionnaireDto(questionnaireWrapper.getQuestionnaire()));
-        if (questionnaireWrapper.getFrequency() != null) {
-            questionnaireWrapperModel.setFrequency(mapFrequencyDto(questionnaireWrapper.getFrequency()));
-        }
-        questionnaireWrapperModel.setThresholds( questionnaireWrapper.getThresholds().stream().map(this::mapThresholdDto).collect(Collectors.toList()) );
-
-        return questionnaireWrapperModel;
+        return QuestionnaireWrapperModel.builder()
+                .questionnaire(questionnaireWrapper.getQuestionnaire().map(this::mapQuestionnaireDto).orElse(null))
+                .frequency(questionnaireWrapper.getFrequency().map(this::mapFrequencyDto).orElse(null))
+                .build();
     }
 
     private QuestionnaireWrapperDto mapQuestionnaireWrapperModel(QuestionnaireWrapperModel questionnaireWrapper) {
         QuestionnaireWrapperDto questionnaireWrapperDto = new QuestionnaireWrapperDto();
-
-        questionnaireWrapperDto.setQuestionnaire(mapQuestionnaireModel(questionnaireWrapper.getQuestionnaire()));
-        if (questionnaireWrapper.getFrequency() != null) {
-            questionnaireWrapperDto.setFrequency(mapFrequencyModel(questionnaireWrapper.getFrequency()));
-        }
-        questionnaireWrapperDto.setSatisfiedUntil(questionnaireWrapper.getSatisfiedUntil());
-        questionnaireWrapperDto.setThresholds( questionnaireWrapper.getThresholds().stream().map(this::mapThresholdModel).collect(Collectors.toList()) );
-
+        questionnaireWrapperDto.setQuestionnaire(Optional.ofNullable(questionnaireWrapper.questionnaire()).map(this::mapQuestionnaireModel));
+        questionnaireWrapperDto.setFrequency(Optional.ofNullable(questionnaireWrapper.frequency()).map(this::mapFrequencyModel));
+        Optional.ofNullable(questionnaireWrapper.satisfiedUntil()).ifPresent(satisfiedUntil -> questionnaireWrapperDto.setSatisfiedUntil(Optional.of(satisfiedUntil).map(this::mapInstant)));
+        questionnaireWrapperDto.setThresholds(questionnaireWrapper.thresholds().stream().map(this::mapThresholdModel).toList());
         return questionnaireWrapperDto;
     }
 
-    public MeasurementTypeDto mapMeasurementTypeModel(MeasurementTypeModel measurementTypeModel) {
-        MeasurementTypeDto measurementTypeDto = new MeasurementTypeDto();
-
-        measurementTypeDto.setSystem(measurementTypeModel.getSystem());
-        measurementTypeDto.setCode(measurementTypeModel.getCode());
-        measurementTypeDto.setDisplay(measurementTypeModel.getDisplay());
-
-        return measurementTypeDto;
+    private OffsetDateTime mapDate(Date lastUpdated) {
+        return lastUpdated.toInstant().atOffset(ZoneOffset.UTC);
     }
+
+    private org.openapitools.model.Status mapStatus(@NotNull Status planDefinitionStatus) {
+        return switch (planDefinitionStatus) {
+            case DRAFT -> org.openapitools.model.Status.DRAFT;
+            case ACTIVE -> org.openapitools.model.Status.ACTIVE;
+            case RETIRED -> org.openapitools.model.Status.RETIRED;
+        };
+    }
+
+
+    private org.openapitools.model.CarePlanStatus mapCarePlanStatus(@NotNull CarePlanStatus carePlanStatus) {
+        return switch (carePlanStatus) {
+            case ACTIVE -> org.openapitools.model.CarePlanStatus.ACTIVE;
+            case COMPLETED -> org.openapitools.model.CarePlanStatus.COMPLETED;
+        };
+    }
+
+
+    private CarePlanStatus mapCarePlanStatus(@NotNull org.openapitools.model.CarePlanStatus carePlanStatus) {
+        return switch (carePlanStatus) {
+            case ACTIVE -> CarePlanStatus.ACTIVE;
+            case COMPLETED -> CarePlanStatus.COMPLETED;
+        };
+    }
+
 }
 
 

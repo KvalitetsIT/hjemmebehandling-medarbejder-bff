@@ -1,56 +1,59 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
-public class QuestionnaireWrapperModel {
-    private QuestionnaireModel questionnaire;
-    private FrequencyModel frequency;
-    private Instant satisfiedUntil;
-    private List<ThresholdModel> thresholds;
-
-    public QuestionnaireWrapperModel() {
-        thresholds = new ArrayList<>();
+public record QuestionnaireWrapperModel(
+        QuestionnaireModel questionnaire,
+        FrequencyModel frequency,
+        Instant satisfiedUntil,
+        List<ThresholdModel> thresholds
+) {
+    public QuestionnaireWrapperModel {
+        // Ensure lists are never null
+        thresholds = thresholds != null ? thresholds : List.of();
     }
 
-    public QuestionnaireWrapperModel(QuestionnaireModel questionnaire, FrequencyModel frequency, Instant satisfiedUntil, List<ThresholdModel> thresholds) {
-        this();
-        this.satisfiedUntil = satisfiedUntil;
-        this.questionnaire = questionnaire;
-        this.frequency = frequency;
-        this.thresholds = thresholds;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public QuestionnaireModel getQuestionnaire() {
-        return questionnaire;
-    }
+    public static class Builder {
+        private QuestionnaireModel questionnaire;
+        private FrequencyModel frequency;
+        private Instant satisfiedUntil;
+        private List<ThresholdModel> thresholds;
 
-    public void setQuestionnaire(QuestionnaireModel questionnaire) {
-        this.questionnaire = questionnaire;
-    }
+        public static Builder from(QuestionnaireWrapperModel source) {
+            return new Builder()
+                    .frequency(source.frequency)
+                    .questionnaire(source.questionnaire)
+                    .satisfiedUntil(source.satisfiedUntil)
+                    .thresholds(source.thresholds);
+        }
 
-    public FrequencyModel getFrequency() {
-        return frequency;
-    }
+        public Builder questionnaire(QuestionnaireModel questionnaire) {
+            this.questionnaire = questionnaire;
+            return this;
+        }
 
-    public void setFrequency(FrequencyModel frequency) {
-        this.frequency = frequency;
-    }
+        public Builder frequency(FrequencyModel frequency) {
+            this.frequency = frequency;
+            return this;
+        }
 
-    public Instant getSatisfiedUntil() {
-        return satisfiedUntil;
-    }
+        public Builder satisfiedUntil(Instant satisfiedUntil) {
+            this.satisfiedUntil = satisfiedUntil;
+            return this;
+        }
 
-    public void setSatisfiedUntil(Instant satisfiedUntil) {
-        this.satisfiedUntil = satisfiedUntil;
-    }
+        public Builder thresholds(List<ThresholdModel> thresholds) {
+            this.thresholds = thresholds;
+            return this;
+        }
 
-    public List<ThresholdModel> getThresholds() {
-        return thresholds;
-    }
-
-    public void setThresholds(List<ThresholdModel> thresholds) {
-        this.thresholds = thresholds;
+        public QuestionnaireWrapperModel build() {
+            return new QuestionnaireWrapperModel(questionnaire, frequency, satisfiedUntil, thresholds);
+        }
     }
 }

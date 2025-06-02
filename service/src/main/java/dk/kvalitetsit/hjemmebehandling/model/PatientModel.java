@@ -1,107 +1,108 @@
 package dk.kvalitetsit.hjemmebehandling.model;
 
-import java.util.List;
+import org.apache.commons.lang3.NotImplementedException;
 
-public class PatientModel {
-    private QualifiedId id;
-    private String givenName;
-    private String familyName;
-    private String cpr;
-    private ContactDetailsModel contactDetails;
-    private PrimaryContactModel primaryContactModel;
-    private List<ContactDetailsModel> additionalRelativeContactDetails;
-    private String customUserId;
-    private String customUserName;
+import java.util.List;
+import java.util.Optional;
+
+public record PatientModel(
+        QualifiedId.PatientId id,
+        PersonNameModel name,
+        CPR cpr,
+        ContactDetailsModel contactDetails,
+        PrimaryContactModel primaryContact,
+        List<ContactDetailsModel> additionalRelativeContactDetails,
+        String customUserId,
+        String customUserName
+) implements BaseModel<PatientModel> {
+
+    public static Builder builder() {
+        return new PatientModel.Builder();
+    }
 
     @Override
-    public String toString() {
-        return "PatientModel{" +
-                "id=" + id +
-                ", givenName='" + givenName + '\'' +
-                ", familyName='" + familyName + '\'' +
-                ", cpr='" + cpr + '\'' +
-                ", contactDetails=" + contactDetails +
-                ", primaryContactMdeol=" + primaryContactModel +
-                ", additionalRelativeContactDetails=" + additionalRelativeContactDetails +
-                ", customUserId='" + customUserId + '\'' +
-                ", customUserName='" + customUserName + '\'' +
-                '}';
+    public QualifiedId.OrganizationId organizationId() {
+        throw new NotImplementedException();
     }
 
-    public PatientModel() {
-        this.primaryContactModel = new PrimaryContactModel();
+    @Override
+    public PatientModel substitute(PatientModel other) {
+        return new PatientModel(
+                Optional.of(other.id).orElse(id),
+                Optional.of(other.name).orElse(name),
+                Optional.of(other.cpr).orElse(cpr),
+                Optional.of(other.contactDetails).orElse(contactDetails),
+                Optional.of(other.primaryContact).orElse(primaryContact),
+                Optional.of(other.additionalRelativeContactDetails).orElse(additionalRelativeContactDetails),
+                Optional.of(other.customUserId).orElse(customUserId),
+                Optional.of(other.customUserName).orElse(customUserName)
+        );
     }
 
-    public QualifiedId getId() {
-        return id;
-    }
+    public static class Builder {
+        private QualifiedId.PatientId id;
+        private PersonNameModel name;
+        private CPR cpr;
+        private ContactDetailsModel contactDetails;
+        private PrimaryContactModel primaryContactModel;
+        private List<ContactDetailsModel> additionalRelativeContactDetails;
+        private String customUserId;
+        private String customUserName;
 
-    public void setId(QualifiedId id) {
-        this.id = id;
-    }
+        public static Builder from(PatientModel model) {
+            return new Builder()
+                    .id(model.id).name(model.name)
+                    .cpr(model.cpr)
+                    .contactDetails(model.contactDetails)
+                    .customUserId(model.customUserId)
+                    .customUserName(model.customUserName)
+                    .primaryContact(model.primaryContact)
+                    .additionalRelativeContactDetails(model.additionalRelativeContactDetails);
+        }
 
-    public String getGivenName() {
-        return givenName;
-    }
+        public Builder id(QualifiedId.PatientId id) {
+            this.id = id;
+            return this;
+        }
 
-    public void setGivenName(String givenName) {
-        this.givenName = givenName;
-    }
+        public Builder name(PersonNameModel name) {
+            this.name = name;
+            return this;
+        }
 
-    public String getFamilyName() {
-        return familyName;
-    }
+        public Builder cpr(CPR cpr) {
+            this.cpr = cpr;
+            return this;
+        }
 
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
-    }
+        public Builder contactDetails(ContactDetailsModel contactDetails) {
+            this.contactDetails = contactDetails;
+            return this;
+        }
 
-    public String getCpr() {
-        return cpr;
-    }
+        public Builder primaryContact(PrimaryContactModel primaryContactModel) {
+            this.primaryContactModel = primaryContactModel;
+            return this;
+        }
 
-    public void setCpr(String cpr) {
-        this.cpr = cpr;
-    }
+        public Builder additionalRelativeContactDetails(List<ContactDetailsModel> additionalRelativeContactDetails) {
+            this.additionalRelativeContactDetails = additionalRelativeContactDetails;
+            return this;
+        }
 
-    public ContactDetailsModel getContactDetails() {
-        return contactDetails;
-    }
+        public Builder customUserId(String customUserId) {
+            this.customUserId = customUserId;
+            return this;
+        }
 
-    public void setContactDetails(ContactDetailsModel contactDetails) {
-        this.contactDetails = contactDetails;
-    }
+        public Builder customUserName(String customUserName) {
+            this.customUserName = customUserName;
+            return this;
+        }
 
-
-    public List<ContactDetailsModel> getAdditionalRelativeContactDetails() {
-        return additionalRelativeContactDetails;
-    }
-
-    public void setAdditionalRelativeContactDetails(List<ContactDetailsModel> additionalRelativeContactDetails) {
-        this.additionalRelativeContactDetails = additionalRelativeContactDetails;
-    }
-
-	public String getCustomUserId() {
-		return customUserId;
-	}
-
-	public void setCustomUserId(String customUserId) {
-		this.customUserId = customUserId;
-	}
-
-	public String getCustomUserName() {
-		return customUserName;
-	}
-
-	public void setCustomUserName(String customUserName) {
-		this.customUserName = customUserName;
-	}
-
-    public PrimaryContactModel getPrimaryContact() {
-        return primaryContactModel;
-    }
-
-    public void setPrimaryContact(PrimaryContactModel primaryContactModel) {
-        this.primaryContactModel = primaryContactModel;
+        public PatientModel build() {
+            return new PatientModel(this.id, this.name, this.cpr, this.contactDetails, this.primaryContactModel, this.additionalRelativeContactDetails, this.customUserId, this.customUserName);
+        }
     }
 }
+

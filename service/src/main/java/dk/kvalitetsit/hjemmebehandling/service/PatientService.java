@@ -1,147 +1,23 @@
 package dk.kvalitetsit.hjemmebehandling.service;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import dk.kvalitetsit.hjemmebehandling.api.PaginatedList;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirLookupResult;
-import dk.kvalitetsit.hjemmebehandling.types.Pagination;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.Patient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import dk.kvalitetsit.hjemmebehandling.api.CustomUserResponseDto;
-import dk.kvalitetsit.hjemmebehandling.api.DtoMapper;
-import dk.kvalitetsit.hjemmebehandling.client.CustomUserClient;
-import dk.kvalitetsit.hjemmebehandling.constants.errors.ErrorDetails;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirClient;
-import dk.kvalitetsit.hjemmebehandling.fhir.FhirMapper;
+import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.PatientModel;
-import dk.kvalitetsit.hjemmebehandling.service.access.AccessValidator;
-import dk.kvalitetsit.hjemmebehandling.service.exception.ErrorKind;
+import dk.kvalitetsit.hjemmebehandling.service.exception.AccessValidationException;
 import dk.kvalitetsit.hjemmebehandling.service.exception.ServiceException;
+import dk.kvalitetsit.hjemmebehandling.types.Pagination;
 
-public class PatientService extends AccessValidatingService {
-    private static final Logger logger = LoggerFactory.getLogger(PatientService.class);
+import java.util.List;
 
-    private final FhirClient fhirClient;
+public interface PatientService {
 
-    private final FhirMapper fhirMapper;
-    
-    private final DtoMapper dtoMapper;
-    
-    private CustomUserClient customUserService;
+    void createPatient(PatientModel patientModel) throws ServiceException ;
 
-    public PatientService(FhirClient fhirClient, FhirMapper fhirMapper, AccessValidator accessValidator, DtoMapper dtoMapper) {
-        super(accessValidator);
+    PatientModel getPatient(CPR cpr) throws ServiceException ;
 
-        this.fhirClient = fhirClient;
-        this.fhirMapper = fhirMapper;
-        this.dtoMapper = dtoMapper;
-    }
+    // TODO: Bad Practice... replace 'includeActive' and 'includeCompleted' with 'CarePlanStatus...  status'
+    List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException, AccessValidationException;
 
-    public void createPatient(PatientModel patientModel) throws ServiceException {
-        try {
-        	Optional<CustomUserResponseDto> customUserResponseDto = customUserService.createUser(dtoMapper.mapPatientModelToCustomUserRequest(patientModel));
-        	if(customUserResponseDto.isPresent()) {
-        		String customerUserLinkId = customUserResponseDto.get().getId();
-        		patientModel.setCustomUserId(customerUserLinkId);
-        	}
-        	fhirClient.savePatient(fhirMapper.mapPatientModel(patientModel));
-        }
-        catch(Exception e) {
-            throw new ServiceException("Error saving patient", e, ErrorKind.INTERNAL_SERVER_ERROR, ErrorDetails.INTERNAL_SERVER_ERROR);
-        }
-    }
+    List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException, AccessValidationException;
 
-    public List<PatientModel> getPatients(String clinicalIdentifier) {
-        FhirContext context = FhirContext.forR4();
-        IGenericClient client = context.newRestfulGenericClient("http://hapi-server:8080/fhir");
-
-        Bundle bundle = (Bundle) client.search().forResource("Patient").prettyPrint().execute();
-
-//        org.hl7.fhir.r4.model.Patient patient = new org.hl7.fhir.r4.model.Patient();
-
-        PatientModel p = new PatientModel();
-
-        p.setCpr("0101010101");
-        p.setFamilyName("Ærtegærde Ømø Ååstrup");
-        p.setGivenName("Torgot");
-
-        return List.of(p);
-    }
-
-    public PatientModel getPatient(String cpr) throws ServiceException {
-        // Look up the patient
-        Optional<Patient> patient = fhirClient.lookupPatientByCpr(cpr);
-        if(patient.isEmpty()) {
-            return null;
-        }
-
-        var orgId = fhirClient.getOrganizationId();
-
-        // Map to the domain model
-        return fhirMapper.mapPatient(patient.get(), orgId);
-    }
-
-    boolean patientIsInList(Patient patientToSearchFor, List<Patient> listToSearchForPatient){
-        return listToSearchForPatient
-                .stream().
-                anyMatch(listP -> Objects.equals(
-                        fhirMapper.extractCpr(listP),
-                        fhirMapper.extractCpr(patientToSearchFor)
-                ));
-    }
-
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted) throws ServiceException {
-
-        var patients = new ArrayList<Patient>();
-
-        var patientsWithActiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.ACTIVE).getPatients();
-
-        if(includeActive)
-            patients.addAll(patientsWithActiveCareplan);
-
-        if(includeCompleted){
-            var patientsWithInactiveCareplan = fhirClient.getPatientsByStatus(CarePlan.CarePlanStatus.COMPLETED).getPatients();
-            patientsWithInactiveCareplan.removeIf( potentialPatient -> patientIsInList(potentialPatient,patientsWithActiveCareplan) );
-            patients.addAll(patientsWithInactiveCareplan);
-        }
-
-        var orgId = fhirClient.getOrganizationId();
-
-        // Map the resources
-        return patients
-                .stream()
-                .sorted(Comparator.comparing(a -> a.getName().get(0).getGivenAsSingleString()))
-                .map(p -> fhirMapper.mapPatient(p, orgId))
-                .collect(Collectors.toList());
-    }
-
-
-    public List<PatientModel> getPatients(boolean includeActive, boolean includeCompleted, Pagination pagination) throws ServiceException {
-        List<PatientModel> patients = this.getPatients(includeActive, includeCompleted);
-
-        return new PaginatedList<>(patients, pagination).getList();
-    }
-
-
-    public List<PatientModel> searchPatients(List<String> searchStrings) throws ServiceException {
-        FhirLookupResult lookupResult = fhirClient.searchPatients(searchStrings, CarePlan.CarePlanStatus.ACTIVE);
-        if(lookupResult.getPatients().isEmpty()) {
-            return List.of();
-        }
-
-        var organizationId = fhirClient.getOrganizationId();
-
-        // Map the resources
-        return lookupResult.getPatients()
-            .stream()
-            .map(p -> fhirMapper.mapPatient(p, organizationId))
-            .collect(Collectors.toList());
-    }
+    List<PatientModel> searchActivePatients(List<String> searchStrings) throws ServiceException, AccessValidationException;
 }
