@@ -17,10 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import static dk.kvalitetsit.hjemmebehandling.Constants.ORGANIZATION_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.Constants.ORGANIZATION_ID_2;
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildOrganization;
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildResource;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_ID_1;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_ID_2;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

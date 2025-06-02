@@ -5,8 +5,8 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.CAREPLAN_ID_1;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.PATIENT_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BundleBuilderTest {

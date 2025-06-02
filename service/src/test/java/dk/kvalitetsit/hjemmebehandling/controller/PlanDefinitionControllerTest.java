@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.PLANDEFINITION_ID_1;
+
+import static dk.kvalitetsit.hjemmebehandling.Constants.PLANDEFINITION_ID_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -161,7 +162,7 @@ public class PlanDefinitionControllerTest {
     @Test
     public void patchPlanDefinition_success() throws Exception {
         PatchPlanDefinitionRequest request = new PatchPlanDefinitionRequest();
-        ResponseEntity<Void> result = subject.patchPlanDefinition("plandefinition-1", request);
+        ResponseEntity<Void> result = subject.patchPlanDefinition(PLANDEFINITION_ID_1.unqualified(), request);
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }

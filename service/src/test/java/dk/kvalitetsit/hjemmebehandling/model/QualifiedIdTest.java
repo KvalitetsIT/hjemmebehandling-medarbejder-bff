@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -16,12 +17,12 @@ public class QualifiedIdTest {
     public void testme() {
         PatientModel p = PatientModel.builder()
                 .name(new PersonNameModel("family", List.of("given")))
-                .cpr(new CPR("0101010101"))
+                .cpr(CPR_1)
                 .build();
 
         PatientModel p2 = PatientModel.builder()
                 .name(new PersonNameModel("family", List.of("given")))
-                .cpr(new CPR("0202020202"))
+                .cpr(CPR_2)
                 .build();
 
         Map<CPR, String> result = Stream.of(p, p2).collect(Collectors.toMap(PatientModel::cpr, u -> u.name().given().getFirst() + " " + u.name().family(), (existing, replacement) -> existing));

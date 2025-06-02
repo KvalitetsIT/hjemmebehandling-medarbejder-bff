@@ -31,7 +31,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.QUESTIONNAIRE_ID_1;
+
+import static dk.kvalitetsit.hjemmebehandling.Constants.QUESTIONNAIRE_ID_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -131,7 +132,7 @@ public class QuestionnaireControllerTest {
 
         QuestionnaireModel questionnaireModel = QuestionnaireModel.builder().build();
         Mockito.when(dtoMapper.mapQuestionnaireDto(request.getQuestionnaire())).thenReturn(questionnaireModel);
-        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(new QualifiedId.QuestionnaireId("questionnaire-1"));
+        Mockito.when(questionnaireService.createQuestionnaire(questionnaireModel)).thenReturn(QUESTIONNAIRE_ID_1);
 
         String location = "http://localhost:8080/api/v1/questionnaire/" + QUESTIONNAIRE_ID_1.unqualified();
         Mockito.when(locationHeaderBuilder.buildLocationHeader(QUESTIONNAIRE_ID_1)).thenReturn(URI.create(location));
@@ -146,15 +147,13 @@ public class QuestionnaireControllerTest {
     public void patchQuestionnaire_success_() throws Exception {
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(List.of(buildQuestionDto()));
-
         ResponseEntity<Void> result = subject.patchQuestionnaire("questionnaire-1", request);
-
         assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
     public void patchQuestionnaire_nullQuestions_throwsBadRequestException() throws Exception {
-        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
+        QualifiedId.QuestionnaireId id = QUESTIONNAIRE_ID_1;
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(null);
 
@@ -163,7 +162,7 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void patchQuestionnaire_emptyQuestions_throwsBadRequestException() throws Exception {
-        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
+        QualifiedId.QuestionnaireId id = QUESTIONNAIRE_ID_1;
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         request.setQuestions(List.of());
 
@@ -172,8 +171,7 @@ public class QuestionnaireControllerTest {
 
     @Test
     public void patchQuestionnaire_accessViolation() throws Exception {
-        QualifiedId.QuestionnaireId id = new QualifiedId.QuestionnaireId("questionnaire-1");
-
+        QualifiedId.QuestionnaireId id = QUESTIONNAIRE_ID_1;
 
         PatchQuestionnaireRequest request = new PatchQuestionnaireRequest();
         QuestionDto questionDto = buildQuestionDto();

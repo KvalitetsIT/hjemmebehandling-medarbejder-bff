@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildQuestionnaireResponse;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -257,7 +257,7 @@ public class QuestionnaireResponseServiceTest {
 
     @Test
     public void updateExaminationStatus_resourceNotFound_throwsException() throws Exception {
-        QualifiedId.QuestionnaireResponseId id = new QualifiedId.QuestionnaireResponseId("questionnaireresponse-1");
+        QualifiedId.QuestionnaireResponseId id = QUESTIONNAIRE_RESPONSE_ID_1;
         ExaminationStatus status = ExaminationStatus.UNDER_EXAMINATION;
         Mockito.when(questionnaireResponseRepository.fetch(id)).thenReturn(Optional.empty());
         assertThrows(ServiceException.class, () -> subject.updateExaminationStatus(id, status));

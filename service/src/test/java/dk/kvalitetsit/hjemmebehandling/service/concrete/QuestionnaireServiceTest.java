@@ -25,8 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static dk.kvalitetsit.hjemmebehandling.Constants.QUESTIONNAIRE_ID_1;
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildQuestionModel;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.QUESTIONNAIRE_ID_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

@@ -13,7 +13,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -252,7 +252,7 @@ public class DtoMapperTest {
 
     private PatientModel buildPatientModel() {
         return PatientModel.builder()
-                .cpr(new CPR("0101010101"))
+                .cpr(CPR_1)
                 .contactDetails(buildContactDetailsModel())
                 .name(new PersonNameModel("Madsen", List.of("Bob")))
                 .primaryContact(PrimaryContactModel.builder()

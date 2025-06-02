@@ -1,3 +1,5 @@
+package dk.kvalitetsit.hjemmebehandling;
+
 import dk.kvalitetsit.hjemmebehandling.model.CPR;
 import dk.kvalitetsit.hjemmebehandling.model.QualifiedId;
 import dk.kvalitetsit.hjemmebehandling.types.Pagination;

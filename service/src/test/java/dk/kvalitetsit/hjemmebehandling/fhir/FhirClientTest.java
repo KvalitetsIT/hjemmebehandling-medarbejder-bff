@@ -19,8 +19,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.buildOrganization;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.ORGANIZATION_ID_1;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.PLANDEFINITION_ID_1;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirClientTest {

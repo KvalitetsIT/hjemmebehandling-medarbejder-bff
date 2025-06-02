@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.CPR_1;
+import static dk.kvalitetsit.hjemmebehandling.Constants.CPR_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

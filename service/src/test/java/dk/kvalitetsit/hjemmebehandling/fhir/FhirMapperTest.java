@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 
 @ExtendWith(MockitoExtension.class)
 public class FhirMapperTest {

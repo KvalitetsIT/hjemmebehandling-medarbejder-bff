@@ -36,7 +36,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static dk.kvalitetsit.hjemmebehandling.MockFactory.*;
-import static dk.kvalitetsit.hjemmebehandling.service.Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 

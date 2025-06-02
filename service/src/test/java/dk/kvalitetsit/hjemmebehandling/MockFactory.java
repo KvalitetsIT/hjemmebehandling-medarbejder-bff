@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static Constants.*;
+import static dk.kvalitetsit.hjemmebehandling.Constants.*;
+
 
 public class MockFactory {
 
