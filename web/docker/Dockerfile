@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.7_6-jre-alpine-3.21
+FROM eclipse-temurin:21.0.13.1_2-jre-alpine-3.24
 
 RUN apk update && apk upgrade && apk add --no-cache tzdata && apk --no-cache add bash
 

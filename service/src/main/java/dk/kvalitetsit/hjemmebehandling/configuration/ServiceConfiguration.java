@@ -3,8 +3,6 @@ package dk.kvalitetsit.hjemmebehandling.configuration;
 import dk.kvalitetsit.hjemmebehandling.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.audit.AuditEventRepository;
-import org.springframework.boot.actuate.audit.InMemoryAuditEventRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -51,10 +49,6 @@ public class ServiceConfiguration {
 
     @Value("${allowed.admin.roles:#{null}}")
     private String adminRoles;
-  @Bean
-  public AuditEventRepository auditEventRepository() {
-    return new InMemoryAuditEventRepository();
-  }
 
     @Bean
     public CarePlanService getCarePlanService(
