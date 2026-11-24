@@ -12,13 +12,17 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dk.kvalitetsit.hjemmebehandling.model.PersonModel;
 
 public class PersonService {
     private static final Logger logger = LoggerFactory.getLogger(PersonService.class);
+
+    // The CPR service adds fields over time (e.g. deceasedDatetime), so ignore the ones we do not map.
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	@Value("${cpr.url}")
 	private String cprUrl;
@@ -35,7 +39,7 @@ public class PersonService {
     	PersonModel person = null;
     	try {
         	String result = restTemplate.getForObject(cprUrl+cpr, String.class);
-        	person = new ObjectMapper().readValue(result, PersonModel.class);
+        	person = MAPPER.readValue(result, PersonModel.class);
         } catch (HttpClientErrorException httpClientErrorException) {
         	httpClientErrorException.printStackTrace();
         	if (HttpStatus.NOT_FOUND.equals(httpClientErrorException.getStatusCode())) {
